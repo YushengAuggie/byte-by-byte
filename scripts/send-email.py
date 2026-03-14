@@ -204,16 +204,48 @@ def get_day_number(config):
     except:
         return None
 
-def load_subscribers(repo_dir):
-    """Load subscriber emails from subscribers.txt (one per line, skip blanks/comments)."""
-    sub_file = os.path.join(repo_dir, 'subscribers.txt')
+def load_subscribers(repo_dir, config):
+    """Load subscribers from Google Sheet CSV (auto) + local subscribers.txt (manual fallback)."""
     subscribers = []
+
+    # Source 1: Google Sheet CSV (automated via form)
+    csv_url = config.get('SUBSCRIBERS_CSV_URL', '')
+    if csv_url:
+        try:
+            import urllib.request
+            import csv
+            import io
+            req = urllib.request.Request(csv_url, headers={'User-Agent': 'byte-by-byte/1.0'})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                text = resp.read().decode('utf-8')
+            reader = csv.reader(io.StringIO(text))
+            header = next(reader, None)  # skip header row
+            # Find the email column (look for column containing "email")
+            email_col = 0
+            if header:
+                for i, col in enumerate(header):
+                    if 'email' in col.lower():
+                        email_col = i
+                        break
+            for row in reader:
+                if len(row) > email_col:
+                    email = row[email_col].strip()
+                    if email and '@' in email:
+                        subscribers.append(email)
+            print('  📋 Loaded {} subscribers from Google Sheet'.format(len(subscribers)))
+        except Exception as e:
+            print('  ⚠️  Could not fetch subscriber sheet: {}'.format(e))
+
+    # Source 2: Local subscribers.txt (manual additions)
+    sub_file = os.path.join(repo_dir, 'subscribers.txt')
     if os.path.exists(sub_file):
         with open(sub_file) as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith('#') and '@' in line:
-                    subscribers.append(line)
+                    if line.lower() not in [s.lower() for s in subscribers]:
+                        subscribers.append(line)
+
     return subscribers
 
 def main():
@@ -227,7 +259,7 @@ def main():
 
     # Build recipient list: owner + subscribers
     recipients = [email_target]
-    subscribers = load_subscribers(repo_dir)
+    subscribers = load_subscribers(repo_dir, config)
     for sub in subscribers:
         if sub.lower() not in [r.lower() for r in recipients]:
             recipients.append(sub)
