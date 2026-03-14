@@ -95,7 +95,13 @@ ONLY after the review gate passes, send each section as a SEPARATE Telegram mess
 - Send in order: 1, 2, 3, 4, 5
 - Read the content from the (possibly corrected) archive files, not from memory
 
-## Step 5: Commit and push
+## Step 5: Send email digest
+```bash
+python3 {{BBB_REPO_DIR}}/scripts/send-email.py
+```
+This combines all 5 archive files into one email and sends to the configured address.
+
+## Step 6: Commit and push
 ```bash
 bash {{BBB_REPO_DIR}}/scripts/commit.sh
 ```
