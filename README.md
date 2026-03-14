@@ -1,6 +1,8 @@
 # 🧠 byte-by-byte
 
-Daily tech knowledge, one byte at a time. 15 minutes of learning delivered to your morning.
+> *A little bit every day. A lot over time.*
+
+15 minutes of tech knowledge, delivered to your morning. One byte won't change your life — but 100 of them will.
 
 ## 📋 What You Get
 
