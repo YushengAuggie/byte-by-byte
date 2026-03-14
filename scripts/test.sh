@@ -261,6 +261,24 @@ json.dump(s, open('state.json', 'w'), indent=2)
 # Clean up any leftover temp files
 rm -f /tmp/bbb-section-{1..5}.txt /tmp/bbb-review.txt
 
+# Create temp config.env if missing (CI environment)
+CREATED_TEMP_CONFIG=false
+if [ ! -f "$REPO_DIR/config.env" ]; then
+  cat > "$REPO_DIR/config.env" << TMPCONF
+BBB_REPO_DIR="$REPO_DIR"
+OPENCLAW_BIN="openclaw"
+TELEGRAM_TARGET="test"
+EMAIL_TARGET="test@test.com"
+CRON_SCHEDULE="0 8 * * *"
+QA_SCHEDULE="15 8 * * *"
+TIMEZONE="America/Los_Angeles"
+MODEL="sonnet"
+SMTP_USER="test@test.com"
+SMTP_APP_PASSWORD="test"
+TMPCONF
+  CREATED_TEMP_CONFIG=true
+fi
+
 # Test 11a: Normal day (Day 1)
 if bash scripts/generate.sh > /tmp/bbb-test-output.txt 2>&1; then
   ALL_SECTIONS=true
@@ -330,9 +348,10 @@ else
   fail "generate.sh Day 5 — script crashed"
 fi
 
-# Restore original state
+# Restore original state and clean up
 echo "$ORIG_STATE" > state.json
 rm -f /tmp/bbb-section-{1..5}.txt /tmp/bbb-review.txt /tmp/bbb-test-output.txt "$TMP_STATE"
+if $CREATED_TEMP_CONFIG; then rm -f "$REPO_DIR/config.env"; fi
 
 # --- 12. Integration: send-email.py dry-run ---
 echo ""
@@ -420,10 +439,16 @@ else:
 echo ""
 echo "📋 Integration: check-exhaustion.sh:"
 
+# Needs config.env — create temp if missing
+CREATED_EXHAUST_CONFIG=false
+if [ ! -f "$REPO_DIR/config.env" ]; then
+  echo "BBB_REPO_DIR=\"$REPO_DIR\"" > "$REPO_DIR/config.env"
+  CREATED_EXHAUST_CONFIG=true
+fi
+
 if bash scripts/check-exhaustion.sh > /tmp/bbb-exhaustion-test.txt 2>&1; then
   pass "check-exhaustion.sh — ran clean (no warnings)"
 else
-  # Check if it's a real warning or an error
   if grep -q "⚠️" /tmp/bbb-exhaustion-test.txt; then
     warn "check-exhaustion.sh — has warnings (may be expected)"
   else
@@ -431,6 +456,7 @@ else
   fi
 fi
 rm -f /tmp/bbb-exhaustion-test.txt
+if $CREATED_EXHAUST_CONFIG; then rm -f "$REPO_DIR/config.env"; fi
 
 # --- Summary ---
 echo ""
