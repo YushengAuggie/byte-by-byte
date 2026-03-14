@@ -28,14 +28,14 @@ table = """| Field | Value |
 |-------|-------|
 | **Current Day** | Day ${CURRENT_DAY} |
 | **Last Sent** | ${LAST_DATE} |
-| **Algorithms Covered** | ${ALGO_IDX} / 150 (NeetCode 150) |
-| **System Design Covered** | ${SD_IDX} / 40 |
-| **Frontend Covered** | ${FE_IDX} / 50 |
-| **Soft Skills Covered** | ${SOFT_IDX} / 40 |
-| **AI Topics Covered** | ${AI_IDX} / 30 |"""
+| **Algorithms** | ${ALGO_IDX} / 150 (NeetCode 150) |
+| **System Design** | ${SD_IDX} / 40 |
+| **Frontend** | ${FE_IDX} / 50 |
+| **Soft Skills** | ${SOFT_IDX} / 40 |
+| **AI Topics** | ${AI_IDX} / 30 |"""
 readme = re.sub(
-    r'(<!-- AUTO-UPDATED.*?-->\n\n).*?(\n\n> 💡)',
-    r'\1' + table + r'\2',
+    r'(<!-- AUTO-UPDATED.*?-->\n\n)\|.*?\n\n',
+    r'\1' + table + '\n\n',
     readme, flags=re.DOTALL
 )
 pathlib.Path("README.md").write_text(readme)

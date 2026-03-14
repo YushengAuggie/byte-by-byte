@@ -17,6 +17,8 @@ WARN_THRESHOLD=5
 echo "=== byte-by-byte content exhaustion check ==="
 echo ""
 
+export BBB_REPO_DIR WARN_THRESHOLD
+
 python3 - << 'EOF'
 import json
 import os
