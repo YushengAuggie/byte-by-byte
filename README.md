@@ -22,7 +22,7 @@ I built this because I wanted to stay sharp without spending hours grinding Leet
 | # | Section | Time | What |
 |---|---------|------|------|
 | 🏗️ | System Design | 3-4 min | Architecture patterns, tradeoffs, real-world systems |
-| 💻 | Algorithms | 3-4 min | NeetCode 150, Python + TypeScript, pattern-focused |
+| 💻 | Algorithms | 3-4 min | NeetCode 150, Python, pattern-focused |
 | 🗣️ | Soft Skills | 2-3 min | STAR framework, senior/staff-level scenarios |
 | 🎨 | Frontend | 2-3 min | CSS → JS → React → Next.js → TypeScript |
 | 🤖 | AI | 2-3 min | Latest news + core concepts with runnable code |
@@ -54,7 +54,7 @@ Every lesson is written in both Chinese and English — not translated, but **na
 - **Self-review gate** — Content is generated, verified, fixed, THEN sent (never sends unchecked content)
 - **QA reviewer** — Second automated pass 15 minutes later catches anything that slipped through
 - **ELI5** — Every section ends with a one-sentence "explain like I'm 5"
-- **TypeScript alternative** — Algorithm solutions in both Python and TypeScript
+- **TypeScript in Frontend** — TypeScript knowledge woven into the frontend progression
 - **Runnable AI code** — Concept days include ≤15 line copy-paste Python snippets
 - **Retry logic** — 3x exponential backoff for delivery failures
 

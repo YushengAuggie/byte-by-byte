@@ -171,14 +171,6 @@ Content:
 - Python solution with detailed comments
 - Time/Space complexity
 - 举一反三 / Pattern Recognition + follow-up variations
-- After the Python solution, include a TypeScript version with this exact format:
-  📝 **TypeScript version:**
-  ```typescript
-  // TypeScript equivalent — same algorithm, idiomatic TS (proper types, no `any`)
-  function exampleFn(input: number[]): boolean {
-    // ... implementation
-  }
-  ```
 
 **After generating this section**, also prepare a "Complexity Quiz" (saved separately to /tmp/bbb-quiz-2.json):
 Generate a JSON object with:
