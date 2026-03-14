@@ -180,11 +180,15 @@ You'll get 5 Telegram messages + 1 HTML email digest every morning at 8 AM. That
 
 Visit the [website](https://yushengauggie.github.io/byte-by-byte/) or [archive](https://yushengauggie.github.io/byte-by-byte/archive.html).
 
-### Option 3: RSS
+### Option 3: Email subscription
+
+[**Subscribe here**](https://forms.gle/UJw1YPmzsA4mKRHK6) — you'll get one HTML email digest every morning at 8 AM PT.
+
+### Option 4: RSS
 
 Subscribe to [`docs/feed.xml`](https://yushengauggie.github.io/byte-by-byte/feed.xml) in your favorite reader.
 
-### Option 4: Fork and customize
+### Option 5: Fork and customize
 
 1. Fork this repo
 2. Edit `content/*.json` to change topics

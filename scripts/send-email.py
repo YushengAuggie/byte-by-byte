@@ -204,6 +204,18 @@ def get_day_number(config):
     except:
         return None
 
+def load_subscribers(repo_dir):
+    """Load subscriber emails from subscribers.txt (one per line, skip blanks/comments)."""
+    sub_file = os.path.join(repo_dir, 'subscribers.txt')
+    subscribers = []
+    if os.path.exists(sub_file):
+        with open(sub_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '@' in line:
+                    subscribers.append(line)
+    return subscribers
+
 def main():
     config = load_config()
     repo_dir = config['BBB_REPO_DIR']
@@ -212,6 +224,13 @@ def main():
     archive_dir = os.path.join(repo_dir, 'archive')
     smtp_user = config.get('SMTP_USER', email_target)
     smtp_pass = config.get('SMTP_APP_PASSWORD', '')
+
+    # Build recipient list: owner + subscribers
+    recipients = [email_target]
+    subscribers = load_subscribers(repo_dir)
+    for sub in subscribers:
+        if sub.lower() not in [r.lower() for r in recipients]:
+            recipients.append(sub)
 
     if not smtp_pass:
         print('SMTP_APP_PASSWORD not set in config.env')
@@ -272,29 +291,39 @@ def main():
 </body>
 </html>'''.format(css=CSS, day_label=day_label, today=today, toc=toc_links, sections=section_blocks)
 
-    # Build MIME multipart
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = '🧠 byte-by-byte{} ({})'.format(day_label, today)
-    msg['From'] = smtp_user
-    msg['To'] = email_target
-
+    # Build plain text fallback
     plain_text = 'byte-by-byte{} - {}\n\n'.format(day_label, today)
     plain_text += '\n\n---\n\n'.join(plain_parts)
     plain_text += '\n\n---\nA little bit every day. A lot over time.'
+    plain_text += '\n\nUnsubscribe: reply with "unsubscribe"'
 
-    msg.attach(MIMEText(plain_text, 'plain', 'utf-8'))
-    msg.attach(MIMEText(full_html, 'html', 'utf-8'))
+    # Add unsubscribe note to HTML footer
+    full_html = full_html.replace(
+        'open source daily learning</p>',
+        'open source daily learning<br><small>Reply "unsubscribe" to stop receiving emails</small></p>'
+    )
 
+    # Send to all recipients
     socket.setdefaulttimeout(20)
-    print('Sending HTML digest to {}...'.format(email_target))
+    print('Sending HTML digest to {} recipients...'.format(len(recipients)))
+
     with smtplib.SMTP('smtp.gmail.com', 587) as s:
         s.ehlo()
         s.starttls()
         s.ehlo()
         s.login(smtp_user, smtp_pass)
-        s.send_message(msg)
 
-    print('Email sent to {}'.format(email_target))
+        for recipient in recipients:
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = '🧠 byte-by-byte{} ({})'.format(day_label, today)
+            msg['From'] = smtp_user
+            msg['To'] = recipient
+            msg.attach(MIMEText(plain_text, 'plain', 'utf-8'))
+            msg.attach(MIMEText(full_html, 'html', 'utf-8'))
+            s.send_message(msg)
+            print('  ✉️  {}'.format(recipient))
+
+    print('Email sent to {} recipients'.format(len(recipients)))
 
 if __name__ == '__main__':
     main()
