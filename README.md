@@ -1,77 +1,82 @@
-# 📚 Daily Interview Prep
+# 🧠 byte-by-byte
 
-Automated daily interview preparation system — bilingual (Chinese/English).
+Daily tech knowledge, one byte at a time. 15 minutes of learning delivered to your morning.
 
-## 📋 Sections
+## 📋 What You Get
 
-| # | Section | Time | Topics |
-|---|---------|------|--------|
-| 🏗️ | System Design | 3-4 min | 40 topics, fundamentals → advanced |
-| 💻 | LeetCode | 3-4 min | NeetCode 150, Python, pattern-focused |
-| 🗣️ | Behavioral | 2-3 min | 40 questions, senior/staff level |
-| 🎨 | Frontend | 2-3 min | 50 topics, CSS → React → Next.js |
-| 🤖 | AI Update | 2-3 min | News + 30 concept topics |
+| # | Section | Time | What |
+|---|---------|------|------|
+| 🏗️ | System Design | 3-4 min | Architecture patterns, tradeoffs, real-world systems |
+| 💻 | Algorithms | 3-4 min | NeetCode 150 problems, Python, pattern-focused |
+| 🗣️ | Soft Skills | 2-3 min | Communication, leadership, decision-making |
+| 🎨 | Frontend | 2-3 min | CSS → JS → React → Next.js → TypeScript |
+| 🤖 | AI | 2-3 min | Latest news + core concepts explained |
 
-**Total: ~15 min daily read**
+**~15 min daily read** • **Bilingual (Chinese/English)** • **Progressive difficulty**
 
-## 🚀 Delivery
+## ✨ Philosophy
 
-- **Time:** 8:00 AM PT daily
-- **Channels:** 5 Telegram messages + 1 combined email
-- **Engine:** OpenClaw cron job
+- **Teach, don't lecture** — real-world analogies, visual traces, "guess the output" challenges
+- **Pattern recognition** — connect today's lesson to previous ones
+- **Build on itself** — each day references what you've learned before
+- **Stay current** — AI section alternates fresh news with foundational concepts
 
 ## 📊 Progress
 
-### LeetCode (NeetCode 150)
-- [ ] Arrays & Hashing (9 problems)
-- [ ] Two Pointers (5 problems)
-- [ ] Sliding Window (6 problems)
-- [ ] Stack (7 problems)
-- [ ] Binary Search (7 problems)
-- [ ] Linked List (11 problems)
-- [ ] Trees (15 problems)
-- [ ] Tries (3 problems)
-- [ ] Heap / Priority Queue (7 problems)
-- [ ] Backtracking (9 problems)
-- [ ] Graphs (13 problems)
-- [ ] Advanced Graphs (6 problems)
-- [ ] 1-D Dynamic Programming (12 problems)
-- [ ] 2-D Dynamic Programming (11 problems)
-- [ ] Greedy (8 problems)
-- [ ] Intervals (6 problems)
-- [ ] Math & Geometry (8 problems)
-- [ ] Bit Manipulation (7 problems)
+### Algorithms (NeetCode 150)
+- [ ] Arrays & Hashing (9)
+- [ ] Two Pointers (5)
+- [ ] Sliding Window (6)
+- [ ] Stack (7)
+- [ ] Binary Search (7)
+- [ ] Linked List (11)
+- [ ] Trees (15)
+- [ ] Tries (3)
+- [ ] Heap / Priority Queue (7)
+- [ ] Backtracking (9)
+- [ ] Graphs (13)
+- [ ] Advanced Graphs (6)
+- [ ] 1-D Dynamic Programming (12)
+- [ ] 2-D Dynamic Programming (11)
+- [ ] Greedy (8)
+- [ ] Intervals (6)
+- [ ] Math & Geometry (8)
+- [ ] Bit Manipulation (7)
 
-### System Design
-- [ ] Fundamentals (14 topics)
-- [ ] Building Blocks (1 topic)
-- [ ] System Design Problems (22 topics)
-- [ ] Expert (1 topic)
+### System Design (40 topics)
+- [ ] Fundamentals (14)
+- [ ] Building Blocks (1)
+- [ ] System Design Problems (22)
+- [ ] Expert (1)
 
-### Frontend
-- [ ] CSS Fundamentals (9 topics)
-- [ ] JavaScript Deep Dive (10 topics)
-- [ ] React Core (9 topics)
-- [ ] Next.js (6 topics)
-- [ ] TypeScript (3 topics)
-- [ ] Testing (2 topics)
-- [ ] Performance (3 topics)
-- [ ] Advanced (7 topics)
+### Frontend (50 topics)
+- [ ] CSS Fundamentals (9)
+- [ ] JavaScript Deep Dive (10)
+- [ ] React Core (9)
+- [ ] Next.js (6)
+- [ ] TypeScript (3)
+- [ ] Testing, Performance, Advanced (8)
 
 ## 🗂️ Structure
 
 ```
 content/
-├── neetcode-150.json      # 150 LeetCode problems (NeetCode order)
+├── neetcode-150.json      # 150 algorithm problems (NeetCode order)
 ├── system-design.json     # 40 system design topics
-├── behavioral.json        # 40 behavioral questions
+├── behavioral.json        # 40 soft skills topics
 ├── frontend.json          # 50 frontend topics
 └── ai-topics.json         # 30 AI concept topics
-archive/                   # Daily content saved as YYYY-MM-DD.md
+archive/                   # Daily content saved as YYYY-MM-DD-*.md
 state.json                 # Progress tracking
 SPEC.md                    # Full specification
 ```
 
-## 🔧 Manual Run
+## 🚀 How It Works
 
-Content is generated and delivered by the OpenClaw cron job. See `SPEC.md` for details.
+Automated via [OpenClaw](https://openclaw.ai) cron jobs. 5 isolated sessions generate content daily and deliver via Telegram + email.
+
+**Want to use this yourself?** Fork the repo, customize the content JSONs, and set up your own delivery mechanism (OpenClaw cron, GitHub Actions, or any scheduler).
+
+## 📝 License
+
+MIT — use it, fork it, learn from it.

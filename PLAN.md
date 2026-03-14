@@ -1,4 +1,4 @@
-# Implementation Plan — Daily Knowledge Digest
+# Implementation Plan — byte-by-byte
 
 ## 🎯 Project Summary
 Automated daily knowledge delivery system: 5 bilingual (CN/EN) messages via Telegram + 1 combined email, every day at 8:00 AM PT. Content covers system design, algorithms, behavioral skills, frontend, and AI — designed as a general learning resource (not interview-specific branding).
@@ -11,12 +11,13 @@ Automated daily knowledge delivery system: 5 bilingual (CN/EN) messages via Tele
 - [x] Create GitHub repo
 - [x] Write SPEC.md
 - [x] Write README.md
-- [ ] **Pick final repo name** (brainstormed: `morning-bytes`, `dev-espresso`, `byte-by-byte`, etc.)
-- [ ] **Rename GitHub repo** to chosen name
-- [ ] **Update README.md** — rebrand language from "interview prep" to "daily learning"
+- [x] **Pick final repo name** → `byte-by-byte`
+- [x] **Rename GitHub repo** → github.com/YushengAuggie/byte-by-byte
+- [x] **Update README.md** — rebranded to "daily learning"
 - [ ] **Update SPEC.md** — match new branding
-- [ ] **Update cron job names** — remove "Interview Prep" wording
-- [ ] Update local workspace directory name to match
+- [x] **Update cron job names** — now "byte-by-byte 1/5" etc.
+- [x] Update local workspace directory name → `byte-by-byte/`
+- [x] Update all cron job paths from `daily-interview-prep` → `byte-by-byte`
 
 ### Phase 2: Content Databases
 - [x] `content/neetcode-150.json` — 150 problems, NeetCode order, pattern-grouped
