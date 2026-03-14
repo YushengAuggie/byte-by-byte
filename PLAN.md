@@ -65,7 +65,7 @@ Automated daily tech knowledge system: 5 bilingual (CN/EN) messages via Telegram
 ### Phase 7: Email Delivery ⬜
 - [ ] Check if `gog` CLI is configured for Gmail
 - [ ] Create 3rd cron job at 8:20 AM — reads archives, sends combined email
-- [ ] Test email to Auggie1024.d@gmail.com
+- [ ] Test email to configured in config.env
 
 ### Phase 8: Public Polish ⬜
 - [ ] Add "How to set up your own" section in README

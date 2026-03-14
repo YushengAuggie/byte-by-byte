@@ -67,7 +67,7 @@ Automated daily tech knowledge system delivering 5 bilingual (Chinese/English) m
 
 ## Delivery
 - Telegram: 5 separate messages (one per section)
-- Email: 1 combined daily digest to Auggie1024.d@gmail.com
+- Email: 1 combined daily digest to configured in config.env
 - Daily at 8:00 AM PT via OpenClaw cron (5 isolated jobs, staggered 1 min apart)
 
 ## Data Files
