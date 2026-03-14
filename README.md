@@ -9,9 +9,9 @@
 [![Bilingual](https://img.shields.io/badge/language-中%2FEN-blue)](https://yushengauggie.github.io/byte-by-byte/)
 [![RSS](https://img.shields.io/badge/RSS-subscribe-orange)](https://yushengauggie.github.io/byte-by-byte/feed.xml)
 
-**15 minutes of tech knowledge, delivered daily. Automated, bilingual (Chinese/English), and designed to compound.**
+**5 topics. 15 minutes. Every day. Bilingual (Chinese/English). Designed to compound.**
 
-I built this because I wanted to stay sharp without spending hours grinding LeetCode. 15 minutes. Every day. Compounding. After 30 days, you've covered 30 algorithm patterns, 30 system designs, and 30 frontend concepts — all without blocking your calendar.
+I built this because I wanted to grow as an engineer without blocking my calendar. 15 minutes a day adds up — after 30 days, you've covered 30 algorithm patterns, 30 system design concepts, and 30 frontend skills.
 
 🌐 [**Website**](https://yushengauggie.github.io/byte-by-byte/) • 📡 [**RSS Feed**](https://yushengauggie.github.io/byte-by-byte/feed.xml) • 📖 [**Browse Archive**](https://yushengauggie.github.io/byte-by-byte/archive.html)
 
@@ -22,7 +22,7 @@ I built this because I wanted to stay sharp without spending hours grinding Leet
 | # | Section | Time | What |
 |---|---------|------|------|
 | 🏗️ | System Design | 3-4 min | Architecture patterns, tradeoffs, real-world systems |
-| 💻 | Algorithms | 3-4 min | NeetCode 150, Python, pattern-focused |
+| 💻 | Algorithms | 3-4 min | 150 problems, Python, pattern-focused |
 | 🗣️ | Soft Skills | 2-3 min | STAR framework, senior/staff-level scenarios |
 | 🎨 | Frontend | 2-3 min | CSS → JS → React → Next.js → TypeScript |
 | 🤖 | AI | 2-3 min | Latest news + core concepts with runnable code |
@@ -48,25 +48,25 @@ Every lesson is written in both Chinese and English — not translated, but **na
 - **Quiz polls** — Telegram polls after Algorithms (complexity quiz) and Frontend (output quiz)
 - **Weekend format** — Saturday deep-dives, Sunday week-in-review
 - **Reading time estimates** — Every section shows estimated minutes
-- **LeetCode links** — Direct problem links + difficulty badges 🟢🟡🔴 + NeetCode videos
+- **Direct links** — Problem links + difficulty badges 🟢🟡🔴 + video solutions
 
 ### ✍️ Content Quality
 - **Self-review gate** — Content is generated, verified, fixed, THEN sent (never sends unchecked content)
 - **QA reviewer** — Second automated pass 15 minutes later catches anything that slipped through
+- **📚 Learn More** — Every section ends with 3 curated links (docs, blogs, videos, papers)
 - **ELI5** — Every section ends with a one-sentence "explain like I'm 5"
-- **TypeScript in Frontend** — TypeScript knowledge woven into the frontend progression
 - **Runnable AI code** — Concept days include ≤15 line copy-paste Python snippets
 - **Retry logic** — 3x exponential backoff for delivery failures
 
 ### 🌐 Sharing & Growth
+- **Email subscribers** — Anyone can [subscribe via Google Form](https://forms.gle/UJw1YPmzsA4mKRHK6) — auto-delivered daily
 - **GitHub Pages site** — Beautiful dark-mode landing page
 - **RSS feed** — Subscribe at `docs/feed.xml`
 - **Archive browser** — Browsable HTML for every past day
 - **Open Graph cards** — Rich previews when sharing links
-- **Social share templates** — Pre-formatted for Twitter, LinkedIn, WeChat
 
 ### 🧪 Testing
-- **53 automated checks** — JSON validity, schema, syntax, personal info leaks, content integrity
+- **61 automated checks** — JSON, schema, syntax, personal info leaks, integration tests
 - **Pre-commit hook** — Every commit runs the full test suite; commit fails if tests fail
 - **GitHub Actions CI** — Same tests run on every push
 
@@ -80,7 +80,7 @@ Every lesson is written in both Chinese and English — not translated, but **na
 |-------|-------|
 | **Current Day** | Day 1 |
 | **Last Sent** | 2026-03-14 |
-| **Algorithms** | 1 / 150 (NeetCode 150) |
+| **Algorithms** | 1 / 150 |
 | **System Design** | 1 / 40 |
 | **Frontend** | 1 / 50 |
 | **Soft Skills** | 1 / 40 |
@@ -88,7 +88,7 @@ Every lesson is written in both Chinese and English — not translated, but **na
 
 ---
 
-## 📖 Sample: What Day 1 Looks Like
+## 📖 Sample: What a Day Looks Like
 
 <details>
 <summary>💻 Algorithms — #217 Contains Duplicate (click to expand)</summary>
@@ -115,6 +115,8 @@ def containsDuplicate(nums: list[int]) -> bool:
 > Step 4: num=1, seen={1,2,3} → FOUND! ✅ return True
 > ```
 >
+> 📚 **Learn More:** [NeetCode Video](https://neetcode.io/problems/contains-duplicate) • [LeetCode](https://leetcode.com/problems/contains-duplicate/)
+>
 > 🧒 ELI5: It's like checking if any kid in class has the same birthday — just keep a list and check each new one.
 
 [Full sample →](samples/day1-algorithms.md)
@@ -137,13 +139,15 @@ def containsDuplicate(nums: list[int]) -> bool:
 > ```
 > Answer: **250px**, not 200px! `width` only sets the content area.
 >
+> 📚 **Learn More:** [MDN: Box Model](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_box_model) • [CSS-Tricks Guide](https://css-tricks.com/the-css-box-model/)
+>
 > 🧒 ELI5: It's like measuring a picture frame — the width you set is just the photo, not the frame around it.
 
 [Full sample →](samples/day1-frontend.md)
 
 </details>
 
-More samples: [Soft Skills](samples/day1-soft-skills.md) • [AI News](samples/day1-ai.md)
+More samples: [Soft Skills](samples/day1-soft-skills.md) • [AI](samples/day1-ai.md)
 
 ---
 
@@ -162,7 +166,19 @@ More samples: [Soft Skills](samples/day1-soft-skills.md) • [AI News](samples/d
 
 ## 🚀 Getting Started
 
-### Option 1: Automated delivery (recommended)
+### Option 1: Subscribe to email (easiest)
+
+[**Subscribe here**](https://forms.gle/UJw1YPmzsA4mKRHK6) — one beautiful HTML email with all 5 sections, delivered daily. Free.
+
+### Option 2: Browse online
+
+Visit the [website](https://yushengauggie.github.io/byte-by-byte/) or [archive](https://yushengauggie.github.io/byte-by-byte/archive.html).
+
+### Option 3: RSS
+
+Subscribe to [`docs/feed.xml`](https://yushengauggie.github.io/byte-by-byte/feed.xml) in your favorite reader.
+
+### Option 4: Self-host with Telegram + Email
 
 Requires [OpenClaw](https://openclaw.ai):
 
@@ -174,19 +190,7 @@ vim config.env  # Add your Telegram ID, email, paths
 ./scripts/setup.sh
 ```
 
-You'll get 5 Telegram messages + 1 HTML email digest daily at your configured time. That's it.
-
-### Option 2: Browse online
-
-Visit the [website](https://yushengauggie.github.io/byte-by-byte/) or [archive](https://yushengauggie.github.io/byte-by-byte/archive.html).
-
-### Option 3: Email subscription
-
-[**Subscribe here**](https://forms.gle/UJw1YPmzsA4mKRHK6) — you'll get one HTML email digest daily.
-
-### Option 4: RSS
-
-Subscribe to [`docs/feed.xml`](https://yushengauggie.github.io/byte-by-byte/feed.xml) in your favorite reader.
+5 Telegram messages + 1 HTML email digest, delivered daily at your configured time.
 
 ### Option 5: Fork and customize
 
@@ -201,17 +205,17 @@ Subscribe to [`docs/feed.xml`](https://yushengauggie.github.io/byte-by-byte/feed
 
 ```
 byte-by-byte/
-├── config.env.example     ← copy to config.env, edit with your settings
+├── config.env.example     ← copy to config.env, add your settings
 ├── state.json             ← progress tracking (auto-updated)
 ├── content/
-│   ├── neetcode-150.json  ← 150 algorithm problems (NeetCode order)
+│   ├── neetcode-150.json  ← 150 algorithm problems
 │   ├── system-design.json ← 40 system design topics
 │   ├── behavioral.json    ← 40 soft skills questions
 │   ├── frontend.json      ← 50 frontend topics
 │   ├── ai-topics.json     ← 30 AI concepts
 │   ├── difficulty-map.json← difficulty phases by day
 │   └── review-schedule.json← spaced repetition config
-├── samples/               ← Day 1 example outputs
+├── samples/               ← example outputs
 ├── archive/               ← daily generated content
 ├── docs/                  ← GitHub Pages site + RSS feed
 ├── scripts/
@@ -219,10 +223,10 @@ byte-by-byte/
 │   ├── send-email.py      ← HTML email digest sender
 │   ├── send-telegram.py   ← Telegram delivery with retry
 │   ├── commit.sh          ← git commit + push + update progress
-│   ├── setup.sh           ← one-command setup for new machines
-│   ├── test.sh            ← 53-check test suite
+│   ├── setup.sh           ← one-command setup (cron + hooks)
+│   ├── test.sh            ← 61-check test suite
 │   ├── check-exhaustion.sh← content remaining alerts
-│   ├── verify-neetcode.py ← NeetCode 150 validation
+│   ├── verify-neetcode.py ← problem list validation
 │   ├── generate-index.py  ← archive HTML page generator
 │   └── generate-rss.py    ← RSS feed generator
 ├── cron/
@@ -239,16 +243,16 @@ byte-by-byte/
 
 ## 📣 Share
 
-If this project helps you, share it with others!
+If this helps you, share it!
 
 **Twitter / X:**
-> Stumbled on byte-by-byte — a free daily bilingual tech newsletter (Chinese + English). 15 min: system design, algorithms, soft skills, frontend, and AI. Every day. Open source. 🧠 https://github.com/YushengAuggie/byte-by-byte
+> byte-by-byte — free daily bilingual tech learning (Chinese + English). 15 min/day: system design, algorithms, soft skills, frontend, AI. Open source 🧠 https://github.com/YushengAuggie/byte-by-byte
 
 **LinkedIn:**
-> I've been learning with byte-by-byte — a daily bilingual tech learning system. 5 topics × 15 minutes = consistent compounding growth. Chinese and English. Automated. Open source. Free. https://yushengauggie.github.io/byte-by-byte/
+> I've been learning with byte-by-byte — a daily bilingual tech learning system. 5 topics × 15 minutes = compounding growth. Chinese and English. Automated. Open source. https://yushengauggie.github.io/byte-by-byte/
 
 **微信：**
-> 分享一个每天学技术的小工具：byte-by-byte。每天早上自动发送5个主题：系统设计、算法、软技能、前端、AI。中英双语，15分钟，每天积累，长期复利。开源免费 https://github.com/YushengAuggie/byte-by-byte
+> 分享一个每天学技术的工具：byte-by-byte。每天5个主题：系统设计、算法、软技能、前端、AI。中英双语，15分钟，每天积累，长期复利。开源免费 https://github.com/YushengAuggie/byte-by-byte
 
 ---
 
