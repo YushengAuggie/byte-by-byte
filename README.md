@@ -119,8 +119,8 @@ Requires [OpenClaw](https://openclaw.ai):
 ```bash
 git clone https://github.com/YushengAuggie/byte-by-byte.git
 cd byte-by-byte
-# Edit config.env with your paths and Telegram/email targets
-vim config.env
+# Copy and edit config with your settings
+cp config.env.example config.env && vim config.env
 # Run setup — creates cron jobs automatically
 ./scripts/setup.sh
 ```

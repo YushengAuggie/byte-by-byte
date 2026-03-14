@@ -7,7 +7,7 @@
 
 ## Test 1: Script Execution — ✅ PASS
 
-**Command:** `bash /Users/davidding/.openclaw/workspace/byte-by-byte/scripts/generate.sh`
+**Command:** `bash /path/to/byte-by-byte/scripts/generate.sh`
 
 **Result:** Script completed without errors. All 5 section files created correctly.
 
@@ -82,8 +82,8 @@ Date: 2026-03-14
 ### config.env Sourcing
 ```bash
 source config.env
-BBB_REPO_DIR=/Users/davidding/.openclaw/workspace/byte-by-byte  ✅
-TELEGRAM_TARGET=8256298838  ✅
+BBB_REPO_DIR=/path/to/byte-by-byte  ✅
+TELEGRAM_TARGET=<TELEGRAM_ID>  ✅
 MODEL=sonnet  ✅
 ```
 Variables correctly imported via `source` — no `export` needed since they're used within the same shell process.
