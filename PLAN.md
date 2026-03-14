@@ -80,6 +80,31 @@ Automated daily tech knowledge system: 5 bilingual (CN/EN) messages via Telegram
 - [ ] Plan content extensions before exhaustion
 - [ ] Consider user feedback mechanism
 
+### Phase 10: Learning Engine ✅
+- [x] **Spaced Repetition** — every 5th day is a review day (Day 5, 10, 15...)
+  - `content/review-schedule.json` defines quiz format and review config
+  - `generate.sh` detects review days via `currentDay % 5 == 0`
+  - Review day: writes `/tmp/bbb-review.txt` with past 4 days' topics
+  - `state.json` now tracks `lastReviewDay` and `reviewDaysCompleted[]`
+- [x] **Content Exhaustion Alerts** — `scripts/check-exhaustion.sh`
+  - Reads `state.json` + all `content/*.json` files
+  - Warns if any section has ≤5 days remaining
+  - Format: `⚠️ behavioral: 5 days remaining (35/40 used)`
+  - Exit code 1 on warning, 0 if all clear
+- [x] **Difficulty Coordination** — `content/difficulty-map.json`
+  - Days 1–10: Foundation (easy/intro across all sections)
+  - Days 11–30: Growth (easy + medium mix)
+  - Days 31–50: Mastery (medium)
+  - Days 51+: Expert (medium-hard and hard)
+  - `generate.sh` reads difficulty phase and injects `DIFFICULTY_PHASE` into all section files
+- [x] **Review Day Prompt** — `cron/daily-prompt.md` updated
+  - Detects `/tmp/bbb-review.txt` and switches to review mode
+  - Review format: 3 mini-quizzes from past 4 days, with spoiler answers
+  - Sends as single Telegram message; skips email on review days
+- [x] **History Tracking** — `generate.sh` appends to `state.json` history array
+  - Each day's entry: day number, date, difficulty phase, all 5 section titles
+  - Powers the review day lookback for spaced repetition
+
 ---
 
 ## 📁 Repo Structure
@@ -94,11 +119,13 @@ byte-by-byte/
 ├── state.json             ← progress tracking
 ├── qa-log.md              ← QA improvement log (created after first run)
 ├── content/
-│   ├── neetcode-150.json  ← 150 algorithm problems
-│   ├── system-design.json ← 40 system design topics
-│   ├── behavioral.json    ← 40 soft skills questions
-│   ├── frontend.json      ← 50 frontend topics
-│   └── ai-topics.json     ← 30 AI concepts
+│   ├── neetcode-150.json    ← 150 algorithm problems
+│   ├── system-design.json   ← 40 system design topics
+│   ├── behavioral.json      ← 40 soft skills questions
+│   ├── frontend.json        ← 50 frontend topics
+│   ├── ai-topics.json       ← 30 AI concepts
+│   ├── review-schedule.json ← spaced repetition config (Phase 10)
+│   └── difficulty-map.json  ← difficulty phase map (Phase 10)
 ├── archive/               ← daily content + QA reports
 │   ├── YYYY-MM-DD-system-design.md
 │   ├── YYYY-MM-DD-algorithms.md
@@ -107,9 +134,10 @@ byte-by-byte/
 │   ├── YYYY-MM-DD-ai.md
 │   └── YYYY-MM-DD-qa-report.md
 ├── scripts/
-│   ├── generate.sh        ← topic picker + state manager
-│   ├── commit.sh          ← git commit + push
-│   └── setup.sh           ← new machine setup
+│   ├── generate.sh          ← topic picker + state manager + review day detection
+│   ├── check-exhaustion.sh  ← content exhaustion alerts (Phase 10)
+│   ├── commit.sh            ← git commit + push
+│   └── setup.sh             ← new machine setup
 └── cron/
     ├── daily-prompt.md    ← generation prompt (stored in repo)
     └── qa-prompt.md       ← QA reviewer prompt (stored in repo)
@@ -154,8 +182,10 @@ byte-by-byte/
 | Git push fail | commit.sh has pull --rebase retry |
 | Code bugs in output | Self-review + QA reviewer double-check |
 | Hardcoded paths | config.env + setup.sh |
-| Content exhaustion | Shortest: soft skills (40 days). Plan extensions at Day 30. |
+| Content exhaustion | check-exhaustion.sh warns at ≤5 days remaining |
 | LLM prompt drift | QA logs track issues. Iterate prompts. |
+| Spaced repetition gaps | Review days (every 5th) pull from history array |
+| Wrong difficulty ramp | difficulty-map.json coordinates pacing across sections |
 
 ## 📅 Status
 
@@ -170,3 +200,4 @@ byte-by-byte/
 | Email Delivery | ⬜ Next |
 | Public Polish | ⬜ This weekend |
 | Ongoing | ⬜ Continuous |
+| Learning Engine | ✅ Complete (spaced repetition + alerts + difficulty) |

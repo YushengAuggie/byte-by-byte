@@ -40,9 +40,103 @@ Calculate the following from state.json:
 ```bash
 bash {{BBB_REPO_DIR}}/scripts/generate.sh
 ```
-This updates state.json atomically and writes section info to /tmp/bbb-section-{1..5}.txt
+This updates state.json atomically and either:
+- **Normal day**: writes section info to /tmp/bbb-section-{1..5}.txt
+- **Review day** (day % 5 == 0): writes /tmp/bbb-review.txt and exits
+
+### Step 1b: Check for review day
+```bash
+[ -f /tmp/bbb-review.txt ] && echo "REVIEW DAY" || echo "NORMAL DAY"
+```
 
 ---
+
+## ⚠️ REVIEW DAY PATH (if /tmp/bbb-review.txt exists)
+
+Skip Steps 2-3 below. Instead, generate a **review quiz** from the past 4 days.
+
+Read /tmp/bbb-review.txt — it contains:
+- `REVIEW_DAY`: today's day number
+- `PAST_TOPICS`: topics covered in the previous 4 days (all sections)
+- `ARCHIVE_PATH`: where to save today's review
+
+### Review Day Content Format
+
+Generate this as a **single message** (not 5 separate messages):
+
+```
+🔄 **复习日 Day N / Review Day N**
+
+今天是复习日！回顾过去4天的内容。
+Today is a review day! Let's revisit the past 4 days.
+
+---
+
+### 📝 Quick Quiz — 3 Mini-Reviews
+
+Pick 3 topics from 3 different sections from the PAST_TOPICS list.
+
+**Q1: [🏗️ System Design]** [Question about a system design topic from past 4 days]
+Testing: why this design / what tradeoff matters most
+
+<details>
+<summary>显示答案 / Show Answer</summary>
+
+[3-4 sentence answer covering the key insight, main tradeoff, and one practical tip]
+
+</details>
+
+---
+
+**Q2: [💻 Algorithms]** [Question about an algorithm from past 4 days]
+Testing: the approach / time complexity / key pattern insight
+
+<details>
+<summary>显示答案 / Show Answer</summary>
+
+[Approach summary, complexity, and the "aha" insight that makes it click]
+
+</details>
+
+---
+
+**Q3: [🗣️/🎨/🤖 pick one]** [Question from soft skills, frontend, or AI from past 4 days]
+Testing: key concept / gotcha / real-world application
+
+<details>
+<summary>显示答案 / Show Answer</summary>
+
+[Focused answer — the main takeaway in 3-4 sentences]
+
+</details>
+
+---
+
+💡 *复习巩固记忆，螺旋式上升。*
+*Review reinforces memory — spiral upward.*
+
+📅 明天继续新内容！/ New content resumes tomorrow!
+```
+
+### Review Day Rules:
+- Questions test **understanding**, not just recall ("why" and "how", not "what")
+- Answers should jog memory — concise, not a full re-teach
+- Reference original day: "From Day N..."
+- Use `<details>` spoiler tags so reader can quiz themselves first
+- Quality-check: would this question stump someone who half-remembered it?
+
+### Review Day Steps:
+1. Generate the review quiz (format above)
+2. Save to ARCHIVE_PATH from /tmp/bbb-review.txt
+3. **Self-review**: Are the answers accurate? Are questions meaningful?
+4. Send as a **single Telegram message** to {{TELEGRAM_TARGET}}
+5. Run `bash {{BBB_REPO_DIR}}/scripts/commit.sh` to save
+6. **SKIP** email step (no email on review days)
+7. **STOP** — do not generate sections 1-5
+
+---
+
+## NORMAL DAY PATH (no /tmp/bbb-review.txt)
 
 ### Step 2: Generate content — DO NOT SEND YET
 
