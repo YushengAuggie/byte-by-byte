@@ -3,142 +3,170 @@
 > *A little bit every day. A lot over time.*
 
 ## 🎯 Project Summary
-Automated daily tech knowledge system: 5 bilingual (CN/EN) messages via Telegram + 1 combined email, every day at 8:00 AM PT. Covers system design, algorithms, soft skills, frontend, and AI.
+Automated daily tech knowledge system: 5 bilingual (CN/EN) messages via Telegram + 1 combined email, every day at 8:00 AM PT. Covers system design, algorithms, soft skills, frontend, and AI. Self-reviewing with QA pass.
 
 ---
 
 ## ✅ Checklist
 
 ### Phase 1: Repo & Branding ✅
-- [x] Create GitHub repo
-- [x] Write SPEC.md
-- [x] Write README.md with tagline
-- [x] Pick final repo name → `byte-by-byte`
-- [x] Rename GitHub repo → github.com/YushengAuggie/byte-by-byte
-- [x] Update README.md — rebranded to daily learning
-- [x] Update SPEC.md — match new branding
-- [x] Update cron job names — now "byte-by-byte 1/5" etc.
-- [x] Update local workspace directory → `byte-by-byte/`
-- [x] Update all cron job paths from `daily-interview-prep` → `byte-by-byte`
+- [x] Create GitHub repo → github.com/YushengAuggie/byte-by-byte
+- [x] Write SPEC.md, README.md, PLAN.md
+- [x] Tagline: "A little bit every day. A lot over time."
+- [x] Rebrand all files/cron jobs (no interview-specific language)
 
 ### Phase 2: Content Databases ✅
-- [x] `content/neetcode-150.json` — 150 problems, NeetCode order, pattern-grouped
-- [x] `content/system-design.json` — 40 topics, progressive difficulty
-- [x] `content/behavioral.json` — 40 questions, senior/staff level
-- [x] `content/frontend.json` — 50 topics, CSS → React → Next.js → TypeScript
-- [x] `content/ai-topics.json` — 30 AI concept topics
+- [x] `content/neetcode-150.json` — 150 problems, NeetCode order
+- [x] `content/system-design.json` — 40 topics, progressive
+- [x] `content/behavioral.json` — 40 questions, senior/staff
+- [x] `content/frontend.json` — 50 topics, CSS → Next.js
+- [x] `content/ai-topics.json` — 30 AI concepts
 - [x] `state.json` — progress tracking
-- [ ] **Verify NeetCode 150 matches official list** — cross-check with neetcode.io
+- [ ] **Verify NeetCode 150 matches official list**
 
-### Phase 3: Cron Jobs (Telegram Delivery) ✅
-- [x] Cron 1: System Design — 8:00 AM PT daily
-- [x] Cron 2: Algorithms — 8:01 AM PT daily
-- [x] Cron 3: Soft Skills — 8:02 AM PT daily
-- [x] Cron 4: Frontend — 8:03 AM PT daily
-- [x] Cron 5: AI — 8:04 AM PT daily
-- [x] All jobs: isolated session, announce to Telegram, model=sonnet
-- [x] All jobs: save to archive/, update state.json, git commit+push
-- [ ] **Test run all 5 jobs manually** — verify output quality
-- [ ] **Verify state.json updates correctly** after test runs
-- [ ] **Verify archive/ files are created** with correct naming
-- [ ] **Verify git commit+push works** from cron context
-- [ ] **Check Telegram message formatting** — no truncation, markdown renders
-- [ ] **Confirm no state.json race conditions** — jobs 1 min apart, should be fine
+### Phase 3: Automation Scripts ✅
+- [x] `config.env` — machine-specific settings (portable!)
+- [x] `scripts/generate.sh` — reads config, picks topics, updates state atomically
+- [x] `scripts/commit.sh` — git commit + push with retry
+- [x] `scripts/setup.sh` — one-command setup on new machines
+- [x] `cron/daily-prompt.md` — prompt stored in repo (not hardcoded in cron)
+- [x] `cron/qa-prompt.md` — QA reviewer prompt stored in repo
+- [x] `.gitignore` — OS files, temp files
 
-### Phase 4: Email Delivery ⬜
-- [ ] **Check if `gog` CLI is configured** for Gmail sending
-- [ ] If gog works: create 6th cron job as email aggregator
-- [ ] If not: set up alternative (IMAP/SMTP skill, or gog OAuth)
-- [ ] **Create cron job 6: Daily Email Digest** — 8:10 AM PT
-  - Reads today's 5 archive files, combines into one email
-  - Sends to Auggie1024.d@gmail.com
-- [ ] **Test email delivery**
+### Phase 4: Cron Jobs ✅
+- [x] **1 daily cron job** at 8:00 AM PT (replaces 5 separate jobs)
+  - Runs generate.sh → generates 5 sections → self-reviews → sends → archives → commits
+- [x] **1 QA cron job** at 8:15 AM PT
+  - Reviews all 5 archive files → grades each section → reports issues → logs improvements
+- [x] Both: isolated session, announce to Telegram, model=sonnet
 
-### Phase 5: Quality & Polish ⬜
-- [ ] **Run Day 1 and review all 5 outputs**
-- [ ] Verify bilingual format (Chinese first, English second)
-- [ ] Verify system design has ASCII diagrams
-- [ ] Verify algorithms has working Python code + visual trace
-- [ ] Verify soft skills has bad/good comparison
-- [ ] Verify frontend has "guess the output" element
-- [ ] Verify AI alternates between news and concept days
-- [ ] **Adjust prompts** based on Day 1 review
-- [ ] **Confirm cross-day references** — Day 2+ references earlier concepts
+### Phase 5: Quality System ✅
+- [x] **Self-review** built into daily prompt (checklist before sending)
+  - Code accuracy, diagram readability, Chinese fluency, difficulty level, format
+- [x] **QA reviewer** as separate cron job
+  - Grades each section ✅/⚠️/❌
+  - Detailed bug reports for ❌
+  - Improvement suggestions for ⚠️
+  - Logs to `qa-log.md` for continuous improvement
+  - Commits QA report to archive
 
-### Phase 6: Public Polish ⬜
+### Phase 6: Portability ✅
+- [x] `config.env` — all machine-specific values in one file
+- [x] `scripts/setup.sh` — creates cron jobs from repo config
+- [x] Prompts stored in `cron/*.md` — not hardcoded
+- [x] New laptop workflow:
+  ```
+  git clone https://github.com/YushengAuggie/byte-by-byte.git
+  cd byte-by-byte
+  vim config.env  # update paths
+  ./scripts/setup.sh
+  ```
+
+### Phase 7: Email Delivery ⬜
+- [ ] Check if `gog` CLI is configured for Gmail
+- [ ] Create 3rd cron job at 8:20 AM — reads archives, sends combined email
+- [ ] Test email to Auggie1024.d@gmail.com
+
+### Phase 8: Public Polish ⬜
 - [ ] Add "How to set up your own" section in README
 - [ ] Add LICENSE file (MIT)
-- [ ] Remove personal info (email, Telegram ID) from committed files
-- [ ] Add `.gitignore` (state.json? temp files?)
-- [ ] Add sample output in `samples/` directory
-- [ ] Consider GitHub Actions alternative for non-OpenClaw users
+- [ ] Sanitize personal info from committed files
+- [ ] Add sample output in `samples/`
+- [ ] Document GitHub Actions alternative
 
-### Phase 7: Ongoing Maintenance ⬜
-- [ ] Monitor first week for issues
-- [ ] Set up error alerting on cron failure
-- [ ] Plan content extensions before exhaustion:
-  - NeetCode 150: ~150 days → add LeetCode 75 hard mode?
-  - System Design: ~40 days → add deep-dive repeats
-  - Frontend: ~50 days → add advanced topics
-  - Soft Skills: ~40 days → add scenario variations
-- [ ] Consider user feedback mechanism (reply to rate quality)
+### Phase 9: Ongoing Maintenance ⬜
+- [ ] Monitor first week
+- [ ] Review QA reports, iterate on prompts
+- [ ] Plan content extensions before exhaustion
+- [ ] Consider user feedback mechanism
 
 ---
 
-## 📐 Architecture
+## 📁 Repo Structure
 
 ```
-┌──────────────────────────────────────────┐
-│            OpenClaw Gateway               │
-│                                           │
-│  Cron Scheduler (5+1 jobs)                │
-│  ┌───────────┐  8:00  🏗️ System Design   │
-│  │ state.json │  8:01  💻 Algorithms      │
-│  │  (shared)  │  8:02  🗣️ Soft Skills    │
-│  └───────────┘  8:03  🎨 Frontend         │
-│       ↕         8:04  🤖 AI              │
-│  ┌───────────┐  8:10  📧 Email Digest     │
-│  │  content/  │                           │
-│  │  *.json    │                           │
-│  └───────────┘                           │
-│        ↓                                  │
-│  ┌───────────┐  ┌───────────┐            │
-│  │  Telegram  │  │   Email   │            │
-│  │  (5 msgs)  │  │ (1 digest)│            │
-│  └───────────┘  └───────────┘            │
-│        ↓                                  │
-│  ┌───────────┐                           │
-│  │  archive/  │  → git commit + push     │
-│  │ YYYY-MM-DD │                           │
-│  └───────────┘                           │
-└──────────────────────────────────────────┘
+byte-by-byte/
+├── README.md              ← public-facing overview
+├── SPEC.md                ← full specification
+├── PLAN.md                ← this file (implementation checklist)
+├── config.env             ← machine-specific settings
+├── .gitignore
+├── state.json             ← progress tracking
+├── qa-log.md              ← QA improvement log (created after first run)
+├── content/
+│   ├── neetcode-150.json  ← 150 algorithm problems
+│   ├── system-design.json ← 40 system design topics
+│   ├── behavioral.json    ← 40 soft skills questions
+│   ├── frontend.json      ← 50 frontend topics
+│   └── ai-topics.json     ← 30 AI concepts
+├── archive/               ← daily content + QA reports
+│   ├── YYYY-MM-DD-system-design.md
+│   ├── YYYY-MM-DD-algorithms.md
+│   ├── YYYY-MM-DD-soft-skills.md
+│   ├── YYYY-MM-DD-frontend.md
+│   ├── YYYY-MM-DD-ai.md
+│   └── YYYY-MM-DD-qa-report.md
+├── scripts/
+│   ├── generate.sh        ← topic picker + state manager
+│   ├── commit.sh          ← git commit + push
+│   └── setup.sh           ← new machine setup
+└── cron/
+    ├── daily-prompt.md    ← generation prompt (stored in repo)
+    └── qa-prompt.md       ← QA reviewer prompt (stored in repo)
 ```
 
-## ⚠️ Known Risks
+## 📐 Flow
+
+```
+8:00 AM ─→ Cron triggers "byte-by-byte daily"
+  │
+  ├─ Step 1: generate.sh
+  │   ├─ Read state.json
+  │   ├─ Pick topics from content/*.json
+  │   ├─ Write /tmp/bbb-section-{1..5}.txt
+  │   └─ Update state.json atomically
+  │
+  ├─ Step 2: LLM generates 5 sections
+  │
+  ├─ Step 3: Self-review checklist
+  │   └─ Revise if needed
+  │
+  ├─ Step 4: Send 5 Telegram messages
+  │
+  ├─ Step 5: Save to archive/
+  │
+  └─ Step 6: commit.sh → git push
+
+8:15 AM ─→ Cron triggers "byte-by-byte QA"
+  │
+  ├─ Read today's archive files
+  ├─ Grade each section ✅/⚠️/❌
+  ├─ Send QA report to Telegram
+  ├─ Log issues to qa-log.md
+  └─ commit.sh → git push
+```
+
+## ⚠️ Risks & Mitigations
 
 | Risk | Mitigation |
 |------|-----------|
-| state.json race condition | Jobs staggered 1 min apart. Monitor first week. |
-| Telegram message too long | Prompted for 3-4 min reads. Add truncation if needed. |
-| Git push fails from cron | Content still delivered. Fix manually if needed. |
-| Email not set up yet | Phase 4 — verify gog/IMAP before creating email cron. |
-| Content quality varies | Review Day 1, iterate on prompts. |
-| Content exhaustion | Shortest is soft skills (40 days). Plan extensions. |
+| state.json race | Single cron job, sequential execution |
+| Git push fail | commit.sh has pull --rebase retry |
+| Code bugs in output | Self-review + QA reviewer double-check |
+| Hardcoded paths | config.env + setup.sh |
+| Content exhaustion | Shortest: soft skills (40 days). Plan extensions at Day 30. |
+| LLM prompt drift | QA logs track issues. Iterate prompts. |
 
-## 📅 Timeline
+## 📅 Status
 
-| Phase | Status | ETA |
-|-------|--------|-----|
-| Phase 1: Repo & Branding | ✅ Complete | Done |
-| Phase 2: Content Databases | ✅ Complete | Done |
-| Phase 3: Cron Jobs | ✅ Created, first run tomorrow 8 AM | Tomorrow |
-| Phase 4: Email Delivery | ⬜ Not started | Tomorrow |
-| Phase 5: Quality & Polish | ⬜ After Day 1 | Tomorrow |
-| Phase 6: Public Polish | ⬜ Not started | This weekend |
-| Phase 7: Ongoing | ⬜ Continuous | Ongoing |
-
-## 🔑 Key Decisions Remaining
-
-1. **Email approach** — confirm gog works, or use alternative
-2. **License** — MIT for public sharing
-3. **state.json** — gitignore or keep public?
+| Phase | Status |
+|-------|--------|
+| Repo & Branding | ✅ Complete |
+| Content Databases | ✅ Complete |
+| Automation Scripts | ✅ Complete |
+| Cron Jobs | ✅ Live (first run tomorrow 8 AM) |
+| Quality System | ✅ Self-review + QA reviewer |
+| Portability | ✅ config.env + setup.sh |
+| Email Delivery | ⬜ Next |
+| Public Polish | ⬜ This weekend |
+| Ongoing | ⬜ Continuous |
