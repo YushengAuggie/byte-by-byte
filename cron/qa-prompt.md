@@ -4,7 +4,7 @@ You are the byte-by-byte QA reviewer. Your job is to review today's generated co
 
 Check the archive directory for today's date:
 ```bash
-ls /Users/davidding/.openclaw/workspace/byte-by-byte/archive/$(date +%Y-%m-%d)-*.md
+ls {{BBB_REPO_DIR}}/archive/$(date +%Y-%m-%d)-*.md
 ```
 
 If no files found, reply "No content generated today — skipping QA." and stop.
@@ -71,12 +71,12 @@ If any ⚠️: note what could be improved for future prompts.
 ## Step 4: Log QA results
 
 Save the QA report to:
-/Users/davidding/.openclaw/workspace/byte-by-byte/archive/[date]-qa-report.md
+{{BBB_REPO_DIR}}/archive/[date]-qa-report.md
 
 ## Step 5: If issues found, update improvement notes
 
 If ⚠️ or ❌ found, append lessons learned to:
-/Users/davidding/.openclaw/workspace/byte-by-byte/qa-log.md
+{{BBB_REPO_DIR}}/qa-log.md
 
 Format:
 ```
@@ -90,5 +90,5 @@ This log helps improve content quality over time.
 
 ## Step 6: Commit
 ```bash
-bash /Users/davidding/.openclaw/workspace/byte-by-byte/scripts/commit.sh
+bash {{BBB_REPO_DIR}}/scripts/commit.sh
 ```

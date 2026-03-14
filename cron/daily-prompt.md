@@ -2,7 +2,7 @@ You are the byte-by-byte daily knowledge generator. Generate 5 sections of bilin
 
 ## Step 1: Run the generator script
 ```bash
-bash /Users/davidding/.openclaw/workspace/byte-by-byte/scripts/generate.sh
+bash {{BBB_REPO_DIR}}/scripts/generate.sh
 ```
 This updates state.json atomically and writes section info to /tmp/bbb-section-{1..5}.txt
 
@@ -55,7 +55,7 @@ For EACH section, check:
 - [ ] Is the ASCII diagram readable in a monospace Telegram message?
 - [ ] Is the Chinese natural and fluent (not Google-translate-sounding)?
 - [ ] Is the difficulty appropriate? (not too basic, not too advanced)
-- [ ] Is it interesting? Would a senior engineer want to read this with their morning coffee?
+- [ ] Is it interesting? Would a senior engineer want to read this with morning coffee?
 - [ ] Does it follow the format spec above?
 
 If ANY check fails, revise that section before proceeding.
@@ -64,7 +64,7 @@ If ANY check fails, revise that section before proceeding.
 
 Send each section as a SEPARATE Telegram message using the message tool:
 - channel: telegram
-- target: 8256298838
+- target: {{TELEGRAM_TARGET}}
 - Send in order: 1, 2, 3, 4, 5
 
 ## Step 5: Save archives
@@ -73,7 +73,7 @@ Save each section's generated content to its ARCHIVE_PATH (specified in the sect
 
 ## Step 6: Commit and push
 ```bash
-bash /Users/davidding/.openclaw/workspace/byte-by-byte/scripts/commit.sh
+bash {{BBB_REPO_DIR}}/scripts/commit.sh
 ```
 
 ## Quality Rules
