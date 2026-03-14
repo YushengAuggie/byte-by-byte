@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-03-14</title>
+  <meta name="description" content="byte-by-byte daily lessons for Saturday, March 14, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Saturday, March 14, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-03-14.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #a0a0b8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #ddd8fa; --text: #1a1a2e; --text2: #555577;
+    --accent: #6d46f5; --accent2: #7c5cfc; --accent3: #9b75ff;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+}
+.page-header-meta { color: var(--text2); font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #e8d5ff; }
+.section-header-sub { font-size: 0.8rem; color: #a090d0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--accent3);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem;
+}
+.section-content li { margin-bottom: 4px; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); }
+.section-content em { color: var(--text2); }
+
+pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 24px 16px 60px; }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-03-14</span>
+    <h1>Saturday, March 14, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <span></span>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">System Design Day 1 — Client-Server Model & How the Internet Works</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>System Design Day 1 — Client-Server Model &amp; How the Internet Works</h1>
+<p><em>Date: 2026-03-14 | Category: Fundamentals | Difficulty: Beginner</em></p>
+
+<hr/>
+
+<p>🏗️ <strong>系统设计 Day 1 / System Design Day 1</strong></p>
+<p><strong>客户端-服务器模型 &amp; 互联网是怎么运转的</strong></p>
+<p><strong>Client-Server Model &amp; How the Internet Works</strong></p>
+
+<hr/>
+
+<p>想象你在一家餐厅点餐。你（客户端）告诉服务员（网络）你想要什么，厨房（服务器）接到订单后准备好食物，再通过服务员把食物送到你面前。互联网的每一次请求，都是这个流程的数字版本。</p>
+
+<p><em>Imagine you're ordering food at a restaurant. You (the client) tell the waiter (the network) what you want, the kitchen (the server) prepares it, and the waiter brings it back. Every internet request follows this exact same flow — digitally.</em></p>
+
+<hr/>
+
+<p><strong>架构图 / Architecture Diagram</strong></p>
+
+<pre><code>你的浏览器 / Your Browser
+        |
+        | HTTP Request (GET /index.html)
+        v
++-------+--------+
+|   DNS Resolver  |   "把 google.com 翻译成 IP 地址"
+|  (Phone book)   |   "Translates domain → IP address"
++-------+--------+
+        |
+        | IP: 142.250.80.46
+        v
++-------+--------+
+|    Internet     |   路由器、交换机、光缆
+|  (The pipes)    |   Routers, switches, fiber cables
++-------+--------+
+        |
+        v
++-------+--------+
+|  Web Server     |   nginx / Apache
+|  (The waiter)   |   Receives your request
++-------+--------+
+        |
+        v
++-------+--------+
+| App Server      |   Node.js / Django / Spring
+| (The kitchen)   |   Runs your business logic
++-------+--------+
+        |
+        v
++-------+--------+
+|   Database      |   PostgreSQL / MySQL / MongoDB
+|  (The pantry)   |   Stores &amp; retrieves data
++-------+--------+
+        |
+        | HTTP Response (200 OK + HTML)
+        v
+你的浏览器渲染页面 / Browser renders the page</code></pre>
+
+<hr/>
+
+<p><strong>关键概念 / Key Concepts</strong></p>
+
+<p><strong>1. IP 地址 — 互联网的门牌号</strong></p>
+<p>每台联网设备都有一个 IP 地址，就像你家的门牌号。</p>
+<p><code>IPv4: 192.168.1.1</code> (4组数字，已快耗尽)</p>
+<p><code>IPv6: 2001:0db8:85a3::8a2e:0370:7334</code> (新标准，几乎无限)</p>
+
+<p><em>Every device on the internet has an IP address — like a postal address for packets.</em></p>
+
+<p><strong>2. DNS — 互联网的电话簿</strong></p>
+<p>你记 <code>google.com</code>，但计算机需要 <code>142.250.80.46</code>。DNS 负责翻译。</p>
+<p>解析顺序：浏览器缓存 → 系统缓存 → 本地 DNS 服务器 → 根域名服务器</p>
+
+<p><em>You type <code>google.com</code>, DNS translates it to an IP. Without DNS, you'd memorize numbers for every website.</em></p>
+
+<p><strong>3. HTTP/HTTPS — 请求的语言</strong></p>
+<pre><code>GET  /api/users        → 获取资源 / Fetch resource
+POST /api/users        → 创建资源 / Create resource
+PUT  /api/users/1      → 更新资源 / Update resource
+DELETE /api/users/1    → 删除资源 / Delete resource</code></pre>
+<p>HTTPS = HTTP + TLS 加密。没有 HTTPS，你的数据在网络上是明文。</p>
+
+<p><strong>4. TCP/IP — 可靠传输的保障</strong></p>
+<p>TCP 保证数据包完整到达，就像注册邮件（有回执）。</p>
+<p>UDP 不保证，但更快，适合视频流、游戏（偶尔丢帧没关系）。</p>
+
+<hr/>
+
+<p><strong>为什么这样设计？/ Why This Design?</strong></p>
+
+<p>客户端-服务器分离的核心好处：</p>
+
+<ul><li><strong>可扩展性</strong>：可以独立扩展服务器（加机器），不影响客户端</li><li><strong>安全性</strong>：数据库不暴露给互联网，只有应用服务器能访问</li><li><strong>可维护性</strong>：前端、后端、数据库各自独立部署</li></ul>
+
+<p><em>Separation of concerns: clients handle presentation, servers handle logic and data. This lets you scale, secure, and maintain each layer independently.</em></p>
+
+<hr/>
+
+<p><strong>别踩这个坑 / Don't Fall Into This Trap</strong></p>
+
+<p>❌ <strong>面试时说「用户点击按钮，数据就存到数据库了」</strong></p>
+<p>这跳过了太多层。面试官想听到：</p>
+<p>DNS解析 → TCP握手 → HTTP请求 → 负载均衡 → 应用服务器 → 数据库</p>
+
+<p>✅ <strong>学会分层描述系统</strong></p>
+<p>每次系统设计，先画出这张图的骨架，再逐层深入。</p>
+
+<p><em>In interviews, never skip layers. "The user clicks a button and data gets saved" misses: DNS, TCP handshake, load balancers, app servers, caching, and database transactions. Walk through every hop.</em></p>
+
+<hr/>
+
+<p><strong>明日预告 / Tomorrow</strong></p>
+<p>Day 2 将深入 <strong>负载均衡</strong> — 当一台服务器不够用时，如何优雅地横向扩展。</p>
+<p><em>Day 2 covers Load Balancing — what happens when one server isn't enough.</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">Algorithms Day 1 — #217 Contains Duplicate</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>Algorithms Day 1 — #217 Contains Duplicate</h1>
+<p><em>Date: 2026-03-14 | Pattern: Arrays &amp; Hashing | Difficulty: Easy</em></p>
+
+<hr/>
+
+<p>💻 <strong>算法 Day 1 / Algorithms Day 1</strong> — #217 Contains Duplicate (Easy) — Arrays &amp; Hashing</p>
+
+<hr/>
+
+<p><strong>现实类比 / Real-World Analogy</strong></p>
+
+<p>想象你在整理一箱名片。你从盒子里一张一张往外拿，每拿出一张，先看看桌上有没有一样的。如果有，说明你有重复的联系人。这就是「哈希集合」的工作方式——把「已见过的」放在一个快速查找的结构里。</p>
+
+<p><em>Imagine going through a box of business cards. You pull each card out and check if you've already put one on the table. If you find a match, you have a duplicate. That's exactly what a hash set does — it gives you O(1) lookup for "have I seen this before?"</em></p>
+
+<hr/>
+
+<p><strong>题目 / Problem Statement</strong></p>
+
+<p>给你一个整数数组 <code>nums</code>，如果其中存在任何重复值，返回 <code>true</code>；否则返回 <code>false</code>。</p>
+
+<p><em>Given an integer array <code>nums</code>, return <code>true</code> if any value appears at least twice, <code>false</code> if every element is distinct.</em></p>
+
+<pre><code>Input:  [1, 2, 3, 1]   → Output: True  (1 出现了两次)
+Input:  [1, 2, 3, 4]   → Output: False (每个数都唯一)
+Input:  [1, 1, 1, 3, 3, 4, 3, 2, 4, 2] → Output: True</code></pre>
+
+<hr/>
+
+<p><strong>逐步分析 / Step-by-Step Walkthrough</strong></p>
+
+<p><strong>方法一：暴力法（别用这个）</strong></p>
+<p>双重循环，比较每对元素。Time: O(n²)，Space: O(1)</p>
+<p>面试中绝对不要停在这里。</p>
+
+<p><strong>方法二：排序法</strong></p>
+<p>排序后相邻元素比较。Time: O(n log n)，Space: O(1)</p>
+<p>稍好，但破坏了原数组顺序。</p>
+
+<p><strong>方法三：哈希集合（最优解）</strong></p>
+<p>维护一个「已见过」的集合，遍历一次搞定。</p>
+
+<pre><code>nums = [1, 2, 3, 1]
+seen = {}
+
+Step 1: num=1  → seen={1}           (新元素，加入)
+Step 2: num=2  → seen={1,2}         (新元素，加入)
+Step 3: num=3  → seen={1,2,3}       (新元素，加入)
+Step 4: num=1  → 1 在 seen 里！→ return True ✓</code></pre>
+
+<hr/>
+
+<p><strong>Python 解法 / Python Solution</strong></p>
+
+<pre><code class="language-python">def containsDuplicate(nums: list[int]) -&gt; bool:
+    # Use a hash set for O(1) average-case lookup
+    seen = set()
+    
+    for num in nums:
+        if num in seen:
+            # Found a duplicate — return immediately (early exit)
+            return True
+        seen.add(num)
+    
+    # No duplicates found after full traversal
+    return False
+
+# One-liner alternative (Pythonic, but reads the whole list)
+# return len(nums) != len(set(nums))</code></pre>
+
+<p><strong>为什么用 <code>set</code> 而不是 <code>list</code>？</strong></p>
+<p><code>x in list</code> → O(n)，要遍历找</p>
+<p><code>x in set</code>  → O(1)，哈希直接定位</p>
+<p><em><code>list</code> membership check is O(n); <code>set</code> uses hashing for O(1) average lookup. This is the key insight.</em></p>
+
+<hr/>
+
+<p><strong>复杂度 / Complexity</strong></p>
+
+<p>| | 暴力法 | 排序法 | 哈希集合 |</p>
+<p>|---|---|---|---|</p>
+<p>| Time | O(n²) | O(n log n) | <strong>O(n)</strong> |</p>
+<p>| Space | O(1) | O(1) | <strong>O(n)</strong> |</p>
+
+<p>最优解是时间-空间的经典权衡：用 O(n) 额外空间换取 O(n) 时间。</p>
+<p><em>Classic time-space tradeoff: we pay O(n) space to get O(n) time.</em></p>
+
+<hr/>
+
+<p><strong>举一反三 / Pattern Recognition</strong></p>
+
+<p>这道题是「Arrays &amp; Hashing」模式的入口。掌握它，你能解：</p>
+
+<ol><li><strong>#1 Two Sum</strong> — 同样的「已见过」思路，存的是值→索引的映射</li><li><strong>#128 Longest Consecutive Sequence</strong> — 先用 set 存所有数，再按规律遍历</li><li><strong>#49 Group Anagrams</strong> — 用排序后的字符串作 key，用 dict 分组</li><li><strong>#36 Valid Sudoku</strong> — 三个方向各维护一个 set</li></ol>
+
+<p><strong>核心模式</strong>：每次遇到「需要快速判断某元素是否出现过」，第一反应是 <code>set</code>；需要记录「出现次数或位置」，用 <code>dict</code>。</p>
+
+<p><em>The pattern: whenever you need "have I seen this before?", think <code>set</code>. When you need "how many times / where did I see it?", think <code>dict</code>. This pattern appears in ~30% of easy/medium array problems.</em></p>
+
+<hr/>
+
+<p><strong>Mini Challenge 🎯</strong></p>
+
+<p>如果题目改成：找到数组中出现超过 n/2 次的元素（保证存在），怎么做？</p>
+<p><em>What if you need to find the element that appears more than n/2 times? (Boyer-Moore Voting Algorithm — hint for tomorrow's pattern thinking)</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">Soft Skills Day 1 — Decision Making Under Uncertainty</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>Soft Skills Day 1 — Decision Making Under Uncertainty</h1>
+<p><em>Date: 2026-03-14 | Category: Decision Making | Level: Senior/Staff</em></p>
+
+<hr/>
+
+<p>🗣️ <strong>软技能 Day 1 / Soft Skills Day 1</strong></p>
+<p><strong>在信息不完整时做出关键技术决策</strong></p>
+<p><strong>Making Critical Technical Decisions with Incomplete Information</strong></p>
+
+<hr/>
+
+<p><strong>为什么这很重要 / Why This Matters</strong></p>
+
+<p>初级工程师等信息齐全再行动。高级工程师知道：信息永远不会完全齐全。</p>
+
+<p>系统随时会挂，竞争对手随时会发布，产品上线时间表不会等你做完全量分析。Senior/Staff 工程师和 L3 工程师最大的差距，不是编码能力，而是在模糊中决断的能力。</p>
+
+<p><em>Junior engineers wait for complete information. Senior engineers know it never arrives. The gap between L3 and Staff isn't coding — it's the ability to make good decisions under uncertainty and own the outcome.</em></p>
+
+<hr/>
+
+<p><strong>STAR 框架拆解 / STAR Framework</strong></p>
+
+<p><strong>Situation（情境）</strong></p>
+<p>描述背景，但要聚焦：有什么压力？为什么信息不完整？</p>
+<p>⚠️ 不要花超过 20% 的时间在这里</p>
+
+<p><strong>Task（任务）</strong></p>
+<p>你需要做什么决定？有什么约束？时间线？</p>
+<p>清楚说明为什么这个决定很难。</p>
+
+<p><strong>Action（行动）</strong> ← 这是重点，占 60-70%</p>
+<ul><li>你如何快速收集最关键的信息？</li><li>你评估了哪些方案？</li><li>你如何在时间压力下做出判断？</li><li>谁参与了决策，如何达成共识？</li><li>你如何记录决定和理由（ADR）？</li></ul>
+
+<p><strong>Result（结果）</strong></p>
+<p>具体指标。但如果结果不完美，更要说清楚你学到了什么。</p>
+
+<hr/>
+
+<p><strong>❌ 糟糕的回答 / Bad Approach</strong></p>
+
+<blockquote>"我们的数据库响应变慢了，我研究了一下，最后升级了实例类型，问题解决了。"</blockquote>
+
+<p>问题出在哪里：</p>
+<ul><li>没有体现「信息不完整」的挑战</li><li>没有说明评估过的其他方案</li><li>没有数字</li><li>听起来是一个人默默解决，没有体现协作</li><li>面试官不知道你的思维过程</li></ul>
+
+<hr/>
+
+<p><strong>✅ 好的回答结构 / Good Approach</strong></p>
+
+<blockquote>"2024年Q3，我们的支付服务在高峰期 p99 延迟从 80ms 跳到了 800ms，但我们不知道根因——可能是代码、数据库、还是下游 API。问题是周五下午5点发生的，我们有个重要的 launch 在下周一。"</blockquote>
+<blockquote></blockquote>
+<blockquote>"我需要在没有完整 tracing 数据的情况下（我们当时监控覆盖率只有60%）决定：是回滚最近的部署、扩容数据库、还是限流？"</blockquote>
+<blockquote></blockquote>
+<blockquote>"我做了三件事：第一，让团队15分钟内各自排查一个方向，并行收集证据。第二，设定了一个阈值——如果30分钟内找不到根因，就先限流保护系统，再继续排查。第三，在 Slack 里实时记录我们的假设和证据，方便团队同步。"</blockquote>
+<blockquote></blockquote>
+<blockquote>"结果是我们在22分钟内发现是一个 N+1 查询问题被一次数据迁移触发了。我们加了一个临时索引，延迟降到了 95ms，顺利支撑了周一 launch。事后我们补了完整的 APM tracing。"</blockquote>
+
+<hr/>
+
+<p><strong>场景模板 / Scenario Template</strong></p>
+
+<pre><code>背景: [系统 X] 在 [时间点] 出现了 [问题/机会]
+信息缺口: 我们不知道 [关键未知项]，因为 [原因]
+约束: [时间/资源/风险约束]
+我的决策框架:
+  - 快速信息收集: [做了什么]
+  - 方案评估: [A vs B vs C，为什么选A]
+  - 风险缓解: [如何降低决策风险]
+  - 沟通对齐: [如何同步团队/stakeholders]
+结果: [具体数字] + [事后学到的]</code></pre>
+
+<hr/>
+
+<p><strong>Senior/Staff 加分项 / Level-Up Tips</strong></p>
+
+<ol><li><strong>提到 ADR（架构决策记录）</strong></li></ol>
+<p>   "我们写了一个 ADR 记录了这个决定和我们当时的信息状态，方便3个月后的人理解为什么这么做。"</p>
+
+<ol><li><strong>主动承认决定的局限性</strong></li></ol>
+<p>   Staff 级别的工程师不假装自己的决定完美，他们说："这是基于当时信息的最优解，我们设置了一个检查点在30天后重新评估。"</p>
+
+<ol><li><strong>体现系统性思维</strong></li></ol>
+<p>   不只解决这次的问题，还要防止下次同类问题发生。</p>
+
+<hr/>
+
+<p><strong>关键要点 / Key Takeaways</strong></p>
+
+<ul><li>面试官想看的是你的<strong>思维过程</strong>，不只是结果</li><li>信息不完整≠瘫痪，要展示你如何<strong>快速收集关键信息</strong></li><li>好的决定有<strong>明确的理由</strong>，坏的结果有<strong>清晰的复盘</strong></li><li>量化一切：延迟数字、时间窗口、影响用户数</li></ul>
+
+<p><em>The interviewer wants to see: structured thinking under pressure, ability to make good-enough decisions fast, and ownership of outcomes regardless of result.</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">Frontend Day 1 — CSS Box Model: The Foundation of Layout</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>Frontend Day 1 — CSS Box Model: The Foundation of Layout</h1>
+<p><em>Date: 2026-03-14 | Category: CSS Fundamentals | Week: 1</em></p>
+
+<hr/>
+
+<p>🎨 <strong>前端 Day 1 / Frontend Day 1</strong></p>
+<p><strong>CSS 盒模型 — 所有布局的起点</strong></p>
+<p><strong>CSS Box Model — The Foundation of Layout</strong></p>
+
+<hr/>
+
+<p><strong>猜猜这段代码输出什么？/ What does this code output?</strong></p>
+
+<pre><code class="language-css">.box {
+  width: 100px;
+  padding: 20px;
+  border: 5px solid black;
+  margin: 10px;
+}</code></pre>
+
+<pre><code class="language-html">&lt;div class="box"&gt;Hello&lt;/div&gt;</code></pre>
+
+<p>问题：<code>.box</code> 在页面上占多少宽度？</p>
+<p><em>Question: How wide does <code>.box</code> actually appear on screen?</em></p>
+
+<p>A) 100px</p>
+<p>B) 150px</p>
+<p>C) 160px</p>
+<p>D) 170px</p>
+
+<p>答案是 <strong>C) 160px</strong> — 但等等，很多人会猜 A！</p>
+<p><em>Most people guess A. The answer is C — here's why.</em></p>
+
+<hr/>
+
+<p><strong>盒模型可视化 / Box Model Visualization</strong></p>
+
+<pre><code>+------------------------------------------+
+|              margin: 10px                |
+|  +------------------------------------+  |
+|  |         border: 5px               |  |
+|  |  +------------------------------+ |  |
+|  |  |       padding: 20px          | |  |
+|  |  |  +------------------------+  | |  |
+|  |  |  |   content: 100px wide  |  | |  |
+|  |  |  |      "Hello"           |  | |  |
+|  |  |  +------------------------+  | |  |
+|  |  |                              | |  |
+|  |  +------------------------------+ |  |
+|  +------------------------------------+  |
++------------------------------------------+
+
+实际渲染宽度 / Rendered width:
+100 (content) + 20*2 (padding) + 5*2 (border) = 150px
+注意：margin 不计入元素宽度，但影响占位空间</code></pre>
+
+<p>默认的 <code>box-sizing: content-box</code> 意味着 <code>width</code> 只是内容区域的宽度。</p>
+<p>Padding 和 border 会叠加在外面，让元素比你想的更大。</p>
+
+<hr/>
+
+<p><strong>解决方案：box-sizing: border-box</strong></p>
+
+<pre><code class="language-css">/* 现代 CSS 的最佳实践 / Modern CSS best practice */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.box {
+  width: 100px;   /* Now this IS the final rendered width */
+  padding: 20px;
+  border: 5px solid black;
+  /* Content area auto-shrinks to: 100 - 40 - 10 = 50px */
+}</code></pre>
+
+<p>用了 <code>border-box</code> 后，<code>width: 100px</code> 就真的是 100px，padding 和 border 都"向内压缩"。这是几乎所有现代 CSS 框架（Bootstrap、Tailwind）默认使用的设置。</p>
+
+<p><em>With <code>border-box</code>, <code>width</code> means what you think it means. Padding and border carve inward. This is why every modern CSS framework resets box-sizing globally.</em></p>
+
+<hr/>
+
+<p><strong>你可能不知道 / You Might Not Know</strong></p>
+
+<p><strong>Gotcha #1: margin 不是元素的一部分</strong></p>
+<p><code>margin</code> 是元素与其他元素之间的空白，不影响元素本身的宽度，但影响布局空间。用 <code>background-color</code> 你会发现 background 不延伸到 margin 里。</p>
+
+<p><strong>Gotcha #2: Margin Collapse（外边距折叠）</strong></p>
+<pre><code class="language-css">.top    { margin-bottom: 20px; }
+.bottom { margin-top: 30px; }</code></pre>
+<p>两个块级元素垂直相邻，你以为间距是 50px，实际是 <strong>30px</strong>（取较大值）。</p>
+<p>水平方向的 margin 不会折叠，只有垂直方向才有这个"惊喜"。</p>
+
+<p><em>Vertical margins between block elements collapse to the larger value. Horizontal margins never collapse. This trips up every developer at least once.</em></p>
+
+<p><strong>Gotcha #3: inline 元素的 padding/margin 行为不同</strong></p>
+<p><code>&lt;span&gt;</code> 这类行内元素，设置 <code>padding-top/bottom</code> 和 <code>margin-top/bottom</code> 不会影响行高，效果跟你想的不一样。要控制高度，先把它变成 <code>inline-block</code>。</p>
+
+<hr/>
+
+<p><strong>Mini Challenge 🎯</strong></p>
+
+<p>不用打开浏览器，算出这个元素的实际渲染宽度：</p>
+
+<pre><code class="language-css">.card {
+  box-sizing: border-box;
+  width: 300px;
+  padding: 16px;
+  border: 2px solid #eee;
+  margin: 24px auto;
+}</code></pre>
+
+<p>渲染宽度是多少？内容区域宽度是多少？</p>
+<p><em>What's the rendered width? What's the content area width?</em></p>
+
+<p>答案下方揭晓：</p>
+<ul><li>渲染宽度：<strong>300px</strong>（因为 <code>border-box</code>）</li><li>内容区域：300 - 32 - 4 = <strong>264px</strong></li></ul>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">AI Day 1 — AI News Roundup</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>AI Day 1 — AI News Roundup</h1>
+<p><em>Date: 2026-03-14 | Mode: NEWS</em></p>
+
+<hr/>
+
+<p>🤖 <strong>AI Day 1 — 本周 AI 大事件 / This Week in AI</strong></p>
+
+<hr/>
+
+<p><strong>📰 Story 1: Claude 1M Context 全面开放</strong></p>
+<p><strong>Claude's 1M Token Context Window Goes Generally Available</strong></p>
+
+<p>Anthropic 昨天（3月13日）宣布，Claude Opus 4.6 和 Sonnet 4.6 的 100万 token 上下文窗口正式 GA，并且<strong>不收长上下文溢价</strong>——无论你发送 9K 还是 900K token，每 token 定价相同（Opus: $5/$25/M，Sonnet: $3/$15/M）。同时单次请求可以包含最多 600 张图片或 PDF 页面（之前是 100）。</p>
+
+<p><em>Anthropic made the 1M context window for Claude Opus 4.6 &amp; Sonnet 4.6 generally available on March 13 with no long-context premium. Same per-token price whether you send 9K or 900K tokens. Media limits expanded 6x to 600 images/PDFs per request.</em></p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+<p>对于需要处理整个代码库、大型合同文档、或长时间 agent 运行的工程师来说，这是实质性突破。之前 200K 以上需要特殊 beta header，现在自动生效。Claude Code 的 Max/Team/Enterprise 用户也自动获得 1M 上下文，减少 compaction 中断——Anthropic 表示这让 compaction 事件减少了 15%。</p>
+
+<p><em>For engineers working with large codebases, legal documents, or long-running agents: this eliminates forced context compression. A 1M context means you can load an entire enterprise codebase and reason across it without losing track of earlier decisions.</em></p>
+
+<hr/>
+
+<p><strong>📰 Story 2: 「会思考的 AI」正在改变代码审查</strong></p>
+<p><strong>AI Agents Are Changing Code Review</strong></p>
+
+<p>越来越多的团队开始用 AI agent（Claude Code、Devin、Copilot Workspace）做第一轮代码审查。一个真实案例：某公司把整个 diff 喂给 Opus 4.6 的 1M 上下文，拿到比分块处理高质量得多的跨文件依赖分析。</p>
+
+<p><em>Teams are deploying AI agents as first-pass code reviewers. With 1M context, agents can ingest full diffs and reason about cross-file dependencies that chunking strategies miss.</em></p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+<p>这不是说 AI 要取代 code review，而是说 AI 能处理「检查你有没有更新所有调用者」、「这个改动和3个文件之外的逻辑一致吗」这类枯燥但重要的检查，让人类 reviewer 聚焦在架构和意图层面。</p>
+
+<p><em>AI handles the mechanical review (did you update all callers? is this consistent with the contract 3 files away?). Humans focus on intent and architecture. Your job as a reviewer is evolving.</em></p>
+
+<hr/>
+
+<p><strong>📰 Story 3: 多模态 AI 的「看懂图纸」能力</strong></p>
+<p><strong>Multimodal AI Learning to Read Engineering Diagrams</strong></p>
+
+<p>前沿模型处理架构图、电路图、数学公式的能力在过去一年显著提升。工程师们开始用它来：解读遗留系统的手绘架构图、分析竞争对手产品的硬件拆解照片、把 Figma 截图直接转成 React 组件。</p>
+
+<p><em>Frontier models have dramatically improved at reading architecture diagrams, circuit schematics, and hand-drawn flowcharts. Engineers are using this to digitize legacy documentation and convert design screenshots to code.</em></p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+<p>如果你的团队还有一堆「只有某个老员工看得懂」的架构图、Confluence 里的白板照片，现在是时候让 AI 把这些知识结构化了。技术债不只是代码债，文档债也是。</p>
+
+<p><em>The "tribal knowledge" locked in whiteboard photos and napkin sketches can now be extracted. Teams that act on this will onboard engineers faster and reduce key-person risk.</em></p>
+
+<hr/>
+
+<p><strong>📰 Story 4: Vibe Coding 的隐藏成本</strong></p>
+<p><strong>The Hidden Costs of Vibe Coding</strong></p>
+
+<p>「Vibe coding」（完全让 AI 写代码，自己不看细节）在 Twitter/X 上很流行，但越来越多的工程师报告了真实代价：安全漏洞（AI 生成了但没人审查）、架构债（快速生成的代码结构混乱）、以及最麻烦的——你不理解自己系统的工作原理，无法 debug。</p>
+
+<p><em>"Vibe coding" — prompting AI to build entire features without reviewing the output — is creating a new class of tech debt: security vulnerabilities nobody audited, architectural chaos from unreviewed code, and engineers who can't debug systems they nominally wrote.</em></p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+<p>AI 是加速器，不是替代品。最有效的工程师是「AI 辅助」而不是「AI 依赖」。理解你代码中每一个关键决策，即使是 AI 建议的，是职业生涯的护城河。</p>
+
+<p><em>The engineers who thrive long-term use AI as an accelerator, not a replacement for understanding. Owning your code means being able to explain every key decision — even if AI suggested it.</em></p>
+
+<hr/>
+
+<p><strong>本周一句话总结 / One-Line Summary</strong></p>
+
+<p>上下文窗口越来越大，AI 能「记住」的越来越多——但你需要理解的也越来越多。工具在进化，思维方式也得跟上。</p>
+
+<p><em>Context windows are expanding, AI can remember more — but so does your responsibility to understand what it's doing. The tools are evolving; so must the mindset.</em></p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+</script>
+
+</body>
+</html>

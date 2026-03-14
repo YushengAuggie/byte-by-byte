@@ -2,6 +2,11 @@
 
 > *A little bit every day. A lot over time.*
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/YushengAuggie/byte-by-byte?style=flat&color=yellow)](https://github.com/YushengAuggie/byte-by-byte/stargazers)
+[![Daily Updates](https://img.shields.io/badge/updates-daily-brightgreen)](https://yushengauggie.github.io/byte-by-byte/archive.html)
+[![Bilingual](https://img.shields.io/badge/language-中%2FEN-blue)](https://yushengauggie.github.io/byte-by-byte/)
+
 **15 minutes of tech knowledge, delivered to your morning. Automated, bilingual (Chinese/English), and designed to compound.**
 
 I built this because I wanted to stay sharp without spending hours grinding LeetCode. 15 minutes. Every morning. Compounding. After 30 days, you've covered 30 algorithm patterns, 30 system designs, and 30 frontend concepts — all without blocking your calendar.
@@ -23,6 +28,24 @@ I built this because I wanted to stay sharp without spending hours grinding Leet
 ### 🌏 Why Bilingual?
 
 Every lesson is written in both Chinese and English — not translated, but **natively bilingual**. You learn the concepts *and* the technical vocabulary in both languages. No other daily learning system does this.
+
+---
+
+## 📊 Current Progress
+
+<!-- AUTO-UPDATED by commit.sh — do not edit this section manually -->
+
+| Field | Value |
+|-------|-------|
+| **Current Day** | Day 1 |
+| **Last Sent** | 2026-03-14 |
+| **Algorithms Covered** | 1 / 150 (NeetCode 150) |
+| **System Design Covered** | 1 / 40 |
+| **Frontend Covered** | 1 / 50 |
+| **Soft Skills Covered** | 1 / 40 |
+| **AI Topics Covered** | 1 / 30 |
+
+> 💡 This table is refreshed automatically when `commit.sh` runs each morning.
 
 ---
 
@@ -193,6 +216,38 @@ byte-by-byte/
 │   └── qa-prompt.md       ← QA reviewer prompt
 └── research/              ← inspiration + test reports
 ```
+
+## 📣 Share byte-by-byte
+
+If this project helps you, share it with others who'd benefit!
+
+**Twitter / X:**
+```
+Stumbled on byte-by-byte — a free daily bilingual tech newsletter (Chinese + English).
+15 min: system design, algorithms, soft skills, frontend, and AI. Every morning.
+Automated + open source.
+🧠 https://github.com/YushengAuggie/byte-by-byte
+#LearnInPublic #SoftwareEngineering #TechLearning
+```
+
+**LinkedIn:**
+```
+I've been learning with byte-by-byte — a daily bilingual tech learning system.
+5 topics × 15 minutes = consistent compounding growth.
+System design, algorithms, soft skills, frontend, AI.
+In both Chinese and English. Automated. Open source. Free.
+Check it out: https://yushengauggie.github.io/byte-by-byte/
+```
+
+**WeChat / 微信：**
+```
+分享一个每天学技术的小工具：byte-by-byte
+每天早上自动发送5个主题：系统设计、算法、软技能、前端、AI
+中英双语，15分钟，每天积累，长期复利
+开源免费：https://github.com/YushengAuggie/byte-by-byte
+```
+
+---
 
 ## 🤝 Contributing
 
