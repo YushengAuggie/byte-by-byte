@@ -9,9 +9,9 @@
 [![Bilingual](https://img.shields.io/badge/language-中%2FEN-blue)](https://yushengauggie.github.io/byte-by-byte/)
 [![RSS](https://img.shields.io/badge/RSS-subscribe-orange)](https://yushengauggie.github.io/byte-by-byte/feed.xml)
 
-**15 minutes of tech knowledge, delivered to your morning. Automated, bilingual (Chinese/English), and designed to compound.**
+**15 minutes of tech knowledge, delivered daily. Automated, bilingual (Chinese/English), and designed to compound.**
 
-I built this because I wanted to stay sharp without spending hours grinding LeetCode. 15 minutes. Every morning. Compounding. After 30 days, you've covered 30 algorithm patterns, 30 system designs, and 30 frontend concepts — all without blocking your calendar.
+I built this because I wanted to stay sharp without spending hours grinding LeetCode. 15 minutes. Every day. Compounding. After 30 days, you've covered 30 algorithm patterns, 30 system designs, and 30 frontend concepts — all without blocking your calendar.
 
 🌐 [**Website**](https://yushengauggie.github.io/byte-by-byte/) • 📡 [**RSS Feed**](https://yushengauggie.github.io/byte-by-byte/feed.xml) • 📖 [**Browse Archive**](https://yushengauggie.github.io/byte-by-byte/archive.html)
 
@@ -44,7 +44,7 @@ Every lesson is written in both Chinese and English — not translated, but **na
 - **Cross-day references** — Each day builds on what came before
 
 ### 💬 Interactive Delivery
-- **Progress tracking** — `📊 Day 12/150 · 🔥 12-day streak!` header every morning
+- **Progress tracking** — `📊 Day 12/150 · 🔥 12-day streak!` header every day
 - **Quiz polls** — Telegram polls after Algorithms (complexity quiz) and Frontend (output quiz)
 - **Weekend format** — Saturday deep-dives, Sunday week-in-review
 - **Reading time estimates** — Every section shows estimated minutes
@@ -174,7 +174,7 @@ vim config.env  # Add your Telegram ID, email, paths
 ./scripts/setup.sh
 ```
 
-You'll get 5 Telegram messages + 1 HTML email digest every morning at 8 AM. That's it.
+You'll get 5 Telegram messages + 1 HTML email digest daily at your configured time. That's it.
 
 ### Option 2: Browse online
 
@@ -182,7 +182,7 @@ Visit the [website](https://yushengauggie.github.io/byte-by-byte/) or [archive](
 
 ### Option 3: Email subscription
 
-[**Subscribe here**](https://forms.gle/UJw1YPmzsA4mKRHK6) — you'll get one HTML email digest every morning at 8 AM PT.
+[**Subscribe here**](https://forms.gle/UJw1YPmzsA4mKRHK6) — you'll get one HTML email digest daily.
 
 ### Option 4: RSS
 
@@ -242,7 +242,7 @@ byte-by-byte/
 If this project helps you, share it with others!
 
 **Twitter / X:**
-> Stumbled on byte-by-byte — a free daily bilingual tech newsletter (Chinese + English). 15 min: system design, algorithms, soft skills, frontend, and AI. Every morning. Open source. 🧠 https://github.com/YushengAuggie/byte-by-byte
+> Stumbled on byte-by-byte — a free daily bilingual tech newsletter (Chinese + English). 15 min: system design, algorithms, soft skills, frontend, and AI. Every day. Open source. 🧠 https://github.com/YushengAuggie/byte-by-byte
 
 **LinkedIn:**
 > I've been learning with byte-by-byte — a daily bilingual tech learning system. 5 topics × 15 minutes = consistent compounding growth. Chinese and English. Automated. Open source. Free. https://yushengauggie.github.io/byte-by-byte/
