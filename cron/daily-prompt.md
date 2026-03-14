@@ -148,6 +148,7 @@ For EACH section (1-5), read /tmp/bbb-section-N.txt and generate the content. Sa
 - ASCII architecture diagram
 - Key concepts, tradeoffs (为什么这样设计？/ Why this design?)
 - Common mistakes (别踩这个坑 / Don't fall into this trap)
+- At the END of the section, add: 🧒 **ELI5:** [One sentence a child could understand. Example: "A load balancer is like a restaurant host who sends each new group to the least busy waiter."]
 
 #### Section 2: Algorithms (4 min read)
 💻 **算法 Day N (4 min read) / Algorithms Day N** — #NUM TITLE (DIFFICULTY) — PATTERN
@@ -170,6 +171,14 @@ Content:
 - Python solution with detailed comments
 - Time/Space complexity
 - 举一反三 / Pattern Recognition + follow-up variations
+- After the Python solution, include a TypeScript version with this exact format:
+  📝 **TypeScript version:**
+  ```typescript
+  // TypeScript equivalent — same algorithm, idiomatic TS (proper types, no `any`)
+  function exampleFn(input: number[]): boolean {
+    // ... implementation
+  }
+  ```
 
 **After generating this section**, also prepare a "Complexity Quiz" (saved separately to /tmp/bbb-quiz-2.json):
 Generate a JSON object with:
@@ -183,6 +192,9 @@ Generate a JSON object with:
 ```
 Choose 4 plausible complexity options where one is the correct answer for the solution you generated. Make the options realistic and educational (not obviously wrong choices).
 
+At the END of the Algorithms section (after 举一反三), add:
+🧒 **ELI5:** [One sentence a child could understand. Example: "A hash set is like a checklist — you mark off each thing you've seen, and checking if something's already on the list takes no time at all."]
+
 #### Section 3: Soft Skills (2 min read)
 🗣️ **软技能 Day N (2 min read) / Soft Skills Day N**
 - Why this matters (为什么这很重要)
@@ -191,6 +203,7 @@ Choose 4 plausible complexity options where one is the correct answer for the so
 - Scenario template to adapt
 - Senior/Staff level tips
 - 关键要点 / Key Takeaways
+- At the END of the section, add: 🧒 **ELI5:** [One sentence a child could understand. Example: "Giving feedback is like telling a friend their shoelace is untied — you do it kindly because you want them to not trip."]
 
 #### Section 4: Frontend (2 min read)
 🎨 **前端 Day N (2 min read) / Frontend Day N**
@@ -212,10 +225,31 @@ Generate a JSON object with the actual answer choices:
 ```
 The correct option should be the actual answer. Make the other 3 options common misconceptions or plausible wrong answers.
 
+At the END of the Frontend section (after Mini challenge), add:
+🧒 **ELI5:** [One sentence a child could understand. Example: "CSS flexbox is like telling your toys to line up in a row and spread out evenly on a shelf."]
+
 #### Section 5: AI (2 min read)
 🤖 **AI Day N (2 min read)**
 - NEWS mode: Search web, 3-5 stories with "为什么你应该关心 / Why you should care"
-- CONCEPT mode: Intuitive explanation → how it works → applications → code snippet
+- CONCEPT mode: Intuitive explanation → how it works → applications → runnable code snippet
+  - Code snippet REQUIREMENTS for CONCEPT mode:
+    - Python, ≤15 lines
+    - Include exact pip install command: `pip install <pkg> && python script.py`
+    - Must copy-paste and run without modification
+    - Example (embeddings topic):
+      ```python
+      # pip install sentence-transformers && python script.py
+      from sentence_transformers import SentenceTransformer
+      import numpy as np
+      model = SentenceTransformer('all-MiniLM-L6-v2')
+      sentences = ["I love coding", "Programming is fun", "I hate vegetables"]
+      embeddings = model.encode(sentences)
+      def cosine_sim(a, b):
+          return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+      print(f"coding vs programming: {cosine_sim(embeddings[0], embeddings[1]):.3f}")
+      print(f"coding vs vegetables:  {cosine_sim(embeddings[0], embeddings[2]):.3f}")
+      ```
+- At the END of the AI section, add: 🧒 **ELI5:** [One sentence a child could understand. Example: "AI embeddings are like giving every word a secret code number so the computer can tell that 'dog' and 'puppy' are almost the same thing."]
 
 ---
 
