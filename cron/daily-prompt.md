@@ -148,7 +148,13 @@ For EACH section (1-5), read /tmp/bbb-section-N.txt and generate the content. Sa
 - ASCII architecture diagram
 - Key concepts, tradeoffs (为什么这样设计？/ Why this design?)
 - Common mistakes (别踩这个坑 / Don't fall into this trap)
-- At the END of the section, add: 🧒 **ELI5:** [One sentence a child could understand. Example: "A load balancer is like a restaurant host who sends each new group to the least busy waiter."]
+- At the END of the section, add a references block, then ELI5:
+  📚 **深入学习 / Learn More:**
+  • Link to a real company engineering blog post about this topic (e.g., Netflix, Uber, AWS, Google)
+  • Link to a relevant YouTube explainer (ByteByteGo, Hussein Nasser, or similar)
+  • Link to the original paper or authoritative reference (e.g., Designing Data-Intensive Applications chapter)
+  (3 links max. Must be real, well-known URLs — do NOT fabricate links.)
+- 🧒 **ELI5:** [One sentence a child could understand. Example: "A load balancer is like a restaurant host who sends each new group to the least busy waiter."]
 
 #### Section 2: Algorithms (4 min read)
 💻 **算法 Day N (4 min read) / Algorithms Day N** — #NUM TITLE (DIFFICULTY) — PATTERN
@@ -184,8 +190,13 @@ Generate a JSON object with:
 ```
 Choose 4 plausible complexity options where one is the correct answer for the solution you generated. Make the options realistic and educational (not obviously wrong choices).
 
-At the END of the Algorithms section (after 举一反三), add:
-🧒 **ELI5:** [One sentence a child could understand. Example: "A hash set is like a checklist — you mark off each thing you've seen, and checking if something's already on the list takes no time at all."]
+At the END of the Algorithms section (after 举一反三), add references then ELI5:
+  📚 **深入学习 / Learn More:**
+  • NeetCode video link (already included above — repeat here for convenience)
+  • Link to a pattern-focused article or guide (e.g., "Arrays & Hashing patterns" on a reputable site)
+  • 1-2 related LeetCode problems to try next (with direct links)
+  (Must be real URLs — do NOT fabricate links.)
+- 🧒 **ELI5:** [One sentence a child could understand. Example: "A hash set is like a checklist — you mark off each thing you've seen, and checking if something's already on the list takes no time at all."]
 
 #### Section 3: Soft Skills (2 min read)
 🗣️ **软技能 Day N (2 min read) / Soft Skills Day N**
@@ -195,7 +206,13 @@ At the END of the Algorithms section (after 举一反三), add:
 - Scenario template to adapt
 - Senior/Staff level tips
 - 关键要点 / Key Takeaways
-- At the END of the section, add: 🧒 **ELI5:** [One sentence a child could understand. Example: "Giving feedback is like telling a friend their shoelace is untied — you do it kindly because you want them to not trip."]
+- At the END of the section, add references then ELI5:
+  📚 **深入学习 / Learn More:**
+  • Link to a relevant Harvard Business Review, First Round Review, or tech leadership article
+  • Link to a recommended book (e.g., "Crucial Conversations", "The Manager's Path")
+  • Link to a relevant talk or podcast episode
+  (3 links max. Must be real URLs — do NOT fabricate links.)
+- 🧒 **ELI5:** [One sentence a child could understand. Example: "Giving feedback is like telling a friend their shoelace is untied — you do it kindly because you want them to not trip."]
 
 #### Section 4: Frontend (2 min read)
 🎨 **前端 Day N (2 min read) / Frontend Day N**
@@ -217,8 +234,13 @@ Generate a JSON object with the actual answer choices:
 ```
 The correct option should be the actual answer. Make the other 3 options common misconceptions or plausible wrong answers.
 
-At the END of the Frontend section (after Mini challenge), add:
-🧒 **ELI5:** [One sentence a child could understand. Example: "CSS flexbox is like telling your toys to line up in a row and spread out evenly on a shelf."]
+At the END of the Frontend section (after Mini challenge), add references then ELI5:
+  📚 **深入学习 / Learn More:**
+  • Link to the relevant MDN Web Docs page (e.g., https://developer.mozilla.org/en-US/docs/...)
+  • Link to a CSS-Tricks, web.dev, or Josh W Comeau article on this topic
+  • Link to an interactive playground or tool (e.g., Flexbox Froggy, CSS Grid Garden, CodePen)
+  (3 links max. Must be real URLs — do NOT fabricate links.)
+- 🧒 **ELI5:** [One sentence a child could understand. Example: "CSS flexbox is like telling your toys to line up in a row and spread out evenly on a shelf."]
 
 #### Section 5: AI (2 min read)
 🤖 **AI Day N (2 min read)**
@@ -241,7 +263,13 @@ At the END of the Frontend section (after Mini challenge), add:
       print(f"coding vs programming: {cosine_sim(embeddings[0], embeddings[1]):.3f}")
       print(f"coding vs vegetables:  {cosine_sim(embeddings[0], embeddings[2]):.3f}")
       ```
-- At the END of the AI section, add: 🧒 **ELI5:** [One sentence a child could understand. Example: "AI embeddings are like giving every word a secret code number so the computer can tell that 'dog' and 'puppy' are almost the same thing."]
+- At the END of the AI section, add references then ELI5:
+  📚 **深入学习 / Learn More:**
+  • For NEWS: links to the original announcements/articles cited in the stories
+  • For CONCEPT: link to the original paper (arXiv), Hugging Face model page, or official docs
+  • Link to a tutorial or hands-on guide for the concept
+  (3 links max. Must be real URLs — do NOT fabricate links.)
+- 🧒 **ELI5:** [One sentence a child could understand. Example: "AI embeddings are like giving every word a secret code number so the computer can tell that 'dog' and 'puppy' are almost the same thing."]
 
 ---
 
