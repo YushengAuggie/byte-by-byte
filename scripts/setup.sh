@@ -105,6 +105,13 @@ QA_PROMPT=$(resolve_prompt "$REPO_DIR/cron/qa-prompt.md")
 
 echo "✓ Created: byte-by-byte QA ($QA_SCHEDULE $TIMEZONE)"
 
+# Install pre-commit hook
+echo ""
+echo "Installing pre-commit hook..."
+cp "$REPO_DIR/hooks/pre-commit" "$REPO_DIR/.git/hooks/pre-commit"
+chmod +x "$REPO_DIR/.git/hooks/pre-commit"
+echo "✓ Pre-commit hook installed (runs test.sh before every commit)"
+
 echo ""
 echo "=== Setup complete ==="
 "$OPENCLAW_BIN" cron list 2>&1
