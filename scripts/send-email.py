@@ -167,11 +167,22 @@ def is_diagram_line(line):
     stripped = line.rstrip()
     if not stripped:
         return False
+    # Skip markdown table rows — they start with | and have | separators
+    if re.match(r'^\s*\|', stripped) and stripped.rstrip().endswith('|'):
+        return False
+    # Skip markdown table separator rows
+    if re.match(r'^\s*\|[\s\-:|]+\|$', stripped):
+        return False
     if re.search(r'[┌┐└┘│─┬├┤▼→←═╔╗╚╝║]', stripped):
         arrow_like = len(re.findall(r'[▼→←═│─┌┐└┘┬├┤╔╗╚╝║]', stripped))
         if arrow_like >= 2 or re.search(r'[┌┐└┘│─┬├┤╔╗╚╝║]', stripped):
             return True
+    # Only match pipe-based diagrams if they DON'T look like tables
+    # (tables have evenly spaced pipes; diagrams have pipes mixed with arrows/boxes)
     if stripped.count('|') >= 2 and re.search(r'[A-Za-z0-9]', stripped):
+        # If it looks like a table row (starts and ends with |, cells between), skip
+        if stripped.startswith('|') and stripped.endswith('|'):
+            return False
         return True
     if len(re.findall(r'(?:->|=>|<-|→|←)', stripped)) >= 2 and re.search(r'[A-Za-z0-9]', stripped):
         return True
