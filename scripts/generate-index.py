@@ -282,6 +282,389 @@ code {
   color: #dfe5ff;
 }
 
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
 hr {
   border: none; border-top: 1px solid var(--border); margin: 20px 0;
 }
@@ -312,6 +695,25 @@ footer {
   main { padding: 24px 16px 60px; }
   .trace-step {
     grid-template-columns: 1fr;
+  }
+  .flow-node {
+    grid-template-columns: 1fr;
+  }
+  .flow-badge {
+    width: 34px;
+    height: 34px;
+  }
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 12px 8px;
+  }
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid {
+    grid-template-columns: 1fr;
+  }
+  .playground-demo {
+    min-height: 160px;
   }
   .copy-btn {
     top: 8px;
@@ -492,36 +894,275 @@ def render_code_block(code: str, lang: str, section_key: str) -> str:
 """.strip()
 
 
-def render_algorithm_trace(section_key: str, text: str) -> str:
-    if section_key != "algorithms" or 's = "anagram"' not in text:
-        return ""
+def render_dns_flowchart() -> str:
+    steps = [
+        ("1", "flow-node-browser", "你的浏览器 / Browser", "User enters a URL and starts lookup."),
+        ("2", "flow-node-cache", "本地缓存 + hosts / Local Cache + hosts", "Check browser cache, OS cache, and hosts file first."),
+        ("3", "flow-node-resolver", "递归解析器 / Recursive Resolver", "Usually ISP DNS or a public resolver like 8.8.8.8."),
+        ("4", "flow-node-root", "根域名服务器 / Root Nameserver", "Points the resolver toward the right TLD."),
+        ("5", "flow-node-tld", "TLD 服务器 / TLD Nameserver", "For `.com`, `.org`, and other top-level domains."),
+        ("6", "flow-node-authoritative", "权威 DNS / Authoritative Nameserver", "Returns the final IP for `myblog.com`."),
+    ]
+    parts = ['<div class="flow-chart" role="img" aria-label="DNS resolution flow from browser to authoritative nameserver">']
+    for index, color_class, title, subtitle in steps:
+        parts.append(
+            f'''
+  <div class="flow-node {color_class}">
+    <span class="flow-badge" aria-hidden="true">{index}</span>
+    <div class="flow-copy">
+      <div class="flow-title">{title}</div>
+      <div class="flow-subtitle">{subtitle}</div>
+    </div>
+  </div>'''.rstrip()
+        )
+        if index != "6":
+            parts.append('  <div class="flow-arrow" aria-hidden="true"></div>')
+    parts.append(
+        '''
+  <div class="flow-node flow-node-return">
+    <span class="flow-badge" aria-hidden="true">✓</span>
+    <div class="flow-copy">
+      <div class="flow-title">IP 返回浏览器 / IP Returned to Browser</div>
+      <div class="flow-subtitle">The browser can now open a connection to the server.</div>
+    </div>
+  </div>
+</div>'''.strip()
+    )
+    return "\n".join(parts)
+
+
+def render_tcp_handshake() -> str:
     return """
-<div class="trace-card">
-  <h3>Visual Step Trace</h3>
-  <div class="trace-steps">
-    <div class="trace-step">
-      <div class="trace-step-label">Start</div>
-      <div class="trace-step-body">count = {}</div>
+<div class="sequence-diagram" role="img" aria-label="TCP three-way handshake sequence diagram between client and server">
+  <div class="sequence-grid">
+    <div class="seq-party">Client</div>
+    <div></div>
+    <div class="seq-party server">Server</div>
+
+    <div class="seq-label">Ready to connect</div>
+    <div class="seq-line" aria-hidden="true"></div>
+    <div class="seq-label right">Listening</div>
+
+    <div class="seq-event">
+      <div class="seq-label">SYN</div>
+      <div class="seq-arrow syn right" aria-hidden="true"></div>
+      <div class="seq-label right">“I want to connect”</div>
     </div>
-    <div class="trace-step">
-      <div class="trace-step-label">Scan s</div>
-      <div class="trace-step-body">a:+3  n:+1  g:+1  r:+1  m:+1</div>
+
+    <div class="seq-event">
+      <div class="seq-label">Waiting for reply</div>
+      <div class="seq-arrow syn-ack left" aria-hidden="true"></div>
+      <div class="seq-label right">SYN-ACK</div>
     </div>
-    <div class="trace-step">
-      <div class="trace-step-label">State</div>
-      <div class="trace-step-body">{'a':3, 'n':1, 'g':1, 'r':1, 'm':1}</div>
+
+    <div class="seq-event">
+      <div class="seq-label">ACK</div>
+      <div class="seq-arrow ack right" aria-hidden="true"></div>
+      <div class="seq-label right">Connection confirmed</div>
     </div>
-    <div class="trace-step">
-      <div class="trace-step-label">Scan t</div>
-      <div class="trace-step-body">n:-1  a:-3  g:-1  r:-1  m:-1</div>
+  </div>
+  <div class="seq-est">Connection Established / 连接建立</div>
+</div>
+""".strip()
+
+
+def enhance_diagrams(html: str, section_key: str) -> str:
+    if section_key != "system-design":
+        return html
+
+    def replace(match: re.Match[str]) -> str:
+        raw = match.group(1)
+        text = re.sub(r"<[^>]+>", "", raw)
+        text = text.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+        lowered = text.lower()
+        if any(keyword in lowered for keyword in ["root nameserver", "recursive resolver", "authoritative nameserver", "tld nameserver"]):
+            return render_dns_flowchart()
+        if "syn" in lowered and "ack" in lowered and "client" in lowered and "server" in lowered:
+            return render_tcp_handshake()
+        return match.group(0)
+
+    return re.sub(r'<div class="diagram-block">(.*?)</div>', replace, html, flags=re.DOTALL)
+
+
+def render_flexbox_playground() -> str:
+    return """
+<div class="playground" data-flexbox-playground>
+  <h3>Interactive Flexbox Playground</h3>
+  <p>Change the flex container controls and compare <code>flex: 1</code> with <code>flex: 1 1 auto</code>.</p>
+  <div class="playground-controls">
+    <label>
+      <span>justify-content</span>
+      <select data-control="justify-content" aria-label="justify-content">
+        <option value="flex-start">flex-start</option>
+        <option value="center">center</option>
+        <option value="space-between" selected>space-between</option>
+        <option value="space-around">space-around</option>
+        <option value="space-evenly">space-evenly</option>
+      </select>
+    </label>
+    <label>
+      <span>align-items</span>
+      <select data-control="align-items" aria-label="align-items">
+        <option value="stretch">stretch</option>
+        <option value="flex-start">flex-start</option>
+        <option value="center" selected>center</option>
+        <option value="flex-end">flex-end</option>
+      </select>
+    </label>
+    <label>
+      <span>flex-direction</span>
+      <select data-control="flex-direction" aria-label="flex-direction">
+        <option value="row" selected>row</option>
+        <option value="column">column</option>
+      </select>
+    </label>
+  </div>
+  <div class="playground-stage">
+    <div class="playground-canvas">
+      <span class="playground-label">Live Container</span>
+      <div class="playground-demo" data-playground-demo>
+        <div class="playground-box a">A</div>
+        <div class="playground-box b">B</div>
+        <div class="playground-box c">C</div>
+      </div>
     </div>
-    <div class="trace-step">
-      <div class="trace-step-label">Finish</div>
-      <div class="trace-step-body">all counts return to 0 → anagram = True</div>
+    <div class="playground-compare">
+      <span class="playground-label">Shorthand Comparison</span>
+      <div class="playground-compare-grid">
+        <div class="compare-scenario">
+          <p><code>flex: 1</code> starts from zero width.</p>
+          <div class="compare-row">
+            <div class="compare-box a" style="flex:1;">A short</div>
+            <div class="compare-box b" style="flex:1;">B has much longer text content</div>
+          </div>
+        </div>
+        <div class="compare-scenario">
+          <p><code>flex: 1 1 auto</code> respects content size first.</p>
+          <div class="compare-row">
+            <div class="compare-box a" style="flex:1 1 auto;">A short</div>
+            <div class="compare-box b" style="flex:1 1 auto;">B has much longer text content</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 """.strip()
+
+
+def render_attention_heatmap() -> str:
+    words = ["The", "animal", "didnt", "cross", "the", "street", "because", "it", "was", "too", "tired"]
+    attention = {
+        "The": 0.02,
+        "animal": 0.86,
+        "didnt": 0.03,
+        "cross": 0.04,
+        "the": 0.02,
+        "street": 0.08,
+        "because": 0.05,
+        "it": 0.03,
+        "was": 0.07,
+        "too": 0.1,
+        "tired": 0.3,
+    }
+    header = "".join(f'<th class="heatmap-axis">{escape_html(word)}</th>' for word in words)
+    cells = []
+    for word in words:
+        value = attention[word]
+        alpha = max(0.04, min(1.0, value))
+        bg = f"rgba(167, 139, 250, {alpha:.2f})"
+        cells.append(
+            f'<td><div class="heatmap-cell" title="{word}: {value:.2f}" aria-label="{word} attention weight {value:.2f}" style="background:{bg};"></div></td>'
+        )
+    row = "".join(cells)
+    return f"""
+<div class="attention-card">
+  <h3>Attention Heatmap</h3>
+  <p>When the model processes <code>it</code>, it attends most strongly to <code>animal</code>.</p>
+  <div class="heatmap-wrap">
+    <table class="heatmap">
+      <thead>
+        <tr>
+          <th></th>
+          {header}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="heatmap-axis row-label">it →</th>
+          {row}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+""".strip()
+
+
+def render_algorithm_trace(section_key: str, text: str) -> str:
+    if section_key != "algorithms" or 's = "anagram"' not in text:
+        return ""
+
+    steps = [
+        ("1", "Start", "Empty counter before scanning any characters.", {}, None, False),
+        ("2", "Scan s", 'Read `anagram` and count each character.', {"a": 3, "n": 1, "g": 1, "r": 1, "m": 1}, "a", False),
+        ("3", "State", "Hash map now stores the required counts.", {"a": 3, "n": 1, "g": 1, "r": 1, "m": 1}, None, False),
+        ("4", "Scan t", 'Read `nagaram` and subtract each character back down.', {"a": 0, "n": 0, "g": 0, "r": 0, "m": 0}, "m", True),
+        ("5", "Finish", "All counts return to zero, so the strings are anagrams.", {"a": 0, "n": 0, "g": 0, "r": 0, "m": 0}, None, True),
+    ]
+
+    step_html = []
+    for index, label, note, state, active_key, done in steps:
+        boxes = []
+        for key, value in state.items():
+            classes = ["hash-box"]
+            if active_key == key:
+                classes.append("active")
+            if done and value == 0:
+                classes.append("done")
+            status = "active key" if active_key == key else ("balanced ✓" if done and value == 0 else "count")
+            boxes.append(
+                f'''
+        <div class="{" ".join(classes)}">
+          <div class="hash-key">key['{key}']</div>
+          <div class="hash-value">{value}</div>
+          <div class="hash-status">{status}</div>
+        </div>'''.rstrip()
+            )
+        if not boxes:
+            boxes.append(
+                """
+        <div class="hash-box">
+          <div class="hash-key">count</div>
+          <div class="hash-value">{}</div>
+          <div class="hash-status">empty map</div>
+        </div>
+""".rstrip()
+            )
+        step_html.append(
+            f'''
+    <div class="trace-step">
+      <div class="trace-step-index" aria-hidden="true">{index}</div>
+      <div class="trace-step-copy">
+        <div class="trace-step-header">
+          <div class="trace-step-label">{label}</div>
+          <div class="trace-step-note">{note}</div>
+        </div>
+        <div class="hash-grid">
+{"".join(boxes)}
+        </div>
+      </div>
+    </div>'''.rstrip()
+        )
+
+    return """
+<div class="trace-card">
+  <h3>Visual Step Trace</h3>
+  <div class="trace-visual">
+    STEP_HTML
+  </div>
+</div>
+""".replace("STEP_HTML", "\n".join(step_html)).strip()
 
 
 def md_to_html(text: str, section_key: str = "") -> str:
@@ -641,10 +1282,14 @@ def md_to_html(text: str, section_key: str = "") -> str:
         html_lines.append(flush_pre())
     if in_table:
         html_lines.append(flush_table())
+    if section_key == "frontend" and "flexbox" in text.lower():
+        html_lines.append(render_flexbox_playground())
+    if section_key == "ai" and any(keyword in text.lower() for keyword in ["attention", "transformer"]):
+        html_lines.append(render_attention_heatmap())
     trace = render_algorithm_trace(section_key, text)
     if trace:
         html_lines.append(trace)
-    return "\n".join(html_lines)
+    return enhance_diagrams("\n".join(html_lines), section_key)
 
 
 def inline_md(text: str) -> str:
@@ -832,6 +1477,20 @@ document.querySelectorAll('.copy-btn').forEach((button) => {{
       setTimeout(() => {{ button.textContent = 'Copy'; }}, 1200);
     }}
   }});
+}});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {{
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {{
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  }};
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
 }});
 </script>
 
