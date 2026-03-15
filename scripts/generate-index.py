@@ -152,7 +152,51 @@ main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
 .section-content strong { color: var(--text); }
 .section-content em { color: var(--text2); }
 
-pre {
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
   background: #09090f;
   border: 1px solid var(--border);
   border-radius: 10px; padding: 16px 20px;
@@ -161,7 +205,7 @@ pre {
   font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
   color: #e8e8f0;
 }
-@media (prefers-color-scheme: light) { pre { background: #1a1a2e; color: #e8e8f0; } }
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
 
 code {
   font-family: 'SF Mono', 'Fira Code', monospace;
@@ -169,7 +213,74 @@ code {
   background: var(--bg3); padding: 1px 5px; border-radius: 4px;
   color: var(--accent3);
 }
-pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
 
 hr {
   border: none; border-top: 1px solid var(--border); margin: 20px 0;
@@ -199,6 +310,16 @@ footer {
 @media (max-width: 600px) {
   .nav-links { display: none; }
   main { padding: 24px 16px 60px; }
+  .trace-step {
+    grid-template-columns: 1fr;
+  }
+  .copy-btn {
+    top: 8px;
+    right: 8px;
+  }
+  .code-block pre {
+    padding-top: 46px;
+  }
 }
 """
 
@@ -215,27 +336,227 @@ SECTION_META = {
 SECTION_ORDER = ["system-design", "algorithms", "soft-skills", "frontend", "ai"]
 
 
-def md_to_html(text: str) -> str:
+def escape_html(text: str) -> str:
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def highlight_code(code: str, lang: str) -> str:
+    lang = (lang or "").lower()
+
+    def render_with_patterns(text: str, patterns: list[tuple[str, str, str]]) -> str:
+        combined = re.compile("|".join(f"(?P<{name}>{pattern})" for name, pattern, _ in patterns), re.MULTILINE)
+        color_map = {name: color for name, _, color in patterns}
+        parts = []
+        last = 0
+        for match in combined.finditer(text):
+            start, end = match.span()
+            if start > last:
+                parts.append(escape_html(text[last:start]))
+            group_name = next(name for name, value in match.groupdict().items() if value is not None)
+            parts.append(f'<span style="color:{color_map[group_name]};">{escape_html(match.group(0))}</span>')
+            last = end
+        if last < len(text):
+            parts.append(escape_html(text[last:]))
+        return ''.join(parts)
+
+    if lang == "python":
+        return render_with_patterns(code, [
+            ("comment", r"#[^\n]*", "#5c6370"),
+            ("string", r'"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', "#e5c07b"),
+            ("keyword", r"\b(?:False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b", "#c678dd"),
+            ("number", r"\b\d+(?:\.\d+)?\b", "#56b6c2"),
+        ])
+    if lang == "css":
+        highlighted = []
+        for line in code.splitlines():
+            escaped = escape_html(line)
+            if "/*" in line:
+                highlighted.append(f'<span style="color:#5c6370;">{escaped}</span>')
+                continue
+            selector_match = re.match(r"^\s*([^{]+)(\s*\{)?\s*$", line)
+            if selector_match and "{" in line and ":" not in line:
+                selector = escape_html(selector_match.group(1).rstrip())
+                suffix = escape_html(line[len(selector_match.group(1)):])
+                highlighted.append(f'<span style="color:#e06c75;">{selector}</span>{suffix}')
+                continue
+            prop_match = re.match(r"^(\s*)([a-z-]+)(\s*:\s*)([^;]+)(;?)", line)
+            if prop_match:
+                indent, prop, colon, value, semi = prop_match.groups()
+                highlighted.append(
+                    f'{escape_html(indent)}<span style="color:#56b6c2;">{escape_html(prop)}</span>'
+                    f'{escape_html(colon)}<span style="color:#e5c07b;">{escape_html(value)}</span>{escape_html(semi)}'
+                )
+                continue
+            highlighted.append(escaped)
+        return "\n".join(highlighted)
+    if lang == "json":
+        return render_with_patterns(code, [
+            ("key", r'"(?:\\.|[^"\\])*"(?=\s*:)', "#56b6c2"),
+            ("string", r'(?<=:\s)"(?:\\.|[^"\\])*"', "#e5c07b"),
+            ("boolean", r"\b(?:true|false|null)\b", "#c678dd"),
+            ("number", r"\b-?\d+(?:\.\d+)?\b", "#56b6c2"),
+        ])
+    if lang in {"html", "xml"}:
+        escaped = escape_html(code)
+
+        def replace_tag(match):
+            prefix, tag_name, attrs, suffix = match.groups()
+            attrs = re.sub(r'([a-zA-Z_:][-a-zA-Z0-9_:.]*)(=)', r'<span style="color:#e5c07b;">\1</span>\2', attrs)
+            return f'{prefix}<span style="color:#e06c75;">{tag_name}</span>{attrs}{suffix}'
+
+        return re.sub(r"(&lt;/?)([a-zA-Z][\w:-]*)(.*?)(/?&gt;)", replace_tag, escaped)
+    if lang in {"bash", "sh", "shell"}:
+        highlighted = []
+        for raw_line in code.splitlines():
+            stripped = raw_line.lstrip()
+            indent = raw_line[:len(raw_line) - len(stripped)]
+            if stripped.startswith("#"):
+                highlighted.append(escape_html(indent) + f'<span style="color:#5c6370;">{escape_html(stripped)}</span>')
+                continue
+            parts = re.split(r"(\s+)", stripped)
+            line_parts = [escape_html(indent)]
+            command_done = False
+            for part in parts:
+                if not part:
+                    continue
+                if part.isspace():
+                    line_parts.append(escape_html(part))
+                elif not command_done and not part.startswith("-"):
+                    line_parts.append(f'<span style="color:#98c379;">{escape_html(part)}</span>')
+                    command_done = True
+                elif part.startswith("-"):
+                    line_parts.append(f'<span style="color:#56b6c2;">{escape_html(part)}</span>')
+                else:
+                    line_parts.append(escape_html(part))
+            highlighted.append("".join(line_parts))
+        return "\n".join(highlighted)
+    return escape_html(code)
+
+
+def is_diagram_line(line: str) -> bool:
+    stripped = line.rstrip()
+    if not stripped:
+        return False
+    if re.search(r"[┌┐└┘│─┬├┤▼→←═╔╗╚╝║]", stripped):
+        arrow_like = len(re.findall(r"[▼→←═│─┌┐└┘┬├┤╔╗╚╝║]", stripped))
+        if arrow_like >= 2 or re.search(r"[┌┐└┘│─┬├┤╔╗╚╝║]", stripped):
+            return True
+    if stripped.count("|") >= 2 and re.search(r"[A-Za-z0-9]", stripped):
+        return True
+    if len(re.findall(r"(?:->|=>|<-|→|←)", stripped)) >= 2 and re.search(r"[A-Za-z0-9]", stripped):
+        return True
+    return False
+
+
+def looks_like_diagram_block(code: str) -> bool:
+    lines = [line for line in code.splitlines() if line.strip()]
+    if not lines:
+        return False
+    diagram_count = sum(1 for line in lines if is_diagram_line(line))
+    return diagram_count >= 2 or any(re.search(r"[┌┐└┘│─┬├┤▼→←═╔╗╚╝║]", line) for line in lines)
+
+
+def render_live_demo(code: str, lang: str, section_key: str) -> str:
+    if section_key != "frontend" or (lang or "").lower() != "css":
+        return ""
+    if "justify-content: space-between" not in code or "width: 300px" not in code:
+        return ""
+    return """
+<div class="live-demo">
+  <p class="live-demo-label">▶ Live result / 实际效果:</p>
+  <div class="live-demo-canvas">
+    <div style="display:flex; justify-content:space-between; width:300px; padding:12px; background:#ffffff; border:1px dashed #c9c2f6; border-radius:10px; margin:0 auto;">
+      <div style="width:80px; height:80px; background:#e06c75; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:10px; font-weight:700;">A</div>
+      <div style="width:80px; height:80px; background:#56b6c2; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:10px; font-weight:700;">B</div>
+      <div style="width:80px; height:80px; background:#98c379; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:10px; font-weight:700;">C</div>
+    </div>
+  </div>
+</div>
+""".strip()
+
+
+def render_code_block(code: str, lang: str, section_key: str) -> str:
+    if not (lang or "").strip() and looks_like_diagram_block(code):
+        return f'<div class="diagram-block">{escape_html(code)}</div>'
+    lang_attr = escape_html(lang or "text")
+    highlighted = highlight_code(code, lang)
+    demo = render_live_demo(code, lang, section_key)
+    escaped_raw = escape_html(code)
+    attr_value = escaped_raw.replace('"', "&quot;").replace("\n", "&#10;")
+    return f"""
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="{attr_value}">Copy</button>
+  <pre><code class="language-{lang_attr}">{highlighted}</code></pre>
+</div>
+{demo}
+""".strip()
+
+
+def render_algorithm_trace(section_key: str, text: str) -> str:
+    if section_key != "algorithms" or 's = "anagram"' not in text:
+        return ""
+    return """
+<div class="trace-card">
+  <h3>Visual Step Trace</h3>
+  <div class="trace-steps">
+    <div class="trace-step">
+      <div class="trace-step-label">Start</div>
+      <div class="trace-step-body">count = {}</div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-step-label">Scan s</div>
+      <div class="trace-step-body">a:+3  n:+1  g:+1  r:+1  m:+1</div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-step-label">State</div>
+      <div class="trace-step-body">{'a':3, 'n':1, 'g':1, 'r':1, 'm':1}</div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-step-label">Scan t</div>
+      <div class="trace-step-body">n:-1  a:-3  g:-1  r:-1  m:-1</div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-step-label">Finish</div>
+      <div class="trace-step-body">all counts return to 0 → anagram = True</div>
+    </div>
+  </div>
+</div>
+""".strip()
+
+
+def md_to_html(text: str, section_key: str = "") -> str:
     """Very lightweight Markdown → HTML converter for archive display."""
     lines = text.split("\n")
     html_lines = []
     in_pre = False
     pre_lang = ""
     pre_buf = []
+    in_table = False
+    table_rows = []
 
     def flush_pre():
         code = "\n".join(pre_buf)
         pre_buf.clear()
-        # Escape HTML inside code
-        code = code.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        lang_class = f' class="language-{pre_lang}"' if pre_lang else ""
-        return f'<pre><code{lang_class}>{code}</code></pre>'
+        return render_code_block(code, pre_lang, section_key)
+
+    def flush_table():
+        nonlocal table_rows
+        if not table_rows:
+            return ""
+        header = table_rows[0]
+        body = table_rows[1:]
+        header_html = "".join(f"<th>{inline_md(cell)}</th>" for cell in header)
+        body_html = "".join(
+            "<tr>{}</tr>".format("".join(f"<td>{inline_md(cell)}</td>" for cell in row))
+            for row in body
+        )
+        table_rows = []
+        return f"<table><thead><tr>{header_html}</tr></thead><tbody>{body_html}</tbody></table>"
 
     i = 0
     while i < len(lines):
         line = lines[i]
 
-        # Fenced code blocks
         if line.startswith("```"):
             if in_pre:
                 in_pre = False
@@ -252,61 +573,78 @@ def md_to_html(text: str) -> str:
             i += 1
             continue
 
-        # ATX headings
-        m = re.match(r'^(#{1,3})\s+(.*)', line)
+        if in_table and not line.strip().startswith("|"):
+            html_lines.append(flush_table())
+            in_table = False
+
+        m = re.match(r"^(#{1,3})\s+(.*)", line)
         if m:
             lvl = len(m.group(1))
             text_inner = inline_md(m.group(2))
-            html_lines.append(f'<h{lvl}>{text_inner}</h{lvl}>')
+            html_lines.append(f"<h{lvl}>{text_inner}</h{lvl}>")
             i += 1
             continue
 
-        # Horizontal rule
-        if re.match(r'^[-*_]{3,}\s*$', line):
-            html_lines.append('<hr/>')
+        if re.match(r"^[-*_]{3,}\s*$", line):
+            html_lines.append("<hr/>")
             i += 1
             continue
 
-        # Blockquote
         if line.startswith(">"):
             content = inline_md(line[1:].strip())
-            html_lines.append(f'<blockquote>{content}</blockquote>')
+            html_lines.append(f"<blockquote>{content}</blockquote>")
             i += 1
             continue
 
-        # Unordered list
-        if re.match(r'^[-*+]\s', line):
-            items = []
-            while i < len(lines) and re.match(r'^[-*+]\s', lines[i]):
-                items.append(f'<li>{inline_md(lines[i][2:].strip())}</li>')
-                i += 1
-            html_lines.append('<ul>' + ''.join(items) + '</ul>')
+        if line.strip().startswith("|"):
+            in_table = True
+            if not re.match(r"^\|[\s\-:|]+\|$", line.strip()):
+                table_rows.append([cell.strip() for cell in line.strip().split("|")[1:-1]])
+            i += 1
             continue
 
-        # Ordered list
-        if re.match(r'^\d+\.\s', line):
+        if re.match(r"^[-*+]\s", line):
             items = []
-            while i < len(lines) and re.match(r'^\d+\.\s', lines[i]):
-                text_inner = re.sub(r'^\d+\.\s', '', lines[i])
-                items.append(f'<li>{inline_md(text_inner)}</li>')
+            while i < len(lines) and re.match(r"^[-*+]\s", lines[i]):
+                items.append(f"<li>{inline_md(lines[i][2:].strip())}</li>")
                 i += 1
-            html_lines.append('<ol>' + ''.join(items) + '</ol>')
+            html_lines.append("<ul>" + "".join(items) + "</ul>")
             continue
 
-        # Empty line
+        if re.match(r"^\d+\.\s", line):
+            items = []
+            while i < len(lines) and re.match(r"^\d+\.\s", lines[i]):
+                text_inner = re.sub(r"^\d+\.\s", "", lines[i])
+                items.append(f"<li>{inline_md(text_inner)}</li>")
+                i += 1
+            html_lines.append("<ol>" + "".join(items) + "</ol>")
+            continue
+
+        if is_diagram_line(line):
+            diagram_lines = [line.rstrip()]
+            i += 1
+            while i < len(lines) and is_diagram_line(lines[i]):
+                diagram_lines.append(lines[i].rstrip())
+                i += 1
+            html_lines.append(f'<div class="diagram-block">{escape_html(chr(10).join(diagram_lines))}</div>')
+            continue
+
         if not line.strip():
-            html_lines.append('')
+            html_lines.append("")
             i += 1
             continue
 
-        # Paragraph
-        html_lines.append(f'<p>{inline_md(line)}</p>')
+        html_lines.append(f"<p>{inline_md(line)}</p>")
         i += 1
 
     if in_pre and pre_buf:
         html_lines.append(flush_pre())
-
-    return '\n'.join(html_lines)
+    if in_table:
+        html_lines.append(flush_table())
+    trace = render_algorithm_trace(section_key, text)
+    if trace:
+        html_lines.append(trace)
+    return "\n".join(html_lines)
 
 
 def inline_md(text: str) -> str:
@@ -387,7 +725,7 @@ def generate_day_html(date_str: str, sections: dict, prev_date: Optional[str], n
             continue
         meta = SECTION_META[key]
         label, subtitle = section_header_text(key, sections[key])
-        content_html = md_to_html(sections[key])
+        content_html = md_to_html(sections[key], key)
         open_class = "open" if idx == 0 else ""  # first section open by default
 
         section_blocks.append(f"""
@@ -480,6 +818,21 @@ function toggleSection(header) {{
   const content = header.nextElementSibling;
   content.classList.toggle('open');
 }}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {{
+  button.addEventListener('click', async () => {{
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\\n');
+    try {{
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => {{ button.textContent = original; }}, 1200);
+    }} catch (err) {{
+      button.textContent = 'Failed';
+      setTimeout(() => {{ button.textContent = 'Copy'; }}, 1200);
+    }}
+  }});
+}});
 </script>
 
 </body>

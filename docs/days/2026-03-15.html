@@ -135,7 +135,51 @@ main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
 .section-content strong { color: var(--text); }
 .section-content em { color: var(--text2); }
 
-pre {
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
   background: #09090f;
   border: 1px solid var(--border);
   border-radius: 10px; padding: 16px 20px;
@@ -144,7 +188,7 @@ pre {
   font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
   color: #e8e8f0;
 }
-@media (prefers-color-scheme: light) { pre { background: #1a1a2e; color: #e8e8f0; } }
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
 
 code {
   font-family: 'SF Mono', 'Fira Code', monospace;
@@ -152,7 +196,74 @@ code {
   background: var(--bg3); padding: 1px 5px; border-radius: 4px;
   color: var(--accent3);
 }
-pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
 
 hr {
   border: none; border-top: 1px solid var(--border); margin: 20px 0;
@@ -182,6 +293,16 @@ footer {
 @media (max-width: 600px) {
   .nav-links { display: none; }
   main { padding: 24px 16px 60px; }
+  .trace-step {
+    grid-template-columns: 1fr;
+  }
+  .copy-btn {
+    top: 8px;
+    right: 8px;
+  }
+  .code-block pre {
+    padding-top: 46px;
+  }
 }
 
   </style>
@@ -251,7 +372,7 @@ footer {
 
 <h3>DNS 查询流程 / DNS Resolution Flow</h3>
 
-<pre><code>你的浏览器
+<div class="diagram-block">你的浏览器
     │
     ▼
 [1] 本地缓存 / Local Cache
@@ -276,11 +397,11 @@ footer {
 [6] 权威 DNS 服务器 / Authoritative Nameserver
     │  "myblog.com → 203.0.113.42"
     ▼
-IP 地址返回给浏览器 / IP returned to browser</code></pre>
+IP 地址返回给浏览器 / IP returned to browser</div>
 
 <p><strong>真实类比 / Real-world analogy:</strong></p>
-<p>根服务器 = 全国电话总机 → TLD 服务器 = 城市区号本 → 权威服务器 = 某公司的直线</p>
-<p><em>Root server = National operator → TLD = City directory → Authoritative = Company's direct line</em></p>
+<div class="diagram-block">根服务器 = 全国电话总机 → TLD 服务器 = 城市区号本 → 权威服务器 = 某公司的直线
+*Root server = National operator → TLD = City directory → Authoritative = Company's direct line*</div>
 
 <hr/>
 
@@ -291,29 +412,23 @@ IP 地址返回给浏览器 / IP returned to browser</code></pre>
 <p><em>IPv4 is 32-bit (~4.3 billion addresses, nearly exhausted). IPv6 is 128-bit, essentially unlimited.</em></p>
 
 <p><strong>公网 vs 私网 / Public vs Private IP:</strong></p>
-<pre><code>家庭网络 / Home Network:
+<div class="diagram-block">家庭网络 / Home Network:
   你的电脑      → 192.168.1.100 (私网/Private)
   你的手机      → 192.168.1.101 (私网/Private)
   路由器对外    → 203.0.113.42  (公网/Public)  ← 互联网只看到这个
                                                   ← Internet only sees this
 NAT（网络地址转换）帮你把私网地址映射到公网
-NAT (Network Address Translation) maps private to public</code></pre>
+NAT (Network Address Translation) maps private to public</div>
 
 <hr/>
 
 <h2>TCP vs UDP：快递公司 vs 广播电台</h2>
 
-<p>| 特性 / Feature | TCP | UDP |</p>
-<p>|---|---|---|</p>
-<p>| 连接方式 / Connection | 三次握手 / 3-way handshake | 无连接 / Connectionless |</p>
-<p>| 可靠性 / Reliability | ✅ 保证送达 / Guaranteed | ❌ 尽力而为 / Best-effort |</p>
-<p>| 顺序 / Order | ✅ 有序 / Ordered | ❌ 可能乱序 / May arrive out of order |</p>
-<p>| 速度 / Speed | 较慢 / Slower | 更快 / Faster |</p>
-<p>| 适用场景 / Use cases | HTTP, Email, File transfer | Video streaming, Gaming, DNS |</p>
+<table><thead><tr><th>特性 / Feature</th><th>TCP</th><th>UDP</th></tr></thead><tbody><tr><td>连接方式 / Connection</td><td>三次握手 / 3-way handshake</td><td>无连接 / Connectionless</td></tr><tr><td>可靠性 / Reliability</td><td>✅ 保证送达 / Guaranteed</td><td>❌ 尽力而为 / Best-effort</td></tr><tr><td>顺序 / Order</td><td>✅ 有序 / Ordered</td><td>❌ 可能乱序 / May arrive out of order</td></tr><tr><td>速度 / Speed</td><td>较慢 / Slower</td><td>更快 / Faster</td></tr><tr><td>适用场景 / Use cases</td><td>HTTP, Email, File transfer</td><td>Video streaming, Gaming, DNS</td></tr></tbody></table>
 
 <h3>TCP 三次握手 / TCP 3-Way Handshake</h3>
 
-<pre><code>客户端 / Client          服务器 / Server
+<div class="diagram-block">客户端 / Client          服务器 / Server
      │                        │
      │──── SYN ──────────────&gt;│  "我想连接你 / I want to connect"
      │                        │
@@ -321,7 +436,7 @@ NAT (Network Address Translation) maps private to public</code></pre>
      │                        │
      │──── ACK ──────────────&gt;│  "我也确认了 / Confirmed"
      │                        │
-     │══════ 连接建立 / Connection Established ══════│</code></pre>
+     │══════ 连接建立 / Connection Established ══════│</div>
 
 <p><strong>为什么需要3次？/ Why 3 handshakes?</strong></p>
 <p>2次不够——服务器无法确认客户端收到了回复。就像打电话："喂？" "喂，听到了吗？" "听到了，开始说吧。"</p>
@@ -360,7 +475,7 @@ NAT (Network Address Translation) maps private to public</code></pre>
 <p><em>DNS translates domains to IPs with hierarchical caching. IPv4 is nearly exhausted, IPv6 is the future. TCP = reliable but slower; UDP = fast but lossy. 3-way handshake ensures both ends can send and receive.</em></p>
 
 <hr/>
-<p><em>Day 2 of 100 | #ByteByByte | 系统设计基础系列</em></p>
+<div class="diagram-block">*Day 2 of 100 | #ByteByByte | 系统设计基础系列*</div>
 
       </div>
     </div>
@@ -393,8 +508,8 @@ NAT (Network Address Translation) maps private to public</code></pre>
 
 <p><strong>English:</strong> Given two strings <code>s</code> and <code>t</code>, return <code>true</code> if <code>t</code> is an anagram of <code>s</code>, and <code>false</code> otherwise. An anagram uses the same characters with the same frequencies.</p>
 
-<pre><code>Input: s = "anagram", t = "nagaram"   → Output: True
-Input: s = "rat",     t = "car"       → Output: False</code></pre>
+<div class="diagram-block">Input: s = "anagram", t = "nagaram"   → Output: True
+Input: s = "rat",     t = "car"       → Output: False</div>
 
 <hr/>
 
@@ -414,23 +529,23 @@ Input: s = "rat",     t = "car"       → Output: False</code></pre>
 <p><code>s = "anagram"</code>, <code>t = "nagaram"</code></p>
 
 <p><strong>遍历 s (+1):</strong></p>
-<pre><code>'a' → count['a'] = 1
+<div class="diagram-block">'a' → count['a'] = 1
 'n' → count['n'] = 1
 'a' → count['a'] = 2
 'g' → count['g'] = 1
 'r' → count['r'] = 1
 'a' → count['a'] = 3
-'m' → count['m'] = 1</code></pre>
+'m' → count['m'] = 1</div>
 <p>状态 / State: <code>{'a':3, 'n':1, 'g':1, 'r':1, 'm':1}</code></p>
 
 <p><strong>遍历 t (-1):</strong></p>
-<pre><code>'n' → count['n'] = 0
+<div class="diagram-block">'n' → count['n'] = 0
 'a' → count['a'] = 2
 'g' → count['g'] = 0
 'a' → count['a'] = 1
 'r' → count['r'] = 0
 'a' → count['a'] = 0
-'m' → count['m'] = 0</code></pre>
+'m' → count['m'] = 0</div>
 <p>状态 / State: <code>{'a':0, 'n':0, 'g':0, 'r':0, 'm':0}</code></p>
 
 <p><strong>所有值为 0 → True ✅</strong></p>
@@ -439,45 +554,45 @@ Input: s = "rat",     t = "car"       → Output: False</code></pre>
 
 <h2>Python 解法 / Python Solution</h2>
 
-<pre><code class="language-python">from collections import defaultdict
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from collections import defaultdict&#10;&#10;def isAnagram(s: str, t: str) -&gt; bool:&#10;    # Quick check: different lengths can't be anagrams&#10;    # 长度不同直接排除&#10;    if len(s) != len(t):&#10;        return False&#10;    &#10;    # Count character frequencies&#10;    # 统计每个字符出现的频率&#10;    count = defaultdict(int)&#10;    &#10;    # +1 for every char in s&#10;    for char in s:&#10;        count[char] += 1&#10;    &#10;    # -1 for every char in t&#10;    for char in t:&#10;        count[char] -= 1&#10;    &#10;    # If all zeros, they have the same characters&#10;    # 所有计数为零，说明字符完全匹配&#10;    return all(v == 0 for v in count.values())&#10;&#10;&#10;# 更 Pythonic 的写法 / More Pythonic version:&#10;from collections import Counter&#10;&#10;def isAnagram_v2(s: str, t: str) -&gt; bool:&#10;    return Counter(s) == Counter(t)">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> collections <span style="color:#c678dd;">import</span> defaultdict
 
-def isAnagram(s: str, t: str) -&gt; bool:
-    # Quick check: different lengths can't be anagrams
-    # 长度不同直接排除
-    if len(s) != len(t):
-        return False
+<span style="color:#c678dd;">def</span> isAnagram(s: str, t: str) -&gt; bool:
+    <span style="color:#5c6370;"># Quick check: different lengths can't be anagrams</span>
+    <span style="color:#5c6370;"># 长度不同直接排除</span>
+    <span style="color:#c678dd;">if</span> len(s) != len(t):
+        <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
     
-    # Count character frequencies
-    # 统计每个字符出现的频率
+    <span style="color:#5c6370;"># Count character frequencies</span>
+    <span style="color:#5c6370;"># 统计每个字符出现的频率</span>
     count = defaultdict(int)
     
-    # +1 for every char in s
-    for char in s:
-        count[char] += 1
+    <span style="color:#5c6370;"># +1 for every char in s</span>
+    <span style="color:#c678dd;">for</span> char <span style="color:#c678dd;">in</span> s:
+        count[char] += <span style="color:#56b6c2;">1</span>
     
-    # -1 for every char in t
-    for char in t:
-        count[char] -= 1
+    <span style="color:#5c6370;"># -1 for every char in t</span>
+    <span style="color:#c678dd;">for</span> char <span style="color:#c678dd;">in</span> t:
+        count[char] -= <span style="color:#56b6c2;">1</span>
     
-    # If all zeros, they have the same characters
-    # 所有计数为零，说明字符完全匹配
-    return all(v == 0 for v in count.values())
+    <span style="color:#5c6370;"># If all zeros, they have the same characters</span>
+    <span style="color:#5c6370;"># 所有计数为零，说明字符完全匹配</span>
+    <span style="color:#c678dd;">return</span> all(v == <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">for</span> v <span style="color:#c678dd;">in</span> count.values())
 
 
-# 更 Pythonic 的写法 / More Pythonic version:
-from collections import Counter
+<span style="color:#5c6370;"># 更 Pythonic 的写法 / More Pythonic version:</span>
+<span style="color:#c678dd;">from</span> collections <span style="color:#c678dd;">import</span> Counter
 
-def isAnagram_v2(s: str, t: str) -&gt; bool:
-    return Counter(s) == Counter(t)</code></pre>
+<span style="color:#c678dd;">def</span> isAnagram_v2(s: str, t: str) -&gt; bool:
+    <span style="color:#c678dd;">return</span> Counter(s) == Counter(t)</code></pre>
+</div>
 
 <hr/>
 
 <h2>复杂度分析 / Complexity Analysis</h2>
 
-<p>| | 复杂度 / Complexity | 说明 / Explanation |</p>
-<p>|---|---|---|</p>
-<p>| 时间 / Time | O(n) | n = len(s)，遍历两次 / two passes |</p>
-<p>| 空间 / Space | O(k) | k = 字符集大小，最多26个字母 / at most 26 letters |</p>
+<table><thead><tr><th></th><th>复杂度 / Complexity</th><th>说明 / Explanation</th></tr></thead><tbody><tr><td>时间 / Time</td><td>O(n)</td><td>n = len(s)，遍历两次 / two passes</td></tr><tr><td>空间 / Space</td><td>O(k)</td><td>k = 字符集大小，最多26个字母 / at most 26 letters</td></tr></tbody></table>
 
 <p><strong>为什么不排序？/ Why not sort?</strong></p>
 <p>排序是 O(n log n)，哈希表是 O(n)，更快。面试时提出这个比较能加分。</p>
@@ -487,11 +602,14 @@ def isAnagram_v2(s: str, t: str) -&gt; bool:
 
 <h2>边界情况 / Edge Cases</h2>
 
-<pre><code class="language-python">isAnagram("a", "a")     # True  — single char match
-isAnagram("a", "b")     # False — single char mismatch
-isAnagram("", "")       # True  — both empty (Counter({}) == Counter({}))
-isAnagram("ab", "a")    # False — length check catches this early
-isAnagram("aa", "bb")   # False — same length, different chars</code></pre>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="isAnagram(&quot;a&quot;, &quot;a&quot;)     # True  — single char match&#10;isAnagram(&quot;a&quot;, &quot;b&quot;)     # False — single char mismatch&#10;isAnagram(&quot;&quot;, &quot;&quot;)       # True  — both empty (Counter({}) == Counter({}))&#10;isAnagram(&quot;ab&quot;, &quot;a&quot;)    # False — length check catches this early&#10;isAnagram(&quot;aa&quot;, &quot;bb&quot;)   # False — same length, different chars">Copy</button>
+  <pre><code class="language-python">isAnagram(<span style="color:#e5c07b;">"a"</span>, <span style="color:#e5c07b;">"a"</span>)     <span style="color:#5c6370;"># True  — single char match</span>
+isAnagram(<span style="color:#e5c07b;">"a"</span>, <span style="color:#e5c07b;">"b"</span>)     <span style="color:#5c6370;"># False — single char mismatch</span>
+isAnagram(<span style="color:#e5c07b;">""</span>, <span style="color:#e5c07b;">""</span>)       <span style="color:#5c6370;"># True  — both empty (Counter({}) == Counter({}))</span>
+isAnagram(<span style="color:#e5c07b;">"ab"</span>, <span style="color:#e5c07b;">"a"</span>)    <span style="color:#5c6370;"># False — length check catches this early</span>
+isAnagram(<span style="color:#e5c07b;">"aa"</span>, <span style="color:#e5c07b;">"bb"</span>)   <span style="color:#5c6370;"># False — same length, different chars</span></code></pre>
+</div>
 
 <hr/>
 
@@ -501,19 +619,40 @@ isAnagram("aa", "bb")   # False — same length, different chars</code></pre>
 
 <p><em>Core pattern: <strong>use a hash map to count frequencies, then compare</strong>. Same pattern appears in:</em></p>
 
-<p>| 题目 / Problem | 变化 / Twist |</p>
-<p>|---|---|</p>
-<p>| #49 Group Anagrams | 把所有互为异位词的字符串分组 / group all anagrams together |</p>
-<p>| #438 Find All Anagrams in a String | 滑动窗口找所有异位词位置 / sliding window to find positions |</p>
-<p>| #383 Ransom Note | 一个字符串能否由另一个构成 / can s be built from t's chars |</p>
+<table><thead><tr><th>题目 / Problem</th><th>变化 / Twist</th></tr></thead><tbody><tr><td>#49 Group Anagrams</td><td>把所有互为异位词的字符串分组 / group all anagrams together</td></tr><tr><td>#438 Find All Anagrams in a String</td><td>滑动窗口找所有异位词位置 / sliding window to find positions</td></tr><tr><td>#383 Ransom Note</td><td>一个字符串能否由另一个构成 / can s be built from t's chars</td></tr></tbody></table>
 
 <p><strong>进阶思考 / Follow-up:</strong></p>
 <p>如果字符串包含 Unicode（中文、emoji）怎么办？用 <code>Counter</code> 依然 work，因为它对任何 hashable 字符都有效。</p>
 <p><em>What if strings contain Unicode (Chinese, emoji)? <code>Counter</code> still works — it handles any hashable character.</em></p>
 
 <hr/>
-<p><em>Day 2 of 100 | #ByteByByte | Arrays &amp; Hashing 系列</em></p>
+<div class="diagram-block">*Day 2 of 100 | #ByteByByte | Arrays &amp; Hashing 系列*</div>
 
+<div class="trace-card">
+  <h3>Visual Step Trace</h3>
+  <div class="trace-steps">
+    <div class="trace-step">
+      <div class="trace-step-label">Start</div>
+      <div class="trace-step-body">count = {}</div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-step-label">Scan s</div>
+      <div class="trace-step-body">a:+3  n:+1  g:+1  r:+1  m:+1</div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-step-label">State</div>
+      <div class="trace-step-body">{'a':3, 'n':1, 'g':1, 'r':1, 'm':1}</div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-step-label">Scan t</div>
+      <div class="trace-step-body">n:-1  a:-3  g:-1  r:-1  m:-1</div>
+    </div>
+    <div class="trace-step">
+      <div class="trace-step-label">Finish</div>
+      <div class="trace-step-body">all counts return to 0 → anagram = True</div>
+    </div>
+  </div>
+</div>
       </div>
     </div>
     <div class="section-block" id="section-soft-skills">
@@ -601,7 +740,9 @@ isAnagram("aa", "bb")   # False — same length, different chars</code></pre>
 
 <h2>场景模板 / Scenario Template to Adapt</h2>
 
-<pre><code>情境: 我需要 [另一个团队/高级工程师/PM] 在 [时间节点] 前完成 [X]，
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="情境: 我需要 [另一个团队/高级工程师/PM] 在 [时间节点] 前完成 [X]，&#10;     但他们没有义务优先处理我的需求。&#10;&#10;策略:&#10;  1. 我研究了他们的 [优先级/OKR/痛点]&#10;  2. 我将需求包装成对他们的 [利益/风险规避/认可机会]&#10;  3. 我降低了他们的参与成本，通过 [缩小范围/提供草稿/async 方式]&#10;  4. 我通过 [共同认识的人/过去的合作] 建立了信任基础&#10;&#10;结果: [量化的结果]">Copy</button>
+  <pre><code class="language-text">情境: 我需要 [另一个团队/高级工程师/PM] 在 [时间节点] 前完成 [X]，
      但他们没有义务优先处理我的需求。
 
 策略:
@@ -611,6 +752,7 @@ isAnagram("aa", "bb")   # False — same length, different chars</code></pre>
   4. 我通过 [共同认识的人/过去的合作] 建立了信任基础
 
 结果: [量化的结果]</code></pre>
+</div>
 
 <hr/>
 
@@ -633,7 +775,7 @@ isAnagram("aa", "bb")   # False — same length, different chars</code></pre>
 <p><em>Understand their incentives. Use data/risk framing, not personal favors. Lower their cost to say yes. Always quantify results.</em></p>
 
 <hr/>
-<p><em>Day 2 of 100 | #ByteByByte | 行为面试系列</em></p>
+<div class="diagram-block">*Day 2 of 100 | #ByteByByte | 行为面试系列*</div>
 
       </div>
     </div>
@@ -654,22 +796,38 @@ isAnagram("aa", "bb")   # False — same length, different chars</code></pre>
 
 <h2>猜猜这段代码输出什么？/ What Does This Code Output?</h2>
 
-<pre><code class="language-html">&lt;div class="container"&gt;
-  &lt;div class="box"&gt;A&lt;/div&gt;
-  &lt;div class="box"&gt;B&lt;/div&gt;
-  &lt;div class="box"&gt;C&lt;/div&gt;
-&lt;/div&gt;</code></pre>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="&lt;div class=&quot;container&quot;&gt;&#10;  &lt;div class=&quot;box&quot;&gt;A&lt;/div&gt;&#10;  &lt;div class=&quot;box&quot;&gt;B&lt;/div&gt;&#10;  &lt;div class=&quot;box&quot;&gt;C&lt;/div&gt;&#10;&lt;/div&gt;">Copy</button>
+  <pre><code class="language-html">&lt;<span style="color:#e06c75;">div</span> <span style="color:#e5c07b;">class</span>="container"&gt;
+  &lt;<span style="color:#e06c75;">div</span> <span style="color:#e5c07b;">class</span>="box"&gt;A&lt;/<span style="color:#e06c75;">div</span>&gt;
+  &lt;<span style="color:#e06c75;">div</span> <span style="color:#e5c07b;">class</span>="box"&gt;B&lt;/<span style="color:#e06c75;">div</span>&gt;
+  &lt;<span style="color:#e06c75;">div</span> <span style="color:#e5c07b;">class</span>="box"&gt;C&lt;/<span style="color:#e06c75;">div</span>&gt;
+&lt;/<span style="color:#e06c75;">div</span>&gt;</code></pre>
+</div>
 
-<pre><code class="language-css">.container {
-  display: flex;
-  justify-content: space-between;
-  width: 300px;
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=".container {&#10;  display: flex;&#10;  justify-content: space-between;&#10;  width: 300px;&#10;}&#10;.box {&#10;  width: 80px;&#10;  height: 80px;&#10;  background: steelblue;&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.container</span>{
+  <span style="color:#56b6c2;">display</span>: <span style="color:#e5c07b;">flex</span>;
+  <span style="color:#56b6c2;">justify-content</span>: <span style="color:#e5c07b;">space-between</span>;
+  <span style="color:#56b6c2;">width</span>: <span style="color:#e5c07b;">300px</span>;
 }
-.box {
-  width: 80px;
-  height: 80px;
-  background: steelblue;
+<span style="color:#e06c75;">.box</span>{
+  <span style="color:#56b6c2;">width</span>: <span style="color:#e5c07b;">80px</span>;
+  <span style="color:#56b6c2;">height</span>: <span style="color:#e5c07b;">80px</span>;
+  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">steelblue</span>;
 }</code></pre>
+</div>
+<div class="live-demo">
+  <p class="live-demo-label">▶ Live result / 实际效果:</p>
+  <div class="live-demo-canvas">
+    <div style="display:flex; justify-content:space-between; width:300px; padding:12px; background:#ffffff; border:1px dashed #c9c2f6; border-radius:10px; margin:0 auto;">
+      <div style="width:80px; height:80px; background:#e06c75; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:10px; font-weight:700;">A</div>
+      <div style="width:80px; height:80px; background:#56b6c2; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:10px; font-weight:700;">B</div>
+      <div style="width:80px; height:80px; background:#98c379; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:10px; font-weight:700;">C</div>
+    </div>
+  </div>
+</div>
 
 <p><strong>你的猜测 / Your guess:</strong></p>
 <p>A) 三个方块左对齐，紧靠在一起</p>
@@ -681,10 +839,10 @@ isAnagram("aa", "bb")   # False — same length, different chars</code></pre>
 
 <p><strong>答案: B ✅</strong></p>
 
-<pre><code>|容器 300px / container 300px|
+<div class="diagram-block">|容器 300px / container 300px|
 |A       |        B        |       C|
  ←80px→  ←←←30px gap→→→  ←80px→
-         (C 也是 80px，右端对齐 / C is also 80px, flush right)</code></pre>
+         (C 也是 80px，右端对齐 / C is also 80px, flush right)</div>
 
 <p><code>space-between</code> 的含义：第一个元素靠左边，最后一个元素靠右边，中间的间距<strong>平均分配</strong>。</p>
 <p><em><code>space-between</code>: first item at start, last item at end, remaining space distributed equally between items.</em></p>
@@ -698,7 +856,7 @@ isAnagram("aa", "bb")   # False — same length, different chars</code></pre>
 
 <p>Flexbox 的核心：一个<strong>主轴（main axis）</strong>和一个<strong>交叉轴（cross axis）</strong>。</p>
 
-<pre><code>flex-direction: row (默认/default)
+<div class="diagram-block">flex-direction: row (默认/default)
 
 主轴 main axis →→→→→→→→→→→→→→→→→→→→→→→
                 ┌──────┐  ┌──────┐  ┌──────┐
@@ -715,7 +873,7 @@ flex-direction: column
                ↓  ├──────┤
                ↓  │  C   │
                   └──────┘
-交叉轴 cross axis → (水平方向/horizontal)</code></pre>
+交叉轴 cross axis → (水平方向/horizontal)</div>
 
 <hr/>
 
@@ -723,44 +881,50 @@ flex-direction: column
 
 <h3>父容器属性 / Container Properties</h3>
 
-<pre><code class="language-css">.container {
-  display: flex;
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=".container {&#10;  display: flex;&#10;  &#10;  /* 主轴方向 / Main axis direction */&#10;  flex-direction: row | row-reverse | column | column-reverse;&#10;  &#10;  /* 主轴对齐 / Main axis alignment */&#10;  justify-content: flex-start | flex-end | center &#10;                 | space-between | space-around | space-evenly;&#10;  &#10;  /* 交叉轴对齐 / Cross axis alignment */&#10;  align-items: stretch | flex-start | flex-end | center | baseline;&#10;  &#10;  /* 换行 / Wrapping */&#10;  flex-wrap: nowrap | wrap | wrap-reverse;&#10;  &#10;  /* gap (现代写法/modern) */&#10;  gap: 16px;  /* 比 margin 更优雅 / cleaner than margin hacks */&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.container</span>{
+  <span style="color:#56b6c2;">display</span>: <span style="color:#e5c07b;">flex</span>;
   
-  /* 主轴方向 / Main axis direction */
-  flex-direction: row | row-reverse | column | column-reverse;
+<span style="color:#5c6370;">  /* 主轴方向 / Main axis direction */</span>
+  <span style="color:#56b6c2;">flex-direction</span>: <span style="color:#e5c07b;">row | row-reverse | column | column-reverse</span>;
   
-  /* 主轴对齐 / Main axis alignment */
-  justify-content: flex-start | flex-end | center 
+<span style="color:#5c6370;">  /* 主轴对齐 / Main axis alignment */</span>
+  <span style="color:#56b6c2;">justify-content</span>: <span style="color:#e5c07b;">flex-start | flex-end | center </span>
                  | space-between | space-around | space-evenly;
   
-  /* 交叉轴对齐 / Cross axis alignment */
-  align-items: stretch | flex-start | flex-end | center | baseline;
+<span style="color:#5c6370;">  /* 交叉轴对齐 / Cross axis alignment */</span>
+  <span style="color:#56b6c2;">align-items</span>: <span style="color:#e5c07b;">stretch | flex-start | flex-end | center | baseline</span>;
   
-  /* 换行 / Wrapping */
-  flex-wrap: nowrap | wrap | wrap-reverse;
+<span style="color:#5c6370;">  /* 换行 / Wrapping */</span>
+  <span style="color:#56b6c2;">flex-wrap</span>: <span style="color:#e5c07b;">nowrap | wrap | wrap-reverse</span>;
   
-  /* gap (现代写法/modern) */
-  gap: 16px;  /* 比 margin 更优雅 / cleaner than margin hacks */
+<span style="color:#5c6370;">  /* gap (现代写法/modern) */</span>
+<span style="color:#5c6370;">  gap: 16px;  /* 比 margin 更优雅 / cleaner than margin hacks */</span>
 }</code></pre>
+</div>
 
 <h3>子元素属性 / Item Properties</h3>
 
-<pre><code class="language-css">.item {
-  /* 伸长比例 / Grow ratio */
-  flex-grow: 0;    /* 默认不伸长 / default: don't grow */
-  flex-grow: 1;    /* 占据剩余空间 / take remaining space */
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=".item {&#10;  /* 伸长比例 / Grow ratio */&#10;  flex-grow: 0;    /* 默认不伸长 / default: don't grow */&#10;  flex-grow: 1;    /* 占据剩余空间 / take remaining space */&#10;  &#10;  /* 收缩比例 / Shrink ratio */&#10;  flex-shrink: 1;  /* 默认允许收缩 / default: can shrink */&#10;  flex-shrink: 0;  /* 禁止收缩 / don't shrink */&#10;  &#10;  /* 基准尺寸 / Base size */&#10;  flex-basis: auto | 200px | 30%;&#10;  &#10;  /* 简写 / Shorthand */&#10;  flex: 1;        /* = flex-grow: 1, flex-shrink: 1, flex-basis: 0 */&#10;  flex: 0 0 200px; /* = 固定200px，不伸不缩 / fixed 200px */&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.item</span>{
+<span style="color:#5c6370;">  /* 伸长比例 / Grow ratio */</span>
+<span style="color:#5c6370;">  flex-grow: 0;    /* 默认不伸长 / default: don't grow */</span>
+<span style="color:#5c6370;">  flex-grow: 1;    /* 占据剩余空间 / take remaining space */</span>
   
-  /* 收缩比例 / Shrink ratio */
-  flex-shrink: 1;  /* 默认允许收缩 / default: can shrink */
-  flex-shrink: 0;  /* 禁止收缩 / don't shrink */
+<span style="color:#5c6370;">  /* 收缩比例 / Shrink ratio */</span>
+<span style="color:#5c6370;">  flex-shrink: 1;  /* 默认允许收缩 / default: can shrink */</span>
+<span style="color:#5c6370;">  flex-shrink: 0;  /* 禁止收缩 / don't shrink */</span>
   
-  /* 基准尺寸 / Base size */
-  flex-basis: auto | 200px | 30%;
+<span style="color:#5c6370;">  /* 基准尺寸 / Base size */</span>
+  <span style="color:#56b6c2;">flex-basis</span>: <span style="color:#e5c07b;">auto | 200px | 30%</span>;
   
-  /* 简写 / Shorthand */
-  flex: 1;        /* = flex-grow: 1, flex-shrink: 1, flex-basis: 0 */
-  flex: 0 0 200px; /* = 固定200px，不伸不缩 / fixed 200px */
+<span style="color:#5c6370;">  /* 简写 / Shorthand */</span>
+<span style="color:#5c6370;">  flex: 1;        /* = flex-grow: 1, flex-shrink: 1, flex-basis: 0 */</span>
+<span style="color:#5c6370;">  flex: 0 0 200px; /* = 固定200px，不伸不缩 / fixed 200px */</span>
 }</code></pre>
+</div>
 
 <hr/>
 
@@ -768,21 +932,24 @@ flex-direction: column
 
 <p><strong><code>flex: 1</code> 和 <code>flex: 1 1 auto</code> 不一样！</strong></p>
 
-<pre><code class="language-css">/* flex: 1 → flex-grow:1, flex-shrink:1, flex-basis: 0 */
-/* 基准是 0，意思是从 0 开始按比例分配空间 */
-/* base is 0: space is distributed purely by ratio */
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* flex: 1 → flex-grow:1, flex-shrink:1, flex-basis: 0 */&#10;/* 基准是 0，意思是从 0 开始按比例分配空间 */&#10;/* base is 0: space is distributed purely by ratio */&#10;&#10;/* flex: 1 1 auto → flex-grow:1, flex-shrink:1, flex-basis: auto */&#10;/* 基准是内容大小，先按内容分，剩余的再按比例分 */&#10;/* base is content size: content first, then distribute remaining */&#10;&#10;.container { display: flex; width: 300px; }&#10;.a { flex: 1; }          /* a 和 b 各得 150px */&#10;.b { flex: 1; }          /* split evenly from 0 */&#10;&#10;/* vs */&#10;.a { flex: 1 1 auto; content: &quot;longer text&quot;; }  /* a 会更宽！*/&#10;.b { flex: 1 1 auto; content: &quot;hi&quot;; }           /* a gets more space! */">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* flex: 1 → flex-grow:1, flex-shrink:1, flex-basis: 0 */</span>
+<span style="color:#5c6370;">/* 基准是 0，意思是从 0 开始按比例分配空间 */</span>
+<span style="color:#5c6370;">/* base is 0: space is distributed purely by ratio */</span>
 
-/* flex: 1 1 auto → flex-grow:1, flex-shrink:1, flex-basis: auto */
-/* 基准是内容大小，先按内容分，剩余的再按比例分 */
-/* base is content size: content first, then distribute remaining */
+<span style="color:#5c6370;">/* flex: 1 1 auto → flex-grow:1, flex-shrink:1, flex-basis: auto */</span>
+<span style="color:#5c6370;">/* 基准是内容大小，先按内容分，剩余的再按比例分 */</span>
+<span style="color:#5c6370;">/* base is content size: content first, then distribute remaining */</span>
 
 .container { display: flex; width: 300px; }
-.a { flex: 1; }          /* a 和 b 各得 150px */
-.b { flex: 1; }          /* split evenly from 0 */
+<span style="color:#5c6370;">.a { flex: 1; }          /* a 和 b 各得 150px */</span>
+<span style="color:#5c6370;">.b { flex: 1; }          /* split evenly from 0 */</span>
 
-/* vs */
-.a { flex: 1 1 auto; content: "longer text"; }  /* a 会更宽！*/
-.b { flex: 1 1 auto; content: "hi"; }           /* a gets more space! */</code></pre>
+<span style="color:#5c6370;">/* vs */</span>
+<span style="color:#5c6370;">.a { flex: 1 1 auto; content: "longer text"; }  /* a 会更宽！*/</span>
+<span style="color:#5c6370;">.b { flex: 1 1 auto; content: "hi"; }           /* a gets more space! */</span></code></pre>
+</div>
 
 <p><em><code>flex: 1</code> splits space from zero (equal shares). <code>flex: 1 1 auto</code> splits from content size (content-biased). This trips up many senior devs!</em></p>
 
@@ -792,25 +959,28 @@ flex-direction: column
 
 <p><strong>圣杯布局（Header + Sidebar + Main + Footer）</strong></p>
 
-<pre><code class="language-css">/* 用 Flexbox 实现三列布局 / Three-column layout */
-.page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* 用 Flexbox 实现三列布局 / Three-column layout */&#10;.page {&#10;  display: flex;&#10;  flex-direction: column;&#10;  min-height: 100vh;&#10;}&#10;&#10;.content-area {&#10;  display: flex;&#10;  flex: 1;  /* 占据剩余高度 / fill remaining height */&#10;}&#10;&#10;.sidebar {&#10;  flex: 0 0 240px;  /* 固定宽度，不伸不缩 / fixed width */&#10;}&#10;&#10;.main {&#10;  flex: 1;  /* 占据剩余宽度 / take remaining width */&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* 用 Flexbox 实现三列布局 / Three-column layout */</span>
+<span style="color:#e06c75;">.page</span>{
+  <span style="color:#56b6c2;">display</span>: <span style="color:#e5c07b;">flex</span>;
+  <span style="color:#56b6c2;">flex-direction</span>: <span style="color:#e5c07b;">column</span>;
+  <span style="color:#56b6c2;">min-height</span>: <span style="color:#e5c07b;">100vh</span>;
 }
 
-.content-area {
-  display: flex;
-  flex: 1;  /* 占据剩余高度 / fill remaining height */
+<span style="color:#e06c75;">.content-area</span>{
+  <span style="color:#56b6c2;">display</span>: <span style="color:#e5c07b;">flex</span>;
+<span style="color:#5c6370;">  flex: 1;  /* 占据剩余高度 / fill remaining height */</span>
 }
 
-.sidebar {
-  flex: 0 0 240px;  /* 固定宽度，不伸不缩 / fixed width */
+<span style="color:#e06c75;">.sidebar</span>{
+<span style="color:#5c6370;">  flex: 0 0 240px;  /* 固定宽度，不伸不缩 / fixed width */</span>
 }
 
-.main {
-  flex: 1;  /* 占据剩余宽度 / take remaining width */
+<span style="color:#e06c75;">.main</span>{
+<span style="color:#5c6370;">  flex: 1;  /* 占据剩余宽度 / take remaining width */</span>
 }</code></pre>
+</div>
 
 <hr/>
 
@@ -818,14 +988,14 @@ flex-direction: column
 
 <p>用纯 CSS Flexbox（不用 Grid），实现这个布局：</p>
 
-<pre><code>┌─────────────────────────────┐
+<div class="diagram-block">┌─────────────────────────────┐
 │         Header              │
 ├────────┬────────────────────┤
 │Sidebar │   Main Content     │
 │(200px) │   (flexible)       │
 ├────────┴────────────────────┤
 │         Footer              │
-└─────────────────────────────┘</code></pre>
+└─────────────────────────────┘</div>
 
 <p>侧边栏固定 200px，主内容区自适应，整体高度 100vh。</p>
 <p><em>Sidebar fixed at 200px, main content flexible, total height 100vh.</em></p>
@@ -833,7 +1003,7 @@ flex-direction: column
 <p>答案明天揭晓！/ Answer revealed tomorrow!</p>
 
 <hr/>
-<p><em>Day 2 of 100 | #ByteByByte | CSS Fundamentals 系列</em></p>
+<div class="diagram-block">*Day 2 of 100 | #ByteByByte | CSS Fundamentals 系列*</div>
 
       </div>
     </div>
@@ -878,7 +1048,7 @@ flex-direction: column
 
 <p><strong>Attention 的解法：</strong> 处理 "it" 时，让模型自动"回头看"整个句子，计算 "it" 和每个其他词的相关性分数。</p>
 
-<pre><code>"it" 与各词的 attention 分数示意 / Attention scores for "it":
+<div class="diagram-block">"it" 与各词的 attention 分数示意 / Attention scores for "it":
 The     → 0.05
 animal  → 0.72  ← 高分！/ High score!
 didn't  → 0.03
@@ -886,7 +1056,7 @@ cross   → 0.04
 the     → 0.02
 street  → 0.08
 because → 0.03
-it      → 0.03</code></pre>
+it      → 0.03</div>
 
 <p><em>Attention solves the "it" problem: when processing "it", the model looks back at all words, assigns a relevance score to each, and "pays attention" to "animal" the most.</em></p>
 
@@ -899,15 +1069,15 @@ it      → 0.03</code></pre>
 <p>每个词（token）会生成三个向量：</p>
 <p><em>Each word generates three vectors:</em></p>
 
-<pre><code>                     ┌─────────────────────────────────────┐
+<div class="diagram-block">                     ┌─────────────────────────────────────┐
 输入词 / Input word  │  Q (Query)  K (Key)   V (Value)     │
 "animal"             │  "我想问什么" "我是什么" "我代表什么信息"  │
                      │  "what I ask" "what I am" "my info" │
-                     └─────────────────────────────────────┘</code></pre>
+                     └─────────────────────────────────────┘</div>
 
 <p><strong>计算过程 / Computation:</strong></p>
 
-<pre><code>步骤1: Score = Q · K^T / √d_k
+<div class="diagram-block">步骤1: Score = Q · K^T / √d_k
        用"查询"和每个词的"键"做点积，得到相关性分数
        Dot product of Query with all Keys → relevance scores
 
@@ -917,13 +1087,13 @@ it      → 0.03</code></pre>
 
 步骤3: Output = Σ(weight × V)
        用权重加权所有词的"值"向量，得到最终表示
-       Weighted sum of all Value vectors → final representation</code></pre>
+       Weighted sum of all Value vectors → final representation</div>
 
 <hr/>
 
 <h2>Transformer 整体架构 / Overall Architecture</h2>
 
-<pre><code>输入文本 / Input Text: "I love cats"
+<div class="diagram-block">输入文本 / Input Text: "I love cats"
          │
          ▼
 [词嵌入 + 位置编码]
@@ -946,7 +1116,7 @@ it      → 0.03</code></pre>
 └─────────────────────────────┘
          │
          ▼
-[丰富的上下文表示 / Rich contextual representation]</code></pre>
+[丰富的上下文表示 / Rich contextual representation]</div>
 
 <p><strong>多头注意力 / Multi-Head Attention:</strong> 同时用多个 Attention（比如 8 个），每个关注不同的语义关系（语法、指代、情感等），最后拼接。就像同时从 8 个角度看一张照片。</p>
 
@@ -956,12 +1126,7 @@ it      → 0.03</code></pre>
 
 <h2>为什么 Transformer 改变了一切？/ Why Did It Change Everything?</h2>
 
-<p>| 特性 / Feature | RNN | Transformer |</p>
-<p>|---|---|---|</p>
-<p>| 并行计算 / Parallelizable | ❌ 必须顺序 / Must be sequential | ✅ 所有位置同时处理 / All positions at once |</p>
-<p>| 长距离依赖 / Long-range | ❌ 容易遗忘 / Forgets | ✅ 直接 Attention / Direct connection |</p>
-<p>| 可扩展性 / Scalability | 差 / Poor | 优秀 / Excellent |</p>
-<p>| GPU 利用率 / GPU usage | 低 / Low | 高 / High |</p>
+<table><thead><tr><th>特性 / Feature</th><th>RNN</th><th>Transformer</th></tr></thead><tbody><tr><td>并行计算 / Parallelizable</td><td>❌ 必须顺序 / Must be sequential</td><td>✅ 所有位置同时处理 / All positions at once</td></tr><tr><td>长距离依赖 / Long-range</td><td>❌ 容易遗忘 / Forgets</td><td>✅ 直接 Attention / Direct connection</td></tr><tr><td>可扩展性 / Scalability</td><td>差 / Poor</td><td>优秀 / Excellent</td></tr><tr><td>GPU 利用率 / GPU usage</td><td>低 / Low</td><td>高 / High</td></tr></tbody></table>
 
 <p><strong>这就是 GPT、BERT、Claude、Gemini 的核心。</strong> 这篇 2017 年的论文，启动了整个现代 AI 时代。</p>
 
@@ -971,39 +1136,42 @@ it      → 0.03</code></pre>
 
 <h2>代码片段：简化版 Attention / Simplified Attention in Code</h2>
 
-<pre><code class="language-python">import numpy as np
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import numpy as np&#10;&#10;def scaled_dot_product_attention(Q, K, V):&#10;    &quot;&quot;&quot;&#10;    Q: Query matrix  (seq_len, d_k)&#10;    K: Key matrix    (seq_len, d_k)&#10;    V: Value matrix  (seq_len, d_v)&#10;    &quot;&quot;&quot;&#10;    d_k = Q.shape[-1]&#10;    &#10;    # Step 1: Compute attention scores&#10;    # scores[i][j] = how much position i should attend to position j&#10;    scores = Q @ K.T / np.sqrt(d_k)&#10;    &#10;    # Step 2: Softmax — convert scores to probabilities&#10;    # exp for numerical stability trick usually applied here&#10;    exp_scores = np.exp(scores - scores.max(axis=-1, keepdims=True))&#10;    attention_weights = exp_scores / exp_scores.sum(axis=-1, keepdims=True)&#10;    &#10;    # Step 3: Weighted sum of values&#10;    output = attention_weights @ V&#10;    &#10;    return output, attention_weights&#10;&#10;# Example: 3 tokens, d_k=4&#10;np.random.seed(42)&#10;Q = np.random.randn(3, 4)  # 3 tokens asking questions&#10;K = np.random.randn(3, 4)  # 3 tokens presenting keys&#10;V = np.random.randn(3, 4)  # 3 tokens' actual info&#10;&#10;output, weights = scaled_dot_product_attention(Q, K, V)&#10;print(&quot;Attention weights shape:&quot;, weights.shape)  # (3, 3)&#10;# Each row sums to 1.0 — how much each token attends to each other">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> numpy <span style="color:#c678dd;">as</span> np
 
-def scaled_dot_product_attention(Q, K, V):
-    """
+<span style="color:#c678dd;">def</span> scaled_dot_product_attention(Q, K, V):
+    <span style="color:#e5c07b;">"""
     Q: Query matrix  (seq_len, d_k)
     K: Key matrix    (seq_len, d_k)
     V: Value matrix  (seq_len, d_v)
-    """
-    d_k = Q.shape[-1]
+    """</span>
+    d_k = Q.shape[-<span style="color:#56b6c2;">1</span>]
     
-    # Step 1: Compute attention scores
-    # scores[i][j] = how much position i should attend to position j
+    <span style="color:#5c6370;"># Step 1: Compute attention scores</span>
+    <span style="color:#5c6370;"># scores[i][j] = how much position i should attend to position j</span>
     scores = Q @ K.T / np.sqrt(d_k)
     
-    # Step 2: Softmax — convert scores to probabilities
-    # exp for numerical stability trick usually applied here
-    exp_scores = np.exp(scores - scores.max(axis=-1, keepdims=True))
-    attention_weights = exp_scores / exp_scores.sum(axis=-1, keepdims=True)
+    <span style="color:#5c6370;"># Step 2: Softmax — convert scores to probabilities</span>
+    <span style="color:#5c6370;"># exp for numerical stability trick usually applied here</span>
+    exp_scores = np.exp(scores - scores.max(axis=-<span style="color:#56b6c2;">1</span>, keepdims=<span style="color:#c678dd;">True</span>))
+    attention_weights = exp_scores / exp_scores.sum(axis=-<span style="color:#56b6c2;">1</span>, keepdims=<span style="color:#c678dd;">True</span>)
     
-    # Step 3: Weighted sum of values
+    <span style="color:#5c6370;"># Step 3: Weighted sum of values</span>
     output = attention_weights @ V
     
-    return output, attention_weights
+    <span style="color:#c678dd;">return</span> output, attention_weights
 
-# Example: 3 tokens, d_k=4
-np.random.seed(42)
-Q = np.random.randn(3, 4)  # 3 tokens asking questions
-K = np.random.randn(3, 4)  # 3 tokens presenting keys
-V = np.random.randn(3, 4)  # 3 tokens' actual info
+<span style="color:#5c6370;"># Example: 3 tokens, d_k=4</span>
+np.random.seed(<span style="color:#56b6c2;">42</span>)
+Q = np.random.randn(<span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">4</span>)  <span style="color:#5c6370;"># 3 tokens asking questions</span>
+K = np.random.randn(<span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">4</span>)  <span style="color:#5c6370;"># 3 tokens presenting keys</span>
+V = np.random.randn(<span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">4</span>)  <span style="color:#5c6370;"># 3 tokens' actual info</span>
 
 output, weights = scaled_dot_product_attention(Q, K, V)
-print("Attention weights shape:", weights.shape)  # (3, 3)
-# Each row sums to 1.0 — how much each token attends to each other</code></pre>
+print(<span style="color:#e5c07b;">"Attention weights shape:"</span>, weights.shape)  <span style="color:#5c6370;"># (3, 3)</span>
+<span style="color:#5c6370;"># Each row sums to 1.0 — how much each token attends to each other</span></code></pre>
+</div>
 
 <hr/>
 
@@ -1021,7 +1189,7 @@ print("Attention weights shape:", weights.shape)  # (3, 3)
 <p><em>Tomorrow Day 3 AI preview: BERT vs GPT — why bidirectional beats unidirectional (sometimes).</em></p>
 
 <hr/>
-<p><em>Day 2 of 100 | #ByteByByte | AI Foundations 系列</em></p>
+<div class="diagram-block">*Day 2 of 100 | #ByteByByte | AI Foundations 系列*</div>
 
       </div>
     </div>
@@ -1043,6 +1211,21 @@ function toggleSection(header) {
   const content = header.nextElementSibling;
   content.classList.toggle('open');
 }
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
 </script>
 
 </body>

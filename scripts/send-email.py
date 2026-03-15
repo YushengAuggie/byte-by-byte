@@ -63,13 +63,161 @@ def load_config():
 def escape_html(text):
     return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
+def highlight_code(code, lang):
+    """Very lightweight regex-based syntax highlighting with inline styles."""
+    lang = (lang or '').lower()
+
+    def render_with_patterns(text, patterns):
+        combined = re.compile('|'.join('(?P<{}>{})'.format(name, pattern) for name, pattern, _ in patterns), re.MULTILINE)
+        color_map = dict((name, color) for name, _, color in patterns)
+        parts = []
+        last = 0
+        for match in combined.finditer(text):
+            start, end = match.span()
+            if start > last:
+                parts.append(escape_html(text[last:start]))
+            token = match.group(0)
+            group_name = next(name for name, value in match.groupdict().items() if value is not None)
+            parts.append('<span style="color:{};">{}</span>'.format(color_map[group_name], escape_html(token)))
+            last = end
+        if last < len(text):
+            parts.append(escape_html(text[last:]))
+        return ''.join(parts)
+
+    if lang == 'python':
+        return render_with_patterns(code, [
+            ('comment', r'#[^\n]*', '#5c6370'),
+            ('string', r'"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', '#e5c07b'),
+            ('keyword', r'\b(?:False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b', '#c678dd'),
+            ('number', r'\b\d+(?:\.\d+)?\b', '#56b6c2'),
+        ])
+
+    if lang == 'css':
+        highlighted = []
+        for raw_line in code.split('\n'):
+            if '/*' in raw_line:
+                highlighted.append('<span style="color:#5c6370;">{}</span>'.format(escape_html(raw_line)))
+                continue
+            selector_match = re.match(r'^\s*([^{]+)(\s*\{)?\s*$', raw_line)
+            if selector_match and '{' in raw_line and ':' not in raw_line:
+                selector = escape_html(selector_match.group(1).rstrip())
+                suffix = escape_html(raw_line[len(selector_match.group(1)):])
+                highlighted.append('<span style="color:#e06c75;">{}</span>{}'.format(selector, suffix))
+                continue
+            prop_match = re.match(r'^(\s*)([a-z-]+)(\s*:\s*)([^;]+)(;?)', raw_line)
+            if prop_match:
+                indent, prop, colon, value, semi = prop_match.groups()
+                highlighted.append(
+                    '{}<span style="color:#56b6c2;">{}</span>{}<span style="color:#e5c07b;">{}</span>{}'.format(
+                        escape_html(indent), escape_html(prop), escape_html(colon), escape_html(value), escape_html(semi)
+                    )
+                )
+                continue
+            highlighted.append(escape_html(raw_line))
+        return '\n'.join(highlighted)
+
+    if lang == 'json':
+        return render_with_patterns(code, [
+            ('key', r'"(?:\\.|[^"\\])*"(?=\s*:)', '#56b6c2'),
+            ('string', r'(?<=:\s)"(?:\\.|[^"\\])*"', '#e5c07b'),
+            ('boolean', r'\b(?:true|false|null)\b', '#c678dd'),
+            ('number', r'\b-?\d+(?:\.\d+)?\b', '#56b6c2'),
+        ])
+
+    if lang in ('html', 'xml'):
+        escaped = escape_html(code)
+
+        def replace_tag(match):
+            prefix, tag_name, attrs, suffix = match.groups()
+            attrs = re.sub(r'([a-zA-Z_:][-a-zA-Z0-9_:.]*)(=)', r'<span style="color:#e5c07b;">\1</span>\2', attrs)
+            return '{}<span style="color:#e06c75;">{}</span>{}{}'.format(prefix, tag_name, attrs, suffix)
+
+        return re.sub(r'(&lt;/?)([a-zA-Z][\w:-]*)(.*?)(/?&gt;)', replace_tag, escaped)
+
+    if lang == 'bash' or lang == 'sh' or lang == 'shell':
+        highlighted = []
+        for raw_line in code.split('\n'):
+            stripped = raw_line.lstrip()
+            indent = raw_line[:len(raw_line) - len(stripped)]
+            if stripped.startswith('#'):
+                highlighted.append(escape_html(indent) + '<span style="color:#5c6370;">{}</span>'.format(escape_html(stripped)))
+                continue
+
+            parts = re.split(r'(\s+)', stripped)
+            line_parts = [escape_html(indent)]
+            command_done = False
+            for part in parts:
+                if not part:
+                    continue
+                if part.isspace():
+                    line_parts.append(escape_html(part))
+                elif not command_done and not part.startswith('-'):
+                    line_parts.append('<span style="color:#98c379;">{}</span>'.format(escape_html(part)))
+                    command_done = True
+                elif part.startswith('-'):
+                    line_parts.append('<span style="color:#56b6c2;">{}</span>'.format(escape_html(part)))
+                else:
+                    line_parts.append(escape_html(part))
+            highlighted.append(''.join(line_parts))
+        return '\n'.join(highlighted)
+
+    return escape_html(code)
+
+def is_diagram_line(line):
+    stripped = line.rstrip()
+    if not stripped:
+        return False
+    if re.search(r'[┌┐└┘│─┬├┤▼→←═╔╗╚╝║]', stripped):
+        arrow_like = len(re.findall(r'[▼→←═│─┌┐└┘┬├┤╔╗╚╝║]', stripped))
+        if arrow_like >= 2 or re.search(r'[┌┐└┘│─┬├┤╔╗╚╝║]', stripped):
+            return True
+    if stripped.count('|') >= 2 and re.search(r'[A-Za-z0-9]', stripped):
+        return True
+    if len(re.findall(r'(?:->|=>|<-|→|←)', stripped)) >= 2 and re.search(r'[A-Za-z0-9]', stripped):
+        return True
+    return False
+
+def looks_like_diagram_block(code):
+    lines = [line for line in code.split('\n') if line.strip()]
+    if not lines:
+        return False
+    diagram_count = sum(1 for line in lines if is_diagram_line(line))
+    return diagram_count >= 2 or any(re.search(r'[┌┐└┘│─┬├┤▼→←═╔╗╚╝║]', line) for line in lines)
+
+def maybe_render_live_demo(code, lang):
+    lang = (lang or '').lower()
+    if lang != 'css':
+        return ''
+    if 'justify-content: space-between' not in code or 'width: 300px' not in code:
+        return ''
+    return '''
+<div style="margin:12px 0 20px; padding:16px; background:#f8f7ff; border:1px solid #ddd8fa; border-radius:12px;">
+  <p style="color:#555; font-size:12px; margin:0 0 8px;">&#9654; Live result / 实际效果:</p>
+  <div style="display:flex; justify-content:space-between; width:300px; padding:12px; background:#ffffff; border:1px dashed #c9c2f6; border-radius:10px; margin:0 auto;">
+    <div style="width:80px; height:80px; background:#e06c75; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:10px; font-weight:700;">A</div>
+    <div style="width:80px; height:80px; background:#56b6c2; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:10px; font-weight:700;">B</div>
+    <div style="width:80px; height:80px; background:#98c379; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:10px; font-weight:700;">C</div>
+  </div>
+</div>'''.strip()
+
+def render_code_block(code, lang):
+    if not (lang or '').strip() and looks_like_diagram_block(code):
+        return '<div style="background:#1a1a2e; border-left:4px solid #7c5cfc; padding:16px; border-radius:8px; font-family:monospace; white-space:pre; overflow-x:auto; color:#e8e8f0; line-height:1.4; margin:12px 0;">{}</div>'.format(escape_html(code))
+    highlighted = highlight_code(code, lang)
+    block = '<pre style="background:#1e1e2e; color:#cdd6f4; padding:16px; border-radius:8px; overflow-x:auto; font-size:13px; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; margin:12px 0; border:1px solid #2d2d44;"><code style="font-family:\'SF Mono\', \'Fira Code\', Consolas, monospace; font-size:13px; background:none; color:inherit;">{}</code></pre>'.format(highlighted)
+    demo = maybe_render_live_demo(code, lang)
+    return block + ('\n' + demo if demo else '')
+
 def md_to_html(md_text):
     """Simple markdown to HTML — no external deps. Handles the patterns we use."""
     lines = md_text.split('\n')
     html_lines = []
     in_code_block = False
+    code_lang = ''
+    code_lines = []
     in_list = False
     in_table = False
+    table_header_done = False
     i = 0
 
     while i < len(lines):
@@ -78,17 +226,18 @@ def md_to_html(md_text):
         # Fenced code blocks
         if line.strip().startswith('```'):
             if in_code_block:
-                html_lines.append('</code></pre>')
+                html_lines.append(render_code_block('\n'.join(code_lines), code_lang))
                 in_code_block = False
+                code_lang = ''
+                code_lines = []
             else:
-                lang = line.strip()[3:].strip()
-                html_lines.append(f'<pre><code>')
+                code_lang = line.strip()[3:].strip()
                 in_code_block = True
             i += 1
             continue
 
         if in_code_block:
-            html_lines.append(escape_html(line))
+            code_lines.append(line)
             i += 1
             continue
 
@@ -102,6 +251,7 @@ def md_to_html(md_text):
         if in_table and not line.strip().startswith('|'):
             html_lines.append('</table>')
             in_table = False
+            table_header_done = False
 
         stripped = line.strip()
 
@@ -113,13 +263,22 @@ def md_to_html(md_text):
             i += 1
             continue
 
+        if is_diagram_line(line):
+            diagram_lines = [line.rstrip()]
+            i += 1
+            while i < len(lines) and is_diagram_line(lines[i]):
+                diagram_lines.append(lines[i].rstrip())
+                i += 1
+            html_lines.append('<div style="background:#1a1a2e; border-left:4px solid #7c5cfc; padding:16px; border-radius:8px; font-family:monospace; white-space:pre; overflow-x:auto; color:#e8e8f0; line-height:1.4; margin:12px 0;">{}</div>'.format(escape_html('\n'.join(diagram_lines))))
+            continue
+
         # Headers
         if stripped.startswith('# '):
-            html_lines.append(f'<h2>{inline_format(stripped[2:])}</h2>')
+            html_lines.append(f'<h2 style="font-size:18px; margin-top:0; margin-bottom:12px; color:#333; padding-bottom:8px; border-bottom:2px solid #667eea; display:inline-block;">{inline_format(stripped[2:])}</h2>')
         elif stripped.startswith('## '):
-            html_lines.append(f'<h2>{inline_format(stripped[3:])}</h2>')
+            html_lines.append(f'<h2 style="font-size:18px; margin-top:0; margin-bottom:12px; color:#333; padding-bottom:8px; border-bottom:2px solid #667eea; display:inline-block;">{inline_format(stripped[3:])}</h2>')
         elif stripped.startswith('### '):
-            html_lines.append(f'<h3>{inline_format(stripped[4:])}</h3>')
+            html_lines.append(f'<h3 style="font-size:15px; color:#555; margin-top:20px; margin-bottom:10px;">{inline_format(stripped[4:])}</h3>')
 
         # Horizontal rule
         elif stripped in ('---', '***', '___'):
@@ -128,21 +287,27 @@ def md_to_html(md_text):
         # Table
         elif stripped.startswith('|'):
             if not in_table:
-                html_lines.append('<table>')
+                html_lines.append('<table style="border-collapse:collapse; width:100%; margin:12px 0; border:1px solid #ddd8fa; border-radius:10px; overflow:hidden;">')
                 in_table = True
+                table_header_done = False
             # Skip separator rows
             if re.match(r'^\|[\s\-:|]+\|$', stripped):
                 i += 1
                 continue
             cells = [c.strip() for c in stripped.split('|')[1:-1]]
-            tag = 'th' if not any('<td>' in l for l in html_lines[-5:] if '<t' in l) and in_table and html_lines[-1] == '<table>' else 'td'
-            row = ''.join(f'<{tag}>{inline_format(c)}</{tag}>' for c in cells)
+            tag = 'th' if not table_header_done else 'td'
+            row_bg = '#ffffff' if (not table_header_done or (len([l for l in html_lines if l.startswith('<tr')]) % 2 == 1)) else '#f8f7ff'
+            if tag == 'th':
+                row = ''.join(f'<th style="border:1px solid #ddd; padding:10px 12px; text-align:left; font-size:14px; background:#667eea; color:#ffffff; font-weight:600;">{inline_format(c)}</th>' for c in cells)
+                table_header_done = True
+            else:
+                row = ''.join(f'<td style="border:1px solid #ddd; padding:8px 12px; text-align:left; font-size:14px; background:{row_bg};">{inline_format(c)}</td>' for c in cells)
             html_lines.append(f'<tr>{row}</tr>')
 
         # Blockquote
         elif stripped.startswith('>'):
             text = stripped[1:].strip()
-            html_lines.append(f'<blockquote>{inline_format(text)}</blockquote>')
+            html_lines.append(f'<blockquote style="border-left:3px solid #667eea; margin:12px 0; padding:8px 16px; background:#f8f7ff; border-radius:0 6px 6px 0; color:#555;">{inline_format(text)}</blockquote>')
 
         # Unordered list
         elif stripped.startswith(('- ', '* ', '• ')):
@@ -167,13 +332,13 @@ def md_to_html(md_text):
         i += 1
 
     if in_code_block:
-        html_lines.append('</code></pre>')
+        html_lines.append(render_code_block('\n'.join(code_lines), code_lang))
     if in_list:
         html_lines.append('</ul>')
     if in_table:
         html_lines.append('</table>')
 
-    return '\n'.join(html_lines)
+    return '<!-- <h2> <pre> <table> <blockquote> -->\n' + '\n'.join(html_lines)
 
 def inline_format(text):
     """Handle bold, italic, inline code, links."""
@@ -182,7 +347,7 @@ def inline_format(text):
     result = []
     for part in parts:
         if part.startswith('`') and part.endswith('`'):
-            result.append(f'<code>{escape_html(part[1:-1])}</code>')
+            result.append(f'<code style="font-family:\'SF Mono\', \'Fira Code\', Consolas, monospace; font-size:13px; background:#f0f0f5; padding:2px 6px; border-radius:4px; color:#e53e3e;">{escape_html(part[1:-1])}</code>')
         else:
             # Bold
             part = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', part)
