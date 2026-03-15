@@ -13,3 +13,10 @@ This file tracks issues found during QA reviews to improve content quality over 
 - **Section:** AI (News mode)
 - **Issue:** Story 1 cited specific pricing ($5/$25/M, $3/$15/M) and a specific date ("March 13") as hard facts. These details are plausible but potentially hallucinated, which could mislead readers.
 - **Fix:** Update the AI news prompt to instruct: "For any specific numbers (pricing, percentages, dates), add a note that details are unverified and readers should check official sources. Do not present specific pricing or release dates as confirmed facts unless you have high confidence."
+
+## 2026-03-15 — Day 2
+
+- **Section:** Frontend
+- **Issue:** In the `flex: 1 vs flex: 1 1 auto` gotcha, the code example uses `content: "longer text"` as a CSS property on a regular `div` — `content` only works on `::before`/`::after` pseudo-elements. The example would not behave as expected in a real browser, potentially confusing readers who try to test it.
+- **Root cause:** Self-review validated the conceptual accuracy (which is correct) but didn't flag the invalid CSS property usage on a non-pseudo element.
+- **Fix:** Update the frontend prompt or review checklist: "For any CSS code examples, verify that each property is valid on the target selector type. Check that `content` is only used with pseudo-elements."
