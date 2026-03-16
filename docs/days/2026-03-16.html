@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-03-16</title>
+  <meta name="description" content="byte-by-byte daily lessons for Monday, March 16, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Monday, March 16, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-03-16.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-03-15.html" style="color:var(--text2)">← 2026-03-15</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-03-16</span>
+    <h1>Monday, March 16, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-03-15.html" class="day-nav-btn">← 2026-03-15</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 Day 3 / System Design Day 3</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 Day 3 / System Design Day 3</h1>
+<p><strong>HTTP/HTTPS &amp; REST APIs</strong></p>
+<div class="diagram-block">*Category: Fundamentals | Difficulty: Beginner | Phase: Foundation*</div>
+
+<hr/>
+
+<h2>想象你在设计... / Imagine You're Building...</h2>
+
+<p>想象你是一家餐厅的服务员。客人（浏览器）坐下来，告诉你他想要什么（HTTP请求），你去厨房（服务器）取回食物，然后送回来（HTTP响应）。这就是HTTP的本质——一种双方约定好的"点餐协议"。</p>
+
+<p>Imagine you're a waiter at a restaurant. The customer (browser) tells you what they want (HTTP request), you go to the kitchen (server), and bring back the food (HTTP response). That's HTTP in a nutshell — a standardized "ordering protocol" both sides agree on.</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<div class="diagram-block">  CLIENT (Browser/App)
+        │
+        │  HTTP Request
+        │  GET /api/users/123
+        │  Headers: {Authorization: "Bearer token..."}
+        ▼
+  ┌─────────────────────┐
+  │    LOAD BALANCER     │
+  │  (distributes load)  │
+  └──────┬──────┬────────┘
+         │      │
+         ▼      ▼
+  ┌──────────┐ ┌──────────┐
+  │ Server 1 │ │ Server 2 │   ← Stateless REST servers
+  └──────┬───┘ └──────┬───┘
+         │             │
+         └──────┬──────┘
+                ▼
+        ┌───────────────┐
+        │   DATABASE    │
+        │  (source of   │
+        │    truth)     │
+        └───────────────┘
+                │
+        HTTP Response
+        200 OK
+        {"id": 123, "name": "Alice"}
+        │
+        ▼
+  CLIENT receives data</div>
+
+<hr/>
+
+<h2>HTTP vs HTTPS — 核心区别 / Core Difference</h2>
+
+<p><strong>HTTP</strong> — HyperText Transfer Protocol</p>
+<ul><li>明文传输，数据可被中间人截获</li><li>Plaintext transmission; data can be intercepted</li></ul>
+
+<p><strong>HTTPS</strong> — HTTP + TLS/SSL 加密</p>
+<ul><li>所有数据加密传输，第三方无法读取内容</li><li>All data encrypted; third parties can't read the content</li><li>通过证书验证服务器身份（你真的是在和 google.com 说话吗？）</li><li>Certificate verifies server identity (are you really talking to google.com?)</li></ul>
+
+<div class="diagram-block">HTTP:   你的密码 → [网络] → 服务器       ← 路由器能看到！
+HTTPS:  你的密码 → [加密] → [网络] → [解密] → 服务器  ← 中间人只看到乱码</div>
+
+<hr/>
+
+<h2>REST API — 六个约束 / Six Constraints</h2>
+
+<p>REST (Representational State Transfer) 不是技术，是一套设计风格：</p>
+
+<ol><li><strong>Stateless（无状态）</strong> — 服务器不记住你。每个请求自带所有信息。</li></ol>
+<p>   Server doesn't remember you. Each request carries all needed info.</p>
+
+<ol><li><strong>Client-Server（客户端-服务器分离）</strong> — 前端和后端独立演化。</li></ol>
+<p>   Frontend and backend evolve independently.</p>
+
+<ol><li><strong>Cacheable（可缓存）</strong> — 响应可以被缓存，减少重复请求。</li></ol>
+<p>   Responses can be cached to reduce redundant requests.</p>
+
+<ol><li><strong>Uniform Interface（统一接口）</strong> — 用标准HTTP方法操作资源。</li></ol>
+<p>   Use standard HTTP verbs to manipulate resources.</p>
+
+<ol><li><strong>Layered System（分层系统）</strong> — 客户端不关心中间有几层。</li></ol>
+<p>   Client doesn't care how many layers exist in between.</p>
+
+<ol><li><strong>Code on Demand (Optional)</strong> — 服务器可返回可执行代码（如JS）。</li></ol>
+<p>   Server can return executable code (e.g., JavaScript).</p>
+
+<hr/>
+
+<h2>HTTP 方法 CRUD 对应关系 / HTTP Methods → CRUD</h2>
+
+<div class="diagram-block">HTTP Method    CRUD Operation    Example
+──────────────────────────────────────────────────
+GET            Read              GET /users/123
+POST           Create            POST /users  {body}
+PUT            Replace (全量)    PUT /users/123  {full body}
+PATCH          Update (部分)     PATCH /users/123 {partial}
+DELETE         Delete            DELETE /users/123</div>
+
+<p><strong>状态码速查 / Status Code Cheat Sheet:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="2xx  ✅  成功 / Success&#10;  200 OK           — 请求成功&#10;  201 Created      — 资源已创建&#10;  204 No Content   — 成功但无返回体&#10;&#10;3xx  ↩️  重定向 / Redirect&#10;  301 Moved Permanently  — 永久跳转&#10;  304 Not Modified       — 用缓存&#10;&#10;4xx  ❌  客户端错误 / Client Error&#10;  400 Bad Request    — 你的请求有问题&#10;  401 Unauthorized   — 没登录&#10;  403 Forbidden      — 登录了但没权限&#10;  404 Not Found      — 资源不存在&#10;  429 Too Many Reqs  — 限流了&#10;&#10;5xx  💥  服务器错误 / Server Error&#10;  500 Internal Server Error — 服务器崩了&#10;  503 Service Unavailable   — 服务不可用">Copy</button>
+  <pre><code class="language-text">2xx  ✅  成功 / Success
+  200 OK           — 请求成功
+  201 Created      — 资源已创建
+  204 No Content   — 成功但无返回体
+
+3xx  ↩️  重定向 / Redirect
+  301 Moved Permanently  — 永久跳转
+  304 Not Modified       — 用缓存
+
+4xx  ❌  客户端错误 / Client Error
+  400 Bad Request    — 你的请求有问题
+  401 Unauthorized   — 没登录
+  403 Forbidden      — 登录了但没权限
+  404 Not Found      — 资源不存在
+  429 Too Many Reqs  — 限流了
+
+5xx  💥  服务器错误 / Server Error
+  500 Internal Server Error — 服务器崩了
+  503 Service Unavailable   — 服务不可用</code></pre>
+</div>
+
+<hr/>
+
+<h2>为什么这样设计？/ Why This Design?</h2>
+
+<p><strong>为什么REST选择无状态（Stateless）？</strong></p>
+
+<p>如果服务器记住每个用户的状态，那扩展到100台服务器时，你必须确保每次请求都打到同一台机器（叫做"粘性会话"sticky session）。这非常麻烦。</p>
+
+<p>无状态的好处：任何服务器都能处理任何请求，水平扩展极其简单。</p>
+
+<p>If servers remembered user state, scaling to 100 servers would require routing each user to the same server every time ("sticky sessions") — a maintenance nightmare. Stateless = any server can handle any request = horizontal scaling is trivial.</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Don't Fall Into This Trap</h2>
+
+<p><strong>坑 1: 在GET请求中修改数据</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="❌  GET /deleteUser?id=123    # 语义错误，GET应该是只读的&#10;✅  DELETE /users/123">Copy</button>
+  <pre><code class="language-text">❌  GET /deleteUser?id=123    # 语义错误，GET应该是只读的
+✅  DELETE /users/123</code></pre>
+</div>
+
+<p><strong>坑 2: 用动词命名资源（URL应该是名词）</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="❌  POST /createUser&#10;❌  GET  /getUserById?id=123&#10;✅  POST /users&#10;✅  GET  /users/123">Copy</button>
+  <pre><code class="language-text">❌  POST /createUser
+❌  GET  /getUserById?id=123
+✅  POST /users
+✅  GET  /users/123</code></pre>
+</div>
+
+<p><strong>坑 3: 忘记区分401和403</strong></p>
+<div class="diagram-block">401 Unauthorized → "你是谁？请先登录" (Who are you? Please log in)
+403 Forbidden    → "我知道你是谁，但你没权限" (I know who you are, but you can't)</div>
+
+<p><strong>坑 4: 滥用200 OK返回错误信息</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="❌  200 OK  {&quot;error&quot;: &quot;User not found&quot;}   # 前端要额外解析body判断成功失败&#10;✅  404 Not Found  {&quot;message&quot;: &quot;User not found&quot;}">Copy</button>
+  <pre><code class="language-text">❌  200 OK  {"error": "User not found"}   # 前端要额外解析body判断成功失败
+✅  404 Not Found  {"message": "User not found"}</code></pre>
+</div>
+
+<hr/>
+
+<h2>与昨天的联系 / Connection to Day 2</h2>
+
+<p>昨天我们学了DNS和TCP/IP。现在你明白了完整链路：</p>
+
+<ol><li>你在浏览器输入 <code>https://api.example.com/users</code></li><li><strong>DNS</strong> 解析域名 → IP地址</li><li><strong>TCP</strong> 建立连接（三次握手）</li><li><strong>TLS</strong> 握手，建立加密通道（HTTPS）</li><li><strong>HTTP</strong> 发送请求，服务器返回响应</li><li>浏览器渲染数据</li></ol>
+
+<div class="diagram-block">Yesterday we covered DNS and TCP/IP. Now you see the full picture: DNS → TCP → TLS → HTTP → response. Each layer builds on the one before it.</div>
+
+<hr/>
+
+<div class="diagram-block">*Day 3 | 系统设计基础系列 | 明天：数据库基础*</div>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 Day 3 / Algorithms Day 3</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 Day 3 / Algorithms Day 3</h1>
+<p><strong>#1 Two Sum (Easy) — Arrays &amp; Hashing</strong></p>
+<p>🔗 https://leetcode.com/problems/two-sum/</p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象你在一家超市，口袋里有 $11，你想找到两件商品，价格加起来正好等于 $11。</p>
+
+<p>笨方法：把每件商品和其他所有商品逐一配对比较 — 效率太低了 O(n²)。</p>
+
+<p>聪明方法：每次拿起一件商品（价格 x），立刻检查你的"已看过价格"笔记本里有没有 <code>11 - x</code>。有就找到了！这就是哈希表的思路。</p>
+
+<p>Imagine you're in a supermarket with $11 and want two items that add up to exactly $11. Brute force: compare every pair. Smart way: for each item (price x), instantly check if <code>11 - x</code> is already in your "seen prices" notebook. That's the hash map approach.</p>
+
+<hr/>
+
+<h2>题目 / Problem Statement</h2>
+
+<p><strong>中文：</strong> 给定一个整数数组 <code>nums</code> 和一个目标值 <code>target</code>，找出数组中和为 <code>target</code> 的两个数的<strong>下标</strong>。假设每道题恰好只有一个答案，且同一个元素不能使用两次。</p>
+
+<p><strong>English:</strong> Given an array of integers <code>nums</code> and an integer <code>target</code>, return the indices of the two numbers that add up to <code>target</code>. You may assume exactly one solution exists, and you may not use the same element twice.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Input:  nums = [2, 7, 11, 15], target = 9&#10;Output: [0, 1]   (because nums[0] + nums[1] = 2 + 7 = 9)">Copy</button>
+  <pre><code class="language-text">Input:  nums = [2, 7, 11, 15], target = 9
+Output: [0, 1]   (because nums[0] + nums[1] = 2 + 7 = 9)</code></pre>
+</div>
+
+<hr/>
+
+<h2>逐步思路 / Step-by-Step Walkthrough</h2>
+
+<h3>方法1：暴力 O(n²) — 先理解，别用它</h3>
+
+<div class="diagram-block">For i = 0 (num = 2):
+  For j = 1 (num = 7):  2 + 7 = 9 ✅ → return [0, 1]</div>
+
+<h3>方法2：哈希表 O(n) — 这才是正解</h3>
+
+<p>核心思路：遍历时，对每个数 <code>num</code>，我们不是找"谁加上 num 等于 target"，而是找"target - num 在不在我们之前见过的数里"。</p>
+
+<p><strong>具体示例追踪：</strong></p>
+<div class="diagram-block">nums = [2, 7, 11, 15], target = 9
+seen = {}  (空字典)
+
+i=0, num=2:
+  complement = 9 - 2 = 7
+  7 in seen? → No (seen is empty)
+  → 把 2 存入 seen: seen = {2: 0}
+
+i=1, num=7:
+  complement = 9 - 7 = 2
+  2 in seen? → Yes! seen[2] = 0
+  → 返回 [seen[2], i] = [0, 1] ✅</div>
+
+<p><strong>再来一个不那么直接的例子：</strong></p>
+<div class="diagram-block">nums = [3, 2, 4], target = 6
+seen = {}
+
+i=0, num=3:
+  complement = 6 - 3 = 3
+  3 in seen? → No
+  seen = {3: 0}
+
+i=1, num=2:
+  complement = 6 - 2 = 4
+  4 in seen? → No
+  seen = {3: 0, 2: 1}
+
+i=2, num=4:
+  complement = 6 - 4 = 2
+  2 in seen? → Yes! seen[2] = 1
+  → 返回 [seen[2], i] = [1, 2] ✅
+  (nums[1] + nums[2] = 2 + 4 = 6 ✓)</div>
+
+<hr/>
+
+<h2>Python 解法 / Python Solution</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def twoSum(nums: list[int], target: int) -&gt; list[int]:&#10;    # Hash map: value → index&#10;    # We store numbers we've already visited&#10;    seen = {}&#10;    &#10;    for i, num in enumerate(nums):&#10;        # What number do we NEED to complete the pair?&#10;        complement = target - num&#10;        &#10;        # Check if that number is already in our map&#10;        if complement in seen:&#10;            # Found it! Return both indices&#10;            return [seen[complement], i]&#10;        &#10;        # Haven't found a pair yet; record this number and its index&#10;        seen[num] = i&#10;    &#10;    # Problem guarantees a solution exists, so we won't reach here&#10;    return []&#10;&#10;&#10;# Test cases&#10;print(twoSum([2, 7, 11, 15], 9))   # [0, 1]&#10;print(twoSum([3, 2, 4], 6))         # [1, 2]&#10;print(twoSum([3, 3], 6))            # [0, 1]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> twoSum(nums: list[int], target: int) -&gt; list[int]:
+    <span style="color:#5c6370;"># Hash map: value → index</span>
+    <span style="color:#5c6370;"># We store numbers we've already visited</span>
+    seen = {}
+    
+    <span style="color:#c678dd;">for</span> i, num <span style="color:#c678dd;">in</span> enumerate(nums):
+        <span style="color:#5c6370;"># What number do we NEED to complete the pair?</span>
+        complement = target - num
+        
+        <span style="color:#5c6370;"># Check if that number is already in our map</span>
+        <span style="color:#c678dd;">if</span> complement <span style="color:#c678dd;">in</span> seen:
+            <span style="color:#5c6370;"># Found it! Return both indices</span>
+            <span style="color:#c678dd;">return</span> [seen[complement], i]
+        
+        <span style="color:#5c6370;"># Haven't found a pair yet; record this number and its index</span>
+        seen[num] = i
+    
+    <span style="color:#5c6370;"># Problem guarantees a solution exists, so we won't reach here</span>
+    <span style="color:#c678dd;">return</span> []
+
+
+<span style="color:#5c6370;"># Test cases</span>
+print(twoSum([<span style="color:#56b6c2;">2</span>, <span style="color:#56b6c2;">7</span>, <span style="color:#56b6c2;">11</span>, <span style="color:#56b6c2;">15</span>], <span style="color:#56b6c2;">9</span>))   <span style="color:#5c6370;"># [0, 1]</span>
+print(twoSum([<span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">2</span>, <span style="color:#56b6c2;">4</span>], <span style="color:#56b6c2;">6</span>))         <span style="color:#5c6370;"># [1, 2]</span>
+print(twoSum([<span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">3</span>], <span style="color:#56b6c2;">6</span>))            <span style="color:#5c6370;"># [0, 1]</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>复杂度分析 / Complexity Analysis</h2>
+
+<div class="diagram-block">时间复杂度 Time:  O(n)
+  → 只遍历数组一次。哈希表查找是 O(1) 平均。
+
+空间复杂度 Space: O(n)
+  → 最坏情况下，哈希表存储 n-1 个元素（最后一对才匹配）。
+
+vs. 暴力 Brute Force:
+  Time: O(n²)  — 双重循环
+  Space: O(1)  — 不用额外空间</div>
+
+<p><strong>权衡：</strong> 用空间换时间。这通常是对的 — 内存便宜，时间贵。</p>
+
+<p><strong>Trade-off:</strong> We trade space for time. Usually the right call — memory is cheap, user time is not.</p>
+
+<hr/>
+
+<h2>边界情况 / Edge Cases</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# 两个相同的数字&#10;twoSum([3, 3], 6)   # → [0, 1] ✅&#10;# 关键：先检查 complement，再存入 seen&#10;# 这样避免同一元素用两次&#10;&#10;# 负数&#10;twoSum([-1, -2, -3, -4, -5], -8)   # → [2, 4] (nums[2]+nums[4] = -3+-5)&#10;&#10;# 只有两个元素&#10;twoSum([1, 9], 10)   # → [0, 1]">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># 两个相同的数字</span>
+twoSum([<span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">3</span>], <span style="color:#56b6c2;">6</span>)   <span style="color:#5c6370;"># → [0, 1] ✅</span>
+<span style="color:#5c6370;"># 关键：先检查 complement，再存入 seen</span>
+<span style="color:#5c6370;"># 这样避免同一元素用两次</span>
+
+<span style="color:#5c6370;"># 负数</span>
+twoSum([-<span style="color:#56b6c2;">1</span>, -<span style="color:#56b6c2;">2</span>, -<span style="color:#56b6c2;">3</span>, -<span style="color:#56b6c2;">4</span>, -<span style="color:#56b6c2;">5</span>], -<span style="color:#56b6c2;">8</span>)   <span style="color:#5c6370;"># → [2, 4] (nums[2]+nums[4] = -3+-5)</span>
+
+<span style="color:#5c6370;"># 只有两个元素</span>
+twoSum([<span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">9</span>], <span style="color:#56b6c2;">10</span>)   <span style="color:#5c6370;"># → [0, 1]</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>举一反三 / Pattern Recognition</h2>
+
+<p>掌握了"边遍历边建哈希表"这个模式，你可以解决：</p>
+
+<ul><li><strong>Two Sum II</strong> (sorted array) — 用双指针，O(1) 空间</li><li><strong>Two Sum III</strong> (data structure) — 设计一个支持 add/find 的类</li><li><strong>3Sum</strong> (#15) — 固定一个数，对剩余用双指针</li><li><strong>4Sum</strong> (#18) — 嵌套一层再用双指针</li><li><strong>Subarray Sum Equals K</strong> (#560) — 前缀和 + 哈希表</li></ul>
+
+<p><strong>核心模式：</strong> "我需要找 X，先问问我见过 X 吗？没见过，就记下现在这个。"</p>
+
+<p><strong>The pattern:</strong> "I need X. Have I seen X? No? Then record what I have now."</p>
+
+<hr/>
+
+<div class="diagram-block">*Day 3 | 数组与哈希系列 | 昨天：Valid Anagram | 明天：Contains Duplicate*</div>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 Day 3 / Soft Skills Day 3</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 Day 3 / Soft Skills Day 3</h1>
+<p><strong>Conflict Resolution — 冲突解决</strong></p>
+
+<p><strong>问题 / Question:</strong></p>
+<blockquote>"Tell me about a time you disagreed with your manager or a senior engineer. How did you handle it?"</blockquote>
+<blockquote>"讲一个你与你的经理或高级工程师意见相左的经历。你是怎么处理的？"</blockquote>
+
+<hr/>
+
+<h2>为什么这很重要 / Why This Matters</h2>
+
+<p>这道题考察的不是"谁对谁错"，而是：</p>
+
+<ol><li><strong>你有没有主见？</strong> 没想法的工程师不能独立工作</li><li><strong>你有没有成熟度？</strong> 能否在坚持立场和尊重经验之间取得平衡</li><li><strong>你能不能影响他人？</strong> 在没有直接权力的情况下推动决策</li></ol>
+
+<p>This question isn't about who was right. It probes:</p>
+<ol><li>Do you have independent judgment?</li><li>Are you mature enough to push back respectfully?</li><li>Can you influence without authority?</li></ol>
+
+<p>At senior/staff level, this is a daily reality. The inability to navigate technical disagreements is a major signal that someone isn't ready to operate at the next level.</p>
+
+<hr/>
+
+<h2>STAR 框架拆解 / STAR Framework Breakdown</h2>
+
+<div class="diagram-block">S - Situation  (情境)  ← 快速设置场景，30秒内
+T - Task       (任务)  ← 你的目标/责任是什么
+A - Action     (行动)  ← 这是重点，用70%的时间
+R - Result     (结果)  ← 量化 + 反思</div>
+
+<hr/>
+
+<h2>❌ 糟糕的回答 / Bad Approach</h2>
+
+<blockquote>"我们在选数据库。我觉得应该用 PostgreSQL，我的经理说用 MongoDB。我给他看了对比文章，最后他同意了我的观点。"</blockquote>
+
+<p><strong>为什么不好：</strong></p>
+<ul><li>没有上下文（为什么要做这个选择？）</li><li>没有展示思考过程（你怎么决定提出来的？）</li><li>"给他看文章"太被动 — 没有体现你如何主动建立共识</li><li>听起来像是"我赢了，他输了" — 没有合作感</li></ul>
+
+<hr/>
+
+<h2>✅ 好的回答 / Good Approach</h2>
+
+<blockquote>"我们要为用户分析平台选择数据存储方案。我的Tech Lead倾向于继续用我们熟悉的MySQL，因为团队对它最熟悉，迁移成本低。我的判断是，我们的查询模式——大量聚合、时间序列、不规则的事件结构——更适合列式存储，比如ClickHouse。</blockquote>
+<blockquote></blockquote>
+<blockquote>我没有直接开会说'你错了'。我先花了两天做了一个小型基准测试：用两套方案各跑了我们最慢的5个查询，把性能数据整理成表格。同时我也整理了迁移的风险点和成本估算。</blockquote>
+<blockquote></blockquote>
+<blockquote>然后我约了Tech Lead 1-on-1，先说：'我想和你讨论一下数据库选型，我做了一些数据，想听听你的想法。'我们发现他的核心顾虑是迁移风险，而不是性能。于是我们达成了折中方案：新的分析pipeline用ClickHouse，老的业务数据留在MySQL，不做迁移。</blockquote>
+<blockquote></blockquote>
+<blockquote>最终上线后，分析查询从平均 8 秒降到 0.3 秒，用户投诉减少了 80%。而且我和Tech Lead的关系没有受损——他后来还把我当成这个领域的go-to person。"</blockquote>
+
+<p><strong>为什么好：</strong></p>
+<ul><li>清楚的商业背景</li><li>展示了"先做数据再谈分歧"的成熟判断</li><li>用1-on-1而不是公开会议处理分歧（情商高）</li><li>承认对方顾虑有道理，找到折中</li><li>量化结果</li><li>关系反而变好了</li></ul>
+
+<hr/>
+
+<h2>场景模板 / Scenario Template</h2>
+
+<p>用这个框架构建你自己的故事：</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="情境：我们在 [项目] 做 [技术决策]&#10;分歧：我的 [经理/Tech Lead] 倾向于 [方案A]&#10;      我的判断是 [方案B] 更合适，因为 [数据/理由]&#10;行动：&#10;  1. 我先 [做了什么验证工作]，而不是直接开会争论&#10;  2. 我通过 [1-on-1/小型演示/数据报告] 分享我的发现&#10;  3. 我先理解了对方的核心顾虑是 [XXX]&#10;  4. 我们达成了 [折中方案/对方被说服/我更新了我的判断]&#10;结果：[量化结果] + [关系/团队影响]">Copy</button>
+  <pre><code class="language-text">情境：我们在 [项目] 做 [技术决策]
+分歧：我的 [经理/Tech Lead] 倾向于 [方案A]
+      我的判断是 [方案B] 更合适，因为 [数据/理由]
+行动：
+  1. 我先 [做了什么验证工作]，而不是直接开会争论
+  2. 我通过 [1-on-1/小型演示/数据报告] 分享我的发现
+  3. 我先理解了对方的核心顾虑是 [XXX]
+  4. 我们达成了 [折中方案/对方被说服/我更新了我的判断]
+结果：[量化结果] + [关系/团队影响]</code></pre>
+</div>
+
+<hr/>
+
+<h2>Senior/Staff 级别的加分点 / Senior/Staff Level Tips</h2>
+
+<p><strong>1. 展示你知道何时该放手 / Show you know when to let go</strong></p>
+<blockquote>"我做了充分的论证，但最终决策权在他。我接受了这个决定，全力支持执行。六个月后，我们确实遇到了我预料的问题，但那时我们一起复盘，而不是我说'我早就说过了'。"</blockquote>
+
+<p><strong>2. 主动建立共识而非赢得辩论 / Build alignment, don't win debates</strong></p>
+<p>Staff工程师知道：即使你是对的，如果你让别人"输了"，你长期付出的代价更大。</p>
+
+<p>Staff engineers know: even if you're right, making someone else "lose" costs you more in the long run.</p>
+
+<p><strong>3. 把技术分歧和人际关系分开 / Separate technical disagreement from personal conflict</strong></p>
+<blockquote>"我特别注意在表达不同意见时，聚焦在数据和影响上，而不是质疑他的判断能力。"</blockquote>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="✅ DO:&#10;  - 先做功课（数据、原型、基准测试）再提出异议&#10;  - 用1-on-1，不要在大会议上让人难堪&#10;  - 理解对方顾虑，找折中点&#10;  - 量化你的结果&#10;  - 即使不同意，也要优雅地接受最终决策&#10;&#10;❌ DON'T:&#10;  - &quot;我最终说服了他&quot; 式的叙述（听起来自大）&#10;  - 描述一个你完全错了的故事（除非重点是你从中学到了什么）&#10;  - 没有结果（&quot;我们还在讨论…&quot;）&#10;  - 批评你的前经理（面试官会想：他会不会也这么说我？）">Copy</button>
+  <pre><code class="language-text">✅ DO:
+  - 先做功课（数据、原型、基准测试）再提出异议
+  - 用1-on-1，不要在大会议上让人难堪
+  - 理解对方顾虑，找折中点
+  - 量化你的结果
+  - 即使不同意，也要优雅地接受最终决策
+
+❌ DON'T:
+  - "我最终说服了他" 式的叙述（听起来自大）
+  - 描述一个你完全错了的故事（除非重点是你从中学到了什么）
+  - 没有结果（"我们还在讨论…"）
+  - 批评你的前经理（面试官会想：他会不会也这么说我？）</code></pre>
+</div>
+
+<hr/>
+
+<div class="diagram-block">*Day 3 | 软技能系列 | 昨天：影响力（无直接权力）| 明天：处理模糊需求*</div>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 Day 3 / Frontend Day 3</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 Day 3 / Frontend Day 3</h1>
+<p><strong>CSS Grid — Two-Dimensional Layouts / 二维布局</strong></p>
+<p><em>Week 1 | CSS Fundamentals</em></p>
+
+<hr/>
+
+<h2>猜猜这段代码输出什么？/ What Does This Layout Look Like?</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="&lt;div class=&quot;grid&quot;&gt;&#10;  &lt;div&gt;A&lt;/div&gt;&#10;  &lt;div&gt;B&lt;/div&gt;&#10;  &lt;div&gt;C&lt;/div&gt;&#10;  &lt;div&gt;D&lt;/div&gt;&#10;  &lt;div&gt;E&lt;/div&gt;&#10;&lt;/div&gt;">Copy</button>
+  <pre><code class="language-html">&lt;<span style="color:#e06c75;">div</span> <span style="color:#e5c07b;">class</span>="grid"&gt;
+  &lt;<span style="color:#e06c75;">div</span>&gt;A&lt;/<span style="color:#e06c75;">div</span>&gt;
+  &lt;<span style="color:#e06c75;">div</span>&gt;B&lt;/<span style="color:#e06c75;">div</span>&gt;
+  &lt;<span style="color:#e06c75;">div</span>&gt;C&lt;/<span style="color:#e06c75;">div</span>&gt;
+  &lt;<span style="color:#e06c75;">div</span>&gt;D&lt;/<span style="color:#e06c75;">div</span>&gt;
+  &lt;<span style="color:#e06c75;">div</span>&gt;E&lt;/<span style="color:#e06c75;">div</span>&gt;
+&lt;/<span style="color:#e06c75;">div</span>&gt;</code></pre>
+</div>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=".grid {&#10;  display: grid;&#10;  grid-template-columns: 1fr 2fr 1fr;&#10;  grid-template-rows: 100px 100px;&#10;  gap: 10px;&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.grid</span>{
+  <span style="color:#56b6c2;">display</span>: <span style="color:#e5c07b;">grid</span>;
+  <span style="color:#56b6c2;">grid-template-columns</span>: <span style="color:#e5c07b;">1fr 2fr 1fr</span>;
+  <span style="color:#56b6c2;">grid-template-rows</span>: <span style="color:#e5c07b;">100px 100px</span>;
+  <span style="color:#56b6c2;">gap</span>: <span style="color:#e5c07b;">10px</span>;
+}</code></pre>
+</div>
+
+<p><strong>猜猜结果 / Guess the output:</strong></p>
+
+<div class="diagram-block">┌────────┬───────────────┬────────┐
+│   A    │       B       │   C    │
+│ (1fr)  │     (2fr)     │ (1fr)  │
+│        │               │        │  ← row 1: 100px tall
+│────────┼───────────────┼────────│
+│   D    │       E       │(empty) │
+│ (1fr)  │     (2fr)     │        │  ← row 2: 100px tall
+└────────┴───────────────┴────────┘
+
+Total 4fr per row → A=25%, B=50%, C=25%</div>
+
+<p>✅ <strong>答案：</strong> 3列布局，比例 1:2:1。B 的宽度是 A 和 C 的两倍。第五个元素 E 占第二行第二格，第三格为空。</p>
+
+<hr/>
+
+<h2>Grid vs Flexbox — 一句话记住 / One-Liner to Remember</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Flexbox = 一维  (一行 or 一列)     Think: 导航栏, 按钮组&#10;Grid    = 二维  (行 AND 列同时)    Think: 页面布局, 卡片网格">Copy</button>
+  <pre><code class="language-text">Flexbox = 一维  (一行 or 一列)     Think: 导航栏, 按钮组
+Grid    = 二维  (行 AND 列同时)    Think: 页面布局, 卡片网格</code></pre>
+</div>
+
+<p>昨天（Day 2）我们学了 Flexbox。今天 Grid 是它的二维升级版。</p>
+
+<hr/>
+
+<h2>核心概念图解 / Core Concepts Illustrated</h2>
+
+<div class="diagram-block">display: grid;
+grid-template-columns: 1fr 1fr 1fr;  ← 3 equal columns
+grid-template-rows: auto auto;        ← 2 rows, height = content
+
+Grid Container (父元素)
+┌──────────┬──────────┬──────────┐
+│  cell    │  cell    │  cell    │ ← row 1
+│  [0,0]   │  [0,1]   │  [0,2]  │
+├──────────┼──────────┼──────────┤
+│  cell    │  cell    │  cell    │ ← row 2
+│  [1,0]   │  [1,1]   │  [1,2]  │
+└──────────┴──────────┴──────────┘
+     ↑            ↑           ↑
+   col 1        col 2       col 3</div>
+
+<hr/>
+
+<h2>让子元素跨格 / Spanning Multiple Cells</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* 这个元素跨越2列 */&#10;.item-a {&#10;  grid-column: 1 / 3;   /* start at line 1, end at line 3 */&#10;  /* shorthand: grid-column: span 2; */&#10;}&#10;&#10;/* 这个元素跨越2行 */&#10;.item-b {&#10;  grid-row: 1 / 3;      /* start at line 1, end at line 3 */&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* 这个元素跨越2列 */</span>
+<span style="color:#e06c75;">.item-a</span>{
+<span style="color:#5c6370;">  grid-column: 1 / 3;   /* start at line 1, end at line 3 */</span>
+<span style="color:#5c6370;">  /* shorthand: grid-column: span 2; */</span>
+}
+
+<span style="color:#5c6370;">/* 这个元素跨越2行 */</span>
+<span style="color:#e06c75;">.item-b</span>{
+<span style="color:#5c6370;">  grid-row: 1 / 3;      /* start at line 1, end at line 3 */</span>
+}</code></pre>
+</div>
+
+<div class="diagram-block">Before span:          After .item-a spans 2 cols:
+┌───┬───┬───┐         ┌─────────┬───┐
+│ A │ B │ C │         │    A    │ C │   ← A now takes col 1+2
+├───┼───┼───┤         ├───┬─────┴───┤
+│ D │ E │ F │         │ D │ E   │ F │
+└───┴───┴───┘         └───┴─────┴───┘</div>
+
+<hr/>
+
+<h2>代码示例：经典页面布局 / Classic Page Layout</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=".page {&#10;  display: grid;&#10;  grid-template-areas:&#10;    &quot;header  header  header&quot;&#10;    &quot;sidebar main    main  &quot;&#10;    &quot;footer  footer  footer&quot;;&#10;  grid-template-columns: 200px 1fr 1fr;&#10;  grid-template-rows: 60px 1fr 40px;&#10;  min-height: 100vh;&#10;  gap: 8px;&#10;}&#10;&#10;.header  { grid-area: header; }&#10;.sidebar { grid-area: sidebar; }&#10;.main    { grid-area: main; }&#10;.footer  { grid-area: footer; }">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.page</span>{
+  <span style="color:#56b6c2;">display</span>: <span style="color:#e5c07b;">grid</span>;
+  grid-template-areas:
+    "header  header  header"
+    "sidebar main    main  "
+    "footer  footer  footer";
+  <span style="color:#56b6c2;">grid-template-columns</span>: <span style="color:#e5c07b;">200px 1fr 1fr</span>;
+  <span style="color:#56b6c2;">grid-template-rows</span>: <span style="color:#e5c07b;">60px 1fr 40px</span>;
+  <span style="color:#56b6c2;">min-height</span>: <span style="color:#e5c07b;">100vh</span>;
+  <span style="color:#56b6c2;">gap</span>: <span style="color:#e5c07b;">8px</span>;
+}
+
+.header  { grid-area: header; }
+.sidebar { grid-area: sidebar; }
+.main    { grid-area: main; }
+.footer  { grid-area: footer; }</code></pre>
+</div>
+
+<div class="diagram-block">Visual Result:
+┌──────────────────────────────────┐
+│           HEADER (full width)    │  60px
+├───────────┬──────────────────────┤
+│           │                      │
+│  SIDEBAR  │        MAIN          │  flex-grow
+│  (200px)  │      (remaining)     │
+│           │                      │
+├───────────┴──────────────────────┤
+│           FOOTER (full width)    │  40px
+└──────────────────────────────────┘</div>
+
+<p><strong><code>grid-template-areas</code> 的魔法：</strong> 用 ASCII 艺术描述布局，可读性极强。</p>
+
+<hr/>
+
+<h2>你可能不知道 / You Might Not Know</h2>
+
+<h3>1. <code>fr</code> 单位只分配<strong>剩余</strong>空间</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="grid-template-columns: 200px 1fr 1fr;">Copy</button>
+  <pre><code class="language-css"><span style="color:#56b6c2;">grid-template-columns</span>: <span style="color:#e5c07b;">200px 1fr 1fr</span>;</code></pre>
+</div>
+
+<p>先分配固定的 200px，<strong>然后</strong> 把剩余宽度按 1:1 分给后两列。不是三等分！</p>
+
+<p><code>fr</code> only distributes <em>remaining</em> space after fixed sizes are allocated.</p>
+
+<h3>2. <code>auto-fill</code> vs <code>auto-fit</code></h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* auto-fill: 尽可能多地创建列（即使是空的） */&#10;grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));&#10;&#10;/* auto-fit: 拉伸现有列填满空间（不创建空列） */&#10;grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* auto-fill: 尽可能多地创建列（即使是空的） */</span>
+<span style="color:#56b6c2;">grid-template-columns</span>: <span style="color:#e5c07b;">repeat(auto-fill, minmax(150px, 1fr))</span>;
+
+<span style="color:#5c6370;">/* auto-fit: 拉伸现有列填满空间（不创建空列） */</span>
+<span style="color:#56b6c2;">grid-template-columns</span>: <span style="color:#e5c07b;">repeat(auto-fit, minmax(150px, 1fr))</span>;</code></pre>
+</div>
+
+<p>这是响应式布局的神器——不写任何 media query 就能自适应！</p>
+
+<p>This is the secret to responsive grid layouts without media queries.</p>
+
+<h3>3. Grid 也能嵌套</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=".card-grid {&#10;  display: grid;&#10;  grid-template-columns: repeat(3, 1fr);&#10;}&#10;&#10;.card {&#10;  display: grid;  /* nested grid! */&#10;  grid-template-rows: auto 1fr auto;  /* image | content | button */&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.card-grid</span>{
+  <span style="color:#56b6c2;">display</span>: <span style="color:#e5c07b;">grid</span>;
+  <span style="color:#56b6c2;">grid-template-columns</span>: <span style="color:#e5c07b;">repeat(3, 1fr)</span>;
+}
+
+<span style="color:#e06c75;">.card</span>{
+<span style="color:#5c6370;">  display: grid;  /* nested grid! */</span>
+<span style="color:#5c6370;">  grid-template-rows: auto 1fr auto;  /* image | content | button */</span>
+}</code></pre>
+</div>
+
+<hr/>
+
+<h2>Mini Challenge / 小挑战</h2>
+
+<p>用 CSS Grid 创建一个响应式卡片布局，要求：</p>
+<ul><li>大屏显示4列，中等屏幕3列，小屏2列</li><li><strong>只用一行 CSS，不用任何 media query</strong></li></ul>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;提示 / Hint&lt;/summary&gt;</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=".grid {&#10;  display: grid;&#10;  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));&#10;  gap: 16px;&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.grid</span>{
+  <span style="color:#56b6c2;">display</span>: <span style="color:#e5c07b;">grid</span>;
+  <span style="color:#56b6c2;">grid-template-columns</span>: <span style="color:#e5c07b;">repeat(auto-fill, minmax(200px, 1fr))</span>;
+  <span style="color:#56b6c2;">gap</span>: <span style="color:#e5c07b;">16px</span>;
+}</code></pre>
+</div>
+
+<p>当容器宽度变化时，<code>minmax(200px, 1fr)</code> 会自动计算可以放多少列！</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>Flexbox vs Grid 决策树 / Decision Tree</h2>
+
+<div class="diagram-block">你需要对齐内容吗？
+│
+├─ 只在一个方向（行 OR 列）→ 用 Flexbox
+│   例：导航栏、按钮组、居中一个元素
+│
+└─ 同时在两个方向（行 AND 列）→ 用 Grid
+    例：页面整体布局、图片画廊、仪表盘</div>
+
+<hr/>
+
+<div class="diagram-block">*Day 3 | CSS 布局系列 | 昨天：Flexbox | 明天：响应式设计 &amp; Media Queries*</div>
+
+<div class="playground" data-flexbox-playground>
+  <h3>Interactive Flexbox Playground</h3>
+  <p>Change the flex container controls and compare <code>flex: 1</code> with <code>flex: 1 1 auto</code>.</p>
+  <div class="playground-controls">
+    <label>
+      <span>justify-content</span>
+      <select data-control="justify-content" aria-label="justify-content">
+        <option value="flex-start">flex-start</option>
+        <option value="center">center</option>
+        <option value="space-between" selected>space-between</option>
+        <option value="space-around">space-around</option>
+        <option value="space-evenly">space-evenly</option>
+      </select>
+    </label>
+    <label>
+      <span>align-items</span>
+      <select data-control="align-items" aria-label="align-items">
+        <option value="stretch">stretch</option>
+        <option value="flex-start">flex-start</option>
+        <option value="center" selected>center</option>
+        <option value="flex-end">flex-end</option>
+      </select>
+    </label>
+    <label>
+      <span>flex-direction</span>
+      <select data-control="flex-direction" aria-label="flex-direction">
+        <option value="row" selected>row</option>
+        <option value="column">column</option>
+      </select>
+    </label>
+  </div>
+  <div class="playground-stage">
+    <div class="playground-canvas">
+      <span class="playground-label">Live Container</span>
+      <div class="playground-demo" data-playground-demo>
+        <div class="playground-box a">A</div>
+        <div class="playground-box b">B</div>
+        <div class="playground-box c">C</div>
+      </div>
+    </div>
+    <div class="playground-compare">
+      <span class="playground-label">Shorthand Comparison</span>
+      <div class="playground-compare-grid">
+        <div class="compare-scenario">
+          <p><code>flex: 1</code> starts from zero width.</p>
+          <div class="compare-row">
+            <div class="compare-box a" style="flex:1;">A short</div>
+            <div class="compare-box b" style="flex:1;">B has much longer text content</div>
+          </div>
+        </div>
+        <div class="compare-scenario">
+          <p><code>flex: 1 1 auto</code> respects content size first.</p>
+          <div class="compare-row">
+            <div class="compare-box a" style="flex:1 1 auto;">A short</div>
+            <div class="compare-box b" style="flex:1 1 auto;">B has much longer text content</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI Day 3 — News Roundup / AI 新闻速递</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI Day 3 — News Roundup / AI 新闻速递</h1>
+<p><em>2026年3月第三周 | March 2026, Week 3</em></p>
+
+<blockquote>⚠️ <strong>注意 / Note:</strong> AI 领域动态极快。以下新闻基于截至本文生成时的公开报道，具体数字与细节以原始来源为准。</blockquote>
+
+<hr/>
+
+<h2>📰 Story 1: Meta 的 "Avocado" 模型推迟发布</h2>
+
+<p>根据报道，Meta 的下一代 AI 大模型（内部代号 "Avocado"）被推迟至至少 2026 年 5 月，原因是性能尚未达到 Google 等竞争对手的水平。</p>
+
+<p><strong>背景：</strong> Meta 此前招募了 Scale AI CEO Alexandr Wang，并投入数十亿美元试图追赶。Avocado 将是这一系列努力的首个重大发布。</p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+
+<p>Meta 的 AI 布局直接影响整个生态——LLaMA 系列是很多开源项目的基础。如果 Avocado 继续落后于 GPT-4o 级别的模型，开源社区的"平替方案"质量也会受影响。对前端/全栈工程师来说：Meta AI 功能的集成（Facebook、Instagram、WhatsApp）会滞后，这可能影响你所在产品的 AI feature timeline。</p>
+
+<hr/>
+
+<h2>📰 Story 2: Palantir 的 Maven Smart System — AI 军事应用的争议</h2>
+
+<p>Palantir 在其 AIPCon 会议上展示了 Maven Smart System，这是一个 AI 驱动的军事目标识别系统。演示视频显示，用户可以用"左键点击、右键点击、左键点击"的方式锁定打击目标，引发了广泛争议。</p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+
+<p>这不只是道德话题——它是工程师职业生涯中越来越难以回避的现实问题。AI 的军事应用正在快速落地，而关于"工程师是否应该为武器系统写代码"的讨论也在硅谷持续升温（参考 Google 的 Project Maven 员工抗议事件）。面试中，你可能会被问到对这类项目的看法。答案没有对错，但你需要有自己的立场。</p>
+
+<hr/>
+
+<h2>📰 Story 3: BuzzFeed 的 AI 教训 — 内容农场的警示</h2>
+
+<p>BuzzFeed 2025 年亏损达 $5730 万，股价跌至 $0.70，部分原因是大量使用 AI 生成文章和测验内容。尽管如此，CEO Jonah Peretti 仍表示将推出"新的 AI 应用"。</p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+
+<p>这是一个"AI 用错地方"的典型案例。内容农场式的 AI 应用（用 AI 批量生产无差异化内容）正在被市场惩罚。读者不傻，算法（Google SEO、推荐算法）也越来越能识别低质量 AI 内容。</p>
+
+<p><strong>工程师视角：</strong> 如果你在构建 AI 内容工具，问题不是"能不能生成"，而是"用户为什么要看这个而不是其他的"。差异化 &gt; 数量。</p>
+
+<hr/>
+
+<h2>📰 Story 4: Amazon Alexa Plus 新增"Sassy"个性模式</h2>
+
+<p>Amazon 为 Alexa Plus 推出了新的"Sassy"个性风格，特点是"不加滤镜的个性、机智的讽刺、以及偶尔被屏蔽的脏话"。该功能仅限成人，需要额外身份验证。</p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+
+<p>这其实是一个有趣的 UX / AI 产品设计信号——用户对 AI 助手的"人格化"需求越来越强。语音 AI 的个性化是下一个竞争维度（而不只是"准确性"）。</p>
+
+<p><strong>技术角度：</strong> 实现"可切换人格"需要在 prompt 层面和 safety filter 层面同时设计。"偶尔允许脏话"这个边界的实现本身就是个有趣的工程问题。</p>
+
+<hr/>
+
+<h2>📰 Story 5: Meta 收购 Moltbook — AI 代理的"社交网络"</h2>
+
+<p>Meta 近期收购了 Moltbook，一个"AI 代理社交网络"平台。收购后，平台更新了服务条款：用户（不是 Meta）对其 AI 代理的所有行为负责，无论行为是否有意为之、是否自主发生。</p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+
+<p>这是 AI 代理（Agent）时代的法律雏形。谁对 AI Agent 的行为负责？目前答案是"你，用户"。这对于正在构建 AI Agent 产品的工程师来说是重要信号：你需要设计审计日志、权限边界、和"人类在回路"（human-in-the-loop）机制，不只是因为产品好，而是因为法律会要求你这么做。</p>
+
+<hr/>
+
+<h2>本周 AI 关键词 / This Week's AI Keywords</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Agentic AI (代理式AI)    — AI 不只回答问题，而是自主行动&#10;Human-in-the-loop (HITL) — 关键决策需要人类确认&#10;AI Liability (AI责任归属) — 谁为 AI 的行为负责？&#10;Model Delay (模型推迟)   — 发布时间表 ≠ 实际发布时间&#10;AI + Military (AI军事化)  — 工程伦理的新战场">Copy</button>
+  <pre><code class="language-text">Agentic AI (代理式AI)    — AI 不只回答问题，而是自主行动
+Human-in-the-loop (HITL) — 关键决策需要人类确认
+AI Liability (AI责任归属) — 谁为 AI 的行为负责？
+Model Delay (模型推迟)   — 发布时间表 ≠ 实际发布时间
+AI + Military (AI军事化)  — 工程伦理的新战场</code></pre>
+</div>
+
+<hr/>
+
+<div class="diagram-block">*Day 3 | AI 新闻系列 | 昨天：Transformer 工作原理 | 明天：RAG（检索增强生成）*</div>
+
+<div class="attention-card">
+  <h3>Attention Heatmap</h3>
+  <p>When the model processes <code>it</code>, it attends most strongly to <code>animal</code>.</p>
+  <div class="heatmap-wrap">
+    <table class="heatmap">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="heatmap-axis">The</th><th class="heatmap-axis">animal</th><th class="heatmap-axis">didnt</th><th class="heatmap-axis">cross</th><th class="heatmap-axis">the</th><th class="heatmap-axis">street</th><th class="heatmap-axis">because</th><th class="heatmap-axis">it</th><th class="heatmap-axis">was</th><th class="heatmap-axis">too</th><th class="heatmap-axis">tired</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="heatmap-axis row-label">it →</th>
+          <td><div class="heatmap-cell" title="The: 0.02" aria-label="The attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="animal: 0.86" aria-label="animal attention weight 0.86" style="background:rgba(167, 139, 250, 0.86);"></div></td><td><div class="heatmap-cell" title="didnt: 0.03" aria-label="didnt attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="cross: 0.04" aria-label="cross attention weight 0.04" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="the: 0.02" aria-label="the attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="street: 0.08" aria-label="street attention weight 0.08" style="background:rgba(167, 139, 250, 0.08);"></div></td><td><div class="heatmap-cell" title="because: 0.05" aria-label="because attention weight 0.05" style="background:rgba(167, 139, 250, 0.05);"></div></td><td><div class="heatmap-cell" title="it: 0.03" aria-label="it attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="was: 0.07" aria-label="was attention weight 0.07" style="background:rgba(167, 139, 250, 0.07);"></div></td><td><div class="heatmap-cell" title="too: 0.10" aria-label="too attention weight 0.10" style="background:rgba(167, 139, 250, 0.10);"></div></td><td><div class="heatmap-cell" title="tired: 0.30" aria-label="tired attention weight 0.30" style="background:rgba(167, 139, 250, 0.30);"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
