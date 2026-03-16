@@ -52,6 +52,10 @@ def load_config():
     config = {}
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(script_dir, '..', 'config.env')
+    if not os.path.exists(config_path):
+        print('❌ config.env not found at {}'.format(config_path))
+        print('   cp config.env.example config.env && edit config.env')
+        sys.exit(1)
     with open(config_path) as f:
         for line in f:
             line = line.strip()
@@ -360,11 +364,14 @@ def inline_format(text):
         if part.startswith('`') and part.endswith('`'):
             result.append(f'<code style="font-family:\'SF Mono\', \'Fira Code\', Consolas, monospace; font-size:13px; background:#f0f0f5; padding:2px 6px; border-radius:4px; color:#e53e3e;">{escape_html(part[1:-1])}</code>')
         else:
+            # Escape HTML first to prevent raw HTML injection (e.g. <script> in content)
+            # * and [] are not HTML-special, so markdown markers survive escaping
+            part = escape_html(part)
             # Bold
             part = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', part)
             # Italic
             part = re.sub(r'\*(.+?)\*', r'<em>\1</em>', part)
-            # Links
+            # Links — text and URL are already HTML-escaped from the step above
             part = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" style="color:#667eea">\1</a>', part)
             result.append(part)
     return ''.join(result)
@@ -515,21 +522,42 @@ def main():
     socket.setdefaulttimeout(20)
     print('Sending HTML digest to {} recipients...'.format(len(recipients)))
 
-    with smtplib.SMTP('smtp.gmail.com', 587) as s:
-        s.ehlo()
-        s.starttls()
-        s.ehlo()
-        s.login(smtp_user, smtp_pass)
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as s:
+            s.ehlo()
+            s.starttls()
+            s.ehlo()
+            try:
+                s.login(smtp_user, smtp_pass)
+            except smtplib.SMTPAuthenticationError:
+                print('❌ SMTP authentication failed — check SMTP_APP_PASSWORD in config.env')
+                sys.exit(1)
 
-        for recipient in recipients:
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = '🧠 byte-by-byte{} ({})'.format(day_label, today)
-            msg['From'] = smtp_user
-            msg['To'] = recipient
-            msg.attach(MIMEText(plain_text, 'plain', 'utf-8'))
-            msg.attach(MIMEText(full_html, 'html', 'utf-8'))
-            s.send_message(msg)
-            print('  ✉️  {}'.format(recipient))
+            failed = []
+            for recipient in recipients:
+                try:
+                    msg = MIMEMultipart('alternative')
+                    msg['Subject'] = '🧠 byte-by-byte{} ({})'.format(day_label, today)
+                    msg['From'] = smtp_user
+                    msg['To'] = recipient
+                    msg.attach(MIMEText(plain_text, 'plain', 'utf-8'))
+                    msg.attach(MIMEText(full_html, 'html', 'utf-8'))
+                    s.send_message(msg)
+                    print('  ✉️  {}'.format(recipient))
+                except Exception as e:
+                    failed.append(recipient)
+                    print('  ❌ Failed to send to {}: {}'.format(recipient, e))
+
+            if failed:
+                print('⚠️  {} delivery failure(s): {}'.format(len(failed), ', '.join(failed)))
+                sys.exit(1)
+
+    except smtplib.SMTPConnectError as e:
+        print('❌ Could not connect to SMTP server: {}'.format(e))
+        sys.exit(1)
+    except smtplib.SMTPException as e:
+        print('❌ SMTP error: {}'.format(e))
+        sys.exit(1)
 
     print('Email sent to {} recipients'.format(len(recipients)))
 
