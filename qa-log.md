@@ -20,3 +20,10 @@ This file tracks issues found during QA reviews to improve content quality over 
 - **Issue:** In the `flex: 1 vs flex: 1 1 auto` gotcha, the code example uses `content: "longer text"` as a CSS property on a regular `div` — `content` only works on `::before`/`::after` pseudo-elements. The example would not behave as expected in a real browser, potentially confusing readers who try to test it.
 - **Root cause:** Self-review validated the conceptual accuracy (which is correct) but didn't flag the invalid CSS property usage on a non-pseudo element.
 - **Fix:** Update the frontend prompt or review checklist: "For any CSS code examples, verify that each property is valid on the target selector type. Check that `content` is only used with pseudo-elements."
+
+## 2026-03-16 — Day 3
+
+- **Section:** AI (News)
+- **Issue:** Specific unverifiable figures present: BuzzFeed 2025 loss ($57.3M), stock price ($0.70), Meta "Avocado" delay date (May 2026), Palantir demo quote ("left-click right-click left-click"). Web search unavailable at QA time to verify.
+- **Root cause:** Recurring pattern — AI news content often contains plausible but hallucinated specifics. Disclaimer was added (improvement from Day 1), but specific figures still appear without sourcing.
+- **Fix:** Consider instructing the AI news generator to avoid specific financial figures and specific future dates unless citing a named source inline (e.g., "per Bloomberg, $57.3M"). Disclaimer is necessary but not sufficient.
