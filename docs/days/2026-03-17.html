@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-03-17</title>
+  <meta name="description" content="byte-by-byte daily lessons for Tuesday, March 17, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Tuesday, March 17, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-03-17.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-03-16.html" style="color:var(--text2)">← 2026-03-16</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-03-17</span>
+    <h1>Tuesday, March 17, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-03-16.html" class="day-nav-btn">← 2026-03-16</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 Day 4 / System Design Day 4 — 负载均衡 / Load Balancing</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 Day 4 / System Design Day 4 — 负载均衡 / Load Balancing</h1>
+
+<blockquote><strong>基础阶段 Foundation Phase</strong> | 预计阅读时间 ~3-4 分钟</blockquote>
+
+<hr/>
+
+<h2>场景引入 / Scenario</h2>
+
+<p>想象你开了一家超级火爆的奶茶店 🧋。第一天只有一个收银台，没问题。但第二天去大众点评上了热搜，突然排队排到门外一百米。怎么办？你开了第二个、第三个收银台，还派了一个引导员在门口，告诉每个客人该去哪个收银台排队。</p>
+
+<p>这个"引导员"就是<strong>负载均衡器（Load Balancer）</strong>。</p>
+
+<p>Imagine you open a super-popular boba tea shop. Day one: one cashier, no problem. Day two: you go viral, and there's a 100-meter queue outside. Solution? You open more cashier lanes and station someone at the entrance directing each customer to the shortest line.</p>
+
+<p>That person at the entrance is your <strong>Load Balancer</strong>.</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<div class="diagram-block">                        ┌─────────────────────────────┐
+                        │         用户请求             │
+                        │     Incoming Requests        │
+                        └──────────────┬──────────────┘
+                                       │
+                                       ▼
+                        ┌─────────────────────────────┐
+                        │       Load Balancer          │
+                        │     负载均衡器               │
+                        │  (Nginx / AWS ALB / HAProxy) │
+                        └───────┬──────┬──────┬───────┘
+                                │      │      │
+                     ┌──────────┘      │      └──────────┐
+                     ▼                 ▼                  ▼
+              ┌────────────┐  ┌────────────┐  ┌────────────┐
+              │  Server 1  │  │  Server 2  │  │  Server 3  │
+              │  服务器 1  │  │  服务器 2  │  │  服务器 3  │
+              │  ████████  │  │  ████      │  │  ██        │
+              │ (80% load) │  │ (40% load) │  │ (20% load) │
+              └────────────┘  └────────────┘  └────────────┘
+                                       │
+                        ┌──────────────┘
+                        │
+                        ▼
+              ┌─────────────────────┐
+              │   Shared Database   │
+              │    共享数据库        │
+              └─────────────────────┘</div>
+
+<hr/>
+
+<h2>核心概念 / Key Concepts</h2>
+
+<h3>负载均衡算法 / Load Balancing Algorithms</h3>
+
+<p><strong>1. Round Robin（轮询）</strong></p>
+<ul><li>依次把请求分给每台服务器，循环往复</li><li>类比：收银台依次叫号</li><li>适用：服务器性能相同、请求处理时间相近的场景</li></ul>
+
+<p><strong>2. Weighted Round Robin（加权轮询）</strong></p>
+<ul><li>性能强的服务器分配更多请求（权重更高）</li><li>类比：有个收银员超快，就多给她排队</li><li>适用：服务器配置不均匀的场景</li></ul>
+
+<p><strong>3. Least Connections（最少连接）</strong></p>
+<ul><li>把新请求分给当前连接数最少的服务器</li><li>类比：去排队最短的那个收银台</li><li>适用：请求处理时长差异大的场景（如文件上传 vs 简单查询）</li></ul>
+
+<p><strong>4. IP Hash（IP 哈希）</strong></p>
+<ul><li>根据客户端 IP 地址决定路由到哪台服务器</li><li>同一个用户总是被路由到同一台服务器</li><li>适用：需要会话粘性（Session Stickiness）的场景</li></ul>
+
+<h3>为什么这样设计？/ Why This Design?</h3>
+
+<table><thead><tr><th>目标 Goal</th><th>解决方案 Solution</th></tr></thead><tbody><tr><td>高可用 High Availability</td><td>一台服务器挂了，流量自动转移</td></tr><tr><td>水平扩展 Horizontal Scaling</td><td>加新服务器，不改代码</td></tr><tr><td>性能 Performance</td><td>避免单点瓶颈，减少响应时间</td></tr><tr><td>健康检查 Health Checks</td><td>LB 自动剔除故障节点</td></tr></tbody></table>
+
+<h3>两种类型 / Two Types</h3>
+
+<p><strong>Layer 4 (Transport Layer) LB</strong></p>
+<ul><li>基于 IP + TCP/UDP 端口路由</li><li>速度快，但"看不懂"请求内容</li><li>类比：只看信封地址，不看信的内容</li></ul>
+
+<p><strong>Layer 7 (Application Layer) LB</strong></p>
+<ul><li>基于 HTTP 头、URL、Cookie 等路由</li><li>更智能（可以把 <code>/api</code> 路由到 API 服务器，把 <code>/static</code> 路由到 CDN）</li><li>类比：根据信的内容决定投递给哪个部门</li><li>性能稍低，但灵活得多</li></ul>
+
+<hr/>
+
+<h2>别踩这个坑 / Don't Fall Into This Trap</h2>
+
+<h3>坑 1：有状态的服务器（Stateful Servers）</h3>
+
+<p>❌ <strong>错误做法：</strong> 把用户 Session 存在单台服务器的内存里</p>
+<div class="diagram-block">用户第1次请求 → Server 1 (Session 存在这里)
+用户第2次请求 → Server 2 (找不到 Session！用户被登出)</div>
+
+<p>✅ <strong>正确做法：</strong> Session 外置到共享存储</p>
+<div class="diagram-block">用户第1次请求 → Server 1 → 把 Session 写入 Redis
+用户第2次请求 → Server 2 → 从 Redis 读 Session ✓</div>
+
+<p><strong>关键原则：服务器要做到"无状态"(Stateless)，所有状态都存外部！</strong></p>
+
+<h3>坑 2：负载均衡器自身成为单点故障</h3>
+
+<p>如果 LB 本身挂了怎么办？</p>
+
+<p>✅ <strong>解决方案：</strong> 部署主备 LB（Active-Passive）或使用 DNS 轮询 + 多 LB</p>
+
+<h3>坑 3：健康检查不够频繁</h3>
+
+<p>LB 依赖健康检查（Health Check）来知道哪台服务器挂了。如果检查间隔太长（比如 60s），可能有 1 分钟的流量打到死服务器上。</p>
+
+<p>✅ 生产环境通常设置：每 5-10 秒一次健康检查。</p>
+
+<hr/>
+
+<h2>延伸阅读 / Going Deeper</h2>
+
+<ul><li>昨天（Day 3）我们聊了 HTTP/REST，现在你知道 LB 就工作在 HTTP 这一层之上</li><li>下周我们会聊<strong>数据库扩展</strong>，届时 LB 的概念还会出现（读写分离 + 连接池）</li><li>如果你听说过 <strong>Nginx、HAProxy、AWS ALB/NLB</strong>，它们都是负载均衡器的具体实现</li></ul>
+
+<hr/>
+
+<p><em>Day 4 / 100 — 系统设计基础系列 System Design Foundations</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 Day 4 / Algorithms Day 4 — #49 Group Anagrams (Medium) — Array...</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 Day 4 / Algorithms Day 4 — #49 Group Anagrams (Medium) — Arrays &amp; Hashing</h1>
+
+<blockquote><strong>基础阶段 Foundation Phase</strong> | 预计阅读时间 ~3-4 分钟</blockquote>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象你在邮局分拣包裹。每个包裹上写的是打乱顺序的地址，比如 "acts", "cats", "tacs" 其实都是同一个地方（字母相同，顺序不同）。你的任务是把所有"相同地址"的包裹放到同一个箱子里。</p>
+
+<p>怎么判断两个地址"本质相同"？把字母排个序，如果排序后一样，就是同一个地址！</p>
+
+<p>At the post office, sorting packages with scrambled addresses: "acts", "cats", "tacs" all go to the same place. Your job: group them together. The trick? Sort the letters — if they match after sorting, they're anagrams!</p>
+
+<hr/>
+
+<h2>题目 / Problem Statement</h2>
+
+<p><strong>给定一个字符串数组，将所有字母异位词（anagram）分组在一起。</strong></p>
+
+<p>Given an array of strings, group the anagrams together.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="输入 Input:  [&quot;eat&quot;,&quot;tea&quot;,&quot;tan&quot;,&quot;ate&quot;,&quot;nat&quot;,&quot;bat&quot;]&#10;输出 Output: [[&quot;bat&quot;],[&quot;nat&quot;,&quot;tan&quot;],[&quot;ate&quot;,&quot;eat&quot;,&quot;tea&quot;]]">Copy</button>
+  <pre><code class="language-text">输入 Input:  ["eat","tea","tan","ate","nat","bat"]
+输出 Output: [["bat"],["nat","tan"],["ate","eat","tea"]]</code></pre>
+</div>
+
+<p>字母异位词 = 由相同字母以不同顺序构成的单词</p>
+<p>Anagram = words with the same letters in different order</p>
+
+<hr/>
+
+<h2>思路解析 / Step-by-Step Walkthrough</h2>
+
+<p><strong>关键洞察 Key Insight：</strong></p>
+<p>两个字符串互为 anagram，当且仅当它们排序后相同。</p>
+<p>Two strings are anagrams if and only if their sorted versions are identical.</p>
+
+<p>所以我们用排序后的字符串作为<strong>哈希表的 key</strong>，把所有 anagram 归到同一个桶（bucket）里。</p>
+
+<h3>追踪过程 / Trace Through the Example</h3>
+
+<p>输入：<code>["eat","tea","tan","ate","nat","bat"]</code></p>
+
+<table><thead><tr><th>当前单词 Word</th><th>排序后 Sorted Key</th><th>哈希表状态 HashMap State</th></tr></thead><tbody><tr><td>"eat"</td><td>"aet"</td><td>{"aet": ["eat"]}</td></tr><tr><td>"tea"</td><td>"aet"</td><td>{"aet": ["eat","tea"]}</td></tr><tr><td>"tan"</td><td>"ant"</td><td>{"aet": ["eat","tea"], "ant": ["tan"]}</td></tr><tr><td>"ate"</td><td>"aet"</td><td>{"aet": ["eat","tea","ate"], "ant": ["tan"]}</td></tr><tr><td>"nat"</td><td>"ant"</td><td>{"aet": ["eat","tea","ate"], "ant": ["tan","nat"]}</td></tr><tr><td>"bat"</td><td>"abt"</td><td>{"aet": [...], "ant": [...], "abt": ["bat"]}</td></tr></tbody></table>
+
+<p>最终取哈希表的所有 values → <code>[["eat","tea","ate"], ["tan","nat"], ["bat"]]</code></p>
+
+<hr/>
+
+<h2>Python 解法 / Python Solution</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from collections import defaultdict&#10;&#10;def groupAnagrams(strs: list[str]) -&gt; list[list[str]]:&#10;    # Use a defaultdict so we can append without checking if key exists&#10;    # 用 defaultdict，省去手动判断 key 是否存在的麻烦&#10;    anagram_map = defaultdict(list)&#10;    &#10;    for word in strs:&#10;        # Sort the word's characters to create the canonical key&#10;        # 对字母排序，得到这组 anagram 的&quot;标准形式&quot;&#10;        # e.g., &quot;eat&quot; -&gt; sorted(&quot;eat&quot;) -&gt; ['a','e','t'] -&gt; &quot;aet&quot;&#10;        key = &quot;&quot;.join(sorted(word))&#10;        &#10;        # Append this word to the bucket for its key&#10;        # 把当前单词放入对应的桶&#10;        anagram_map[key].append(word)&#10;    &#10;    # Return all the groups (values of the map)&#10;    # 返回所有分组&#10;    return list(anagram_map.values())">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> collections <span style="color:#c678dd;">import</span> defaultdict
+
+<span style="color:#c678dd;">def</span> groupAnagrams(strs: list[str]) -&gt; list[list[str]]:
+    <span style="color:#5c6370;"># Use a defaultdict so we can append without checking if key exists</span>
+    <span style="color:#5c6370;"># 用 defaultdict，省去手动判断 key 是否存在的麻烦</span>
+    anagram_map = defaultdict(list)
+    
+    <span style="color:#c678dd;">for</span> word <span style="color:#c678dd;">in</span> strs:
+        <span style="color:#5c6370;"># Sort the word's characters to create the canonical key</span>
+        <span style="color:#5c6370;"># 对字母排序，得到这组 anagram 的"标准形式"</span>
+        <span style="color:#5c6370;"># e.g., "eat" -&gt; sorted("eat") -&gt; ['a','e','t'] -&gt; "aet"</span>
+        key = <span style="color:#e5c07b;">""</span>.join(sorted(word))
+        
+        <span style="color:#5c6370;"># Append this word to the bucket for its key</span>
+        <span style="color:#5c6370;"># 把当前单词放入对应的桶</span>
+        anagram_map[key].append(word)
+    
+    <span style="color:#5c6370;"># Return all the groups (values of the map)</span>
+    <span style="color:#5c6370;"># 返回所有分组</span>
+    <span style="color:#c678dd;">return</span> list(anagram_map.values())</code></pre>
+</div>
+
+<h3>手动验证 / Manual Verification</h3>
+
+<p>让我们用 <code>["eat","tea","tan","ate","nat","bat"]</code> 逐步跑代码：</p>
+
+<ol><li><code>word = "eat"</code> → <code>sorted("eat")</code> = <code>['a','e','t']</code> → <code>key = "aet"</code> → <code>anagram_map = {"aet": ["eat"]}</code></li><li><code>word = "tea"</code> → <code>sorted("tea")</code> = <code>['a','e','t']</code> → <code>key = "aet"</code> → <code>anagram_map = {"aet": ["eat","tea"]}</code></li><li><code>word = "tan"</code> → <code>sorted("tan")</code> = <code>['a','n','t']</code> → <code>key = "ant"</code> → <code>anagram_map = {"aet": [...], "ant": ["tan"]}</code></li><li><code>word = "ate"</code> → <code>sorted("ate")</code> = <code>['a','e','t']</code> → <code>key = "aet"</code> → <code>anagram_map = {"aet": ["eat","tea","ate"], "ant": ["tan"]}</code></li><li><code>word = "nat"</code> → <code>sorted("nat")</code> = <code>['a','n','t']</code> → <code>key = "ant"</code> → <code>anagram_map = {"aet": [...], "ant": ["tan","nat"]}</code></li><li><code>word = "bat"</code> → <code>sorted("bat")</code> = <code>['a','b','t']</code> → <code>key = "abt"</code> → <code>anagram_map = {"aet": [...], "ant": [...], "abt": ["bat"]}</code></li></ol>
+
+<p>最终返回 <code>[["eat","tea","ate"], ["tan","nat"], ["bat"]]</code> ✅ 与题目期望输出一致！</p>
+
+<hr/>
+
+<h2>时间/空间复杂度 / Complexity Analysis</h2>
+
+<p><strong>时间复杂度 Time Complexity: O(n × k log k)</strong></p>
+<ul><li>n = 字符串数量（number of strings）</li><li>k = 最长字符串的长度（max string length）</li><li>对每个字符串排序 = O(k log k)，总共 n 个字符串</li></ul>
+
+<p><strong>空间复杂度 Space Complexity: O(n × k)</strong></p>
+<ul><li>哈希表存储所有字符串的副本</li><li>最坏情况：所有字符串都不是 anagram，每个单独一个桶</li></ul>
+
+<hr/>
+
+<h2>边界情况 / Edge Cases</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# 空数组 Empty input&#10;groupAnagrams([])  # → []&#10;&#10;# 单个字符串 Single string&#10;groupAnagrams([&quot;a&quot;])  # → [[&quot;a&quot;]]&#10;&#10;# 所有字符串都是 anagram All are anagrams&#10;groupAnagrams([&quot;abc&quot;,&quot;bca&quot;,&quot;cab&quot;])  # → [[&quot;abc&quot;,&quot;bca&quot;,&quot;cab&quot;]]&#10;&#10;# 没有 anagram 对 No anagram pairs&#10;groupAnagrams([&quot;abc&quot;,&quot;def&quot;,&quot;ghi&quot;])  # → [[&quot;abc&quot;],[&quot;def&quot;],[&quot;ghi&quot;]]">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># 空数组 Empty input</span>
+groupAnagrams([])  <span style="color:#5c6370;"># → []</span>
+
+<span style="color:#5c6370;"># 单个字符串 Single string</span>
+groupAnagrams([<span style="color:#e5c07b;">"a"</span>])  <span style="color:#5c6370;"># → [["a"]]</span>
+
+<span style="color:#5c6370;"># 所有字符串都是 anagram All are anagrams</span>
+groupAnagrams([<span style="color:#e5c07b;">"abc"</span>,<span style="color:#e5c07b;">"bca"</span>,<span style="color:#e5c07b;">"cab"</span>])  <span style="color:#5c6370;"># → [["abc","bca","cab"]]</span>
+
+<span style="color:#5c6370;"># 没有 anagram 对 No anagram pairs</span>
+groupAnagrams([<span style="color:#e5c07b;">"abc"</span>,<span style="color:#e5c07b;">"def"</span>,<span style="color:#e5c07b;">"ghi"</span>])  <span style="color:#5c6370;"># → [["abc"],["def"],["ghi"]]</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>举一反三 / Pattern Recognition</h2>
+
+<p><strong>这道题的模式：用排序/哈希创建"规范形式"（Canonical Form）</strong></p>
+
+<p>当你需要"把等价的东西归类"时，找到一个好的 key 是关键。</p>
+
+<p><strong>同类变体 / Follow-up Variations:</strong></p>
+
+<ol><li><strong>#242 Valid Anagram（Day 2 做过！）</strong> — 判断两个字符串是否互为 anagram，现在你应该更理解为什么用哈希表了</li></ol>
+
+<ol><li><strong>用字符计数作 key（优化版）</strong> — 不排序，而是统计 26 个字母的频率，构成一个 tuple 作 key。时间复杂度降到 O(n × k)：</li></ol>
+<p>   ```python</p>
+<p>   key = tuple(Counter(word).values())  # 不推荐，顺序不固定</p>
+<p>   # 更好的方式：</p>
+<p>   count = [0] * 26</p>
+<p>   for c in word:</p>
+<p>       count[ord(c) - ord('a')] += 1</p>
+<p>   key = tuple(count)  # e.g., "eat" -&gt; (1,0,0,0,1,0,...,1,...) [a=1,e=1,t=1]</p>
+<p>   ```</p>
+
+<ol><li><strong>思考扩展：</strong> 如果字符串包含 Unicode 字符怎么办？用 <code>Counter</code> 而非固定 26 位数组</li></ol>
+
+<hr/>
+
+<p><em>Day 4 / 100 — Arrays &amp; Hashing 系列</em></p>
+<p><em>昨天 Day 3：Two Sum | 明天 Day 5：Top K Frequent Elements</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 Day 4 / Soft Skills Day 4 — 失败与成长 / Failure & Growth</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 Day 4 / Soft Skills Day 4 — 失败与成长 / Failure &amp; Growth</h1>
+
+<blockquote><strong>基础阶段 Foundation Phase</strong> | 预计阅读时间 ~2-3 分钟</blockquote>
+
+<hr/>
+
+<h2>今日问题 / Today's Question</h2>
+
+<blockquote>"Describe a project that failed or didn't meet expectations. What did you learn?"</blockquote>
+<blockquote>描述一个失败的或未达到预期的项目。你从中学到了什么？</blockquote>
+
+<hr/>
+
+<h2>为什么这很重要 / Why This Matters</h2>
+
+<p>这个问题是面试官用来区分<strong>普通候选人</strong>和<strong>优秀候选人</strong>的分水岭。</p>
+
+<p>大多数人要么：</p>
+<ul><li>找借口（"那个产品经理需求一直在变…"）</li><li>给出假失败（"我太追求完美了！"）</li></ul>
+
+<p>真正优秀的工程师知道：失败是学习的压缩包。能清晰复盘失败，说明你有自我意识、有成长心态、有责任感。</p>
+
+<p>This question separates candidates who are self-aware from those who aren't. Great engineers treat failure as dense learning. If you can articulate a real failure with clarity, you signal maturity, accountability, and a growth mindset.</p>
+
+<hr/>
+
+<h2>STAR 框架拆解 / STAR Framework Breakdown</h2>
+
+<p><strong>Situation（情境）:</strong> 设置背景 — 项目是什么？团队多大？时间线如何？</p>
+
+<p><strong>Task（任务）:</strong> 你的角色 — 你负责什么？期望是什么？</p>
+
+<p><strong>Action（行动）:</strong> 你做了什么 — 包括那些事后回想起来的"错误决定"</p>
+
+<p><strong>Result（结果）:</strong> 真实的结果 — 项目延期？功能被砍？用户不买账？</p>
+
+<p><strong>+Learning（学习）:</strong> ⭐ 这是整个回答的精华 — 你具体学到了什么？有什么改变？</p>
+
+<hr/>
+
+<h2>❌ 糟糕的回答 / Bad Approach</h2>
+
+<blockquote>"我们做了一个推荐系统，但效果没有预期好。这让我意识到我应该更仔细地沟通需求。"</blockquote>
+
+<p><strong>问题在哪？</strong></p>
+<ul><li>没有具体细节（什么推荐系统？多大的影响？）</li><li>"更仔细地沟通"——太泛了，面试官听到这句话已经睡着了</li><li>没有说明<strong>你个人</strong>在失败中的角色</li><li>学到的教训没有被<strong>后续行动</strong>验证</li></ul>
+
+<hr/>
+
+<h2>✅ 好的回答 / Good Approach</h2>
+
+<blockquote>"In my second year at [Company], I led a migration of our user notification system from a monolithic service to an event-driven architecture. The business goal was to reduce notification latency from ~3 seconds to under 500ms and improve reliability.</blockquote>
+<blockquote></blockquote>
+<blockquote>我的任务是设计新架构并协调三个团队的迁移工作，预期 Q2 上线。</blockquote>
+<blockquote></blockquote>
+<blockquote>我犯的关键错误：我低估了消息幂等性（idempotency）的问题。我假设下游消费者已经处理好了重复消息，但实际上没有。上线后，部分用户在一次事件中收到了 3-5 条重复通知，引发了大量投诉，我们不得不回滚。</blockquote>
+<blockquote></blockquote>
+<blockquote>We rolled back within 6 hours, which itself was a success — but the original go-live failed.</blockquote>
+<blockquote></blockquote>
+<blockquote>从这次失败中，我有两个具体改变：</blockquote>
+<blockquote>1. <strong>我开始在所有 event-driven 设计的 design doc 里加一节 'Idempotency Guarantees'</strong>，明确列出哪一层负责去重</blockquote>
+<blockquote>2. <strong>我们建立了 chaos testing 流程</strong>，在 staging 环境模拟消息重投递，在那以后我们再没有出现类似问题</blockquote>
+<blockquote></blockquote>
+<blockquote>三个月后，同一个团队完成了迁移，延迟确实降到了 420ms。我认为能拿到这个结果，部分原因就是第一次的失败让我们想清楚了真正的难点。"</blockquote>
+
+<hr/>
+
+<h2>为什么这个回答好？/ Why This Works</h2>
+
+<p>✅ <strong>具体技术细节</strong> — 幂等性问题，不是模糊的"沟通问题"</p>
+<p>✅ <strong>诚实承担责任</strong> — "我犯的关键错误"，没有推锅</p>
+<p>✅ <strong>量化影响</strong> — 3-5 条重复通知，回滚 6 小时内完成</p>
+<p>✅ <strong>学习有证据</strong> — 不是说"我学会了要考虑幂等性"，而是说"我在所有后续 design doc 里加了这一节"</p>
+<p>✅ <strong>故事有结尾</strong> — 三个月后成功了，说明学习真的有效</p>
+
+<hr/>
+
+<h2>Senior/Staff 级别加分项 / Senior/Staff Level Tips</h2>
+
+<p>如果你是 Senior 或 Staff 候选人，面试官想听到更多的是<strong>系统性改变</strong>，而非个人教训：</p>
+
+<ul><li>"我把这个 checklist 推广到了整个团队" (team impact)</li><li>"我们更新了 runbook，现在新 engineer onboarding 时会学到这个" (process change)</li><li>"这次失败推动了我们建立 incident review 文化" (cultural change)</li></ul>
+
+<p><strong>层级越高，你的学习边界越大。</strong> Junior 学到的是"我应该更仔细地测试"；Staff 学到的是"我们整个组织的测试文化需要改变"。</p>
+
+<hr/>
+
+<h2>你可以改编的模板 / Scenario Template</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="情境: 我在 [公司/项目] 负责 [技术项目]，目标是 [业务目标]。&#10;错误: 我的关键判断失误是 [具体技术/流程错误]。&#10;影响: 导致了 [具体后果，数字化]。&#10;学习1: 从此以后，我 [具体新习惯/流程，可验证]。&#10;学习2: 我把这个教训 [推广/文档化] 到了 [范围]。&#10;后续: [N 个月后，最终的结果是...]。">Copy</button>
+  <pre><code class="language-text">情境: 我在 [公司/项目] 负责 [技术项目]，目标是 [业务目标]。
+错误: 我的关键判断失误是 [具体技术/流程错误]。
+影响: 导致了 [具体后果，数字化]。
+学习1: 从此以后，我 [具体新习惯/流程，可验证]。
+学习2: 我把这个教训 [推广/文档化] 到了 [范围]。
+后续: [N 个月后，最终的结果是...]。</code></pre>
+</div>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<ol><li><strong>选真实的失败</strong> — 面试官能辨别出假失败。真失败才有说服力</li><li><strong>从个人行动出发</strong> — "我们失败了"比"我做了错误决定"弱 10 倍</li><li><strong>学习要有后续行动</strong> — "我意识到"不够，"我从那以后改变了"才有力量</li><li><strong>结局不一定非要成功</strong> — "项目被取消，但我建立的系统依然在生产环境跑着"也是好结尾</li></ol>
+
+<hr/>
+
+<p><em>Day 4 / 100 — 行为面试系列 Behavioral Interview Series</em></p>
+<p><em>昨天 Day 3：与领导意见相左 | 明天 Day 5：时间管理与优先级</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 Day 4 / Frontend Day 4 — 响应式设计与媒体查询 / Responsive Design & Medi...</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 Day 4 / Frontend Day 4 — 响应式设计与媒体查询 / Responsive Design &amp; Media Queries</h1>
+
+<blockquote><strong>基础阶段 Foundation Phase</strong> | 预计阅读时间 ~2-3 分钟</blockquote>
+
+<hr/>
+
+<h2>猜猜这段代码的行为？/ What Does This Code Do?</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=".container {&#10;  width: 100%;&#10;  padding: 0 20px;&#10;  box-sizing: border-box;&#10;}&#10;&#10;@media (min-width: 768px) {&#10;  .container {&#10;    max-width: 960px;&#10;    margin: 0 auto;&#10;    padding: 0 40px;&#10;  }&#10;}&#10;&#10;@media (min-width: 1200px) {&#10;  .container {&#10;    max-width: 1140px;&#10;    padding: 0 60px;&#10;  }&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.container</span>{
+  <span style="color:#56b6c2;">width</span>: <span style="color:#e5c07b;">100%</span>;
+  <span style="color:#56b6c2;">padding</span>: <span style="color:#e5c07b;">0 20px</span>;
+  <span style="color:#56b6c2;">box-sizing</span>: <span style="color:#e5c07b;">border-box</span>;
+}
+
+@media (min-width: 768px) {
+<span style="color:#e06c75;">.container</span>r {
+    <span style="color:#56b6c2;">max-width</span>: <span style="color:#e5c07b;">960px</span>;
+    <span style="color:#56b6c2;">margin</span>: <span style="color:#e5c07b;">0 auto</span>;
+    <span style="color:#56b6c2;">padding</span>: <span style="color:#e5c07b;">0 40px</span>;
+  }
+}
+
+@media (min-width: 1200px) {
+<span style="color:#e06c75;">.container</span>r {
+    <span style="color:#56b6c2;">max-width</span>: <span style="color:#e5c07b;">1140px</span>;
+    <span style="color:#56b6c2;">padding</span>: <span style="color:#e5c07b;">0 60px</span>;
+  }
+}</code></pre>
+</div>
+
+<p><strong>问：当浏览器宽度是 800px 时，<code>.container</code> 的实际宽度和 padding 是多少？</strong></p>
+<p><strong>Q: When the browser is 800px wide, what are the actual width and padding?</strong></p>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;点击查看答案 / Click for Answer&lt;/summary&gt;</p>
+
+<p><strong>答案：宽度 = 800px（100% of viewport），padding = 0 40px</strong></p>
+
+<p>理由：</p>
+<ul><li>800px &gt; 768px → 第一个 <code>@media</code> 规则生效 ✓</li><li>800px &lt; 1200px → 第二个 <code>@media</code> 规则不生效 ✗</li><li><code>max-width: 960px</code> 生效，但 800px &lt; 960px，所以实际宽度被 <code>width: 100%</code> 控制 = 800px</li><li><code>margin: 0 auto</code> 生效（container 会居中，但由于宽度是 100%，看不出来）</li><li><code>padding</code> 被第一个媒体查询覆盖为 <code>0 40px</code></li></ul>
+
+<p><strong>所以：width = 800px，padding = 0 40px</strong> ✅</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>核心概念 / Core Concepts</h2>
+
+<h3>什么是响应式设计？/ What Is Responsive Design?</h3>
+
+<p>同一套 HTML/CSS，在手机、平板、电脑上都好看好用。</p>
+<p>不是做三个不同的页面，而是用<strong>弹性布局 + 媒体查询</strong>适配所有屏幕。</p>
+
+<p>One codebase, all screen sizes. Not three separate pages — flexible layouts + media queries.</p>
+
+<h3>媒体查询语法 / Media Query Syntax</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* 基础语法 Basic syntax */&#10;@media [media-type] [and/not/only] (condition) {&#10;  /* CSS rules */&#10;}&#10;&#10;/* 常见断点 Common breakpoints */&#10;/* Mobile first approach (推荐!) */&#10;/* Base styles: mobile */&#10;.element { font-size: 14px; }&#10;&#10;@media (min-width: 576px)  { /* sm - Large phones */ }&#10;@media (min-width: 768px)  { /* md - Tablets */ }&#10;@media (min-width: 992px)  { /* lg - Desktops */ }&#10;@media (min-width: 1200px) { /* xl - Large desktops */ }">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* 基础语法 Basic syntax */</span>
+<span style="color:#e06c75;">@media [media-type] [and/not/only] (condition)</span>{
+<span style="color:#5c6370;">  /* CSS rules */</span>
+}
+
+<span style="color:#5c6370;">/* 常见断点 Common breakpoints */</span>
+<span style="color:#5c6370;">/* Mobile first approach (推荐!) */</span>
+<span style="color:#5c6370;">/* Base styles: mobile */</span>
+.element { font-size: 14px; }
+
+<span style="color:#5c6370;">@media (min-width: 576px)  { /* sm - Large phones */ }</span>
+<span style="color:#5c6370;">@media (min-width: 768px)  { /* md - Tablets */ }</span>
+<span style="color:#5c6370;">@media (min-width: 992px)  { /* lg - Desktops */ }</span>
+<span style="color:#5c6370;">@media (min-width: 1200px) { /* xl - Large desktops */ }</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>两种策略 / Two Approaches</h2>
+
+<div class="diagram-block">Mobile First (推荐 ✓)          Desktop First (常见但不推荐)
+────────────────────           ──────────────────────────
+先写手机样式，                   先写桌面样式，
+用 min-width 往上覆盖            用 max-width 往下覆盖
+
+Base → small screens            Base → large screens
+↑ override for larger           ↓ override for smaller
+
+好处:                            缺点:
+✅ 性能更好 (mobile loads less)  ❌ 移动端加载冗余样式
+✅ 优先考虑移动端体验            ❌ 思维反直觉
+✅ Progressive enhancement       ❌ Graceful degradation</div>
+
+<hr/>
+
+<h2>实战代码 / Practical Example</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* Mobile First: 先写最小屏幕的样式 */&#10;.card-grid {&#10;  display: grid;&#10;  grid-template-columns: 1fr;  /* 1 column on mobile */&#10;  gap: 16px;&#10;  padding: 16px;&#10;}&#10;&#10;/* 平板: 2 列 */&#10;@media (min-width: 768px) {&#10;  .card-grid {&#10;    grid-template-columns: repeat(2, 1fr);  /* 2 columns */&#10;    gap: 24px;&#10;    padding: 24px;&#10;  }&#10;}&#10;&#10;/* 桌面: 3 列 */&#10;@media (min-width: 1200px) {&#10;  .card-grid {&#10;    grid-template-columns: repeat(3, 1fr);  /* 3 columns */&#10;    gap: 32px;&#10;    padding: 32px;&#10;  }&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* Mobile First: 先写最小屏幕的样式 */</span>
+<span style="color:#e06c75;">.card-grid</span>{
+  <span style="color:#56b6c2;">display</span>: <span style="color:#e5c07b;">grid</span>;
+<span style="color:#5c6370;">  grid-template-columns: 1fr;  /* 1 column on mobile */</span>
+  <span style="color:#56b6c2;">gap</span>: <span style="color:#e5c07b;">16px</span>;
+  <span style="color:#56b6c2;">padding</span>: <span style="color:#e5c07b;">16px</span>;
+}
+
+<span style="color:#5c6370;">/* 平板: 2 列 */</span>
+@media (min-width: 768px) {
+<span style="color:#e06c75;">.card-grid</span>d {
+<span style="color:#5c6370;">    grid-template-columns: repeat(2, 1fr);  /* 2 columns */</span>
+    <span style="color:#56b6c2;">gap</span>: <span style="color:#e5c07b;">24px</span>;
+    <span style="color:#56b6c2;">padding</span>: <span style="color:#e5c07b;">24px</span>;
+  }
+}
+
+<span style="color:#5c6370;">/* 桌面: 3 列 */</span>
+@media (min-width: 1200px) {
+<span style="color:#e06c75;">.card-grid</span>d {
+<span style="color:#5c6370;">    grid-template-columns: repeat(3, 1fr);  /* 3 columns */</span>
+    <span style="color:#56b6c2;">gap</span>: <span style="color:#e5c07b;">32px</span>;
+    <span style="color:#56b6c2;">padding</span>: <span style="color:#e5c07b;">32px</span>;
+  }
+}</code></pre>
+</div>
+
+<div class="diagram-block">手机 (&lt; 768px)    平板 (768-1199px)    桌面 (≥ 1200px)
+──────────────    ─────────────────    ───────────────
+┌──────────┐      ┌─────┐ ┌─────┐     ┌───┐ ┌───┐ ┌───┐
+│  Card 1  │      │Card1│ │Card2│     │ 1 │ │ 2 │ │ 3 │
+├──────────┤      ├─────┤ ├─────┤     ├───┤ ├───┤ ├───┤
+│  Card 2  │      │Card3│ │Card4│     │ 4 │ │ 5 │ │ 6 │
+├──────────┤      └─────┘ └─────┘     └───┘ └───┘ └───┘
+│  Card 3  │
+└──────────┘</div>
+
+<hr/>
+
+<h2>你可能不知道 / You Might Not Know</h2>
+
+<h3>Viewport Meta Tag — 必不可少！</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="&lt;!-- 没有这个，媒体查询在手机上不会正常工作！ --&gt;&#10;&lt;!-- Without this, media queries won't work on mobile! --&gt;&#10;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;">Copy</button>
+  <pre><code class="language-html">&lt;!-- 没有这个，媒体查询在手机上不会正常工作！ --&gt;
+&lt;!-- Without this, media queries won't work on mobile! --&gt;
+&lt;<span style="color:#e06c75;">meta</span> <span style="color:#e5c07b;">name</span>="viewport" <span style="color:#e5c07b;">content</span>="<span style="color:#e5c07b;">width</span>=device-width, <span style="color:#e5c07b;">initial-scale</span>=1.0"&gt;</code></pre>
+</div>
+
+<p><strong>为什么？</strong> 手机浏览器默认假装自己是 980px 宽的桌面（为了渲染老网站）。加了这个 meta tag，才告诉它"就用设备真实宽度"。</p>
+
+<p>Why? Mobile browsers default to pretending they're a ~980px desktop viewport (legacy web compatibility). This tag tells them: use the real device width.</p>
+
+<h3>媒体查询也能针对其他特性 / Other Media Features</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* 暗色模式 Dark mode */&#10;@media (prefers-color-scheme: dark) {&#10;  body { background: #1a1a1a; color: #f0f0f0; }&#10;}&#10;&#10;/* 减少动画（无障碍）Reduced motion (accessibility) */&#10;@media (prefers-reduced-motion: reduce) {&#10;  * { animation: none !important; transition: none !important; }&#10;}&#10;&#10;/* 横竖屏 Orientation */&#10;@media (orientation: landscape) {&#10;  .sidebar { display: block; }&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* 暗色模式 Dark mode */</span>
+@media (prefers-color-scheme: dark) {
+  body { background: #1a1a1a; color: #f0f0f0; }
+}
+
+<span style="color:#5c6370;">/* 减少动画（无障碍）Reduced motion (accessibility) */</span>
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+<span style="color:#5c6370;">/* 横竖屏 Orientation */</span>
+@media (orientation: landscape) {
+  .sidebar { display: block; }
+}</code></pre>
+</div>
+
+<hr/>
+
+<h2>Mini Challenge 小挑战</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* 这段代码中，如果屏幕宽度是 600px，&#10;   .box 的背景色是什么？ */&#10;/* What is the background color of .box at 600px? */&#10;&#10;.box { background: red; }&#10;&#10;@media (min-width: 500px) {&#10;  .box { background: blue; }&#10;}&#10;&#10;@media (max-width: 700px) {&#10;  .box { background: green; }&#10;}&#10;&#10;@media (min-width: 550px) and (max-width: 650px) {&#10;  .box { background: yellow; }&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* 这段代码中，如果屏幕宽度是 600px，</span>
+   .box 的背景色是什么？ */
+<span style="color:#5c6370;">/* What is the background color of .box at 600px? */</span>
+
+.box { background: red; }
+
+@media (min-width: 500px) {
+  .box { background: blue; }
+}
+
+@media (max-width: 700px) {
+  .box { background: green; }
+}
+
+@media (min-width: 550px) and (max-width: 650px) {
+  .box { background: yellow; }
+}</code></pre>
+</div>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;答案 / Answer&lt;/summary&gt;</p>
+
+<p><strong>答案：yellow（黄色）</strong></p>
+
+<p>在 600px 时：</p>
+<ol><li><code>red</code> — 基础样式 ✓</li><li><code>min-width: 500px</code> → 600 ≥ 500 → 覆盖为 <code>blue</code> ✓</li><li><code>max-width: 700px</code> → 600 ≤ 700 → 覆盖为 <code>green</code> ✓</li><li><code>min-width: 550px and max-width: 650px</code> → 550 ≤ 600 ≤ 650 → 覆盖为 <code>yellow</code> ✓</li></ol>
+
+<p>CSS 层叠规则：后声明的规则（同优先级时）覆盖先声明的。最后生效的是 <code>yellow</code>。</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><em>Day 4 / 100 — CSS 基础系列 CSS Fundamentals</em></p>
+<p><em>昨天 Day 3：CSS Grid | 明天 Day 5：CSS 动画与 Transitions</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI Day 4 — 分词（Tokenization）：LLM 眼中的文字 / Tokenization: How LLMs Se...</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI Day 4 — 分词（Tokenization）：LLM 眼中的文字 / Tokenization: How LLMs See Text</h1>
+
+<blockquote><strong>基础阶段 Foundation Phase</strong> | 预计阅读时间 ~2-3 分钟</blockquote>
+
+<hr/>
+
+<h2>直觉解释 / Intuitive Explanation</h2>
+
+<p>你有没有想过，为什么 ChatGPT 有时候连字都数不清楚？比如问它"'strawberry' 这个词里有几个 r？"，它可能回答"2 个"而不是正确答案"3 个"？</p>
+
+<p>这就是<strong>分词（Tokenization）</strong>在背后作怪。</p>
+
+<p>LLM 看到的世界，不是一个个字母，也不是一个个单词——而是<strong>tokens（词元）</strong>。一个 token 可能是：</p>
+<ul><li>一个完整的英语单词（如 <code>hello</code>）</li><li>一个常见单词的一部分（如 <code>token</code> → <code>tok</code> + <code>en</code>）</li><li>一个标点符号或空格</li><li>一个汉字（通常 1 个汉字 = 1 个 token）</li></ul>
+
+<p>Have you ever wondered why ChatGPT struggles to count letters? Ask "how many 'r's in strawberry?" and it might say 2 instead of 3. That's tokenization at work — the model never sees individual letters.</p>
+
+<hr/>
+
+<h2>Tokenization 是怎么工作的？/ How Does It Work?</h2>
+
+<h3>主流算法：BPE（Byte Pair Encoding）</h3>
+
+<p><strong>训练阶段（一次性，在模型训练前）:</strong></p>
+
+<ol><li>从字母级别开始：把所有文字拆成单个字符</li><li>统计最常出现的相邻字符对，合并成一个新 token</li><li>重复 N 次（N 通常是几万次），直到词汇表大小达标</li></ol>
+
+<p><strong>效果：</strong>常见的词/词根保持完整，罕见的词被拆开。</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="&quot;tokenization&quot; 可能被拆成：&#10;&quot;token&quot; + &quot;ization&quot;&#10;或&#10;&quot;token&quot; + &quot;iz&quot; + &quot;ation&quot;&#10;（取决于训练数据中这些片段的频率）">Copy</button>
+  <pre><code class="language-text">"tokenization" 可能被拆成：
+"token" + "ization"
+或
+"token" + "iz" + "ation"
+（取决于训练数据中这些片段的频率）</code></pre>
+</div>
+
+<hr/>
+
+<h2>可视化追踪 / Visual Trace</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="原始文本 Raw Text:&#10;&quot;LLMs are transformers&quot;&#10;&#10;          ↓ Tokenizer&#10;&#10;Token IDs:   [  47,    2860,    527,   83386 ]&#10;             &quot;LL&quot;  &quot;Ms are&quot;  &quot; trans&quot;  &quot;formers&quot;&#10;              ↑&#10;           注意 &quot;LLMs&quot; 被拆成多个 token！&#10;&#10;(以上是示意，实际 token 边界取决于具体模型的词汇表)">Copy</button>
+  <pre><code class="language-text">原始文本 Raw Text:
+"LLMs are transformers"
+
+          ↓ Tokenizer
+
+Token IDs:   [  47,    2860,    527,   83386 ]
+             "LL"  "Ms are"  " trans"  "formers"
+              ↑
+           注意 "LLMs" 被拆成多个 token！
+
+(以上是示意，实际 token 边界取决于具体模型的词汇表)</code></pre>
+</div>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="模型看到的不是:   L L M s   a r e   t r a n s f o r m e r s&#10;而是:            [token1] [token2] [token3] [token4]&#10;&#10;就像把句子看成 LEGO 块，而不是沙粒&#10;Like seeing sentences as LEGO bricks, not individual grains of sand">Copy</button>
+  <pre><code class="language-text">模型看到的不是:   L L M s   a r e   t r a n s f o r m e r s
+而是:            [token1] [token2] [token3] [token4]
+
+就像把句子看成 LEGO 块，而不是沙粒
+Like seeing sentences as LEGO bricks, not individual grains of sand</code></pre>
+</div>
+
+<hr/>
+
+<h2>为什么这很重要？/ Why Does This Matter?</h2>
+
+<h3>1. 解释了"数字母"的 bug 🔢</h3>
+
+<p><code>"strawberry"</code> → 可能被 token 化为 <code>"straw"</code> + <code>"berry"</code></p>
+<p>模型数 r 时是数 token 里的 r，不是逐字母数。</p>
+<p>这是已知的 LLM 局限，不是 bug，而是架构的内在特性。</p>
+
+<h3>2. 解释了 Token 计费 💰</h3>
+
+<p>OpenAI 按 token 而非单词收费：</p>
+<ul><li>英文：1 token ≈ 0.75 个单词</li><li>中文：1 个汉字 ≈ 1 个 token（有时更多）</li><li>代码：注释和空格也算 token，很"贵"</li></ul>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="&quot;Hello, world!&quot; = 4 tokens: [&quot;Hello&quot;, &quot;,&quot;, &quot; world&quot;, &quot;!&quot;]&#10;&quot;你好世界&quot; = 4 tokens: [&quot;你&quot;,&quot;好&quot;,&quot;世&quot;,&quot;界&quot;]（每个汉字一个）">Copy</button>
+  <pre><code class="language-text">"Hello, world!" = 4 tokens: ["Hello", ",", " world", "!"]
+"你好世界" = 4 tokens: ["你","好","世","界"]（每个汉字一个）</code></pre>
+</div>
+
+<h3>3. 解释了 Context Window 的实际限制 📏</h3>
+
+<p>GPT-4 的 128K context window 是 token 数，不是字数。</p>
+<p>如果你的提示词里中文很多，等效"容量"就比英文少。</p>
+
+<hr/>
+
+<h2>代码片段 / Code Snippet</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# 用 tiktoken 查看 GPT 系列模型如何分词&#10;# pip install tiktoken&#10;import tiktoken&#10;&#10;# Load GPT-4's tokenizer&#10;enc = tiktoken.encoding_for_model(&quot;gpt-4&quot;)&#10;&#10;# Encode a string into token IDs&#10;tokens = enc.encode(&quot;tokenization is fascinating&quot;)&#10;print(tokens)&#10;# Output: [4037, 2065, 374, 27387] (actual IDs may vary)&#10;&#10;# Decode back&#10;decoded = [enc.decode([t]) for t in tokens]&#10;print(decoded)&#10;# Output: ['token', 'ization', ' is', ' fascinating']&#10;# Notice: &quot;tokenization&quot; is split into 2 tokens!&#10;&#10;# Count tokens in a prompt&#10;text = &quot;strawberry&quot;&#10;count = len(enc.encode(text))&#10;print(f&quot;'{text}' = {count} token(s)&quot;)&#10;# Output: 'strawberry' = 1 token(s)&#10;# 所以 GPT-4 看 &quot;strawberry&quot; 是 1 整个 token，&#10;# 难怪数不出来里面有 3 个 r！">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># 用 tiktoken 查看 GPT 系列模型如何分词</span>
+<span style="color:#5c6370;"># pip install tiktoken</span>
+<span style="color:#c678dd;">import</span> tiktoken
+
+<span style="color:#5c6370;"># Load GPT-4's tokenizer</span>
+enc = tiktoken.encoding_for_model(<span style="color:#e5c07b;">"gpt-4"</span>)
+
+<span style="color:#5c6370;"># Encode a string into token IDs</span>
+tokens = enc.encode(<span style="color:#e5c07b;">"tokenization is fascinating"</span>)
+print(tokens)
+<span style="color:#5c6370;"># Output: [4037, 2065, 374, 27387] (actual IDs may vary)</span>
+
+<span style="color:#5c6370;"># Decode back</span>
+decoded = [enc.decode([t]) <span style="color:#c678dd;">for</span> t <span style="color:#c678dd;">in</span> tokens]
+print(decoded)
+<span style="color:#5c6370;"># Output: ['token', 'ization', ' is', ' fascinating']</span>
+<span style="color:#5c6370;"># Notice: "tokenization" is split into 2 tokens!</span>
+
+<span style="color:#5c6370;"># Count tokens in a prompt</span>
+text = <span style="color:#e5c07b;">"strawberry"</span>
+count = len(enc.encode(text))
+print(f<span style="color:#e5c07b;">"'{text}' = {count} token(s)"</span>)
+<span style="color:#5c6370;"># Output: 'strawberry' = 1 token(s)</span>
+<span style="color:#5c6370;"># 所以 GPT-4 看 "strawberry" 是 1 整个 token，</span>
+<span style="color:#5c6370;"># 难怪数不出来里面有 3 个 r！</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>实际应用 / Applications</h2>
+
+<table><thead><tr><th>场景 Use Case</th><th>Tokenization 的影响 Impact</th></tr></thead><tbody><tr><td>Prompt Engineering</td><td>压缩 token 数 → 降低成本、扩大 context 空间</td></tr><tr><td>RAG 系统</td><td>Chunking 时要按 token 数切，不按字符数切</td></tr><tr><td>微调 Fine-tuning</td><td>训练数据的 token 分布影响模型性能</td></tr><tr><td>多语言支持</td><td>不同语言的 token 效率差异很大（英文 &gt; 中文 &gt; 某些小语种）</td></tr></tbody></table>
+
+<hr/>
+
+<h2>有趣彩蛋 / Fun Fact</h2>
+
+<p>GPT-4 的词汇表有 ~100,256 个 token（cl100k_base encoding）。</p>
+<p>其中包括：整个英文单词、代码关键词，甚至 <code> Python</code>（带前置空格）和 <code>Python</code> 是<strong>不同的 token</strong>！</p>
+
+<p>空格有时候是 token 的一部分，这就是为什么 prompt 里的格式细节可能影响输出——模型在 token 层面感知到了差异。</p>
+
+<hr/>
+
+<p><em>Day 4 / 100 — AI 基础系列 AI Foundations</em></p>
+<p><em>昨天 Day 3：AI News Roundup | 明天 Day 5：Embeddings — 语义的数学表达</em></p>
+
+<div class="attention-card">
+  <h3>Attention Heatmap</h3>
+  <p>When the model processes <code>it</code>, it attends most strongly to <code>animal</code>.</p>
+  <div class="heatmap-wrap">
+    <table class="heatmap">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="heatmap-axis">The</th><th class="heatmap-axis">animal</th><th class="heatmap-axis">didnt</th><th class="heatmap-axis">cross</th><th class="heatmap-axis">the</th><th class="heatmap-axis">street</th><th class="heatmap-axis">because</th><th class="heatmap-axis">it</th><th class="heatmap-axis">was</th><th class="heatmap-axis">too</th><th class="heatmap-axis">tired</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="heatmap-axis row-label">it →</th>
+          <td><div class="heatmap-cell" title="The: 0.02" aria-label="The attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="animal: 0.86" aria-label="animal attention weight 0.86" style="background:rgba(167, 139, 250, 0.86);"></div></td><td><div class="heatmap-cell" title="didnt: 0.03" aria-label="didnt attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="cross: 0.04" aria-label="cross attention weight 0.04" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="the: 0.02" aria-label="the attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="street: 0.08" aria-label="street attention weight 0.08" style="background:rgba(167, 139, 250, 0.08);"></div></td><td><div class="heatmap-cell" title="because: 0.05" aria-label="because attention weight 0.05" style="background:rgba(167, 139, 250, 0.05);"></div></td><td><div class="heatmap-cell" title="it: 0.03" aria-label="it attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="was: 0.07" aria-label="was attention weight 0.07" style="background:rgba(167, 139, 250, 0.07);"></div></td><td><div class="heatmap-cell" title="too: 0.10" aria-label="too attention weight 0.10" style="background:rgba(167, 139, 250, 0.10);"></div></td><td><div class="heatmap-cell" title="tired: 0.30" aria-label="tired attention weight 0.30" style="background:rgba(167, 139, 250, 0.30);"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
