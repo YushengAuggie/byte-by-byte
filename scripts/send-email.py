@@ -48,6 +48,9 @@ SECTION_META = [
     ('ai',            '🤖', 'AI',            'AI'),
 ]
 
+# Review day uses a single file instead of 5 sections
+REVIEW_META = ('review', '📝', 'Review Quiz', '复习测验')
+
 def load_config():
     config = {}
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -223,8 +226,33 @@ def render_code_block(code, lang):
     demo = maybe_render_live_demo(code, lang)
     return block + ('\n' + demo if demo else '')
 
+def convert_details_blocks(md_text):
+    """Convert <details>/<summary> blocks to email-friendly spoiler format.
+    Gmail strips <details> tags, so we render them as styled divs."""
+    # Match <details>...<summary>TITLE</summary>CONTENT...</details>
+    def replace_details(match):
+        summary = match.group(1).strip()
+        content = match.group(2).strip()
+        return (
+            '<div style="margin:16px 0; border:2px solid #667eea; border-radius:10px; overflow:hidden;">'
+            '<div style="background:#667eea; color:white; padding:10px 16px; font-weight:700; font-size:14px;">'
+            '👇 {}</div>'
+            '<div style="padding:16px; background:#f8f7ff; font-size:14px; line-height:1.7;">'
+            '{}</div></div>'
+        ).format(summary, content)
+
+    result = re.sub(
+        r'<details>\s*<summary>(.*?)</summary>(.*?)</details>',
+        replace_details,
+        md_text,
+        flags=re.DOTALL
+    )
+    return result
+
 def md_to_html(md_text):
     """Simple markdown to HTML — no external deps. Handles the patterns we use."""
+    # Pre-process: convert <details> blocks before line-by-line parsing
+    md_text = convert_details_blocks(md_text)
     lines = md_text.split('\n')
     html_lines = []
     in_code_block = False
@@ -451,7 +479,7 @@ def main():
         print('SMTP_APP_PASSWORD not set in config.env')
         sys.exit(1)
 
-    # Load sections
+    # Load sections — try normal 5-section day first, fall back to review day
     sections_html = []
     plain_parts = []
     found = 0
@@ -464,6 +492,19 @@ def main():
             sections_html.append((icon, name_en, name_cn, filename, html))
             plain_parts.append(content)
             found += 1
+
+    # If no normal sections, check for review day file
+    if found == 0:
+        review_path = os.path.join(archive_dir, '{}-{}.md'.format(today, REVIEW_META[0]))
+        if os.path.exists(review_path):
+            with open(review_path) as f:
+                content = f.read()
+            html = md_to_html(content)
+            filename, icon, name_en, name_cn = REVIEW_META
+            sections_html.append((icon, name_en, name_cn, filename, html))
+            plain_parts.append(content)
+            found = 1
+            print('📝 Review day detected — sending review quiz email')
 
     if found == 0:
         print('No archive files found for {}. Skipping email.'.format(today))

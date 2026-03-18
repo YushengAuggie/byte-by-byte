@@ -130,8 +130,11 @@ Testing: key concept / gotcha / real-world application
 2. Save to ARCHIVE_PATH from /tmp/bbb-review.txt
 3. **Self-review**: Are the answers accurate? Are questions meaningful?
 4. Send as a **single Telegram message** to {{TELEGRAM_TARGET}}
-5. Run `bash {{BBB_REPO_DIR}}/scripts/commit.sh` to save
-6. **SKIP** email step (no email on review days)
+5. **Send email digest** (review days included):
+```bash
+python3 {{BBB_REPO_DIR}}/scripts/send-email.py
+```
+6. Run `bash {{BBB_REPO_DIR}}/scripts/commit.sh` to save
 7. **STOP** — do not generate sections 1-5
 
 ---
@@ -372,11 +375,13 @@ Send the AI section content.
 
 ---
 
-### Step 5: Send email digest
+### Step 5: Send email digest (MANDATORY — DO NOT SKIP)
 ```bash
 python3 {{BBB_REPO_DIR}}/scripts/send-email.py
 ```
-This combines all 5 archive files into one email and sends to the configured address.
+This combines all archive files into one email and sends to the configured address.
+**This step is REQUIRED for both normal days AND review days. Never skip it.**
+If the script exits with "No archive files found", something went wrong — report it.
 
 ---
 
