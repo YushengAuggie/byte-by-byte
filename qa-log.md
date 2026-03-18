@@ -27,3 +27,9 @@ This file tracks issues found during QA reviews to improve content quality over 
 - **Issue:** Specific unverifiable figures present: BuzzFeed 2025 loss ($57.3M), stock price ($0.70), Meta "Avocado" delay date (May 2026), Palantir demo quote ("left-click right-click left-click"). Web search unavailable at QA time to verify.
 - **Root cause:** Recurring pattern — AI news content often contains plausible but hallucinated specifics. Disclaimer was added (improvement from Day 1), but specific figures still appear without sourcing.
 - **Fix:** Consider instructing the AI news generator to avoid specific financial figures and specific future dates unless citing a named source inline (e.g., "per Bloomberg, $57.3M"). Disclaimer is necessary but not sufficient.
+
+## 2026-03-18 — Day 5 (Review Day)
+- **Section:** Algorithms (Q2 quiz question)
+- **Issue:** Two Sum code skeleton is missing the `target` parameter. `def mystery(nums):` references `target` inside the function body, which would cause a `NameError` at runtime. Correct signature is `def mystery(nums, target):`.
+- **Root cause:** Review day content is generated as pattern-recognition quizzes (students identify the algorithm, not run it). Self-review likely validated conceptual correctness without testing whether the code skeleton is syntactically executable.
+- **Fix:** Add an explicit check in review day generation: "For any code snippet in quiz questions, verify all referenced variables are either defined locally, passed as parameters, or explicitly marked as pseudo-code/skeleton with a comment." Consider adding `# target is passed as argument` or simply correcting the signature.
