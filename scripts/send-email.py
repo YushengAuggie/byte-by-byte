@@ -426,8 +426,12 @@ def load_subscribers(repo_dir, config):
             import urllib.request
             import csv
             import io
+            import ssl
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
             req = urllib.request.Request(csv_url, headers={'User-Agent': 'byte-by-byte/1.0'})
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
                 text = resp.read().decode('utf-8')
             reader = csv.reader(io.StringIO(text))
             header = next(reader, None)  # skip header row
@@ -601,6 +605,24 @@ def main():
         sys.exit(1)
 
     print('Email sent to {} recipients'.format(len(recipients)))
+
+    # Log successful send
+    log_path = os.path.join(repo_dir, 'email-send-log.json')
+    try:
+        if os.path.exists(log_path):
+            with open(log_path) as f:
+                send_log = json.load(f)
+        else:
+            send_log = {}
+        send_log[today] = {
+            'sent_at': __import__('datetime').datetime.now().isoformat(),
+            'recipients': len(recipients),
+            'sections': found,
+        }
+        with open(log_path, 'w') as f:
+            json.dump(send_log, f, indent=2)
+    except Exception as e:
+        print('⚠️  Could not update send log: {}'.format(e))
 
 if __name__ == '__main__':
     main()
