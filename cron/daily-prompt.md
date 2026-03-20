@@ -145,6 +145,21 @@ python3 {{BBB_REPO_DIR}}/scripts/send-email.py
 
 For EACH section (1-5), read /tmp/bbb-section-N.txt and generate the content. Save each section to its ARCHIVE_PATH (specified in the section file). DO NOT send any messages yet.
 
+**⚠️ CRITICAL: After writing ALL 5 archive files, VERIFY they exist:**
+```bash
+TODAY=$(date +%Y-%m-%d)
+for section in system-design algorithms soft-skills frontend ai; do
+  FILE="{{BBB_REPO_DIR}}/archive/${TODAY}-${section}.md"
+  if [ ! -f "$FILE" ]; then
+    echo "MISSING: $FILE"
+    exit 1
+  fi
+  SIZE=$(wc -c < "$FILE")
+  echo "✅ ${section}: ${SIZE} bytes"
+done
+```
+**If ANY file is missing or empty, DO NOT proceed. Re-generate and save it.**
+
 #### Section 1: System Design (3 min read)
 🏗️ **系统设计 Day N (3 min read) / System Design Day N**
 - Real-world scenario intro ("想象你在设计...")
