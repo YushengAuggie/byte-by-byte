@@ -790,9 +790,10 @@ SECTION_META = {
     "soft-skills":   {"icon": "🗣️", "label": "Soft Skills",   "color": "#34d399"},
     "frontend":      {"icon": "🎨", "label": "Frontend",      "color": "#f472b6"},
     "ai":            {"icon": "🤖", "label": "AI",            "color": "#fbbf24"},
+    "review":        {"icon": "📝", "label": "Review Quiz",   "color": "#a78bfa"},
 }
 
-SECTION_ORDER = ["system-design", "algorithms", "soft-skills", "frontend", "ai"]
+SECTION_ORDER = ["system-design", "algorithms", "soft-skills", "frontend", "ai", "review"]
 
 
 def escape_html(text: str) -> str:
