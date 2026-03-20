@@ -40,7 +40,7 @@ Calculate the following from state.json:
 ```bash
 bash {{BBB_REPO_DIR}}/scripts/generate.sh
 ```
-This updates state.json atomically and either:
+This picks today's topics and writes section info files. **It does NOT advance state.json** — state is only advanced after archive files are verified (in Step 6).
 - **Normal day**: writes section info to /tmp/bbb-section-{1..5}.txt
 - **Review day** (day % 5 == 0): writes /tmp/bbb-review.txt and exits
 
@@ -129,13 +129,22 @@ Testing: key concept / gotcha / real-world application
 1. Generate the review quiz (format above)
 2. Save to ARCHIVE_PATH from /tmp/bbb-review.txt
 3. **Self-review**: Are the answers accurate? Are questions meaningful?
-4. Send as a **single Telegram message** to {{TELEGRAM_TARGET}}
-5. **Send email digest** (review days included):
+4. **Verify the archive file exists and advance state:**
+```bash
+ls -la {{BBB_REPO_DIR}}/archive/$(date +%Y-%m-%d)-review.md
+bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
+```
+**If advance-state.sh fails, DO NOT continue. Fix the missing file first.**
+5. Send as a **single Telegram message** to {{TELEGRAM_TARGET}}
+6. **Send email digest** (review days included — MANDATORY):
 ```bash
 python3 {{BBB_REPO_DIR}}/scripts/send-email.py
 ```
-6. Run `bash {{BBB_REPO_DIR}}/scripts/commit.sh` to save
-7. **STOP** — do not generate sections 1-5
+7. **Commit and push:**
+```bash
+bash {{BBB_REPO_DIR}}/scripts/commit.sh
+```
+8. **STOP** — do not generate sections 1-5
 
 ---
 
@@ -159,6 +168,12 @@ for section in system-design algorithms soft-skills frontend ai; do
 done
 ```
 **If ANY file is missing or empty, DO NOT proceed. Re-generate and save it.**
+
+**Then advance the state (this is safe — files are verified):**
+```bash
+bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
+```
+**If advance-state.sh fails, DO NOT continue. Fix the issue first.**
 
 #### Section 1: System Design (3 min read)
 🏗️ **系统设计 Day N (3 min read) / System Design Day N**
@@ -461,11 +476,20 @@ For algorithms deep-dives, include the LeetCode/NeetCode links:
 
 5. Review gate: Verify all code and claims as in Step 3.
 
-6. Send as a **single Telegram message** (or split into 2-3 if too long):
+6. **Advance state after verifying archive exists:**
+   ```bash
+   bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
+   ```
+
+7. Send as a **single Telegram message** (or split into 2-3 if too long):
    - channel: telegram, target: {{TELEGRAM_TARGET}}
    - Start with progress header embedded in the first message
 
-7. Send email digest and commit as normal (Steps 5-6).
+8. Send email digest and commit:
+   ```bash
+   python3 {{BBB_REPO_DIR}}/scripts/send-email.py
+   bash {{BBB_REPO_DIR}}/scripts/commit.sh
+   ```
 
 ---
 

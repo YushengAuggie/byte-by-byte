@@ -279,7 +279,7 @@ TMPCONF
   CREATED_TEMP_CONFIG=true
 fi
 
-# Test 11a: Normal day (Day 1)
+# Test 11a: Normal day (Day 1) — generate.sh prepares sections, advance-state.sh advances state
 if bash scripts/generate.sh > /tmp/bbb-test-output.txt 2>&1; then
   ALL_SECTIONS=true
   for i in 1 2 3 4 5; do
@@ -291,21 +291,50 @@ if bash scripts/generate.sh > /tmp/bbb-test-output.txt 2>&1; then
     fail "generate.sh Day 1 — missing section files"
   fi
 
-  # Verify state advanced
-  NEW_DAY=$(python3 -c "import json; print(json.load(open('state.json'))['currentDay'])")
-  if [ "$NEW_DAY" = "1" ]; then
-    pass "generate.sh Day 1 — state.json advanced to day 1"
+  # State should NOT be advanced yet (generate.sh no longer advances)
+  PRE_DAY=$(python3 -c "import json; print(json.load(open('state.json'))['currentDay'])")
+
+  # Create dummy archive files so advance-state.sh can verify them (must be >100 bytes)
+  # Use a temp dir to avoid overwriting real archive files
+  TODAY_TEST=$(date +%Y-%m-%d)
+  ARCHIVE_BACKED_UP=false
+  for section in system-design algorithms soft-skills frontend ai; do
+    TARGET="archive/${TODAY_TEST}-${section}.md"
+    if [ -f "$TARGET" ]; then
+      cp "$TARGET" "$TARGET.test-backup"
+      ARCHIVE_BACKED_UP=true
+    fi
+    python3 -c "print('# Test content for $section\n' + 'Lorem ipsum dolor sit amet consectetur. ' * 5)" > "$TARGET"
+  done
+
+  # Now advance state
+  if bash scripts/advance-state.sh > /tmp/bbb-test-advance.txt 2>&1; then
+    NEW_DAY=$(python3 -c "import json; print(json.load(open('state.json'))['currentDay'])")
+    if [ "$NEW_DAY" = "1" ]; then
+      pass "generate.sh Day 1 — state.json advanced to day 1"
+    else
+      fail "generate.sh Day 1 — expected day 1, got $NEW_DAY"
+    fi
+
+    HIST_LEN=$(python3 -c "import json; print(len(json.load(open('state.json'))['history']))")
+    if [ "$HIST_LEN" = "1" ]; then
+      pass "generate.sh Day 1 — history has 1 entry"
+    else
+      fail "generate.sh Day 1 — expected 1 history entry, got $HIST_LEN"
+    fi
   else
-    fail "generate.sh Day 1 — expected day 1, got $NEW_DAY"
+    fail "advance-state.sh Day 1 — script failed"
   fi
 
-  # Verify history populated
-  HIST_LEN=$(python3 -c "import json; print(len(json.load(open('state.json'))['history']))")
-  if [ "$HIST_LEN" = "1" ]; then
-    pass "generate.sh Day 1 — history has 1 entry"
-  else
-    fail "generate.sh Day 1 — expected 1 history entry, got $HIST_LEN"
-  fi
+  # Restore backed up archive files
+  for section in system-design algorithms soft-skills frontend ai; do
+    TARGET="archive/${TODAY_TEST}-${section}.md"
+    if [ -f "$TARGET.test-backup" ]; then
+      mv "$TARGET.test-backup" "$TARGET"
+    else
+      rm -f "$TARGET"
+    fi
+  done
 else
   fail "generate.sh Day 1 — script crashed"
 fi
@@ -315,6 +344,7 @@ python3 -c "
 import json
 s = json.load(open('state.json'))
 s['currentDay'] = 4
+s['lastSentDate'] = '1970-01-01'  # Reset so generate.sh doesn't skip
 s['systemDesignIndex'] = 4
 s['leetcodeIndex'] = 4
 s['behavioralIndex'] = 4

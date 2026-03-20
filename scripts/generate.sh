@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # byte-by-byte daily content generator
-# Reads config.env, picks today's topics, updates state atomically.
+# Phase 1 ONLY: Reads state, picks topics, writes section info to /tmp/bbb-section-*.txt
+# Does NOT advance state.json — that happens in advance-state.sh after archive files are verified.
 # On review days (day % 5 == 0), writes /tmp/bbb-review.txt instead.
 # Usage: ./scripts/generate.sh
 
@@ -22,34 +23,6 @@ mkdir -p "$ARCHIVE_DIR"
 # ── Helpers ──────────────────────────────────────────────────────────
 get_index() {
   python3 -c "import json; print(json.load(open('$STATE_FILE'))['$1'])"
-}
-
-get_state_field() {
-  python3 -c "import json; d = json.load(open('$STATE_FILE')); print(d.get('$1', 'null'))"
-}
-
-update_state() {
-  python3 -c "
-import json
-with open('$STATE_FILE', 'r') as f:
-    state = json.load(f)
-state['$1'] = $2
-state['lastSentDate'] = '$TODAY'
-with open('$STATE_FILE', 'w') as f:
-    json.dump(state, f, indent=2)
-"
-}
-
-update_state_str() {
-  python3 -c "
-import json
-with open('$STATE_FILE', 'r') as f:
-    state = json.load(f)
-state['$1'] = '$2'
-state['lastSentDate'] = '$TODAY'
-with open('$STATE_FILE', 'w') as f:
-    json.dump(state, f, indent=2)
-"
 }
 
 get_topic() {
@@ -83,13 +56,11 @@ print('Expert')
 }
 
 get_history_topics() {
-  # Get topic titles from history for review day
   python3 -c "
 import json
 with open('$STATE_FILE') as f:
     state = json.load(f)
 history = state.get('history', [])
-# Last 4 entries (days before this review day)
 recent = history[-4:] if len(history) >= 4 else history
 for entry in recent:
     day = entry.get('day', '?')
@@ -100,19 +71,13 @@ for entry in recent:
 "
 }
 
-append_history() {
-  # Append today's topics to history array in state.json
-  python3 -c "
-import json
-with open('$STATE_FILE', 'r') as f:
-    state = json.load(f)
-if 'history' not in state:
-    state['history'] = []
-state['history'].append($1)
-with open('$STATE_FILE', 'w') as f:
-    json.dump(state, f, indent=2)
-"
-}
+# ── Idempotency: skip if already generated for today ─────────────────
+LAST_SENT=$(python3 -c "import json; print(json.load(open('$STATE_FILE')).get('lastSentDate',''))")
+if [ "$LAST_SENT" = "$TODAY" ]; then
+  echo "⚠️  Already generated for $TODAY (lastSentDate=$TODAY). Skipping."
+  echo "To force regeneration, reset lastSentDate in state.json."
+  exit 0
+fi
 
 # ── Main ─────────────────────────────────────────────────────────────
 echo "=== byte-by-byte generator ==="
@@ -120,14 +85,17 @@ echo "Date: $TODAY"
 echo "Repo: $BBB_REPO_DIR"
 echo ""
 
-# Get current day (pre-increment)
 CURRENT_DAY=$(get_index "currentDay")
 NEXT_DAY=$((CURRENT_DAY + 1))
 
-# ── Difficulty Phase ─────────────────────────────────────────────────
 DIFFICULTY_PHASE=$(get_difficulty_phase "$NEXT_DAY")
 echo "Day: $NEXT_DAY | Difficulty Phase: $DIFFICULTY_PHASE"
 echo ""
+
+# ── Write planned day info for advance-state.sh ──────────────────────
+cat > /tmp/bbb-day-info.json << EOF
+{"nextDay": $NEXT_DAY, "date": "$TODAY", "difficultyPhase": "$DIFFICULTY_PHASE"}
+EOF
 
 # ── Review Day Detection ──────────────────────────────────────────────
 IS_REVIEW_DAY=0
@@ -139,7 +107,6 @@ if (( IS_REVIEW_DAY == 1 )); then
   echo "🔄 Day $NEXT_DAY is a REVIEW DAY (day % 5 == 0)"
   echo ""
 
-  # Gather history for the past 4 days
   HISTORY_TOPICS=$(get_history_topics)
 
   cat > /tmp/bbb-review.txt << EOF
@@ -163,34 +130,17 @@ EOF
 
   echo "✓ Review file written to /tmp/bbb-review.txt"
   echo ""
-
-  # Update state: increment day, mark as review
-  update_state "currentDay" "$NEXT_DAY"
-  update_state_str "lastReviewDay" "$NEXT_DAY"
-  update_state_str "lastSentDate" "$TODAY"
-
-  # Also initialize review tracking if not present
-  python3 -c "
-import json
-with open('$STATE_FILE', 'r') as f:
-    state = json.load(f)
-if 'reviewDaysCompleted' not in state:
-    state['reviewDaysCompleted'] = []
-if $NEXT_DAY not in state['reviewDaysCompleted']:
-    state['reviewDaysCompleted'].append($NEXT_DAY)
-with open('$STATE_FILE', 'w') as f:
-    json.dump(state, f, indent=2)
-"
-  echo "✓ State updated with review tracking"
-  echo ""
-  echo "=== Review day setup complete ==="
-  echo "→ Read /tmp/bbb-review.txt and cron/daily-prompt.md for review generation instructions"
+  echo "=== Review day setup complete (state NOT advanced yet) ==="
+  echo "→ After writing archive/${TODAY}-review.md, run: bash scripts/advance-state.sh"
   exit 0
 fi
 
-# ── Normal Day: Generate 5 Sections ──────────────────────────────────
+# ── Normal Day: Write Section Info Files ─────────────────────────────
 echo "📚 Day $NEXT_DAY — Normal content day (Phase: $DIFFICULTY_PHASE)"
 echo ""
+
+# Clean up any leftover review file
+rm -f /tmp/bbb-review.txt
 
 # Section 1: System Design
 SD_INDEX=$(get_index "systemDesignIndex")
@@ -205,7 +155,6 @@ DIFFICULTY: $(extract "$SD_TOPIC" "difficulty")
 DIFFICULTY_PHASE: $DIFFICULTY_PHASE
 ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-system-design.md
 EOF
-update_state "systemDesignIndex" "$((SD_INDEX + 1))"
 echo "✓ Section 1: System Design Day $SD_DAY — $(extract "$SD_TOPIC" "title")"
 
 # Section 2: Algorithms
@@ -223,7 +172,6 @@ DIFFICULTY_PHASE: $DIFFICULTY_PHASE
 URL: $(extract "$LC_TOPIC" "url")
 ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-algorithms.md
 EOF
-update_state "leetcodeIndex" "$((LC_INDEX + 1))"
 echo "✓ Section 2: Algorithms Day $LC_DAY — #$(extract "$LC_TOPIC" "leetcode_num") $(extract "$LC_TOPIC" "title")"
 
 # Section 3: Soft Skills
@@ -239,7 +187,6 @@ LEVEL: $(extract "$BH_TOPIC" "level")
 DIFFICULTY_PHASE: $DIFFICULTY_PHASE
 ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-soft-skills.md
 EOF
-update_state "behavioralIndex" "$((BH_INDEX + 1))"
 echo "✓ Section 3: Soft Skills Day $BH_DAY — $(extract "$BH_TOPIC" "category")"
 
 # Section 4: Frontend
@@ -255,7 +202,6 @@ WEEK: $(extract "$FE_TOPIC" "week")
 DIFFICULTY_PHASE: $DIFFICULTY_PHASE
 ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-frontend.md
 EOF
-update_state "frontendIndex" "$((FE_INDEX + 1))"
 echo "✓ Section 4: Frontend Day $FE_DAY — $(extract "$FE_TOPIC" "title")"
 
 # Section 5: AI
@@ -271,7 +217,6 @@ DIFFICULTY_PHASE: $DIFFICULTY_PHASE
 ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-ai.md
 EOF
   echo "✓ Section 5: AI Day $AI_DAY — NEWS"
-  AI_TITLE="AI News Roundup"
 else
   AI_TOPIC=$(get_topic "$CONTENT_DIR/ai-topics.json" "$AI_INDEX")
   AI_TITLE=$(extract "$AI_TOPIC" "title")
@@ -284,34 +229,9 @@ CATEGORY: $(extract "$AI_TOPIC" "category")
 DIFFICULTY_PHASE: $DIFFICULTY_PHASE
 ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-ai.md
 EOF
-  update_state "aiTopicIndex" "$((AI_INDEX + 1))"
   echo "✓ Section 5: AI Day $AI_DAY — CONCEPT: $AI_TITLE"
 fi
 
-# ── Update state with today's topics in history ───────────────────────
-SD_TITLE=$(extract "$SD_TOPIC" "title")
-LC_TITLE=$(extract "$LC_TOPIC" "title")
-BH_Q=$(extract "$BH_TOPIC" "question")
-FE_TITLE=$(extract "$FE_TOPIC" "title")
-
-append_history "{
-  \"day\": $NEXT_DAY,
-  \"date\": \"$TODAY\",
-  \"difficultyPhase\": \"$DIFFICULTY_PHASE\",
-  \"sections\": {
-    \"system_design\": {\"title\": $(echo "$SD_TITLE" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))')},
-    \"algorithms\": {\"title\": $(echo "$LC_TITLE" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))')},
-    \"soft_skills\": {\"question\": $(echo "$BH_Q" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))')},
-    \"frontend\": {\"title\": $(echo "$FE_TITLE" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))')},
-    \"ai\": {\"title\": $(echo "$AI_TITLE" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))')}
-  }
-}"
-
-update_state "currentDay" "$NEXT_DAY"
-
-# Clean up any leftover review file from a previous review day
-rm -f /tmp/bbb-review.txt
-
 echo ""
-echo "=== All 5 sections prepared (Phase: $DIFFICULTY_PHASE) ==="
-echo "State: $(cat "$STATE_FILE")"
+echo "=== All 5 section info files written (state NOT advanced yet) ==="
+echo "→ After writing all archive files, run: bash scripts/advance-state.sh"
