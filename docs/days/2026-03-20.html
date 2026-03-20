@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-03-20</title>
+  <meta name="description" content="byte-by-byte daily lessons for Friday, March 20, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Friday, March 20, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-03-20.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-03-19.html" style="color:var(--text2)">← 2026-03-19</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-03-20</span>
+    <h1>Friday, March 20, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-03-19.html" class="day-nav-btn">← 2026-03-19</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 Day 7 (3 min read) / System Design Day 7</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 Day 7 (3 min read) / System Design Day 7</h1>
+<h2>Database Types: SQL vs NoSQL — 数据库类型：关系型 vs 非关系型</h2>
+
+<hr/>
+
+<p>想象你在设计一个新的社交媒体平台…</p>
+
+<p>你的用户数据整齐划一：每人都有 ID、用户名、邮箱、注册时间。这很适合用 <strong>SQL 数据库</strong> — 就像一张结构清晰的 Excel 表格，行和列整整齐齐。</p>
+
+<p>但是，用户发的帖子呢？有人只写文字，有人附图片，有人嵌入视频，有人加了位置标签… 每条帖子的结构都不同。这时候 <strong>NoSQL</strong> 就大放异彩 — 像一个灵活的 JSON 文档，想放什么字段就放什么。</p>
+
+<hr/>
+
+<h3>架构对比 / Architecture Comparison</h3>
+
+<div class="diagram-block">         SQL Database                    NoSQL Database
+    ┌─────────────────────┐         ┌─────────────────────────┐
+    │      USERS TABLE    │         │    users collection     │
+    ├──────┬──────┬───────┤         │                         │
+    │  id  │ name │ email │         │ { id: 1,                │
+    ├──────┼──────┼───────┤         │   name: "Alice",        │
+    │  1   │Alice │a@x.com│         │   email: "a@x.com",     │
+    │  2   │ Bob  │b@y.com│         │   preferences: {...},   │
+    └──────┴──────┴───────┘         │   badges: ["🏆","⭐"] } │
+                                    └─────────────────────────┘
+    Schema enforced upfront          Schema flexible / per doc
+    JOIN across tables               Embed related data
+    ACID transactions                Eventual consistency (often)
+    Scale: vertical (bigger server)  Scale: horizontal (more servers)</div>
+
+<hr/>
+
+<h3>核心概念 / Key Concepts</h3>
+
+<p><strong>SQL (关系型数据库) — MySQL, PostgreSQL, SQLite</strong></p>
+<ul><li><strong>结构化数据</strong>: 表、行、列，schema 固定</li><li><strong>ACID 事务</strong>: Atomicity（原子性）, Consistency（一致性）, Isolation（隔离性）, Durability（持久性）— 银行转账不能丢数据！</li><li><strong>JOIN 操作</strong>: 多表关联查询，数据不冗余</li><li><strong>强一致性</strong>: 写入后立即可读</li></ul>
+
+<p><strong>NoSQL — MongoDB (文档), Redis (键值), Cassandra (列族), Neo4j (图)</strong></p>
+<ul><li><strong>灵活 schema</strong>: 每条记录结构可以不同</li><li><strong>水平扩展</strong>: 分片（sharding）轻松加机器</li><li><strong>最终一致性</strong>: 写入后可能有短暂延迟才全局可见</li><li><strong>高吞吐量</strong>: 读写速度极快（尤其键值存储）</li></ul>
+
+<hr/>
+
+<h3>为什么这样设计？How to Choose?</h3>
+
+<table><thead><tr><th>场景</th><th>推荐</th><th>原因</th></tr></thead><tbody><tr><td>用户账户、订单、财务</td><td>SQL</td><td>需要 ACID，数据关系明确</td></tr><tr><td>用户会话、缓存、排行榜</td><td>Redis (NoSQL)</td><td>极速读写，TTL 支持</td></tr><tr><td>产品目录、内容管理</td><td>MongoDB (NoSQL)</td><td>结构多变，嵌套文档</td></tr><tr><td>社交图谱、推荐系统</td><td>Neo4j (Graph)</td><td>关系查询是核心需求</td></tr><tr><td>日志、时序数据</td><td>Cassandra (NoSQL)</td><td>海量写入，时间范围查询</td></tr></tbody></table>
+
+<div class="diagram-block">**经验法则**: 先问"我的数据关系是否复杂？事务是否关键？" → 是则 SQL。"数据量是否巨大？结构是否多变？" → 是则 NoSQL。</div>
+
+<p><strong>现实中：两者共存！</strong></p>
+<ul><li>Instagram: PostgreSQL（用户/帖子关系） + Cassandra（活动 feed） + Redis（缓存）</li><li>单一数据库解决所有问题是反模式</li></ul>
+
+<hr/>
+
+<h3>别踩这个坑 / Common Mistakes</h3>
+
+<p>❌ <strong>"NoSQL 比 SQL 更快"</strong> — 错！取决于使用场景。复杂 JOIN 查询 SQL 更高效；简单键值查找 Redis 秒杀一切。</p>
+
+<p>❌ <strong>"NoSQL 不支持事务"</strong> — MongoDB 4.0+ 已支持多文档 ACID 事务，只是使用场景不同。</p>
+
+<p>❌ <strong>"选了就不能换"</strong> — 实践中，随着业务演进经常需要引入第二种数据库。提前规划数据访问层（DAL）让切换更容易。</p>
+
+<p>❌ <strong>过早优化</strong> — 99% 的创业公司用 PostgreSQL 就够了。等真正有 scale 问题再引入 NoSQL。</p>
+
+<hr/>
+
+<p>📚 <strong>深入学习 / Learn More:</strong></p>
+<ul><li><a href="https://www.uber.com/blog/postgres-to-mysql-migration/">Uber Engineering: Postgres to MySQL Migration</a> — 真实案例：为什么 Uber 从 PostgreSQL 迁移到 MySQL</li><li><a href="https://www.youtube.com/watch?v=_Ss42Vb1SU4">ByteByteGo: SQL vs NoSQL</a> — 可视化对比讲解（YouTube）</li><li><a href="https://dataintensive.net/">Designing Data-Intensive Applications, Ch. 2</a> — Martin Kleppmann 的权威参考书</li></ul>
+
+<p>🧒 <strong>ELI5:</strong> A SQL database is like a super organized binder with divider tabs where everything goes in exactly the right slot; a NoSQL database is like a big backpack where you can throw in anything — a book, a lunchbox, a basketball — whatever shape it is.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 Day 7 (4 min read) / Algorithms Day 7</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 Day 7 (4 min read) / Algorithms Day 7</h1>
+<h2>#238 Product of Array Except Self (Medium) — Arrays &amp; Hashing / Prefix Products</h2>
+
+<p>🔗 <a href="https://leetcode.com/problems/product-of-array-except-self/">LeetCode #238: Product of Array Except Self</a> 🟡 Medium</p>
+<p>📹 <a href="https://neetcode.io/problems/products-of-array-discluding-self">NeetCode Solution</a></p>
+
+<hr/>
+
+<h3>🌎 Real-World Analogy / 现实类比</h3>
+
+<p>想象你是一家工厂的质检员，流水线上有 N 个零件，每个都有一个重量。你的任务是：对于每个零件，快速计算出<strong>其他所有零件的总重量之积</strong>（不能把该零件自己算进去）。</p>
+
+<p>最笨的方法？每次都把其他所有零件重新乘一遍 — O(n²)，太慢了。</p>
+<p>聪明的方法？先从左到右算一遍"前缀积"，再从右到左算一遍"后缀积"，两个一乘就得到答案！</p>
+
+<hr/>
+
+<h3>📋 Problem Statement / 题目</h3>
+
+<p>Given an integer array <code>nums</code>, return an array <code>answer</code> such that <code>answer[i]</code> is equal to the product of all elements of <code>nums</code> except <code>nums[i]</code>.</p>
+
+<p>给定整数数组 <code>nums</code>，返回数组 <code>answer</code>，使得 <code>answer[i]</code> 等于 <code>nums</code> 中除 <code>nums[i]</code> 之外所有元素的乘积。</p>
+
+<p><strong>Constraint</strong>: Must run in O(n) time, <strong>without using division</strong> (不能用除法).</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Input:  nums = [1, 2, 3, 4]&#10;Output:       [24, 12,  8,  6]&#10;&#10;Check: &#10;  answer[0] = 2 * 3 * 4 = 24  ✓&#10;  answer[1] = 1 * 3 * 4 = 12  ✓&#10;  answer[2] = 1 * 2 * 4 =  8  ✓&#10;  answer[3] = 1 * 2 * 3 =  6  ✓">Copy</button>
+  <pre><code class="language-text">Input:  nums = [1, 2, 3, 4]
+Output:       [24, 12,  8,  6]
+
+Check: 
+  answer[0] = 2 * 3 * 4 = 24  ✓
+  answer[1] = 1 * 3 * 4 = 12  ✓
+  answer[2] = 1 * 2 * 4 =  8  ✓
+  answer[3] = 1 * 2 * 3 =  6  ✓</code></pre>
+</div>
+
+<hr/>
+
+<h3>🔍 Step-by-Step Walkthrough / 逐步分析</h3>
+
+<p><strong>Key Insight</strong>: For position <code>i</code>, the answer = (product of everything to the LEFT of i) × (product of everything to the RIGHT of i)</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="nums =   [ 1,   2,   3,   4 ]&#10;index:     0    1    2    3&#10;&#10;Left prefix products (prefix[i] = product of nums[0..i-1]):&#10;prefix = [ 1,   1,   2,   6 ]&#10;          ^     ^    ^    ^&#10;          i=0   1*1  1*2  1*2*3&#10;         (nothing (only (1,2   (1,2,3&#10;          left)   nums[0])  left) left)&#10;&#10;Right suffix products (suffix[i] = product of nums[i+1..end]):&#10;suffix = [24,  12,   4,   1 ]&#10;          ^     ^    ^    ^&#10;        2*3*4  3*4   4   (nothing&#10;                          right)&#10;&#10;answer[i] = prefix[i] * suffix[i]:&#10;  [0]: 1 * 24 = 24&#10;  [1]: 1 * 12 = 12&#10;  [2]: 2 *  4 =  8&#10;  [3]: 6 *  1 =  6">Copy</button>
+  <pre><code class="language-text">nums =   [ 1,   2,   3,   4 ]
+index:     0    1    2    3
+
+Left prefix products (prefix[i] = product of nums[0..i-1]):
+prefix = [ 1,   1,   2,   6 ]
+          ^     ^    ^    ^
+          i=0   1*1  1*2  1*2*3
+         (nothing (only (1,2   (1,2,3
+          left)   nums[0])  left) left)
+
+Right suffix products (suffix[i] = product of nums[i+1..end]):
+suffix = [24,  12,   4,   1 ]
+          ^     ^    ^    ^
+        2*3*4  3*4   4   (nothing
+                          right)
+
+answer[i] = prefix[i] * suffix[i]:
+  [0]: 1 * 24 = 24
+  [1]: 1 * 12 = 12
+  [2]: 2 *  4 =  8
+  [3]: 6 *  1 =  6</code></pre>
+</div>
+
+<p><strong>Space Optimization</strong>: We can do this in O(1) extra space (output array doesn't count) by computing prefix in the output array first, then multiplying suffix on-the-fly from right to left.</p>
+
+<hr/>
+
+<h3>🐍 Python Solution / Python 解法</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def productExceptSelf(nums: list[int]) -&gt; list[int]:&#10;    n = len(nums)&#10;    answer = [1] * n&#10;    &#10;    # Pass 1: Fill answer[i] with the PREFIX product (product of everything LEFT of i)&#10;    # After this pass: answer = [1, 1, 2, 6] for input [1, 2, 3, 4]&#10;    prefix = 1&#10;    for i in range(n):&#10;        answer[i] = prefix      # store product of everything before i&#10;        prefix *= nums[i]       # update running prefix&#10;    &#10;    # Pass 2: Multiply answer[i] by the SUFFIX product (product of everything RIGHT of i)&#10;    # We traverse right-to-left, tracking running suffix product&#10;    suffix = 1&#10;    for i in range(n - 1, -1, -1):&#10;        answer[i] *= suffix     # multiply in the suffix product&#10;        suffix *= nums[i]       # update running suffix&#10;&#10;    return answer&#10;&#10;# Test it:&#10;print(productExceptSelf([1, 2, 3, 4]))    # → [24, 12, 8, 6]&#10;print(productExceptSelf([-1, 1, 0, -3, 3]))  # → [0, 0, 9, 0, 0]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> productExceptSelf(nums: list[int]) -&gt; list[int]:
+    n = len(nums)
+    answer = [<span style="color:#56b6c2;">1</span>] * n
+    
+    <span style="color:#5c6370;"># Pass 1: Fill answer[i] with the PREFIX product (product of everything LEFT of i)</span>
+    <span style="color:#5c6370;"># After this pass: answer = [1, 1, 2, 6] for input [1, 2, 3, 4]</span>
+    prefix = <span style="color:#56b6c2;">1</span>
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(n):
+        answer[i] = prefix      <span style="color:#5c6370;"># store product of everything before i</span>
+        prefix *= nums[i]       <span style="color:#5c6370;"># update running prefix</span>
+    
+    <span style="color:#5c6370;"># Pass 2: Multiply answer[i] by the SUFFIX product (product of everything RIGHT of i)</span>
+    <span style="color:#5c6370;"># We traverse right-to-left, tracking running suffix product</span>
+    suffix = <span style="color:#56b6c2;">1</span>
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(n - <span style="color:#56b6c2;">1</span>, -<span style="color:#56b6c2;">1</span>, -<span style="color:#56b6c2;">1</span>):
+        answer[i] *= suffix     <span style="color:#5c6370;"># multiply in the suffix product</span>
+        suffix *= nums[i]       <span style="color:#5c6370;"># update running suffix</span>
+
+    <span style="color:#c678dd;">return</span> answer
+
+<span style="color:#5c6370;"># Test it:</span>
+print(productExceptSelf([<span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">2</span>, <span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">4</span>]))    <span style="color:#5c6370;"># → [24, 12, 8, 6]</span>
+print(productExceptSelf([-<span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">0</span>, -<span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">3</span>]))  <span style="color:#5c6370;"># → [0, 0, 9, 0, 0]</span></code></pre>
+</div>
+
+<p><strong>Trace with [1, 2, 3, 4]:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="After Pass 1 (prefix):&#10;  i=0: answer[0] = 1,  prefix = 1&#10;  i=1: answer[1] = 1,  prefix = 2&#10;  i=2: answer[2] = 2,  prefix = 6&#10;  i=3: answer[3] = 6,  prefix = 24&#10;  answer = [1, 1, 2, 6]&#10;&#10;After Pass 2 (suffix, right to left):&#10;  i=3: answer[3] = 6  * 1 = 6,   suffix = 4&#10;  i=2: answer[2] = 2  * 4 = 8,   suffix = 12&#10;  i=1: answer[1] = 1  * 12 = 12, suffix = 24&#10;  i=0: answer[0] = 1  * 24 = 24, suffix = 24&#10;  answer = [24, 12, 8, 6]  ✓">Copy</button>
+  <pre><code class="language-text">After Pass 1 (prefix):
+  i=0: answer[0] = 1,  prefix = 1
+  i=1: answer[1] = 1,  prefix = 2
+  i=2: answer[2] = 2,  prefix = 6
+  i=3: answer[3] = 6,  prefix = 24
+  answer = [1, 1, 2, 6]
+
+After Pass 2 (suffix, right to left):
+  i=3: answer[3] = 6  * 1 = 6,   suffix = 4
+  i=2: answer[2] = 2  * 4 = 8,   suffix = 12
+  i=1: answer[1] = 1  * 12 = 12, suffix = 24
+  i=0: answer[0] = 1  * 24 = 24, suffix = 24
+  answer = [24, 12, 8, 6]  ✓</code></pre>
+</div>
+
+<hr/>
+
+<h3>⏱️ Complexity / 复杂度</h3>
+
+<table><thead><tr><th></th><th>Complexity</th></tr></thead><tbody><tr><td><strong>Time</strong></td><td>O(n) — two linear passes</td></tr><tr><td><strong>Space</strong></td><td>O(1) extra (output array doesn't count per problem rules)</td></tr></tbody></table>
+
+<hr/>
+
+<h3>举一反三 / Pattern Recognition</h3>
+
+<p><strong>The Prefix/Suffix Pattern</strong> unlocks many problems:</p>
+<ul><li>Any time you need "everything except me" → think prefix × suffix</li><li><strong>Variant</strong>: <a href="https://leetcode.com/problems/trapping-rain-water/">LeetCode #42: Trapping Rain Water</a> — uses max-prefix and max-suffix arrays</li><li><strong>Variant</strong>: <a href="https://leetcode.com/problems/maximum-product-subarray/">LeetCode #152: Maximum Product Subarray</a> — track both max and min prefix (negatives flip signs!)</li><li><strong>Variant</strong>: <a href="https://leetcode.com/problems/find-pivot-index/">LeetCode #724: Find Pivot Index</a> — prefix sum version of the same idea</li></ul>
+
+<p><strong>Follow-up interview questions:</strong></p>
+<ol><li>"What if the array contains zeros?" → The code already handles it correctly (the zero propagates into the suffix/prefix)</li><li>"Can you solve it with O(n²) first, then optimize?" → Always a good way to start</li><li>"What about overflow?" → Use Python (arbitrary precision) or modular arithmetic</li></ol>
+
+<hr/>
+
+<p>📚 <strong>深入学习 / Learn More:</strong></p>
+<ul><li>📹 <a href="https://neetcode.io/problems/products-of-array-discluding-self">NeetCode Solution Video</a> — best visual explanation of the prefix/suffix approach</li><li><a href="https://neetcode.io/roadmap">Arrays &amp; Hashing Pattern Guide — NeetCode Roadmap</a> — see the Arrays &amp; Hashing section for this pattern</li><li>Related: <a href="https://leetcode.com/problems/trapping-rain-water/">LeetCode #42: Trapping Rain Water</a> 🔴 Hard | <a href="https://leetcode.com/problems/maximum-product-subarray/">LeetCode #152: Maximum Product Subarray</a> 🟡 Medium</li></ul>
+
+<p>🧒 <strong>ELI5:</strong> If you have 4 friends and you want to know how many handshakes happen when you're NOT included, you count all the handshakes to your left, then all the handshakes to your right, and multiply them together — that's your answer!</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 Day 7 (2 min read) / Soft Skills Day 7</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 Day 7 (2 min read) / Soft Skills Day 7</h1>
+<h2>Technical Leadership: "Tell me about a time you simplified a complex system"</h2>
+<h2>技术领导力："讲一个你简化复杂系统的经历"</h2>
+
+<hr/>
+
+<h3>为什么这很重要 / Why This Matters</h3>
+
+<p>这道题考查的不是"你删了多少行代码"，而是：</p>
+<ol><li><strong>你能识别真正的复杂性来源</strong>（accidental vs essential complexity）</li><li><strong>你有勇气说"这个可以更简单"</strong>，并推动改变</li><li><strong>你理解简化的代价</strong> — 有时候"复杂"是有原因的</li></ol>
+
+<p>Senior/Staff 工程师最重要的技能之一：<strong>抵抗系统熵增</strong>，不让复杂性悄悄积累。</p>
+
+<p><em>This question tests whether you can identify the root of complexity, have the courage to push for change, and understand the tradeoffs of simplification.</em></p>
+
+<hr/>
+
+<h3>STAR Framework Breakdown / STAR 框架拆解</h3>
+
+<p><strong>Situation (情境):</strong></p>
+<p>描述系统状态 + 为什么它变复杂了</p>
+<ul><li>关键信息：系统规模、团队背景、复杂性的历史原因</li><li>例："我们的支付服务经历了 3 年迭代，有 7 个微服务处理同一笔交易的不同阶段…"</li></ul>
+
+<p><strong>Task (任务):</strong></p>
+<p>你的角色 + 为什么这个简化很重要</p>
+<ul><li>不只是"我负责这个" — 说清楚商业影响</li><li>例："每次新支付方式上线需要 6 周，竞对只需 2 周。我主导了简化工作。"</li></ul>
+
+<p><strong>Action (行动):</strong></p>
+<p>这是最重要的部分！展示技术深度：</p>
+<ul><li>你如何诊断复杂性来源（画架构图？追踪请求链路？）</li><li>你如何区分哪些复杂性可以去掉，哪些必须保留</li><li>你如何获得团队 buy-in（技术评审、数据支撑、渐进迁移）</li><li>你如何降低风险（feature flags、灰度发布、监控）</li></ul>
+
+<p><strong>Result (结果):</strong></p>
+<p>量化影响，不要含糊：</p>
+<ul><li>✅ "上线时间从 6 周降至 1.5 周"</li><li>✅ "代码行数减少 40%，P99 延迟从 800ms 降到 200ms"</li><li>✅ "新工程师上手时间从 2 周缩短到 3 天"</li></ul>
+
+<hr/>
+
+<h3>❌ Bad Approach vs ✅ Good Approach</h3>
+
+<p><strong>❌ Bad:</strong></p>
+<blockquote>"我们的旧系统很乱，我重写了它。现在好多了，代码更干净，大家都很满意。"</blockquote>
+
+<p>问题所在：</p>
+<ul><li>没说清楚复杂性的来源</li><li>"重写"是危险词（没提风险管理）</li><li>结果模糊，没有数据</li><li>听起来像个人英雄主义，不像团队领导力</li></ul>
+
+<p><strong>✅ Good:</strong></p>
+<blockquote>"我们有一个支付编排服务，最初设计是 2021 年给 3 种支付方式用的，到 2023 年已经支持 12 种，服务里充满了 if/else 分支和特殊 case 处理。每次新方式上线，QA 要测试所有 12 种，因为改动影响面不可预测。</blockquote>
+<blockquote></blockquote>
+<blockquote>我花了两周时间梳理请求流，发现核心问题：所有支付方式被平等对待，但实际上 80% 的代码只和 2 种高复杂度方式有关。我提出用策略模式（Strategy Pattern）重构，让每种支付方式封装自己的逻辑。</blockquote>
+<blockquote></blockquote>
+<blockquote>说服团队是最难的部分 — 大家怕改出 bug。我做了一个 spike，证明可以在不改变任何外部 API 的情况下完成重构，并用 feature flags 控制灰度。我们花了 6 周分批迁移，每批覆盖 2 种支付方式。</blockquote>
+<blockquote></blockquote>
+<blockquote>最终：新支付方式上线时间从 6 周降至 1.5 周，QA 测试范围减少 60%，事故率下降了 35%。"</blockquote>
+
+<hr/>
+
+<h3>Scenario Template to Adapt / 可复用场景模板</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Context: [系统名] had grown from [原始状态] to [当前状态] over [时间],&#10;         resulting in [具体问题].&#10;&#10;My Role: As [你的角色], I was responsible for [范围].&#10;         The business impact was [影响] — [量化].&#10;&#10;Diagnosis: I [诊断方式 — 画图/追链路/分析指标], and identified that&#10;           the core source of complexity was [根本原因].&#10;&#10;Solution: I proposed [方案], which addressed [核心问题] while&#10;          preserving [必须保留的复杂性原因].&#10;&#10;Risk Management: To validate, I [验证方法]. For rollout, I [迁移策略].&#10;&#10;Result: [定量结果 1], [定量结果 2], [定量结果 3].">Copy</button>
+  <pre><code class="language-text">Context: [系统名] had grown from [原始状态] to [当前状态] over [时间],
+         resulting in [具体问题].
+
+My Role: As [你的角色], I was responsible for [范围].
+         The business impact was [影响] — [量化].
+
+Diagnosis: I [诊断方式 — 画图/追链路/分析指标], and identified that
+           the core source of complexity was [根本原因].
+
+Solution: I proposed [方案], which addressed [核心问题] while
+          preserving [必须保留的复杂性原因].
+
+Risk Management: To validate, I [验证方法]. For rollout, I [迁移策略].
+
+Result: [定量结果 1], [定量结果 2], [定量结果 3].</code></pre>
+</div>
+
+<hr/>
+
+<h3>Senior/Staff Level Tips / Senior/Staff 级别加分点</h3>
+
+<p>🎯 <strong>区分 accidental vs essential complexity</strong></p>
+<ul><li>Essential: 业务本身就是复杂的（监管要求、多租户架构）— 必须接受</li><li>Accidental: 历史债务、过度工程、沟通问题导致的 — 可以消除</li><li>在回答中明确说"这部分复杂性是必要的，我们保留了它"</li></ul>
+
+<p>🎯 <strong>说清楚你是如何 sell 这个方案的</strong></p>
+<p>Staff 工程师的简化工作往往需要跨团队协作。说说你如何：</p>
+<ul><li>用数据/可视化说服怀疑者</li><li>处理"如果没坏为什么要修"的反对声</li><li>建立渐进迁移计划让团队安心</li></ul>
+
+<p>🎯 <strong>提到你保留了什么</strong></p>
+<p>最好的答案会说"我们考虑过把 X 也简化掉，但决定保留，因为…" — 这体现了成熟的判断力。</p>
+
+<hr/>
+
+<h3>关键要点 / Key Takeaways</h3>
+
+<ol><li><strong>简化不是删代码，是降低认知负担</strong> — 衡量标准是新工程师理解系统需要多久</li><li><strong>诊断先于方案</strong> — 先说"我如何找到问题根源"，再说方案</li><li><strong>量化一切</strong> — 上线时间、延迟、事故率、代码规模</li><li><strong>展示工程领导力</strong> — 技术判断 + 团队推动 + 风险管理</li></ol>
+
+<hr/>
+
+<p>📚 <strong>深入学习 / Learn More:</strong></p>
+<ul><li><a href="https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction">The Wrong Abstraction — Sandi Metz</a> — classic post on when simplification actually makes things worse</li><li><a href="https://web.stanford.edu/~ouster/cgi-bin/book.php">A Philosophy of Software Design — John Ousterhout</a> — the definitive book on managing complexity in software</li><li><a href="https://www.youtube.com/watch?v=SxdOUGdseq4">Simple Made Easy — Rich Hickey (Strange Loop Talk)</a> — legendary talk distinguishing "simple" from "easy"</li></ul>
+
+<p>🧒 <strong>ELI5:</strong> Simplifying a complex system is like cleaning your messy backpack — you take everything out, throw away what you don't need, and put the rest back in a way that makes it easy to find your pencil without dumping everything on the floor.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 Day 7 (2 min read) / Frontend Day 7</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 Day 7 (2 min read) / Frontend Day 7</h1>
+<h2>CSS Positioning: relative, absolute, fixed, sticky</h2>
+<h2>CSS 定位：相对、绝对、固定、粘性</h2>
+
+<hr/>
+
+<h3>猜猜这段代码输出什么？/ What does this code output?</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="&lt;style&gt;&#10;  .container {&#10;    position: relative;&#10;    width: 200px;&#10;    height: 200px;&#10;    background: lightblue;&#10;  }&#10;&#10;  .box {&#10;    position: absolute;&#10;    top: 20px;&#10;    left: 30px;&#10;    width: 60px;&#10;    height: 60px;&#10;    background: coral;&#10;  }&#10;&lt;/style&gt;&#10;&#10;&lt;div class=&quot;container&quot;&gt;&#10;  &lt;div class=&quot;box&quot;&gt;&lt;/div&gt;&#10;&lt;/div&gt;">Copy</button>
+  <pre><code class="language-html">&lt;<span style="color:#e06c75;">style</span>&gt;
+  .container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    background: lightblue;
+  }
+
+  .box {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    width: 60px;
+    height: 60px;
+    background: coral;
+  }
+&lt;/<span style="color:#e06c75;">style</span>&gt;
+
+&lt;<span style="color:#e06c75;">div</span> <span style="color:#e5c07b;">class</span>="container"&gt;
+  &lt;<span style="color:#e06c75;">div</span> <span style="color:#e5c07b;">class</span>="box"&gt;&lt;/<span style="color:#e06c75;">div</span>&gt;
+&lt;/<span style="color:#e06c75;">div</span>&gt;</code></pre>
+</div>
+
+<p><strong>Where does the coral <code>.box</code> appear?</strong></p>
+<p>A) 20px from the top of the <strong>page</strong>, 30px from the left of the <strong>page</strong></p>
+<p>B) 20px from the top of <code>.container</code>, 30px from the left of <code>.container</code> ← ✅</p>
+<p>C) 20px from the top of the <strong>viewport</strong>, 30px from the left of the <strong>viewport</strong></p>
+<p>D) It won't move — absolute positioning only works without a parent</p>
+
+<p><em>Answer: B — because <code>.container</code> has <code>position: relative</code>, it becomes the <strong>containing block</strong> for <code>.box</code>.</em></p>
+
+<hr/>
+
+<h3>🗺️ Visual Map of All 4 Positioning Modes</h3>
+
+<div class="diagram-block">┌─────────────────────────────────────────────────────────────┐
+│                         WEBPAGE                             │
+│                                                             │
+│  ┌─────────────────────────────────────┐                    │
+│  │   position: relative                │                    │
+│  │   └─ stays in flow                 │                    │
+│  │   └─ offset from WHERE IT WOULD BE │                    │
+│  └─────────────────────────────────────┘                    │
+│                                                             │
+│  ┌─────────────────────────────────────┐                    │
+│  │   position: absolute                │                    │
+│  │   ┌─────────────────────────────┐  │                    │
+│  │   │ nearest positioned ancestor │  │                    │
+│  │   │      ← offsets from HERE   │  │                    │
+│  │   └─────────────────────────────┘  │                    │
+│  └─────────────────────────────────────┘                    │
+│                                                             │
+│  ╔══════════════════════════════════════╗ ← VIEWPORT TOP    │
+│  ║   position: fixed                    ║                   │
+│  ║   └─ always relative to VIEWPORT    ║                   │
+│  ║   └─ stays even when you scroll     ║                   │
+│  ╚══════════════════════════════════════╝                   │
+│                                                             │
+│  ┌─────────────────────────────────────┐                    │
+│  │   position: sticky                  │                    │
+│  │   └─ relative UNTIL you scroll     │                    │
+│  │      past threshold → then FIXED   │                    │
+│  └─────────────────────────────────────┘                    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘</div>
+
+<hr/>
+
+<h3>Code Examples / 代码示例</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* 1. RELATIVE — offset from its normal position, stays in document flow */&#10;.badge {&#10;  position: relative;&#10;  top: -2px;   /* nudge up 2px from where it would normally sit */&#10;  /* still takes up its original space in the layout! */&#10;}&#10;&#10;/* 2. ABSOLUTE — removed from flow, positioned relative to nearest &#10;   positioned ancestor (or &lt;html&gt; if none exists) */&#10;.tooltip {&#10;  position: absolute;&#10;  top: 100%;     /* just below the parent */&#10;  left: 50%;&#10;  transform: translateX(-50%);  /* center it */&#10;  /* KEY: the parent must have position: relative! */&#10;}&#10;&#10;/* 3. FIXED — always relative to the viewport, never scrolls away */&#10;.navbar {&#10;  position: fixed;&#10;  top: 0;&#10;  left: 0;&#10;  right: 0;&#10;  z-index: 1000;  /* stay above everything */&#10;}&#10;&#10;/* 4. STICKY — hybrid: relative until threshold, then fixed */&#10;.section-header {&#10;  position: sticky;&#10;  top: 60px;   /* becomes &quot;fixed&quot; 60px from top once scrolled past */&#10;  background: white;&#10;  z-index: 10;&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* 1. RELATIVE — offset from its normal position, stays in document flow */</span>
+<span style="color:#e06c75;">.badge</span>{
+  <span style="color:#56b6c2;">position</span>: <span style="color:#e5c07b;">relative</span>;
+<span style="color:#5c6370;">  top: -2px;   /* nudge up 2px from where it would normally sit */</span>
+<span style="color:#5c6370;">  /* still takes up its original space in the layout! */</span>
+}
+
+<span style="color:#5c6370;">/* 2. ABSOLUTE — removed from flow, positioned relative to nearest </span>
+   positioned ancestor (or &lt;html&gt; if none exists) */
+<span style="color:#e06c75;">.tooltip</span>{
+  <span style="color:#56b6c2;">position</span>: <span style="color:#e5c07b;">absolute</span>;
+<span style="color:#5c6370;">  top: 100%;     /* just below the parent */</span>
+  <span style="color:#56b6c2;">left</span>: <span style="color:#e5c07b;">50%</span>;
+<span style="color:#5c6370;">  transform: translateX(-50%);  /* center it */</span>
+<span style="color:#5c6370;">  /* KEY: the parent must have position: relative! */</span>
+}
+
+<span style="color:#5c6370;">/* 3. FIXED — always relative to the viewport, never scrolls away */</span>
+<span style="color:#e06c75;">.navbar</span>{
+  <span style="color:#56b6c2;">position</span>: <span style="color:#e5c07b;">fixed</span>;
+  <span style="color:#56b6c2;">top</span>: <span style="color:#e5c07b;">0</span>;
+  <span style="color:#56b6c2;">left</span>: <span style="color:#e5c07b;">0</span>;
+  <span style="color:#56b6c2;">right</span>: <span style="color:#e5c07b;">0</span>;
+<span style="color:#5c6370;">  z-index: 1000;  /* stay above everything */</span>
+}
+
+<span style="color:#5c6370;">/* 4. STICKY — hybrid: relative until threshold, then fixed */</span>
+<span style="color:#e06c75;">.section-header</span>{
+  <span style="color:#56b6c2;">position</span>: <span style="color:#e5c07b;">sticky</span>;
+<span style="color:#5c6370;">  top: 60px;   /* becomes "fixed" 60px from top once scrolled past */</span>
+  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">white</span>;
+  <span style="color:#56b6c2;">z-index</span>: <span style="color:#e5c07b;">10</span>;
+}</code></pre>
+</div>
+
+<hr/>
+
+<h3>你可能不知道 / You Might Not Know</h3>
+
+<p>⚠️ <strong><code>absolute</code> 的"陷阱"：containing block 是谁？</strong></p>
+
+<p><code>absolute</code> 定位是相对于"最近的已定位祖先"（nearest positioned ancestor = any element with <code>position</code> other than <code>static</code>）。</p>
+
+<p>如果没有任何祖先设置了 <code>position</code>，那就相对于 <code>&lt;html&gt;</code> 根元素！</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* Common bug: forgot to add position: relative to parent */&#10;.card {&#10;  /* position: relative; ← forgot this! */&#10;}&#10;.card .badge {&#10;  position: absolute;&#10;  top: 10px;&#10;  right: 10px;&#10;  /* This badge will now position relative to the page, not .card! */&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* Common bug: forgot to add position: relative to parent */</span>
+<span style="color:#e06c75;">.card</span>{
+<span style="color:#5c6370;">  /* position: relative; ← forgot this! */</span>
+}
+<span style="color:#e06c75;">.card .badge</span>{
+  <span style="color:#56b6c2;">position</span>: <span style="color:#e5c07b;">absolute</span>;
+  <span style="color:#56b6c2;">top</span>: <span style="color:#e5c07b;">10px</span>;
+  <span style="color:#56b6c2;">right</span>: <span style="color:#e5c07b;">10px</span>;
+<span style="color:#5c6370;">  /* This badge will now position relative to the page, not .card! */</span>
+}</code></pre>
+</div>
+
+<p>⚠️ <strong><code>sticky</code> 需要高度限制！</strong></p>
+
+<p><code>sticky</code> 只在其<strong>父容器的范围内</strong>有效。如果父容器太短，或者 <code>overflow: hidden</code> 被设置，<code>sticky</code> 会"不工作"。这是最常见的 sticky bug！</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* sticky won't work if parent has overflow: hidden/scroll/auto */&#10;.parent {&#10;  overflow: hidden;  /* this BREAKS sticky! */&#10;}&#10;.child {&#10;  position: sticky;&#10;  top: 0;  /* won't stick — parent clips it */&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* sticky won't work if parent has overflow: hidden/scroll/auto */</span>
+<span style="color:#e06c75;">.parent</span>{
+<span style="color:#5c6370;">  overflow: hidden;  /* this BREAKS sticky! */</span>
+}
+<span style="color:#e06c75;">.child</span>{
+  <span style="color:#56b6c2;">position</span>: <span style="color:#e5c07b;">sticky</span>;
+<span style="color:#5c6370;">  top: 0;  /* won't stick — parent clips it */</span>
+}</code></pre>
+</div>
+
+<hr/>
+
+<h3>🎯 Mini Challenge</h3>
+
+<p>Create a <strong>notification badge</strong> that sits in the top-right corner of an avatar image, like this:</p>
+
+<div class="diagram-block">┌──────────┐
+│  👤      │🔴  ← red dot badge, top-right corner
+│          │
+└──────────┘</div>
+
+<p>Write the HTML/CSS. (Hint: you need ONE element with <code>position: relative</code> and ONE with <code>position: absolute</code>.)</p>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;Solution / 答案&lt;/summary&gt;</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="&lt;div class=&quot;avatar-wrapper&quot;&gt;&#10;  &lt;img src=&quot;avatar.png&quot; alt=&quot;User&quot; /&gt;&#10;  &lt;span class=&quot;badge&quot;&gt;3&lt;/span&gt;&#10;&lt;/div&gt;">Copy</button>
+  <pre><code class="language-html">&lt;<span style="color:#e06c75;">div</span> <span style="color:#e5c07b;">class</span>="avatar-wrapper"&gt;
+  &lt;<span style="color:#e06c75;">img</span> <span style="color:#e5c07b;">src</span>="avatar.png" <span style="color:#e5c07b;">alt</span>="User" /&gt;
+  &lt;<span style="color:#e06c75;">span</span> <span style="color:#e5c07b;">class</span>="badge"&gt;3&lt;/<span style="color:#e06c75;">span</span>&gt;
+&lt;/<span style="color:#e06c75;">div</span>&gt;</code></pre>
+</div>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=".avatar-wrapper {&#10;  position: relative;  /* containing block for the badge */&#10;  display: inline-block;&#10;  width: 60px;&#10;  height: 60px;&#10;}&#10;&#10;.avatar-wrapper img {&#10;  width: 100%;&#10;  height: 100%;&#10;  border-radius: 50%;&#10;}&#10;&#10;.badge {&#10;  position: absolute;&#10;  top: -4px;&#10;  right: -4px;&#10;  background: red;&#10;  color: white;&#10;  font-size: 11px;&#10;  width: 20px;&#10;  height: 20px;&#10;  border-radius: 50%;&#10;  display: flex;&#10;  align-items: center;&#10;  justify-content: center;&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.avatar-wrapper</span>{
+<span style="color:#5c6370;">  position: relative;  /* containing block for the badge */</span>
+  <span style="color:#56b6c2;">display</span>: <span style="color:#e5c07b;">inline-block</span>;
+  <span style="color:#56b6c2;">width</span>: <span style="color:#e5c07b;">60px</span>;
+  <span style="color:#56b6c2;">height</span>: <span style="color:#e5c07b;">60px</span>;
+}
+
+<span style="color:#e06c75;">.avatar-wrapper img</span>{
+  <span style="color:#56b6c2;">width</span>: <span style="color:#e5c07b;">100%</span>;
+  <span style="color:#56b6c2;">height</span>: <span style="color:#e5c07b;">100%</span>;
+  <span style="color:#56b6c2;">border-radius</span>: <span style="color:#e5c07b;">50%</span>;
+}
+
+<span style="color:#e06c75;">.badge</span>{
+  <span style="color:#56b6c2;">position</span>: <span style="color:#e5c07b;">absolute</span>;
+  <span style="color:#56b6c2;">top</span>: <span style="color:#e5c07b;">-4px</span>;
+  <span style="color:#56b6c2;">right</span>: <span style="color:#e5c07b;">-4px</span>;
+  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">red</span>;
+  <span style="color:#56b6c2;">color</span>: <span style="color:#e5c07b;">white</span>;
+  <span style="color:#56b6c2;">font-size</span>: <span style="color:#e5c07b;">11px</span>;
+  <span style="color:#56b6c2;">width</span>: <span style="color:#e5c07b;">20px</span>;
+  <span style="color:#56b6c2;">height</span>: <span style="color:#e5c07b;">20px</span>;
+  <span style="color:#56b6c2;">border-radius</span>: <span style="color:#e5c07b;">50%</span>;
+  <span style="color:#56b6c2;">display</span>: <span style="color:#e5c07b;">flex</span>;
+  <span style="color:#56b6c2;">align-items</span>: <span style="color:#e5c07b;">center</span>;
+  <span style="color:#56b6c2;">justify-content</span>: <span style="color:#e5c07b;">center</span>;
+}</code></pre>
+</div>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>📚 <strong>深入学习 / Learn More:</strong></p>
+<ul><li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/position">MDN: CSS position property</a> — the authoritative reference with live examples</li><li><a href="https://css-tricks.com/absolute-relative-fixed-positioining-how-do-they-differ/">CSS-Tricks: Absolute, Relative, Fixed Positioning: How Do They Differ?</a> — clear visual explainer</li><li><a href="https://css-tricks.com/position-sticky-2/">Sticky CSS Headers</a> — CSS-Tricks deep dive on the sticky gotchas</li></ul>
+
+<p>🧒 <strong>ELI5:</strong> CSS positioning is like choosing where to put your toys — <code>relative</code> means "move a little from where you already are," <code>absolute</code> means "go to a specific spot inside your room," <code>fixed</code> means "stay on the door no matter where I walk," and <code>sticky</code> means "follow me around, but only once I've passed a certain point."</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI Day 7 (2 min read) — AI 新闻速递 / AI News Roundup</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI Day 7 (2 min read) — AI 新闻速递 / AI News Roundup</h1>
+
+<p><em>Week of March 17–20, 2026</em></p>
+
+<hr/>
+
+<h3>📰 Story 1: Meta 用 AI 替代内容审核员</h3>
+
+<p><strong>What happened:</strong> Meta 宣布大规模推出 AI 内容支持助手，将大幅减少对第三方内容审核承包商的依赖。Meta 表示 AI 系统将处理"重复性的图形内容审核"以及诈骗、毒品销售等对抗性内容的识别。</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>这不只是 Meta 的内部决策 — 它标志着 AI 在<strong>高风险判断任务</strong>中正式进入规模化应用。争议点在于：AI 审核仍然会有偏差和漏判，而当人类被从循环中移除，谁来负责？对于工程师而言，这意味着 AI 安全和内容策略将成为未来几年的关键工程挑战。</p>
+
+<hr/>
+
+<h3>📰 Story 2: Samsung 宣布 730 亿美元 AI 芯片扩张计划</h3>
+
+<p><strong>What happened:</strong> 三星宣布 2026 年将 AI 相关投入增加 22%，押注 Agentic AI 的算力需求激增。目标是超越 SK Hynix，成为 Nvidia 最大的 HBM（高带宽内存）供应商。</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>GPU 之争的下一个战场是 <strong>HBM 内存</strong>。LLM 推理的瓶颈越来越不是算力本身，而是内存带宽 — 这也是为什么 Agentic AI（需要长上下文、多轮推理）会带来如此巨大的内存需求。关注 Samsung vs SK Hynix 的竞争，本质上是在关注 AI 基础设施的下一个瓶颈。</p>
+
+<hr/>
+
+<h3>📰 Story 3: Signal 创始人与 Meta 合作加密 AI</h3>
+
+<p><strong>What happened:</strong> Signal 创始人 Moxie Marlinspike 宣布其加密 AI 聊天机器人 Confer 将与 Meta AI 集成，为 Meta 的 AI 提供端到端隐私保护技术。目标：让 AI 对话内容对 Meta 服务器本身也不可见。</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p><strong>隐私保护 AI（Privacy-Preserving AI）</strong> 是下一个重要技术方向。目前几乎所有 AI 推理都在云端完成，服务商可以看到你的所有对话。Moxie 提出的方向（结合 TEE/可信执行环境 + 同态加密）如果成功，将彻底改变 AI 应用的隐私模型。这对医疗 AI、法律 AI 等敏感场景意义巨大。</p>
+
+<hr/>
+
+<h3>📰 Story 4: Microsoft 发布 MAI-Image-2 图像生成模型</h3>
+
+<p><strong>What happened:</strong> 微软发布第二代 AI 图像生成模型 MAI-Image-2，主打"增强照片真实感"和"图像内文字生成更可靠"。现已在 Copilot 和 Bing Image Creator 上线。</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>文字渲染（text rendering in images）一直是图像 AI 的"耻辱角落" — GPT-4 画出来的招牌字往往是乱码。MAI-Image-2 将文字生成列为核心改进点，这对营销、设计、UI 素材生成有直接影响。同时，这也表明微软正在摆脱对 OpenAI DALL-E 的依赖，建立自己的图像模型能力。</p>
+
+<hr/>
+
+<h3>📰 Story 5: Amazon Alexa Plus 登陆英国 — Agentic AI 助手首个欧洲落地</h3>
+
+<p><strong>What happened:</strong> 亚马逊宣布 Alexa Plus（搭载 agentic AI 能力的升级版）在英国上线，早期访问阶段免费，之后每月 £19.99（约 $26.50），Prime 会员免费。亚马逊特别强调其"genuinely British"——理解"cuppa"、"knackered"、"nippy"等英式表达。</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>AI 助手本地化（localization）不只是翻译，还包括文化理解和方言处理。Alexa Plus 的"Agentic"定位意味着它不再只是问答，而是可以执行多步任务（预订、购物、控制智能家居）。这是 AI 助手从"聊天机器人"向"数字代理人"演进的关键节点，也是 OpenAI、Google、Apple 都在争夺的市场。</p>
+
+<hr/>
+
+<p>📚 <strong>深入学习 / Learn More:</strong></p>
+<ul><li><a href="https://about.fb.com/news/2026/03/boosting-your-support-and-safety-on-metas-apps-with-ai/">Meta AI Content Moderation Announcement</a> — 官方博客原文</li><li><a href="https://confer.to/blog/2026/03/encrypted-meta/">Moxie on Confer + Meta AI Integration</a> — 技术细节和隐私保护 AI 原理</li><li><a href="https://microsoft.ai/news/introducing-MAI-Image-2/">Microsoft MAI-Image-2 Announcement</a> — 官方发布博客</li></ul>
+
+<p>🧒 <strong>ELI5:</strong> This week in AI: robots are learning to be internet safety guards, phone chips are getting a huge upgrade to handle smarter AI, someone figured out how to make AI chats private like a secret code, and AI assistants are learning to speak in different accents — even British English!</p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
