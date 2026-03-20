@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-03-19</title>
+  <meta name="description" content="byte-by-byte daily lessons for Thursday, March 19, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Thursday, March 19, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-03-19.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-03-17.html" style="color:var(--text2)">← 2026-03-17</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-03-19</span>
+    <h1>Thursday, March 19, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-03-17.html" class="day-nav-btn">← 2026-03-17</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <p>🏗️ <strong>系统设计 Day 6 / System Design Day 6</strong></p>
+<p><strong>CDN (Content Delivery Network) — 内容分发网络</strong></p>
+
+<hr/>
+
+<p><strong>想象你在设计... / Imagine You're Building...</strong></p>
+
+<p>你在上海开了一家咖啡豆网店，客户遍布全球。每次有人从纽约访问你的网站，请求要飞越太平洋到上海服务器取图片、CSS、JS，再飞回去。往返 200ms+，用户等得花都谢了 🌸。</p>
+
+<p>解决方案？在纽约、伦敦、东京都放一份你网站的静态资源副本。用户访问时，就近取货。</p>
+
+<p>这就是 <strong>CDN（内容分发网络）</strong>。</p>
+
+<p>You run a coffee bean shop in Shanghai with global customers. Every request from NYC flies across the Pacific and back — 200ms+ round trip. Solution? Cache copies of your static assets in NYC, London, Tokyo. Users get served from the nearest copy. That's a <strong>CDN</strong>.</p>
+
+<hr/>
+
+<p><strong>架构图 / Architecture Diagram</strong></p>
+
+<div class="diagram-block">                     用户请求 User Request
+                           │
+                     ┌──────┴──────┐
+                     │  DNS 解析    │
+                     │ (返回最近的  │
+                     │  CDN 节点)   │
+                     └──────┬──────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        ▼                   ▼                   ▼
+  ┌──────────┐       ┌──────────┐       ┌──────────┐
+  │ CDN Edge │       │ CDN Edge │       │ CDN Edge │
+  │  纽约    │       │  伦敦    │       │  东京    │
+  │ ████████ │       │ ████     │       │ ██████   │
+  │ (cached) │       │ (cached) │       │ (cached) │
+  └────┬─────┘       └────┬─────┘       └────┬─────┘
+       │                   │                   │
+       └───────────────────┼───────────────────┘
+                           │ cache miss 时回源
+                           ▼
+                    ┌──────────────┐
+                    │ Origin Server│
+                    │  源站 (上海)  │
+                    └──────────────┘</div>
+
+<hr/>
+
+<p><strong>核心概念 / Key Concepts</strong></p>
+
+<p><strong>1. Cache Hit vs Cache Miss</strong></p>
+<ul><li><strong>Hit（命中）：</strong> CDN 节点有缓存 → 直接返回，超快（&lt; 50ms）</li><li><strong>Miss（未命中）：</strong> CDN 没有 → 回源站取，存一份，下次就 Hit 了</li></ul>
+
+<p><strong>2. TTL (Time To Live)</strong></p>
+<ul><li>缓存过期时间。太短 → 频繁回源；太长 → 用户看到旧内容</li><li>静态资源（图片/CSS/JS）：TTL 长（1天-1年），文件名带 hash（<code>app.a3f2b1.js</code>）</li><li>API 响应：TTL 短（几秒-几分钟）或不缓存</li></ul>
+
+<p><strong>3. Cache Invalidation（缓存失效）</strong></p>
+<ul><li>发布新版本时需要清除旧缓存</li><li>方法 1：Purge API（主动清除指定 URL）</li><li>方法 2：文件名 hash（新版本 = 新文件名 = 自动绕过旧缓存）✅ 推荐</li></ul>
+
+<p><strong>4. Push vs Pull CDN</strong></p>
+<ul><li><strong>Pull：</strong> CDN 节点在第一次请求时从源站拉取（大多数 CDN 默认行为）</li><li><strong>Push：</strong> 你主动上传内容到 CDN（适合大文件、已知内容）</li></ul>
+
+<hr/>
+
+<p><strong>别踩这个坑 / Don't Fall Into This Trap</strong></p>
+
+<p>❌ 把带用户个人信息的 API 响应（如 <code>/api/me</code>）也放 CDN 缓存</p>
+<p>→ 用户 A 看到用户 B 的数据！</p>
+
+<p>✅ 只缓存公开、不含个人信息的内容。私有内容设 <code>Cache-Control: private, no-store</code>。</p>
+
+<p>⚠️ CDN 缓存了错误的 response（比如 500 错误页面）</p>
+<p>→ 设置：只缓存 2xx 响应，或设置很短的负缓存 TTL</p>
+
+<p>⚠️ 源站宕机时 CDN 还能服务（这是优点！）但如果 TTL 过了且源站还没恢复 → "stale-while-revalidate" 策略可以继续用旧缓存</p>
+
+<hr/>
+
+<p><strong>面试要点 / Interview Key Points</strong></p>
+
+<ol><li>CDN 降低延迟（地理距离）+ 减轻源站压力</li><li>适合静态资源；动态内容需要谨慎（考虑 Edge Computing）</li><li>常见 CDN：CloudFront (AWS), Cloudflare, Akamai, Fastly</li><li>CDN + Load Balancer + Cache = 高性能系统的三驾马车</li></ol>
+
+<hr/>
+
+<p><em>Day 6 / 150 — 系统设计基础系列</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <p>💻 <strong>算法 Day 6 / Algorithms Day 6 — #271 Encode and Decode Strings (Medium) — Arrays &amp; Hashing</strong></p>
+<p>🔗 https://leetcode.com/problems/encode-and-decode-strings/</p>
+
+<hr/>
+
+<p><strong>现实类比 / Real-World Analogy</strong></p>
+
+<p>你要把一堆购物清单放进一个信封里寄出去。问题是：收件人怎么知道哪里是一个清单的结束、另一个的开始？</p>
+
+<p>笨办法：用逗号分隔 → 但如果清单内容本身有逗号呢？</p>
+<div class="diagram-block">聪明办法：每个清单前面写上它的长度 → `"5#Hello3#Bye"` → 无歧义！</div>
+
+<hr/>
+
+<p><strong>题目 / Problem Statement</strong></p>
+
+<p>设计一个算法，将字符串列表编码为单个字符串，再解码回原始列表。</p>
+<p>Design an algorithm to encode a list of strings into a single string, and decode it back.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Input:  [&quot;Hello&quot;, &quot;World&quot;]&#10;Encode: &quot;5#Hello5#World&quot;&#10;Decode: [&quot;Hello&quot;, &quot;World&quot;]">Copy</button>
+  <pre><code class="language-text">Input:  ["Hello", "World"]
+Encode: "5#Hello5#World"
+Decode: ["Hello", "World"]</code></pre>
+</div>
+
+<p>编码后的字符串可以包含任何字符（包括 <code>#</code>、空字符串等），必须无歧义。</p>
+
+<hr/>
+
+<p><strong>追踪过程 / Trace Through</strong></p>
+
+<p>编码 <code>["Hi", "", "a#b"]</code>：</p>
+
+<div class="diagram-block">"Hi"  → len=2  → "2#Hi"
+""    → len=0  → "0#"
+"a#b" → len=3  → "3#a#b"
+
+encoded = "2#Hi0#3#a#b"</div>
+
+<p>解码 <code>"2#Hi0#3#a#b"</code>：</p>
+
+<div class="diagram-block">i=0: find '#' at index 1 → length=2 → read "Hi" → i=4
+i=4: find '#' at index 5 → length=0 → read "" → i=6
+i=6: find '#' at index 7 → length=3 → read "a#b" → i=11
+Done! → ["Hi", "", "a#b"] ✅</div>
+
+<p>注意 <code>"a#b"</code> 内部的 <code>#</code> 不会造成混淆，因为我们是按<strong>长度</strong>读取的，不是按分隔符！</p>
+
+<hr/>
+
+<p><strong>Python 解法 / Python Solution</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="class Codec:&#10;    def encode(self, strs: list[str]) -&gt; str:&#10;        # Format: &quot;length#string&quot; for each string&#10;        result = []&#10;        for s in strs:&#10;            result.append(f&quot;{len(s)}#{s}&quot;)&#10;        return &quot;&quot;.join(result)&#10;&#10;    def decode(self, s: str) -&gt; list[str]:&#10;        result = []&#10;        i = 0&#10;        while i &lt; len(s):&#10;            # Find the '#' delimiter&#10;            j = s.index('#', i)&#10;            # Characters before '#' are the length&#10;            length = int(s[i:j])&#10;            # Read exactly 'length' characters after '#'&#10;            result.append(s[j + 1 : j + 1 + length])&#10;            # Move pointer past the string&#10;            i = j + 1 + length&#10;        return result">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">class</span> Codec:
+    <span style="color:#c678dd;">def</span> encode(self, strs: list[str]) -&gt; str:
+        <span style="color:#5c6370;"># Format: "length#string" for each string</span>
+        result = []
+        <span style="color:#c678dd;">for</span> s <span style="color:#c678dd;">in</span> strs:
+            result.append(f<span style="color:#e5c07b;">"{len(s)}#{s}"</span>)
+        <span style="color:#c678dd;">return</span> <span style="color:#e5c07b;">""</span>.join(result)
+
+    <span style="color:#c678dd;">def</span> decode(self, s: str) -&gt; list[str]:
+        result = []
+        i = <span style="color:#56b6c2;">0</span>
+        <span style="color:#c678dd;">while</span> i &lt; len(s):
+            <span style="color:#5c6370;"># Find the '#' delimiter</span>
+            j = s.index(<span style="color:#e5c07b;">'#'</span>, i)
+            <span style="color:#5c6370;"># Characters before '#' are the length</span>
+            length = int(s[i:j])
+            <span style="color:#5c6370;"># Read exactly 'length' characters after '#'</span>
+            result.append(s[j + <span style="color:#56b6c2;">1</span> : j + <span style="color:#56b6c2;">1</span> + length])
+            <span style="color:#5c6370;"># Move pointer past the string</span>
+            i = j + <span style="color:#56b6c2;">1</span> + length
+        <span style="color:#c678dd;">return</span> result</code></pre>
+</div>
+
+<hr/>
+
+<p><strong>复杂度 / Complexity</strong></p>
+
+<ul><li><strong>时间 Time:</strong> O(n) — n 是所有字符串总长度</li><li><strong>空间 Space:</strong> O(1) — 不算输出空间（编码和解码都是线性扫描）</li></ul>
+
+<hr/>
+
+<p><strong>边界情况 / Edge Cases</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="codec = Codec()&#10;&#10;# Empty list&#10;codec.decode(codec.encode([])) == []  # ✅&#10;&#10;# List with empty string&#10;codec.decode(codec.encode([&quot;&quot;])) == [&quot;&quot;]  # ✅ &quot;0#&quot; → [&quot;&quot;]&#10;&#10;# Strings containing '#'&#10;codec.decode(codec.encode([&quot;a#b&quot;, &quot;#&quot;])) == [&quot;a#b&quot;, &quot;#&quot;]  # ✅&#10;&#10;# Very long string&#10;codec.decode(codec.encode([&quot;a&quot; * 10000])) == [&quot;a&quot; * 10000]  # ✅">Copy</button>
+  <pre><code class="language-python">codec = Codec()
+
+<span style="color:#5c6370;"># Empty list</span>
+codec.decode(codec.encode([])) == []  <span style="color:#5c6370;"># ✅</span>
+
+<span style="color:#5c6370;"># List with empty string</span>
+codec.decode(codec.encode([<span style="color:#e5c07b;">""</span>])) == [<span style="color:#e5c07b;">""</span>]  <span style="color:#5c6370;"># ✅ "0#" → [""]</span>
+
+<span style="color:#5c6370;"># Strings containing '#'</span>
+codec.decode(codec.encode([<span style="color:#e5c07b;">"a#b"</span>, <span style="color:#e5c07b;">"#"</span>])) == [<span style="color:#e5c07b;">"a#b"</span>, <span style="color:#e5c07b;">"#"</span>]  <span style="color:#5c6370;"># ✅</span>
+
+<span style="color:#5c6370;"># Very long string</span>
+codec.decode(codec.encode([<span style="color:#e5c07b;">"a"</span> * <span style="color:#56b6c2;">10000</span>])) == [<span style="color:#e5c07b;">"a"</span> * <span style="color:#56b6c2;">10000</span>]  <span style="color:#5c6370;"># ✅</span></code></pre>
+</div>
+
+<hr/>
+
+<p><strong>举一反三 / Pattern Recognition</strong></p>
+
+<p><strong>模式：长度前缀编码（Length-Prefixed Encoding）</strong></p>
+
+<p>这和网络协议（TCP、HTTP/2）、序列化格式（Protocol Buffers）用的是同一个思路：先告诉你"接下来有多少字节"，然后精确读取。</p>
+
+<p>为什么不用特殊分隔符（如 <code>|</code> 或 <code>\0</code>）？</p>
+<p>→ 字符串可能包含任何字符！长度前缀永远不会歧义。</p>
+
+<p><strong>相关题目：</strong></p>
+<ul><li>#443 String Compression（类似的编码思维）</li><li>序列化/反序列化（#297 Serialize and Deserialize Binary Tree）</li></ul>
+
+<hr/>
+
+<p><em>Day 6 / 150 — Arrays &amp; Hashing 系列</em></p>
+<p><em>昨天 Day 4：Group Anagrams | 明天 Day 7：Product of Array Except Self</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <p>🗣️ <strong>软技能 Day 6 / Soft Skills Day 6</strong></p>
+<p><strong>Leadership — 领导力（不靠头衔）</strong></p>
+
+<p><strong>问题 / Question:</strong></p>
+<blockquote>"Describe how you've mentored or grown other engineers."</blockquote>
+<blockquote>"描述你是如何指导或培养其他工程师的。"</blockquote>
+
+<hr/>
+
+<p><strong>为什么这很重要 / Why This Matters</strong></p>
+
+<p>Senior/Staff 工程师的核心职责之一不是写更多代码，而是<strong>让团队里每个人都变得更强</strong>。面试官问这题是想看：</p>
+<ol><li>你有没有"利他"意识（不只关心自己的 output）</li><li>你的指导方式是否有结构、有结果</li><li>你能不能识别他人的成长需求</li></ol>
+
+<p>At senior+ levels, your impact is measured by the engineers you've grown, not just the code you've shipped.</p>
+
+<hr/>
+
+<p><strong>❌ 糟糕的回答 / Bad Approach</strong></p>
+
+<blockquote>"我经常帮初级工程师 review 代码，给他们指出问题，告诉他们怎么改。"</blockquote>
+
+<p>问题：</p>
+<ul><li>这只是日常工作，不算 mentoring</li><li>"告诉他们怎么改" = 给答案，不是教思考</li><li>没有具体故事、没有成长轨迹</li></ul>
+
+<hr/>
+
+<p><strong>✅ 好的回答框架 / Good Approach (STAR)</strong></p>
+
+<p><strong>Situation:</strong> "团队来了一位从 bootcamp 毕业的新工程师 Alex。他代码能 work，但 PR 里经常缺乏边界处理和测试，review 来回很多轮。"</p>
+
+<p><strong>Task:</strong> "作为他的 buddy engineer，我的目标不只是帮他过 PR，而是让他在 3 个月内能独立负责一个模块。"</p>
+
+<p><strong>Action:</strong></p>
+<ul><li>"我没有直接告诉他'加个 null check'，而是在 PR comment 里问引导性问题：'如果这个参数是 undefined 会发生什么？'让他自己发现问题"</li><li>"每周 1:1 花 30 分钟，前 15 分钟他讲本周遇到的困难，后 15 分钟我分享一个设计决策的背景（为什么我们用 Redis 而不是 Memcached）"</li><li>"第 6 周开始让他 lead 一个小 feature 的设计 doc，我只 review 不动手"</li></ul>
+
+<p><strong>Result:</strong> "3 个月后，他的 PR 首次 review 通过率从 20% 提升到 75%。第 4 个月他独立 ship 了用户通知系统。半年后他成了团队里 on-call 最可靠的人之一。"</p>
+
+<hr/>
+
+<p><strong>Senior/Staff 级别技巧 / Senior/Staff Tips</strong></p>
+
+<p>🎯 <strong>从"给答案"到"问问题"</strong></p>
+<ul><li>初级：直接告诉他怎么做（他需要 unblock）</li><li>中级：给方向，让他自己找路</li><li>高级：只问问题，让他自己发现问题和答案</li></ul>
+
+<p>🎯 <strong>Mentoring ≠ 只有 1:1</strong></p>
+<ul><li>写好的设计文档 = 一次写，教会所有人</li><li>做技术分享 / lunch &amp; learn = 批量 mentoring</li><li>建立团队 wiki / onboarding guide = 可扩展的知识传播</li></ul>
+
+<p>🎯 <strong>跟踪成长，不只是感觉</strong></p>
+<ul><li>用具体指标说话（PR 通过率、独立完成的 feature 数、on-call 表现）</li><li>"他成长了"太模糊，"他从需要 3 轮 review 到 1 轮"才有说服力</li></ul>
+
+<hr/>
+
+<p><strong>关键要点 / Key Takeaways</strong></p>
+
+<ol><li>Mentoring 的核心是<strong>授人以渔</strong> — 教思考方式，不只是给答案</li><li>好的 mentor 会<strong>有意识地退后</strong> — 让 mentee 犯可控的错误并从中学习</li><li>用<strong>具体的成长指标</strong>证明你的 mentoring 有效果</li><li>最高级的 leadership：建立系统和文化，让 mentoring 自然发生（不依赖你个人）</li></ol>
+
+<hr/>
+
+<p><em>Day 6 / 150 — 软技能系列</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <p>🎨 <strong>前端 Day 6 / Frontend Day 6</strong></p>
+<p><strong>CSS Variables &amp; Modern CSS Features — CSS 自定义属性</strong></p>
+
+<hr/>
+
+<p><strong>猜猜这段代码输出什么？/ What does this layout look like?</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=":root {&#10;  --primary: #3b82f6;&#10;  --spacing: 16px;&#10;  --radius: 8px;&#10;}&#10;&#10;.card {&#10;  --primary: #ef4444;  /* 局部覆盖 */&#10;  padding: var(--spacing);&#10;  border: 2px solid var(--primary);&#10;  border-radius: var(--radius);&#10;}&#10;&#10;.card .badge {&#10;  background: var(--primary);&#10;  color: white;&#10;  padding: calc(var(--spacing) / 4) calc(var(--spacing) / 2);&#10;  border-radius: var(--radius);&#10;}">Copy</button>
+  <pre><code class="language-css">:root {
+  <span style="color:#56b6c2;">--primary</span>: <span style="color:#e5c07b;">#3b82f6</span>;
+  <span style="color:#56b6c2;">--spacing</span>: <span style="color:#e5c07b;">16px</span>;
+  <span style="color:#56b6c2;">--radius</span>: <span style="color:#e5c07b;">8px</span>;
+}
+
+<span style="color:#e06c75;">.card</span>{
+<span style="color:#5c6370;">  --primary: #ef4444;  /* 局部覆盖 */</span>
+  <span style="color:#56b6c2;">padding</span>: <span style="color:#e5c07b;">var(--spacing)</span>;
+  <span style="color:#56b6c2;">border</span>: <span style="color:#e5c07b;">2px solid var(--primary)</span>;
+  <span style="color:#56b6c2;">border-radius</span>: <span style="color:#e5c07b;">var(--radius)</span>;
+}
+
+<span style="color:#e06c75;">.card .badge</span>{
+  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">var(--primary)</span>;
+  <span style="color:#56b6c2;">color</span>: <span style="color:#e5c07b;">white</span>;
+  <span style="color:#56b6c2;">padding</span>: <span style="color:#e5c07b;">calc(var(--spacing) / 4) calc(var(--spacing) / 2)</span>;
+  <span style="color:#56b6c2;">border-radius</span>: <span style="color:#e5c07b;">var(--radius)</span>;
+}</code></pre>
+</div>
+
+<p>🤔 <code>.badge</code> 的 <code>background</code> 是蓝色 <code>#3b82f6</code> 还是红色 <code>#ef4444</code>？</p>
+
+<p>✅ <strong>答案：红色 <code>#ef4444</code>！</strong></p>
+
+<p>CSS Variables 遵循<strong>继承规则</strong> — <code>.card</code> 里重新定义了 <code>--primary</code>，它的所有后代元素（包括 <code>.badge</code>）都会继承这个新值。这和 Sass/Less 变量完全不同（它们是编译时替换，不支持继承）。</p>
+
+<hr/>
+
+<p><strong>CSS Variables 核心 / Key Concepts</strong></p>
+
+<p><strong>1. 定义与使用</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* 定义：用 -- 前缀 */&#10;:root {&#10;  --color-text: #1a1a1a;&#10;  --font-size-base: 16px;&#10;}&#10;&#10;/* 使用：用 var() 函数 */&#10;body {&#10;  color: var(--color-text);&#10;  font-size: var(--font-size-base);&#10;}&#10;&#10;/* 带 fallback 值 */&#10;p {&#10;  color: var(--color-accent, #666);  /* 如果 --color-accent 未定义，用 #666 */&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* 定义：用 -- 前缀 */</span>
+:root {
+  <span style="color:#56b6c2;">--color-text</span>: <span style="color:#e5c07b;">#1a1a1a</span>;
+  <span style="color:#56b6c2;">--font-size-base</span>: <span style="color:#e5c07b;">16px</span>;
+}
+
+<span style="color:#5c6370;">/* 使用：用 var() 函数 */</span>
+<span style="color:#e06c75;">body</span>{
+  <span style="color:#56b6c2;">color</span>: <span style="color:#e5c07b;">var(--color-text)</span>;
+  <span style="color:#56b6c2;">font-size</span>: <span style="color:#e5c07b;">var(--font-size-base)</span>;
+}
+
+<span style="color:#5c6370;">/* 带 fallback 值 */</span>
+<span style="color:#e06c75;">p</span>{
+<span style="color:#5c6370;">  color: var(--color-accent, #666);  /* 如果 --color-accent 未定义，用 #666 */</span>
+}</code></pre>
+</div>
+
+<p><strong>2. 运行时 vs 编译时</strong></p>
+<div class="diagram-block">Sass:   $primary: blue → 编译后变成 → color: blue（写死了）
+CSS:    --primary: blue → 运行时读取 → 可以随时改！</div>
+
+<p>这意味着你可以：</p>
+<ul><li>用 JS 动态改变 → <code>document.documentElement.style.setProperty('--primary', 'red')</code></li><li>根据 media query 改变 → 深色模式只需重新定义变量</li><li>组件内局部覆盖 → 不影响全局</li></ul>
+
+<p><strong>3. Dark Mode 只需几行</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=":root {&#10;  --bg: #ffffff;&#10;  --text: #1a1a1a;&#10;}&#10;&#10;@media (prefers-color-scheme: dark) {&#10;  :root {&#10;    --bg: #1a1a1a;&#10;    --text: #f0f0f0;&#10;  }&#10;}&#10;&#10;body {&#10;  background: var(--bg);&#10;  color: var(--text);&#10;}">Copy</button>
+  <pre><code class="language-css">:root {
+  <span style="color:#56b6c2;">--bg</span>: <span style="color:#e5c07b;">#ffffff</span>;
+  <span style="color:#56b6c2;">--text</span>: <span style="color:#e5c07b;">#1a1a1a</span>;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    <span style="color:#56b6c2;">--bg</span>: <span style="color:#e5c07b;">#1a1a1a</span>;
+    <span style="color:#56b6c2;">--text</span>: <span style="color:#e5c07b;">#f0f0f0</span>;
+  }
+}
+
+<span style="color:#e06c75;">body</span>{
+  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">var(--bg)</span>;
+  <span style="color:#56b6c2;">color</span>: <span style="color:#e5c07b;">var(--text)</span>;
+}</code></pre>
+</div>
+
+<hr/>
+
+<p><strong>你可能不知道 / You Might Not Know</strong></p>
+
+<p>CSS Variables 可以用在 <code>calc()</code> 里做数学运算：</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=":root {&#10;  --base: 8px;&#10;}&#10;&#10;.component {&#10;  padding: calc(var(--base) * 2);      /* 16px */&#10;  margin: calc(var(--base) * 3);       /* 24px */&#10;  border-radius: calc(var(--base) / 2); /* 4px */&#10;}">Copy</button>
+  <pre><code class="language-css">:root {
+  <span style="color:#56b6c2;">--base</span>: <span style="color:#e5c07b;">8px</span>;
+}
+
+<span style="color:#e06c75;">.component</span>{
+<span style="color:#5c6370;">  padding: calc(var(--base) * 2);      /* 16px */</span>
+<span style="color:#5c6370;">  margin: calc(var(--base) * 3);       /* 24px */</span>
+<span style="color:#5c6370;">  border-radius: calc(var(--base) / 2); /* 4px */</span>
+}</code></pre>
+</div>
+
+<p>这就是 <strong>Design Token</strong> 的基础 — 用一个基数推导出整个间距系统（4px, 8px, 12px, 16px, 24px, 32px...），改一个值就改全部。Tailwind CSS 内部就是这个原理。</p>
+
+<hr/>
+
+<p><strong>⚠️ 常见陷阱 / Gotcha</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=".box {&#10;  --size: 100;&#10;  width: var(--size)px;  /* ❌ 不行！不会变成 100px */&#10;  width: calc(var(--size) * 1px);  /* ✅ 这样才行 */&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.box</span>{
+  <span style="color:#56b6c2;">--size</span>: <span style="color:#e5c07b;">100</span>;
+<span style="color:#5c6370;">  width: var(--size)px;  /* ❌ 不行！不会变成 100px */</span>
+<span style="color:#5c6370;">  width: calc(var(--size) * 1px);  /* ✅ 这样才行 */</span>
+}</code></pre>
+</div>
+
+<p>CSS Variables 存的是<strong>字符串</strong>，<code>var(--size)px</code> 会变成 <code>100 px</code>（中间有空格），无效。必须用 <code>calc()</code> 做单位转换。</p>
+
+<hr/>
+
+<p><strong>Mini Challenge 🧩</strong></p>
+
+<p>不看上面的内容，回答：</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=":root { --gap: 10px; }&#10;.parent { --gap: 20px; }&#10;.parent .child { margin: var(--gap); }">Copy</button>
+  <pre><code class="language-css">:root { --gap: 10px; }
+.parent { --gap: 20px; }
+.parent .child { margin: var(--gap); }</code></pre>
+</div>
+
+<p><code>.child</code> 的 <code>margin</code> 是多少？</p>
+
+<p>答案：<strong>20px</strong> — <code>.parent</code> 覆盖了 <code>--gap</code>，<code>.child</code> 作为后代继承 <code>.parent</code> 的值。</p>
+
+<hr/>
+
+<p><em>Day 6 / 150 — CSS 基础系列</em></p>
+<p><em>昨天 Day 4：Responsive Design &amp; Media Queries | 明天 Day 7：JavaScript DOM 基础</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <p>🤖 <strong>AI Day 6 — 新闻速递 / News Roundup</strong></p>
+<p><em>2026年3月 | March 2026</em></p>
+
+<blockquote>⚠️ 以下为基于公开报道的摘要，具体数字以原始来源为准。</blockquote>
+<blockquote>Based on public reporting; verify specifics at original sources.</blockquote>
+
+<hr/>
+
+<p><strong>📰 1. Claude 4 发布 — Anthropic 的新旗舰</strong></p>
+
+<p>Anthropic 发布了 Claude 4 系列模型，包含 Claude 4 Opus（旗舰推理模型）和 Claude 4 Sonnet（平衡性能/速度）。据报道在编码、数学推理和长文档分析上有显著提升。</p>
+
+<p><strong>为什么你应该关心：</strong></p>
+<p>Claude 4 是 GPT-5 之后的又一个"代际跳跃"。如果你在做 AI 产品，现在有两个顶级推理模型可选。对开发者来说，更强的编码能力意味着 AI pair programming 又升了一个台阶。</p>
+
+<hr/>
+
+<p><strong>📰 2. 开源模型追赶闭源 — Llama 4 / Qwen 3</strong></p>
+
+<p>Meta 的 Llama 4 和阿里的 Qwen 3 系列在基准测试上接近 GPT-4 级别。Llama 4 Scout（17B 参数）在 MMLU 上接近 GPT-4o 水平。</p>
+
+<p><strong>为什么你应该关心：</strong></p>
+<p>开源模型的质量已经到了"够用"的临界点。对创业公司意味着：不再被 OpenAI/Anthropic 的定价绑定。对大公司意味着：可以在私有基础设施上部署，数据不出内网。如果你在选模型，先评估开源方案——可能省 90% 的 API 成本。</p>
+
+<hr/>
+
+<p><strong>📰 3. AI Agent 框架爆发</strong></p>
+
+<p>2026年初，AI Agent（智能体）从概念变成了产品。OpenAI 的 Operator、Anthropic 的 Computer Use、以及开源的 browser-use 等项目让 AI 能直接操作浏览器、写代码、管理文件。</p>
+
+<p><strong>为什么你应该关心：</strong></p>
+<p>"AI 能帮你查东西"和"AI 能帮你做事"是两个完全不同的级别。Agent 意味着 AI 从"回答问题"升级到"执行任务"。工程师需要思考：你的产品/API 是否对 Agent 友好？是否有好的错误提示让 Agent 能自动恢复？</p>
+
+<hr/>
+
+<p><strong>📰 4. 欧盟 AI Act 正式执行</strong></p>
+
+<p>欧盟的 AI 法案（AI Act）开始分阶段执行。高风险 AI 系统（医疗诊断、招聘筛选、信用评分）需要通过合规审查，包括数据来源透明度、偏见测试、人工审核机制。</p>
+
+<p><strong>为什么你应该关心：</strong></p>
+<p>如果你的产品面向欧洲用户，这不是"以后再说"——它现在就是法律了。即使你在美国，欧盟用户的 GDPR 合规 + AI Act 合规 = 你需要知道你的模型用了什么数据、做了什么决策。文档化不是可选的。</p>
+
+<hr/>
+
+<p><strong>📰 5. Vibe Coding 成为主流开发方式</strong></p>
+
+<p>"Vibe Coding"——用自然语言描述需求、让 AI 生成代码、开发者做审查和架构决策——在 2026 年成为被广泛接受的开发方式。Cursor、Copilot、Claude Code 等工具的日活用户据报道已超百万。</p>
+
+<p><strong>为什么你应该关心：</strong></p>
+<p>不是"AI 会不会取代工程师"，而是"用 AI 的工程师会不会取代不用的"。核心变化：<strong>写代码的成本降低了，但设计正确系统的能力反而更值钱了</strong>。算法理解、系统设计、代码审查能力变得更重要，因为你要能审查 AI 写的代码。</p>
+
+<hr/>
+
+<p><em>Day 6 / 150 — AI 新闻系列</em></p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
