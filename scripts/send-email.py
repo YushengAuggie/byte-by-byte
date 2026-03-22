@@ -51,6 +51,12 @@ SECTION_META = [
 # Review day uses a single file instead of 5 sections
 REVIEW_META = ('review', '📝', 'Review Quiz', '复习测验')
 
+# Weekend special formats
+WEEKEND_META = [
+    ('deepdive', '🔬', 'Saturday Deep Dive', '周六深度解析'),
+    ('week-review', '📅', 'Week in Review', '一周回顾'),
+]
+
 def load_config():
     config = {}
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -472,6 +478,18 @@ def main():
     smtp_user = config.get('SMTP_USER', email_target)
     smtp_pass = config.get('SMTP_APP_PASSWORD', '')
 
+    # ── Dedup guard: skip if email already sent today ────────────────
+    send_log_path = os.path.join(repo_dir, 'email-send-log.json')
+    if os.path.exists(send_log_path):
+        try:
+            with open(send_log_path) as f:
+                send_log = json.load(f)
+            if today in send_log:
+                print('✅ Email already sent today ({}). Skipping to avoid duplicate.'.format(today))
+                sys.exit(0)
+        except Exception:
+            pass  # If log is corrupted, proceed with sending
+
     # Build recipient list: owner + subscribers
     recipients = [email_target]
     subscribers = load_subscribers(repo_dir, config)
@@ -497,8 +515,9 @@ def main():
             plain_parts.append(content)
             found += 1
 
-    # If no normal sections, check for review day file
+    # If no normal sections, check for review day or weekend files
     if found == 0:
+        # Try review file first
         review_path = os.path.join(archive_dir, '{}-{}.md'.format(today, REVIEW_META[0]))
         if os.path.exists(review_path):
             with open(review_path) as f:
@@ -509,6 +528,19 @@ def main():
             plain_parts.append(content)
             found = 1
             print('📝 Review day detected — sending review quiz email')
+
+    # Try weekend formats (deepdive, week-review)
+    if found == 0:
+        for filename, icon, name_en, name_cn in WEEKEND_META:
+            path = os.path.join(archive_dir, '{}-{}.md'.format(today, filename))
+            if os.path.exists(path):
+                with open(path) as f:
+                    content = f.read()
+                html = md_to_html(content)
+                sections_html.append((icon, name_en, name_cn, filename, html))
+                plain_parts.append(content)
+                found += 1
+                print('🔬 Weekend content detected — sending {} email'.format(name_en))
 
     if found == 0:
         print('No archive files found for {}. Skipping email.'.format(today))
