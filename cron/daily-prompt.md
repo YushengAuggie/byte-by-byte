@@ -277,7 +277,15 @@ At the END of the Frontend section (after Mini challenge), add references then E
 
 #### Section 5: AI (2 min read)
 🤖 **AI Day N (2 min read)**
-- NEWS mode: Search web, 3-5 stories with "为什么你应该关心 / Why you should care"
+- NEWS mode: **You MUST use web_search to find real, current AI news.** Do NOT write news from memory.
+  - Search queries to run (use web_search tool):
+    1. `"AI news this week"` or `"artificial intelligence news March 2026"`
+    2. `"LLM news"` or `"OpenAI Anthropic Google AI update"`
+    3. One domain-specific query based on recent trends
+  - Pick the 3-5 most significant stories from search results
+  - For each story: cite the actual source URL, include real dates/numbers from the article
+  - Format: "为什么你应该关心 / Why you should care" for each story
+  - **DO NOT fabricate or infer news stories. Every story must come from a search result.**
 - CONCEPT mode: Intuitive explanation → how it works → applications → runnable code snippet
   - Code snippet REQUIREMENTS for CONCEPT mode:
     - Python, ≤15 lines
@@ -332,7 +340,7 @@ Now switch roles. You are a **strict QA reviewer**. Re-read each archive file yo
 - If the answer is wrong: FIX IT and rewrite the archive file. Also UPDATE /tmp/bbb-quiz-4.json with the corrected correct_index.
 
 #### AI — VERIFY:
-- For NEWS: caveat any specific dates/prices/stats as "reported" unless you verified via web search
+- For NEWS: **Every story MUST have come from a web_search result.** Verify URLs are real. If you didn't search, go back and search now before proceeding.
 - For CONCEPT: is the technical explanation accurate?
 
 #### Review Output:
