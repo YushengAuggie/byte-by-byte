@@ -121,11 +121,15 @@ Content for every problem:
 - Why this matters → STAR breakdown → ❌ Bad vs ✅ Good → Senior/Staff tips → Key Takeaways
 - 📚 References + 🧒 ELI5
 
-### Section 4: Frontend (2 min)
+### Section 4: Frontend — React/TypeScript 实战 (2 min)
 🎨 **前端 Day N / Frontend Day N**
-- "猜猜这段代码输出什么？" quiz with A/B/C/D
-- Code examples + gotchas + mini challenge
-- 📚 References + 🧒 ELI5
+Focus on **practical, production-ready** React/TypeScript/Next.js knowledge:
+- Start with a **real scenario**: "你在做一个 dashboard，需要..." / "You're building a dashboard and need to..."
+- Show a **code snippet** that demonstrates the concept (React component, hook, or TypeScript type)
+- "猜猜这段代码输出什么？" quiz with A/B/C/D (for hooks/JS behavior topics)
+- **Common mistake** → **correct approach** (❌ vs ✅ code comparison)
+- **When to use / when NOT to use** — practical decision framework
+- 📚 References (MDN, React docs, real blog posts) + 🧒 ELI5
 - **Also write** `/tmp/bbb-quiz-4.json`: `{"question":"...","options":[4 items],"correct_index":N}`
 
 ### Section 5: AI (2 min)
