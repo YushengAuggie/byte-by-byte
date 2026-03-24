@@ -80,11 +80,39 @@ For each section (1-5), read `/tmp/bbb-section-N.txt` and write content to its A
 - Common mistakes (别踩这个坑)
 - 📚 References (3 real URLs) + 🧒 ELI5
 
-### Section 2: Algorithms (4 min)
+### Section 2: Algorithms (4 min) — PATTERN-BASED TEACHING
 💻 **算法 Day N / Algorithms Day N** — #NUM TITLE (DIFFICULTY) — PATTERN
+
+Read `/tmp/bbb-section-2.txt` carefully. It contains pattern context:
+- `IS_FIRST_IN_PATTERN`: if "yes", this is the FIRST problem in a new pattern block. **Start with the pattern template** before the problem.
+- `PATTERN_TEMPLATE_NAME`, `WHEN_TO_USE`, `SIGNALS`, `PYTHON_TEMPLATE`, `TEMPLATE_KEY_INSIGHT`: the reusable pattern template.
+- `POSITION_IN_BLOCK`: e.g., "3/7" means 3rd of 7 problems in this pattern.
+- `BLOCK_PROBLEMS`: all problems in this pattern block for context.
+
+**If IS_FIRST_IN_PATTERN = yes:**
+Start the section with a **Pattern Introduction** box:
+```
+🧩 **新模式 / New Pattern: {PATTERN_TEMPLATE_NAME}**
+📍 This block: {BLOCK_PROBLEMS count} problems
+
+**什么时候用 / When to use:** {WHEN_TO_USE}
+**识别信号 / Signals:** {SIGNALS}
+
+**通用模版 / Template:**
+{PYTHON_TEMPLATE}
+
+**核心洞察 / Key Insight:** {TEMPLATE_KEY_INSIGHT}
+```
+Then proceed with today's problem, explicitly showing how it maps to the template.
+
+**If IS_FIRST_IN_PATTERN = no:**
+Start with: `🧩 **{PATTERN} ({POSITION_IN_BLOCK})** — building on the template from Day X`
+Show how today's problem is a **variation** of the template. Highlight what's different from previous problems in this block.
+
+Content for every problem:
 - 🔗 LeetCode link + 🟢🟡🔴 badge + 📹 NeetCode link
-- Real-world analogy → problem → key insight → Python solution with trace → complexity
-- 举一反三 / Pattern Recognition with related problems
+- Real-world analogy → problem → **map to pattern template** → Python solution with trace → complexity
+- 举一反三: connect to other problems in the SAME pattern block
 - 📚 References + 🧒 ELI5
 - **Also write** `/tmp/bbb-quiz-2.json`: `{"question":"...","options":[4 items],"correct_index":N}`
 

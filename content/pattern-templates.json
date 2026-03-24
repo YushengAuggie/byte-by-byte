@@ -1,0 +1,146 @@
+{
+  "Arrays & Hashing": {
+    "template_name": "Hash Map / Hash Set 模式",
+    "when_to_use": "需要 O(1) 查找、计数、去重、配对时",
+    "signals": ["find duplicates", "count frequency", "two sum / pair matching", "group by key"],
+    "python_template": "seen = set()  # or Counter()\nfor item in arr:\n    if TARGET in seen:\n        return True\n    seen.add(item)",
+    "complexity": "Time O(n), Space O(n)",
+    "key_insight": "用空间换时间 — O(n²) 暴力搜索变 O(n) 哈希查找"
+  },
+  "Two Pointers": {
+    "template_name": "双指针模式",
+    "when_to_use": "排序数组中找配对、回文检测、原地操作时",
+    "signals": ["sorted array", "find pair with sum", "palindrome", "remove in-place", "merge sorted"],
+    "python_template": "left, right = 0, len(arr) - 1\nwhile left < right:\n    total = arr[left] + arr[right]\n    if total == target: return [left, right]\n    elif total < target: left += 1\n    else: right -= 1",
+    "complexity": "Time O(n), Space O(1)",
+    "key_insight": "排序 + 两端逼近，避免嵌套循环"
+  },
+  "Sliding Window": {
+    "template_name": "滑动窗口模式",
+    "when_to_use": "连续子数组/子串的最大值、最小值、满足条件的最短/最长",
+    "signals": ["subarray", "substring", "contiguous", "window", "maximum/minimum length"],
+    "python_template": "left = 0\nfor right in range(len(arr)):\n    window.add(arr[right])  # expand\n    while CONDITION_VIOLATED:\n        window.remove(arr[left])  # shrink\n        left += 1\n    result = max(result, right - left + 1)",
+    "complexity": "Time O(n), Space O(k) where k = window content",
+    "key_insight": "右指针扩张探索，左指针收缩维护约束 — 每个元素最多进出窗口各一次"
+  },
+  "Stack": {
+    "template_name": "单调栈模式",
+    "when_to_use": "找下一个更大/更小元素、括号匹配、表达式求值",
+    "signals": ["next greater element", "valid parentheses", "evaluate expression", "monotonic"],
+    "python_template": "stack = []\nfor i, num in enumerate(arr):\n    while stack and arr[stack[-1]] < num:\n        idx = stack.pop()\n        result[idx] = num  # next greater\n    stack.append(i)",
+    "complexity": "Time O(n), Space O(n)",
+    "key_insight": "栈维护单调递减序列 — 遇到更大的就弹出结算"
+  },
+  "Binary Search": {
+    "template_name": "二分搜索模式",
+    "when_to_use": "排序数组查找、搜索空间可二分、最小化/最大化问题",
+    "signals": ["sorted", "O(log n)", "find minimum/maximum that satisfies", "search space"],
+    "python_template": "left, right = 0, len(arr) - 1\nwhile left <= right:\n    mid = (left + right) // 2\n    if arr[mid] == target: return mid\n    elif arr[mid] < target: left = mid + 1\n    else: right = mid - 1",
+    "complexity": "Time O(log n), Space O(1)",
+    "key_insight": "每次排除一半搜索空间 — 不只用于排序数组，任何单调性都可以二分"
+  },
+  "Linked List": {
+    "template_name": "链表技巧模式",
+    "when_to_use": "链表反转、环检测、合并、找中点",
+    "signals": ["reverse", "cycle detection", "merge", "find middle", "remove nth from end"],
+    "python_template": "# Fast-slow pointers (cycle / middle)\nslow = fast = head\nwhile fast and fast.next:\n    slow = slow.next\n    fast = fast.next.next\n# slow is at middle (or meeting point if cycle)",
+    "complexity": "Time O(n), Space O(1)",
+    "key_insight": "快慢指针解决大部分链表问题 — 环检测、找中点、找倒数第 k 个"
+  },
+  "Trees": {
+    "template_name": "树遍历模式",
+    "when_to_use": "二叉树遍历、路径问题、验证 BST、层序遍历",
+    "signals": ["binary tree", "BST", "path sum", "level order", "depth", "validate"],
+    "python_template": "def dfs(node):\n    if not node: return BASE_CASE\n    left = dfs(node.left)\n    right = dfs(node.right)\n    return COMBINE(node.val, left, right)",
+    "complexity": "Time O(n), Space O(h) where h = height",
+    "key_insight": "几乎所有树问题都是 DFS 递归 — 关键是定义好返回值语义"
+  },
+  "Backtracking": {
+    "template_name": "回溯模式",
+    "when_to_use": "生成所有组合/排列/子集、约束满足问题",
+    "signals": ["all combinations", "all permutations", "all subsets", "generate all", "constraint satisfaction"],
+    "python_template": "def backtrack(path, choices):\n    if IS_COMPLETE(path):\n        result.append(path[:])\n        return\n    for choice in choices:\n        if IS_VALID(choice):\n            path.append(choice)\n            backtrack(path, NEXT_CHOICES)\n            path.pop()  # undo",
+    "complexity": "Time O(2^n) or O(n!), Space O(n)",
+    "key_insight": "选择 → 递归 → 撤销。剪枝是优化关键"
+  },
+  "Graphs": {
+    "template_name": "图遍历模式 (BFS/DFS)",
+    "when_to_use": "连通性、最短路径、拓扑排序、岛屿问题",
+    "signals": ["connected components", "shortest path", "topological sort", "grid/matrix traversal", "islands"],
+    "python_template": "# BFS\nfrom collections import deque\nqueue = deque([start])\nvisited = {start}\nwhile queue:\n    node = queue.popleft()\n    for neighbor in graph[node]:\n        if neighbor not in visited:\n            visited.add(neighbor)\n            queue.append(neighbor)",
+    "complexity": "Time O(V+E), Space O(V)",
+    "key_insight": "BFS = 最短路径（无权图），DFS = 连通性/路径探索。visited 集合防止死循环"
+  },
+  "1-D Dynamic Programming": {
+    "template_name": "一维动态规划模式",
+    "when_to_use": "最优子结构 + 重叠子问题、计数路径、最大/最小值",
+    "signals": ["minimum cost", "maximum profit", "number of ways", "can you reach", "optimal"],
+    "python_template": "dp = [0] * (n + 1)\ndp[0] = BASE_CASE\nfor i in range(1, n + 1):\n    dp[i] = TRANSITION(dp[i-1], dp[i-2], ...)\nreturn dp[n]",
+    "complexity": "Time O(n), Space O(n) → can optimize to O(1)",
+    "key_insight": "定义 dp[i] 的含义 → 找状态转移方程 → 确定 base case。先写递归再优化"
+  },
+  "Heap / Priority Queue": {
+    "template_name": "堆/优先队列模式",
+    "when_to_use": "Top K 问题、合并 K 个有序序列、动态中位数",
+    "signals": ["top k", "kth largest/smallest", "merge k sorted", "median", "schedule"],
+    "python_template": "import heapq\nheap = []\nfor item in stream:\n    heapq.heappush(heap, item)\n    if len(heap) > k:\n        heapq.heappop(heap)\n# heap contains top-k elements",
+    "complexity": "Time O(n log k), Space O(k)",
+    "key_insight": "维护大小为 k 的堆 — 比排序整个数组高效得多"
+  },
+  "Tries": {
+    "template_name": "前缀树模式",
+    "when_to_use": "前缀搜索、自动补全、词典匹配",
+    "signals": ["prefix search", "autocomplete", "word dictionary", "starts with"],
+    "python_template": "class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.is_end = False\n\ndef insert(root, word):\n    node = root\n    for ch in word:\n        if ch not in node.children:\n            node.children[ch] = TrieNode()\n        node = node.children[ch]\n    node.is_end = True",
+    "complexity": "Time O(L) per operation, Space O(N*L)",
+    "key_insight": "共享前缀 → 节省空间 + 快速前缀查询"
+  },
+  "Advanced Graphs": {
+    "template_name": "高级图算法模式",
+    "when_to_use": "最短路径（有权图）、最小生成树、Union-Find",
+    "signals": ["weighted shortest path", "minimum spanning tree", "union find", "disjoint sets", "network"],
+    "python_template": "# Dijkstra's\nimport heapq\ndist = {node: float('inf') for node in graph}\ndist[start] = 0\nheap = [(0, start)]\nwhile heap:\n    d, u = heapq.heappop(heap)\n    if d > dist[u]: continue\n    for v, w in graph[u]:\n        if dist[u] + w < dist[v]:\n            dist[v] = dist[u] + w\n            heapq.heappush(heap, (dist[v], v))",
+    "complexity": "Time O((V+E) log V), Space O(V)",
+    "key_insight": "Dijkstra = BFS + 优先队列。Union-Find 用于动态连通性"
+  },
+  "2-D Dynamic Programming": {
+    "template_name": "二维动态规划模式",
+    "when_to_use": "网格路径、字符串匹配、背包问题",
+    "signals": ["grid paths", "edit distance", "longest common subsequence", "knapsack", "matrix"],
+    "python_template": "dp = [[0] * (m+1) for _ in range(n+1)]\nfor i in range(1, n+1):\n    for j in range(1, m+1):\n        dp[i][j] = TRANSITION(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])\nreturn dp[n][m]",
+    "complexity": "Time O(n*m), Space O(n*m) → can optimize to O(m)",
+    "key_insight": "二维表格填充 — 画出表格手动填几格就能发现转移规律"
+  },
+  "Greedy": {
+    "template_name": "贪心模式",
+    "when_to_use": "局部最优 → 全局最优、区间调度、跳跃游戏",
+    "signals": ["maximum/minimum with greedy choice", "interval scheduling", "jump game", "gas station"],
+    "python_template": "# Sort by some criteria, then greedily pick\nitems.sort(key=lambda x: x.end)  # or x.ratio, x.weight...\nresult = 0\nfor item in items:\n    if CAN_PICK(item):\n        result += item.value",
+    "complexity": "Time O(n log n) (sorting), Space O(1)",
+    "key_insight": "贪心的难点不是写代码，是证明贪心策略的正确性"
+  },
+  "Intervals": {
+    "template_name": "区间合并模式",
+    "when_to_use": "合并重叠区间、插入区间、会议室调度",
+    "signals": ["merge intervals", "overlapping", "meeting rooms", "insert interval"],
+    "python_template": "intervals.sort(key=lambda x: x[0])\nmerged = [intervals[0]]\nfor start, end in intervals[1:]:\n    if start <= merged[-1][1]:  # overlap\n        merged[-1][1] = max(merged[-1][1], end)\n    else:\n        merged.append([start, end])",
+    "complexity": "Time O(n log n), Space O(n)",
+    "key_insight": "排序后线性扫描 — 重叠判断：当前起点 ≤ 上一个终点"
+  },
+  "Math & Geometry": {
+    "template_name": "数学与几何模式",
+    "when_to_use": "数学规律、位运算技巧、几何计算",
+    "signals": ["power of", "rotate matrix", "spiral", "happy number", "plus one"],
+    "python_template": "# Example: detect cycle in number transformation\nslow = fast = n\nwhile True:\n    slow = transform(slow)\n    fast = transform(transform(fast))\n    if slow == fast: break",
+    "complexity": "Varies",
+    "key_insight": "数学题靠观察规律 — 先手算几个例子找 pattern"
+  },
+  "Bit Manipulation": {
+    "template_name": "位运算模式",
+    "when_to_use": "异或找唯一、位计数、2 的幂判断",
+    "signals": ["single number", "count bits", "power of two", "XOR", "bit mask"],
+    "python_template": "# XOR to find single number\nresult = 0\nfor num in nums:\n    result ^= num  # a ^ a = 0, a ^ 0 = a\nreturn result",
+    "complexity": "Time O(n), Space O(1)",
+    "key_insight": "XOR 是位运算的瑞士军刀 — 自消性 (a^a=0) 解决大量问题"
+  }
+}

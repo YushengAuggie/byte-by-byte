@@ -22,7 +22,7 @@ I built this because I wanted to grow as an engineer without blocking my calenda
 | # | Section | Time | What |
 |---|---------|------|------|
 | 🏗️ | System Design | 3-4 min | Architecture patterns, tradeoffs, real-world systems |
-| 💻 | Algorithms | 3-4 min | 150 problems, Python, pattern-focused |
+| 💻 | Algorithms | 3-4 min | 150 problems, Python, **pattern-based** (template → variations) |
 | 🗣️ | Soft Skills | 2-3 min | STAR framework, senior/staff-level scenarios |
 | 🎨 | Frontend | 2-3 min | CSS → JS → React → Next.js → TypeScript |
 | 🤖 | AI | 2-3 min | Latest news + core concepts with runnable code |
@@ -38,9 +38,11 @@ Every lesson is written in both Chinese and English — not translated, but **na
 ## ✨ Features
 
 ### 📚 Learning Engine
+- **Pattern-based algorithms** — Problems grouped by pattern (Two Pointers, Sliding Window, etc.). Each block starts with a reusable **template**, then progressively harder variations. Learn one pattern, solve many problems.
+- **18 pattern templates** — Arrays & Hashing → Two Pointers → Sliding Window → Stack → Binary Search → Linked List → Trees → Tries → Heap → Backtracking → Graphs → Advanced Graphs → 1-D DP → 2-D DP → Greedy → Intervals → Math → Bit Manipulation
 - **Spaced repetition** — Every 5th day is a review quiz on past material
 - **Difficulty phases** — Foundation (Day 1-10) → Growth (11-30) → Mastery (31-50) → Expert (51+)
-- **Exhaustion alerts** — Warns when content sections are running low
+- **Exhaustion alerts** — Warns at 10 days remaining, critical at 5 days
 - **Cross-day references** — Each day builds on what came before
 
 ### 💬 Interactive Delivery
@@ -66,7 +68,7 @@ Every lesson is written in both Chinese and English — not translated, but **na
 - **Open Graph cards** — Rich previews when sharing links
 
 ### 🧪 Testing
-- **61 automated checks** — JSON, schema, syntax, personal info leaks, integration tests
+- **72+ automated checks** — JSON, schema, syntax, personal info leaks, integration tests, URL validation
 - **Pre-commit hook** — Every commit runs the full test suite; commit fails if tests fail
 - **GitHub Actions CI** — Same tests run on every push
 
@@ -151,6 +153,50 @@ More samples: [Soft Skills](samples/day1-soft-skills.md) • [AI](samples/day1-a
 
 ---
 
+## 🧩 Pattern-Based Algorithm Learning
+
+Most algorithm courses teach one random problem per day. That doesn't work — you forget the pattern before the next related problem arrives.
+
+**byte-by-byte groups problems by pattern.** Each pattern block:
+
+| Day | What | Example (Two Pointers) |
+|-----|------|------------------------|
+| First in block | **Pattern template** + first problem | 🧩 Template: `left, right = 0, n-1` → #167 Two Sum II |
+| Middle | **Variation** — how does this differ? | #15 3Sum — "same template, but fix one pointer" |
+| Later | **Harder variation** | #11 Container With Most Water — "maximize area" |
+| Last | **Hardest** | #42 Trapping Rain Water — "prefix + suffix variant" |
+| Review day | **Compare all problems** in the block | "When Two Pointers vs Sliding Window?" |
+
+**18 patterns, 150 problems.** Learn the template once, apply it everywhere.
+
+<details>
+<summary>📋 All 18 Pattern Blocks (click to expand)</summary>
+
+| # | Pattern | Problems | Template |
+|---|---------|----------|----------|
+| 1 | Arrays & Hashing | 9 | Hash Set/Map for O(1) lookup |
+| 2 | Two Pointers | 5 | Sorted array, two ends converge |
+| 3 | Sliding Window | 6 | Right expands, left shrinks |
+| 4 | Stack | 7 | Monotonic stack, next greater |
+| 5 | Binary Search | 7 | Halve search space each step |
+| 6 | Linked List | 11 | Fast-slow pointers |
+| 7 | Trees | 15 | DFS recursion, define return value |
+| 8 | Tries | 3 | Prefix tree with children dict |
+| 9 | Heap / Priority Queue | 7 | Top-K with min/max heap |
+| 10 | Backtracking | 9 | Choose → recurse → undo |
+| 11 | Graphs | 13 | BFS/DFS + visited set |
+| 12 | Advanced Graphs | 6 | Dijkstra, Union-Find |
+| 13 | 1-D DP | 12 | dp[i] = f(dp[i-1], ...) |
+| 14 | 2-D DP | 11 | dp[i][j] = f(neighbors) |
+| 15 | Greedy | 8 | Sort + local optimal choice |
+| 16 | Intervals | 6 | Sort by start, merge overlaps |
+| 17 | Math & Geometry | 8 | Spot the mathematical pattern |
+| 18 | Bit Manipulation | 7 | XOR self-cancellation |
+
+</details>
+
+---
+
 ## 🗓️ Difficulty Progression
 
 | Phase | Days | Level | Example |
@@ -208,7 +254,8 @@ byte-by-byte/
 ├── config.env.example     ← copy to config.env, add your settings
 ├── state.json             ← progress tracking (auto-updated)
 ├── content/
-│   ├── neetcode-150.json  ← 150 algorithm problems
+│   ├── neetcode-150.json  ← 150 algorithm problems (ordered by pattern block)
+│   ├── pattern-templates.json ← 18 reusable pattern templates
 │   ├── system-design.json ← 40 system design topics
 │   ├── behavioral.json    ← 40 soft skills questions
 │   ├── frontend.json      ← 50 frontend topics
@@ -219,19 +266,26 @@ byte-by-byte/
 ├── archive/               ← daily generated content
 ├── docs/                  ← GitHub Pages site + RSS feed
 ├── scripts/
-│   ├── generate.sh        ← topic picker + state manager
+│   ├── generate.sh        ← topic picker (includes pattern context)
+│   ├── advance-state.sh   ← verify archives → advance state
+│   ├── verify-and-send.sh ← backup: check + send if missed
 │   ├── send-email.py      ← HTML email digest sender
 │   ├── send-telegram.py   ← Telegram delivery with retry
 │   ├── commit.sh          ← git commit + push + update progress
 │   ├── setup.sh           ← one-command setup (cron + hooks)
-│   ├── test.sh            ← 61-check test suite
-│   ├── check-exhaustion.sh← content remaining alerts
+│   ├── test.sh            ← 72-check test suite
+│   ├── check-exhaustion.sh← content remaining alerts (warn/critical)
+│   ├── validate-urls.py   ← archive URL health checker
+│   ├── fix-history.py     ← repair history gaps in state.json
 │   ├── verify-neetcode.py ← problem list validation
 │   ├── generate-index.py  ← archive HTML page generator
 │   └── generate-rss.py    ← RSS feed generator
 ├── cron/
-│   ├── daily-prompt.md    ← generation prompt (with review gate)
-│   └── qa-prompt.md       ← QA reviewer prompt
+│   ├── weekday-prompt.md  ← Mon-Fri generation prompt (5 sections)
+│   ├── saturday-prompt.md ← Saturday deep dive prompt
+│   ├── sunday-prompt.md   ← Sunday week-in-review prompt
+│   ├── qa-prompt.md       ← QA reviewer prompt
+│   └── daily-prompt.md    ← legacy reference (full combined prompt)
 ├── hooks/
 │   └── pre-commit         ← auto-installed by setup.sh
 ├── .github/workflows/

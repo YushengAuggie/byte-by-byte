@@ -161,18 +161,67 @@ echo "✓ Section 1: System Design Day $SD_DAY — $(extract "$SD_TOPIC" "title"
 LC_INDEX=$(get_index "leetcodeIndex")
 LC_TOPIC=$(get_topic "$CONTENT_DIR/neetcode-150.json" "$LC_INDEX")
 LC_DAY=$((LC_INDEX + 1))
+LC_PATTERN=$(extract "$LC_TOPIC" "pattern")
+
+# Calculate position within pattern block + get template
+PATTERN_INFO=$(python3 << PYEOF
+import json
+with open('$CONTENT_DIR/neetcode-150.json') as f:
+    problems = json.load(f)
+with open('$CONTENT_DIR/pattern-templates.json') as f:
+    templates = json.load(f)
+
+idx = $LC_INDEX
+current = problems[idx]
+pattern = current['pattern']
+
+# Find block boundaries
+block_start = idx
+while block_start > 0 and problems[block_start - 1]['pattern'] == pattern:
+    block_start -= 1
+block_end = idx
+while block_end < len(problems) - 1 and problems[block_end + 1]['pattern'] == pattern:
+    block_end += 1
+
+pos = idx - block_start + 1
+total = block_end - block_start + 1
+is_first = (pos == 1)
+
+tmpl = templates.get(pattern, {})
+print(f"POSITION_IN_BLOCK: {pos}/{total}")
+print(f"IS_FIRST_IN_PATTERN: {'yes' if is_first else 'no'}")
+print(f"PATTERN_TEMPLATE_NAME: {tmpl.get('template_name', '')}")
+print(f"WHEN_TO_USE: {tmpl.get('when_to_use', '')}")
+print(f"SIGNALS: {', '.join(tmpl.get('signals', []))}")
+tmpl_code = tmpl.get('python_template', '').replace('\n', '\\n')
+print(f"PYTHON_TEMPLATE: {tmpl_code}")
+print(f"TEMPLATE_COMPLEXITY: {tmpl.get('complexity', '')}")
+print(f"TEMPLATE_KEY_INSIGHT: {tmpl.get('key_insight', '')}")
+
+# List other problems in this block for context
+siblings = []
+for i in range(block_start, block_end + 1):
+    p = problems[i]
+    marker = " <- TODAY" if i == idx else ""
+    siblings.append(f"  {i-block_start+1}. #{p['leetcode_num']} {p['title']} ({p['difficulty']}){marker}")
+nl = '\n'
+print(f"BLOCK_PROBLEMS:{nl}{nl.join(siblings)}")
+PYEOF
+)
+
 cat > /tmp/bbb-section-2.txt << EOF
 SECTION: Algorithms
 DAY: $LC_DAY
 TITLE: $(extract "$LC_TOPIC" "title")
 LEETCODE_NUM: $(extract "$LC_TOPIC" "leetcode_num")
-PATTERN: $(extract "$LC_TOPIC" "pattern")
+PATTERN: $LC_PATTERN
 DIFFICULTY: $(extract "$LC_TOPIC" "difficulty")
 DIFFICULTY_PHASE: $DIFFICULTY_PHASE
 URL: $(extract "$LC_TOPIC" "url")
 ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-algorithms.md
+$PATTERN_INFO
 EOF
-echo "✓ Section 2: Algorithms Day $LC_DAY — #$(extract "$LC_TOPIC" "leetcode_num") $(extract "$LC_TOPIC" "title")"
+echo "✓ Section 2: Algorithms Day $LC_DAY — #$(extract "$LC_TOPIC" "leetcode_num") $(extract "$LC_TOPIC" "title") [$LC_PATTERN]"
 
 # Section 3: Soft Skills
 BH_INDEX=$(get_index "behavioralIndex")
