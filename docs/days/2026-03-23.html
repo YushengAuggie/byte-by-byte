@@ -805,112 +805,97 @@ footer {
         <span class="section-header-icon">🏗️</span>
         <div>
           <div class="section-header-title">🏗️ System Design</div>
-          <div class="section-header-sub">🏗️</div>
+          <div class="section-header-sub">🏗️ 系统设计 Day 8 / System Design Day 8</div>
         </div>
         <span class="section-header-chevron">▼</span>
       </div>
       <div class="section-content open">
-        <p>🏗️ <strong>系统设计 Day 8（3 min read）/ System Design Day 8</strong></p>
-<p><strong>主题 / Topic：Database Indexing &amp; Query Optimization（数据库索引与查询优化）</strong></p>
-
-<p>想象你在设计一个电商网站：用户在搜索框里输入“airpods”，页面要在 100ms 内返回结果。数据在持续增长，表里有千万级商品。如果没有索引，你的数据库就像“每次找一本书都从图书馆第一排开始一页页翻”。</p>
-
-<p>Imagine you’re building an e-commerce search page: user types “airpods” and expects results in ~100ms. Your products table grows to tens of millions of rows. Without indexes, the database is basically “flip through every page of the library every time.”</p>
+        <h1>🏗️ 系统设计 Day 8 / System Design Day 8</h1>
+<p><strong>主题 / Topic:</strong> 数据库索引与查询优化 / Database Indexing &amp; Query Optimization</p>
+<p><strong>分类 / Category:</strong> Fundamentals · Beginner · Foundation Phase</p>
 
 <hr/>
 
-<h2>1) 直觉 / Intuition</h2>
-<p><strong>索引（Index）= 额外维护的一份“按某种顺序排好”的目录</strong>，让数据库能更快定位行。</p>
+<h2>🌍 真实场景 / Real-World Scenario</h2>
 
-<p>An <strong>index</strong> is an extra data structure (a “sorted directory”) that helps the DB find rows faster.</p>
+<p>想象你在设计 Twitter 的搜索功能。用户搜索某条推文，数据库里有 <strong>5 亿条记录</strong>——如果没有索引，数据库必须逐行扫描，花几分钟才能返回结果。有了索引，查询可以在 <strong>几毫秒内</strong> 完成。</p>
 
-<ul><li>没索引：通常是 <strong>全表扫描 / full table scan</strong>（O(n) 级别的行访问）</li><li>有合适索引：可以 <strong>走索引 / index seek</strong>（更少的页读取，常见是 B+Tree 的 logN）</li></ul>
-
-<p>但索引不是免费的：</p>
-<ul><li>写入变慢（INSERT/UPDATE/DELETE 需要维护索引）</li><li>占用存储（索引页 + 指针）</li><li>选错索引会“看起来有索引但依然慢”</li></ul>
+<p><em>Imagine you're designing Twitter's search feature. Users search for tweets, and there are 500 million records in the database — without indexing, the database must scan row-by-row, taking minutes. With indexes, queries return in milliseconds.</em></p>
 
 <hr/>
 
-<h2>2) 典型架构位置 / Where this fits (ASCII)</h2>
-<div class="diagram-block">[App/API]
-   |
-   v
-[Query Builder/ORM]
-   |
-   v
-[DB]
-   |
-   +--&gt; [Index (B+Tree)]  --&gt; (fast seek + range scan)
-   |
-   +--&gt; [Table Heap/Clustered Data] --&gt; (row fetch)</div>
+<h2>🏛️ 架构图 / ASCII Architecture Diagram</h2>
 
-<p><strong>关键点 / Key idea:</strong> 很多查询慢，不是 CPU 慢，而是 <strong>磁盘/页读取多</strong>。索引能显著减少需要读取的页数。</p>
+<div class="diagram-block">User Query: "SELECT * FROM tweets WHERE user_id = 42 AND created_at &gt; '2026-01-01'"
 
-<hr/>
+WITHOUT INDEX:                     WITH INDEX:
+┌─────────────────────┐           ┌─────────────────────┐
+│   Full Table Scan   │           │   B-Tree Index      │
+│   Row 1: user_id=1  │           │   (user_id, date)   │
+│   Row 2: user_id=15 │           │        Root         │
+│   Row 3: user_id=42 │           │       /    \        │
+│   ...               │           │    Node    Node     │
+│   Row 500M: ???     │           │   /  \    /  \      │
+│   ❌ 500M reads     │           │  L1  L2  L3  L4     │
+└─────────────────────┘           │  ✅ ~log(N) reads   │
+                                  └─────────────────────┘
 
-<h2>3) 核心概念速记 / Core concepts</h2>
-<h3>A. B+Tree 索引（最常见）/ B+Tree index (common default)</h3>
-<ul><li>适合等值查询、范围查询（<code>WHERE x = ?</code> / <code>WHERE x BETWEEN a AND b</code>）</li><li>叶子节点按顺序链接，范围扫描很快</li></ul>
-
-<h3>B. 覆盖索引 / Covering index</h3>
-<p>如果查询需要的列都在索引里，DB 不用回表取数据：</p>
-<ul><li>MySQL/InnoDB：少一次“回表”</li><li>Postgres：index-only scan（需要可见性信息满足条件）</li></ul>
-
-<p>If all selected columns are in the index, the DB can answer from the index alone.</p>
-
-<h3>C. 组合索引的“最左前缀”/ Composite index &amp; leftmost prefix</h3>
-<p>索引 <code>(a, b, c)</code>：</p>
-<ul><li>能用：<code>a</code>、<code>a,b</code>、<code>a,b,c</code></li><li>通常不能用：只按 <code>b</code> 过滤（除非有其他技巧/统计恰好能用）</li></ul>
-
-<p>Composite index <code>(a,b,c)</code> works best when your WHERE/GROUP/ORDER starts from <code>a</code>.</p>
-
-<h3>D. 选择性 / Selectivity</h3>
-<p><strong>选择性越高（越“能区分行”）越值得建索引。</strong></p>
-<ul><li><code>gender</code> 这种只有 2-3 个值的列，单列索引可能收益很小</li><li><code>user_id</code> 这种高基数列，非常适合索引</li></ul>
-
-<p>Higher selectivity → better index payoff.</p>
-
-<h3>E. EXPLAIN / Query Plan</h3>
-<p>优化不是“猜”，是 <strong>看执行计划</strong>：</p>
-<ul><li>是否走了 index scan/seek</li><li>估算行数是否离谱（统计信息过期）</li><li>是否发生了排序/回表/大量 hash join</li></ul>
-
-<p>Don’t guess—use <code>EXPLAIN</code> to see the plan.</p>
+Index Storage:
+┌──────────┬──────────┬─────────────────┐
+│ user_id  │   date   │  row_pointer →  │
+│    42    │ 2026-01  │  page 1042, r3  │
+│    42    │ 2026-02  │  page 2891, r7  │
+└──────────┴──────────┴─────────────────┘</div>
 
 <hr/>
 
-<h2>4) 为什么这样设计？/ Why this design? (Tradeoffs)</h2>
-<ul><li><strong>读多写少的系统</strong>：多建索引通常划算（搜索、feed、报表）</li><li><strong>写多读少的系统</strong>：索引要克制（日志写入、事件流落库）</li></ul>
+<h2>⚖️ 关键权衡 / Key Tradeoffs (为什么这样设计？)</h2>
 
-<p>Tradeoff: indexes speed reads but slow writes and consume storage.</p>
+<h3>索引加速读，但拖慢写 / Indexes Speed Reads, Slow Writes</h3>
 
-<h3>你常见会遇到的取舍 / Practical tradeoffs</h3>
-<p>1) <strong>索引数量 vs 写入吞吐</strong></p>
-<p>   - 每多一个索引，写入要多维护一次结构</p>
+<table><thead><tr><th>指标 / Metric</th><th>无索引 Without Index</th><th>有索引 With Index</th></tr></thead><tbody><tr><td>SELECT 查询</td><td>O(N) 全表扫描</td><td>O(log N) B-Tree 遍历</td></tr><tr><td>INSERT / UPDATE</td><td>快 ⚡</td><td>慢（需维护索引）</td></tr><tr><td>存储空间 Storage</td><td>小</td><td>更大（索引占空间）</td></tr></tbody></table>
 
-<p>2) <strong>覆盖索引 vs 索引体积</strong></p>
-<p>   - 把更多列放入索引可减少回表，但索引更大、缓存命中率可能下降</p>
+<p><strong>为什么用 B-Tree？</strong> B-Tree 保持数据有序，支持范围查询（<code>BETWEEN</code>, <code>&gt;</code>），适合绝大多数业务场景。  </p>
+<p><em>Why B-Tree? It keeps data sorted, supports range queries (<code>BETWEEN</code>, <code>&gt;</code>), fitting most business use cases.</em></p>
 
-<p>3) <strong>单列索引 vs 组合索引</strong></p>
-<p>   - 组合索引更贴近真实查询，但更难设计（依赖查询模式稳定）</p>
-
-<hr/>
-
-<h2>5) 常见坑 / Don’t fall into this trap</h2>
-<p>1) <strong>在低选择性列上建单列索引</strong>（收益很小，写入还变慢）</p>
-<p>2) <strong>组合索引顺序错了</strong>：<code>(created_at, user_id)</code> vs <code>(user_id, created_at)</code> 区别巨大</p>
-<p>3) <strong>SELECT </strong>*：取太多列导致无法 index-only/covering，回表成本暴涨</p>
-<p>4) <strong>统计信息不准</strong>：数据分布变化后，优化器选错计划（记得 ANALYZE / 维护统计）</p>
-<p>5) <strong>把“加索引”当唯一手段</strong>：有时正确做法是改查询、加物化视图、分区、或引入搜索引擎</p>
+<p><strong>复合索引的列顺序很重要 / Column order in composite indexes matters:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="-- Index on (user_id, created_at)&#10;-- ✅ Can use: WHERE user_id = 42 AND created_at &gt; '2026-01-01'&#10;-- ✅ Can use: WHERE user_id = 42&#10;-- ❌ Cannot use: WHERE created_at &gt; '2026-01-01' (alone)&#10;-- 最左前缀原则 / Leftmost prefix rule!">Copy</button>
+  <pre><code class="language-sql">-- Index on (user_id, created_at)
+-- ✅ Can use: WHERE user_id = 42 AND created_at &gt; '2026-01-01'
+-- ✅ Can use: WHERE user_id = 42
+-- ❌ Cannot use: WHERE created_at &gt; '2026-01-01' (alone)
+-- 最左前缀原则 / Leftmost prefix rule!</code></pre>
+</div>
 
 <hr/>
 
-<h2>📚 深入学习 / Learn More</h2>
-<ul><li>Engineering blog（真实案例）: https://aws.amazon.com/blogs/database/understanding-amazon-rds-performance-insights/</li><li>YouTube（讲解清晰）: https://www.youtube.com/@ByteByteGo</li><li>权威参考 / Authoritative: <em>Designing Data-Intensive Applications</em>（Chapter: Indexing / Storage &amp; Retrieval）</li></ul>
+<h2>⚠️ 常见错误 / Common Mistakes (别踩这个坑)</h2>
 
-<h2>🧒 ELI5</h2>
-<p>索引就像书后面的“索引页”，你不用从第一页开始翻，就能直接找到你要的内容。</p>
+<ol><li><strong>过度索引 Over-indexing</strong> — 给每列都加索引？写操作会变得极慢。生产中见过 INSERT 耗时 10 秒的案例。  </li></ol>
+<p>   <em>Adding an index to every column? Writes become painfully slow.</em></p>
 
-<p>An index is like the index pages at the back of a book—you jump straight to what you need instead of reading every page.</p>
+<ol><li><strong>索引列上做函数运算 Function on indexed column</strong> — <code>WHERE YEAR(created_at) = 2026</code> 无法使用索引！改用 <code>WHERE created_at BETWEEN '2026-01-01' AND '2026-12-31'</code>。  </li></ol>
+<p>   <em><code>WHERE YEAR(created_at) = 2026</code> can't use the index! Use range instead.</em></p>
+
+<ol><li><strong>忽视 EXPLAIN / Ignoring EXPLAIN</strong> — 不跑 <code>EXPLAIN SELECT ...</code> 怎么知道是否用到了索引？  </li></ol>
+<p>   <em>Never running <code>EXPLAIN SELECT ...</code> — how do you even know if the index is used?</em></p>
+
+<ol><li><strong>N+1 查询问题 / N+1 Query Problem</strong> — 循环里查询数据库，100 次查询 vs 1 次 JOIN。  </li></ol>
+<p>   <em>Querying inside a loop: 100 queries vs 1 JOIN.</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li><a href="https://www.postgresql.org/docs/current/indexes.html">PostgreSQL Index Documentation</a></li><li><a href="https://use-the-index-luke.com/">Use The Index, Luke — Free SQL Indexing Guide</a></li><li><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html">MySQL EXPLAIN Output Format</a></li></ul>
+
+<h2>🧒 ELI5 (小朋友也能懂)</h2>
+
+<p>索引就像书的<strong>目录</strong>。没有目录，你要找"索引"这个词，就得从第1页翻到最后。有了目录，直接翻到第 283 页。数据库索引做的是同样的事情——不用"翻遍所有数据"，直接跳到你要找的地方。</p>
+
+<p><em>An index is like a book's table of contents. Without it, you'd flip through every page to find "indexing." With a table of contents, you jump right to page 283. Database indexes do the same thing — skip straight to what you need.</em></p>
+
       </div>
     </div>
     <div class="section-block" id="section-algorithms">
@@ -918,113 +903,155 @@ footer {
         <span class="section-header-icon">💻</span>
         <div>
           <div class="section-header-title">💻 Algorithms</div>
-          <div class="section-header-sub">💻</div>
+          <div class="section-header-sub">💻 算法 Day 8 / Algorithms Day 8</div>
         </div>
         <span class="section-header-chevron">▼</span>
       </div>
       <div class="section-content ">
-        <p>💻 <strong>算法 Day 8 (4 min read) / Algorithms Day 8</strong></p>
-<p><strong>#36 Valid Sudoku (Medium) — Arrays &amp; Hashing</strong></p>
+        <h1>💻 算法 Day 8 / Algorithms Day 8</h1>
+<p><strong>题目 / Problem:</strong> #36 Valid Sudoku · 🟡 Medium</p>
+<p><strong>模式 / Pattern:</strong> Arrays &amp; Hashing</p>
 
-<p>🔗 <a href="https://leetcode.com/problems/valid-sudoku/">LeetCode #36: Valid Sudoku</a> 🟡 Medium</p>
-<p>📹 <a href="https://neetcode.io/problems/valid-sudoku">NeetCode Solution</a></p>
-
-<hr/>
-
-<p><strong>🌎 Real-World Analogy / 现实类比</strong></p>
-
-<p>想象你是数独比赛的裁判。你不需要解出整个数独，只需要检查当前填入的数字是否违规 — 同一行、同一列、同一个 3×3 宫格内有没有重复数字。</p>
+<p>🔗 <a href="https://leetcode.com/problems/valid-sudoku/">LeetCode #36</a> · 📹 <a href="https://www.youtube.com/watch?v=TjFXEUCMqI8">NeetCode Video</a></p>
 
 <hr/>
 
-<p><strong>题目 / Problem</strong></p>
+<h2>🌍 真实类比 / Real-World Analogy</h2>
 
-<p>判断一个 9×9 的数独棋盘是否有效。只需验证已填入的数字是否合法：</p>
-<ul><li>每行不能有重复数字</li><li>每列不能有重复数字</li><li>每个 3×3 宫格不能有重复数字</li></ul>
+<p>想象你是数独游戏的裁判。你不需要<strong>解开</strong>这个数独——只需要检查当前状态是否<strong>合法</strong>（没有行、列、3×3格子里有重复数字）。就像检查停车场：不是找空位，而是确认没有两辆车占同一个格子。</p>
+
+<p><em>Imagine you're a Sudoku referee. You don't need to solve the puzzle — just verify the current state is valid (no duplicate numbers in any row, column, or 3×3 box). Like checking a parking lot: not finding empty spots, but confirming no two cars share the same space.</em></p>
+
+<hr/>
+
+<h2>🧩 题目 / Problem</h2>
+
+<p>给定一个 9×9 的数独棋盘，判断是否有效。规则：  </p>
+<ul><li>每行数字 1-9 不重复</li><li>每列数字 1-9 不重复</li><li>每个 3×3 子格数字 1-9 不重复</li><li>空格用 <code>'.'</code> 表示</li></ul>
+
+<p><em>Given a 9×9 Sudoku board, determine if it is valid. Rules: no duplicates in any row, column, or 3×3 box. Empty cells are <code>'.'</code>.</em></p>
+
+<hr/>
+
+<h2>💡 关键洞察 / Key Insight</h2>
+
+<p><strong>用哈希集合跟踪所见数字。</strong> 同时遍历三种结构：行、列、3×3格。  </p>
+<p><strong>关键公式：</strong> 位于 <code>(r, c)</code> 的格子属于哪个 3×3 格？ → <code>box_id = (r // 3) * 3 + (c // 3)</code></p>
+
+<p><em>Use hash sets to track seen numbers simultaneously across rows, columns, and 3×3 boxes.</em>  </p>
+<p><em>Key formula: which box does cell <code>(r, c)</code> belong to? → <code>box_id = (r // 3) </em> 3 + (c // 3)</code>*</p>
+
+<div class="diagram-block">Box IDs:
+┌───────┬───────┬───────┐
+│ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │
+│ box 0 │ box 1 │ box 2 │
+├───────┼───────┼───────┤
+│ box 3 │ box 4 │ box 5 │
+├───────┼───────┼───────┤
+│ box 6 │ box 7 │ box 8 │
+└───────┴───────┴───────┘
+r=0,c=0: (0//3)*3+(0//3) = 0*3+0 = box 0 ✅
+r=1,c=4: (1//3)*3+(4//3) = 0*3+1 = box 1 ✅
+r=4,c=7: (4//3)*3+(7//3) = 1*3+2 = box 5 ✅</div>
+
+<hr/>
+
+<h2>🐍 Python 解法 / Python Solution</h2>
 
 <div class="code-block">
-  <button class="copy-btn" type="button" data-copy="Input:&#10;[[&quot;5&quot;,&quot;3&quot;,&quot;.&quot;,&quot;.&quot;,&quot;7&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;]&#10; [&quot;6&quot;,&quot;.&quot;,&quot;.&quot;,&quot;1&quot;,&quot;9&quot;,&quot;5&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;]&#10; [&quot;.&quot;,&quot;9&quot;,&quot;8&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;6&quot;,&quot;.&quot;]&#10; [&quot;8&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;6&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;3&quot;]&#10; [&quot;4&quot;,&quot;.&quot;,&quot;.&quot;,&quot;8&quot;,&quot;.&quot;,&quot;3&quot;,&quot;.&quot;,&quot;.&quot;,&quot;1&quot;]&#10; [&quot;7&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;2&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;6&quot;]&#10; [&quot;.&quot;,&quot;6&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;2&quot;,&quot;8&quot;,&quot;.&quot;]&#10; [&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;4&quot;,&quot;1&quot;,&quot;9&quot;,&quot;.&quot;,&quot;.&quot;,&quot;5&quot;]&#10; [&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;8&quot;,&quot;.&quot;,&quot;.&quot;,&quot;7&quot;,&quot;9&quot;]]&#10;Output: True">Copy</button>
-  <pre><code class="language-text">Input:
-[["5","3",".",".","7",".",".",".","."]
- ["6",".",".","1","9","5",".",".","."]
- [".","9","8",".",".",".",".","6","."]
- ["8",".",".",".","6",".",".",".","3"]
- ["4",".",".","8",".","3",".",".","1"]
- ["7",".",".",".","2",".",".",".","6"]
- [".","6",".",".",".",".","2","8","."]
- [".",".",".","4","1","9",".",".","5"]
- [".",".",".",".","8",".",".","7","9"]]
-Output: True</code></pre>
-</div>
-
-<hr/>
-
-<p><strong>核心洞察 / Key Insight</strong></p>
-
-<p>用 3 组 HashSet 追踪已见数字：</p>
-<ul><li><code>rows[i]</code> — 第 i 行已有的数字</li><li><code>cols[j]</code> — 第 j 列已有的数字</li><li><code>boxes[i//3][j//3]</code> — 第 (i//3, j//3) 宫格已有的数字</li></ul>
-
-<p>关键：<code>(i // 3, j // 3)</code> 把 9×9 映射到 3×3 宫格索引！</p>
-
-<div class="diagram-block">行列 → 宫格映射:
-(0,0)→(0,0)  (0,3)→(0,1)  (0,6)→(0,2)
-(3,0)→(1,0)  (3,3)→(1,1)  (3,6)→(1,2)
-(6,0)→(2,0)  (6,3)→(2,1)  (6,6)→(2,2)</div>
-
-<hr/>
-
-<p><strong>Python 解法 / Solution</strong></p>
-
-<div class="code-block">
-  <button class="copy-btn" type="button" data-copy="from collections import defaultdict&#10;&#10;def isValidSudoku(board):&#10;    rows = defaultdict(set)    # rows[i] = set of nums in row i&#10;    cols = defaultdict(set)    # cols[j] = set of nums in col j&#10;    boxes = defaultdict(set)   # boxes[(i//3, j//3)] = set of nums in box&#10;&#10;    for i in range(9):&#10;        for j in range(9):&#10;            num = board[i][j]&#10;            if num == '.':&#10;                continue&#10;&#10;            box_key = (i // 3, j // 3)&#10;&#10;            if num in rows[i] or num in cols[j] or num in boxes[box_key]:&#10;                return False  # Duplicate found!&#10;&#10;            rows[i].add(num)&#10;            cols[j].add(num)&#10;            boxes[box_key].add(num)&#10;&#10;    return True">Copy</button>
+  <button class="copy-btn" type="button" data-copy="from collections import defaultdict&#10;&#10;def isValidSudoku(board):&#10;    # Use sets for each row, col, box&#10;    rows = defaultdict(set)   # rows[r] = set of digits seen in row r&#10;    cols = defaultdict(set)   # cols[c] = set of digits seen in col c&#10;    boxes = defaultdict(set)  # boxes[b] = set of digits seen in box b&#10;&#10;    for r in range(9):&#10;        for c in range(9):&#10;            val = board[r][c]&#10;            if val == '.':&#10;                continue  # Skip empty cells&#10;&#10;            box_id = (r // 3) * 3 + (c // 3)&#10;&#10;            # Check for duplicates&#10;            if val in rows[r] or val in cols[c] or val in boxes[box_id]:&#10;                return False&#10;&#10;            # Record this value&#10;            rows[r].add(val)&#10;            cols[c].add(val)&#10;            boxes[box_id].add(val)&#10;&#10;    return True">Copy</button>
   <pre><code class="language-python"><span style="color:#c678dd;">from</span> collections <span style="color:#c678dd;">import</span> defaultdict
 
 <span style="color:#c678dd;">def</span> isValidSudoku(board):
-    rows = defaultdict(set)    <span style="color:#5c6370;"># rows[i] = set of nums in row i</span>
-    cols = defaultdict(set)    <span style="color:#5c6370;"># cols[j] = set of nums in col j</span>
-    boxes = defaultdict(set)   <span style="color:#5c6370;"># boxes[(i//3, j//3)] = set of nums in box</span>
+    <span style="color:#5c6370;"># Use sets for each row, col, box</span>
+    rows = defaultdict(set)   <span style="color:#5c6370;"># rows[r] = set of digits seen in row r</span>
+    cols = defaultdict(set)   <span style="color:#5c6370;"># cols[c] = set of digits seen in col c</span>
+    boxes = defaultdict(set)  <span style="color:#5c6370;"># boxes[b] = set of digits seen in box b</span>
 
-    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">9</span>):
-        <span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">9</span>):
-            num = board[i][j]
-            <span style="color:#c678dd;">if</span> num == <span style="color:#e5c07b;">'.'</span>:
-                <span style="color:#c678dd;">continue</span>
+    <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">9</span>):
+        <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">9</span>):
+            val = board[r][c]
+            <span style="color:#c678dd;">if</span> val == <span style="color:#e5c07b;">'.'</span>:
+                <span style="color:#c678dd;">continue</span>  <span style="color:#5c6370;"># Skip empty cells</span>
 
-            box_key = (i // <span style="color:#56b6c2;">3</span>, j // <span style="color:#56b6c2;">3</span>)
+            box_id = (r // <span style="color:#56b6c2;">3</span>) * <span style="color:#56b6c2;">3</span> + (c // <span style="color:#56b6c2;">3</span>)
 
-            <span style="color:#c678dd;">if</span> num <span style="color:#c678dd;">in</span> rows[i] <span style="color:#c678dd;">or</span> num <span style="color:#c678dd;">in</span> cols[j] <span style="color:#c678dd;">or</span> num <span style="color:#c678dd;">in</span> boxes[box_key]:
-                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>  <span style="color:#5c6370;"># Duplicate found!</span>
+            <span style="color:#5c6370;"># Check for duplicates</span>
+            <span style="color:#c678dd;">if</span> val <span style="color:#c678dd;">in</span> rows[r] <span style="color:#c678dd;">or</span> val <span style="color:#c678dd;">in</span> cols[c] <span style="color:#c678dd;">or</span> val <span style="color:#c678dd;">in</span> boxes[box_id]:
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
 
-            rows[i].add(num)
-            cols[j].add(num)
-            boxes[box_key].add(num)
+            <span style="color:#5c6370;"># Record this value</span>
+            rows[r].add(val)
+            cols[c].add(val)
+            boxes[box_id].add(val)
 
     <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span></code></pre>
 </div>
 
-<p><strong>Trace (first few cells):</strong></p>
-<ul><li>(0,0)="5": rows[0]={5}, cols[0]={5}, boxes[(0,0)]={5} ✅</li><li>(0,1)="3": rows[0]={5,3}, cols[1]={3}, boxes[(0,0)]={5,3} ✅</li><li>(0,4)="7": rows[0]={5,3,7}, cols[4]={7}, boxes[(0,1)]={7} ✅</li><li>...遍历完所有非空格，无冲突 → True ✅</li></ul>
+<hr/>
+
+<h2>🔍 代码追踪 / Code Trace</h2>
+
+<p>Using a small example focusing on the top-left 3×3 box (box 0):</p>
+
+<div class="diagram-block">board[0] = ["5","3",".",".","7",".",".",".","."]
+board[1] = ["6",".",".","1","9","5",".",".","."]
+board[2] = [".","9","8",".",".",".",".","6","."]
+
+Processing r=0, c=0: val="5"
+  box_id = (0//3)*3 + (0//3) = 0
+  "5" not in rows[0]={}, cols[0]={}, boxes[0]={} → OK
+  rows[0]={"5"}, cols[0]={"5"}, boxes[0]={"5"}
+
+Processing r=0, c=1: val="3"
+  box_id = (0//3)*3 + (1//3) = 0
+  "3" not in rows[0]={"5"}, cols[1]={}, boxes[0]={"5"} → OK
+  rows[0]={"5","3"}, cols[1]={"3"}, boxes[0]={"5","3"}
+
+Processing r=1, c=0: val="6"
+  box_id = (1//3)*3 + (0//3) = 0
+  "6" not in rows[1]={}, cols[0]={"5"}, boxes[0]={"5","3"} → OK
+  boxes[0]={"5","3","6"}
+
+Processing r=2, c=1: val="9"
+  box_id = (2//3)*3 + (1//3) = 0
+  "9" not in boxes[0]={"5","3","6"} → OK
+
+Processing r=2, c=2: val="8"
+  box_id = 0
+  "8" not in boxes[0]={"5","3","6","9"} → OK
+  boxes[0]={"5","3","6","9","8"}
+
+Final result: True ✅ (valid board)</div>
 
 <hr/>
 
-<p><strong>⏱️ Complexity</strong></p>
-<ul><li>Time: O(81) = O(1) — 固定 9×9 棋盘</li><li>Space: O(81) = O(1) — 最多存 81 个数字</li></ul>
+<h2>⏱️ 复杂度 / Complexity</h2>
+
+<table><thead><tr><th></th><th>时间 Time</th><th>空间 Space</th></tr></thead><tbody><tr><td>复杂度</td><td>O(9²) = <strong>O(81) = O(1)</strong></td><td>O(9²) = <strong>O(1)</strong></td></tr><tr><td>说明</td><td>固定 81 格，常数时间</td><td>最多存 81 个数字</td></tr></tbody></table>
+
+<p><em>Board is always 9×9 — technically O(1) since input size is fixed!</em></p>
 
 <hr/>
 
-<p><strong>举一反三 / Pattern Recognition</strong></p>
+<h2>🔄 举一反三 / Pattern Recognition</h2>
 
-<p>HashSet 验证唯一性 — "seen before?" 模式：</p>
-<ul><li>🟢 <a href="https://leetcode.com/problems/contains-duplicate/">LeetCode #217: Contains Duplicate</a></li><li>🟡 <a href="https://leetcode.com/problems/group-anagrams/">LeetCode #49: Group Anagrams</a></li><li>🔴 <a href="https://leetcode.com/problems/sudoku-solver/">LeetCode #37: Sudoku Solver</a> (回溯法)</li></ul>
+<p>掌握"哈希集合去重"模式后，还能解：  </p>
+<p><em>Once you master "hash set deduplication," apply it to:</em></p>
+
+<ul><li><a href="https://leetcode.com/problems/rotate-image/">#48 Rotate Image</a> — in-place matrix transformation</li><li><a href="https://leetcode.com/problems/spiral-matrix/">#54 Spiral Matrix</a> — matrix traversal order</li><li><a href="https://leetcode.com/problems/game-of-life/">#289 Game of Life</a> — state tracking in grids</li><li><a href="https://leetcode.com/problems/set-matrix-zeroes/">#73 Set Matrix Zeroes</a> — flagging with sets</li></ul>
 
 <hr/>
 
-<p>📚 <strong>深入学习 / Learn More:</strong></p>
-<p>• 📹 <a href="https://neetcode.io/problems/valid-sudoku">NeetCode Solution Video</a></p>
-<p>• <a href="https://neetcode.io/roadmap">NeetCode Roadmap: Arrays &amp; Hashing</a></p>
-<p>• <a href="https://leetcode.com/problems/sudoku-solver/">LeetCode #37: Sudoku Solver</a> — 进阶：从验证到求解</p>
+<h2>📚 References</h2>
 
-<p>🧒 <strong>ELI5:</strong> Checking a Sudoku board is like being a hall monitor — you walk down each row, each column, and peek into each 3×3 room, making sure nobody snuck in twice!</p>
+<ul><li><a href="https://leetcode.com/problems/valid-sudoku/">LeetCode #36 Valid Sudoku</a></li><li><a href="https://www.youtube.com/watch?v=TjFXEUCMqI8">NeetCode Solution Video</a></li><li><a href="https://docs.python.org/3/library/collections.html#collections.defaultdict">Python defaultdict docs</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你有9张纸，每张代表一行。遇到数字就写到对应行的纸上。如果那张纸上<strong>已经有了</strong>这个数字，就说明不合法！同样对列和3×3格子也这样检查。</p>
+
+<p><em>Imagine 9 sheets of paper, one per row. When you see a number, write it on that row's sheet. If the sheet already has that number — invalid! Do the same for columns and 3×3 boxes.</em></p>
 
       </div>
     </div>
@@ -1033,81 +1060,109 @@ Output: True</code></pre>
         <span class="section-header-icon">🗣️</span>
         <div>
           <div class="section-header-title">🗣️ Soft Skills</div>
-          <div class="section-header-sub">🗣️</div>
+          <div class="section-header-sub">🗣️ 软技能 Day 8 / Soft Skills Day 8</div>
         </div>
         <span class="section-header-chevron">▼</span>
       </div>
       <div class="section-content ">
-        <p>🗣️ <strong>软技能 Day 8 (2 min read) / Soft Skills Day 8</strong></p>
-<p><strong>处理模糊需求："Tell me about a time you worked with ambiguous requirements"</strong></p>
-<p><strong>"讲一个你在需求不明确时如何推进工作的经历"</strong></p>
+        <h1>🗣️ 软技能 Day 8 / Soft Skills Day 8</h1>
+<p><strong>题目 / Question:</strong> 你如何处理模糊不清的需求？ / How do you approach working with ambiguous requirements?</p>
+<p><strong>分类 / Category:</strong> Ambiguity · Senior/Staff Level · Foundation Phase</p>
 
 <hr/>
 
-<p><strong>为什么这很重要 / Why This Matters</strong></p>
+<h2>🎯 为什么这很重要 / Why This Matters</h2>
 
-<p>现实中，完美的 PRD 不存在。Senior 工程师的核心能力之一：<strong>在不确定中前进</strong>。这道题考查：</p>
-<ol><li>你会等别人给答案，还是主动去找答案？</li><li>你能区分"必须现在确认"和"可以先做再调"吗？</li><li>你怎么管理风险 — 不是消除不确定性，而是降低不确定性的成本。</li></ol>
+<p>在大厂，<strong>模糊是常态，而非例外</strong>。产品经理不可能把每个细节都想清楚，业务方也不总知道自己真正想要什么。能优雅处理模糊需求，是区分 senior 工程师和 staff 工程师的核心能力之一。</p>
 
-<hr/>
-
-<p><strong>STAR 框架拆解</strong></p>
-
-<p><strong>Situation:</strong> 项目背景 + 为什么需求模糊（新市场？跨团队？PM 离职？）</p>
-<p><strong>Task:</strong> 你的角色 + 为什么不能等（deadline、依赖关系）</p>
-<p><strong>Action:</strong> 最重要！展示：</p>
-<p>  - 如何拆解模糊性（哪些部分确定？哪些不确定？）</p>
-<p>  - 主动沟通：找谁确认？怎么问的？</p>
-<p>  - 决策框架：先做确定的部分，不确定的用接口隔离</p>
-<p>  - 风险管理：feature flags、可逆决策、spike/prototype</p>
-<p><strong>Result:</strong> 量化！交付时间、返工率、客户反馈</p>
+<p><em>In big tech, ambiguity is the norm, not the exception. PMs can't anticipate every detail, and stakeholders don't always know what they really want. Navigating ambiguity gracefully separates senior engineers from staff engineers.</em></p>
 
 <hr/>
 
-<p><strong>❌ Bad vs ✅ Good</strong></p>
+<h2>⭐ STAR 拆解 / STAR Breakdown</h2>
 
-<p>❌ <em>"需求不清楚，我就去问 PM，等他给我明确的 spec 再开始做。"</em></p>
-<p>→ 被动等待，没有展示独立判断力</p>
+<p><strong>情境 Situation:</strong> 描述一个需求不清晰的真实场景  </p>
+<p><em>Describe a real scenario where requirements were unclear</em></p>
 
-<p>✅ <em>"接手支付重构时，PM 只说'支持国际化'，没有具体国家列表。我做了三件事：(1) 分析现有用户数据，发现 80% 国际流量来自 5 个国家；(2) 和 PM 确认优先级 — 先做这 5 个，架构预留扩展；(3) 用 Strategy Pattern 隔离货币/税率逻辑，新增国家只需加配置文件。结果：2 周交付 MVP，后续 3 个月扩展到 15 个国家，零架构改动。"</em></p>
+<p><strong>任务 Task:</strong> 你被分配了什么？你需要负责什么？  </p>
+<p><em>What were you assigned? What were you accountable for?</em></p>
 
-<hr/>
+<p><strong>行动 Action:</strong> 你具体做了哪些事来厘清需求、推进工作？  </p>
+<p><em>What specific steps did you take to clarify and move forward?</em></p>
 
-<p><strong>Scenario Template / 可复用模板</strong></p>
-
-<div class="code-block">
-  <button class="copy-btn" type="button" data-copy="[项目名] 的需求是 [模糊描述]，&#10;缺少 [具体缺失信息]。&#10;&#10;我通过 [数据分析/用户调研/竞品分析] 缩小范围，&#10;与 [角色] 确认了 [关键决策]，&#10;用 [技术方案] 隔离不确定性。&#10;&#10;结果：[时间指标]，[质量指标]，[扩展性指标]。">Copy</button>
-  <pre><code class="language-text">[项目名] 的需求是 [模糊描述]，
-缺少 [具体缺失信息]。
-
-我通过 [数据分析/用户调研/竞品分析] 缩小范围，
-与 [角色] 确认了 [关键决策]，
-用 [技术方案] 隔离不确定性。
-
-结果：[时间指标]，[质量指标]，[扩展性指标]。</code></pre>
-</div>
+<p><strong>结果 Result:</strong> 量化影响——节省了多少时间？避免了什么返工？  </p>
+<p><em>Quantify impact — time saved, rework avoided, team unblocked?</em></p>
 
 <hr/>
 
-<p><strong>Senior/Staff 加分点</strong></p>
+<h2>❌ 差的回答 vs ✅ 好的回答 / Bad vs Good Answer</h2>
 
-<p>🎯 <strong>区分可逆 vs 不可逆决策</strong> — "这个决定错了容易改吗？" 可逆的就先做，不可逆的才需要等确认</p>
-<p>🎯 <strong>展示 spike/prototype 思维</strong> — "我花 2 天做了个 prototype 验证假设"</p>
-<p>🎯 <strong>主动对齐而非被动等待</strong> — 写 RFC/设计文档，让利益相关方评审</p>
+<h3>❌ 差的回答</h3>
+<blockquote>"需求不清楚的时候，我就等产品经理把需求整理清楚，再开始做。"</blockquote>
+<blockquote>"When requirements are unclear, I wait for the PM to clarify everything before starting."</blockquote>
 
-<hr/>
-
-<p><strong>关键要点 / Key Takeaways</strong></p>
-<ol><li>模糊 ≠ 停下来等 — 拆解模糊性，找到可以先动的部分</li><li>用数据缩小范围 — 80/20 法则找到最重要的 case</li><li>架构隔离不确定性 — 接口、策略模式、feature flags</li><li>主动沟通 &gt; 被动等待 — 带着方案去讨论，不是带着问题</li></ol>
+<p><strong>问题：</strong> 被动等待，没有主动推进。这在面试中是红牌。  </p>
+<p><em>Problem: Passive waiting shows no ownership or initiative — a red flag in interviews.</em></p>
 
 <hr/>
 
-<p>📚 <strong>深入学习 / Learn More:</strong></p>
-<p>• <a href="https://review.firstround.com/making-decisions-under-uncertainty">Making Decisions Under Uncertainty — First Round Review</a></p>
-<p>• <a href="https://www.oreilly.com/library/view/the-managers-path/9781491973882/">The Manager's Path — Camille Fournier</a></p>
-<p>• <a href="https://www.aboutamazon.com/news/company-news/2015-letter-to-shareholders">Reversible vs Irreversible Decisions — Jeff Bezos</a></p>
+<h3>✅ 好的回答（结构化）</h3>
 
-<p>🧒 <strong>ELI5:</strong> Working with unclear instructions is like building with LEGOs when you only see part of the picture on the box — you start with the pieces you can figure out, and leave room to add more later when you see the rest!</p>
+<p><strong>S:</strong> 我们在设计一个新的通知系统，PM 只说"用户应该能收到重要通知"，但没有定义什么是"重要"，也没有给出频率和渠道的要求。</p>
+
+<p><em>S: We were designing a new notification system. The PM only said "users should receive important notifications" — no definition of "important," no frequency or channel requirements.</em></p>
+
+<p><strong>T:</strong> 我是 tech lead，需要在两周内给出技术方案，但需求太模糊无法开始。</p>
+
+<p><em>T: I was the tech lead, needing to deliver a technical plan in two weeks, but the requirements were too vague to start.</em></p>
+
+<p><strong>A:</strong> 我做了三件事：</p>
+<ol><li><strong>先列假设清单</strong>：把我理解的"默认行为"写成文档，发给 PM 确认（"我假设通知包括订单状态变更和系统告警，是否正确？"）</li><li><strong>识别 reversible vs irreversible 决策</strong>：渠道选择（邮件/推送）容易改，数据库 schema 难改——对难改的部分花更多时间对齐</li><li><strong>用 spike + timebox</strong>：花一天做技术调研验证假设，而不是等两周后再发现方向错了</li></ol>
+
+<p><em>A: I did three things:</em></p>
+<p><em>1. Made an assumption document — wrote down my "default understanding," sent to PM for confirmation</em></p>
+<p><em>2. Identified reversible vs irreversible decisions — channel choice is easy to change; DB schema is hard — spent more alignment time on hard decisions</em></p>
+<p><em>3. Used a spike + timebox — one day of research to validate assumptions rather than discover wrong direction two weeks later</em></p>
+
+<p><strong>R:</strong> 提前 4 天完成方案，避免了一次因误解"重要通知"而可能导致的数据库重新设计（估计 1.5 周返工）。</p>
+
+<p><em>R: Delivered the plan 4 days early, avoiding a potential DB redesign from misunderstanding "important notifications" (estimated 1.5 weeks of rework).</em></p>
+
+<hr/>
+
+<h2>👑 Senior/Staff 进阶技巧 / Senior/Staff Tips</h2>
+
+<ol><li><strong>区分"紧急不可逆"和"可以先行"</strong> — 并非所有模糊都需要澄清后才能动手。  </li></ol>
+<p>   <em>Distinguish "critical &amp; irreversible" ambiguity from "can start anyway." Not all ambiguity blocks progress.</em></p>
+
+<ol><li><strong>用"约束条件反问"</strong> — 不要问"你想要什么"，而是"有哪些约束条件？"（deadline、预算、不能动哪些系统）  </li></ol>
+<p>   <em>Ask about constraints rather than desires: "What can't change?" uncovers real requirements faster.</em></p>
+
+<ol><li><strong>两次沟通法则</strong> — 如果你向同一个人问了两次同样的问题还没答案，换个方式：写 RFC，开会对齐，或者向上升级。  </li></ol>
+<p>   <em>Two-ask rule: If you've asked the same person twice with no answer, escalate the format — write an RFC, schedule alignment, or escalate.</em></p>
+
+<ol><li><strong>让数据说话</strong> — "我们先做一个小实验来验证假设"比"我不确定需求是什么"更有说服力。  </li></ol>
+<p>   <em>Let data clarify: "Let's run a small experiment" is more powerful than "I'm not sure what we need."</em></p>
+
+<hr/>
+
+<h2>🎯 关键要点 / Key Takeaways</h2>
+
+<ul><li>🔑 模糊是工程师的日常，主动澄清是职业素养</li><li>🔑 区分"必须澄清"和"可以默认处理"的需求</li><li>🔑 把假设写成文档，发出去确认，保留记录</li><li>🔑 先行动，后优化——不要等到 100% 清晰</li></ul>
+
+<p><em>Ambiguity is daily life in engineering. Proactive clarification is professional maturity. Document assumptions. Move forward on reversible decisions, pause on irreversible ones.</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li><a href="https://newsletter.pragmaticengineer.com/">Gergely Orosz: "The Art of Asking Questions"</a></li><li><a href="https://staffeng.com/guides/engineering-strategy">StaffEng.com: Staff-level behaviors</a></li><li><a href="https://www.amazon.jobs/content/en/our-workplace/leadership-principles">Amazon LP: "Bias for Action" principle</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+
+<p>如果老师说"画一幅漂亮的画"，你不知道要画什么。聪明的做法是先问："可以是动物吗？用什么颜色？多大？" 然后开始画，完成后再调整。而不是坐在那里什么都不做，等老师来告诉你每一步。</p>
+
+<p><em>If a teacher says "draw something beautiful" without details, the smart move is to ask: "Can it be an animal? What colors? How big?" Then start drawing and adjust. Not sit frozen waiting for the teacher to specify every brushstroke.</em></p>
 
       </div>
     </div>
@@ -1116,117 +1171,213 @@ Output: True</code></pre>
         <span class="section-header-icon">🎨</span>
         <div>
           <div class="section-header-title">🎨 Frontend</div>
-          <div class="section-header-sub">🎨</div>
+          <div class="section-header-sub">🎨 前端 Day 8 / Frontend Day 8</div>
         </div>
         <span class="section-header-chevron">▼</span>
       </div>
       <div class="section-content ">
-        <p>🎨 <strong>前端 Day 8 (2 min read) / Frontend Day 8</strong></p>
-<p><strong>CSS Animations &amp; Transitions — CSS 动画与过渡</strong></p>
+        <h1>🎨 前端 Day 8 / Frontend Day 8</h1>
+<p><strong>主题 / Topic:</strong> CSS 动画与过渡 / CSS Animations &amp; Transitions</p>
+<p><strong>分类 / Category:</strong> CSS Fundamentals · Week 2 · Foundation Phase</p>
 
 <hr/>
 
-<p><strong>猜猜这段代码输出什么？/ What does this code output?</strong></p>
+<h2>🤔 猜猜输出 / What's the Output?</h2>
 
 <div class="code-block">
-  <button class="copy-btn" type="button" data-copy=".box {&#10;  width: 100px;&#10;  height: 100px;&#10;  background: coral;&#10;  transition: transform 0.3s ease;&#10;}&#10;.box:hover {&#10;  transform: scale(1.2) rotate(10deg);&#10;}">Copy</button>
+  <button class="copy-btn" type="button" data-copy=".box {&#10;  width: 100px;&#10;  background: blue;&#10;  transition: width 2s, background 0.5s;&#10;}&#10;&#10;.box:hover {&#10;  width: 300px;&#10;  background: red;&#10;}">Copy</button>
   <pre><code class="language-css"><span style="color:#e06c75;">.box</span>{
   <span style="color:#56b6c2;">width</span>: <span style="color:#e5c07b;">100px</span>;
-  <span style="color:#56b6c2;">height</span>: <span style="color:#e5c07b;">100px</span>;
-  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">coral</span>;
-  <span style="color:#56b6c2;">transition</span>: <span style="color:#e5c07b;">transform 0.3s ease</span>;
+  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">blue</span>;
+  <span style="color:#56b6c2;">transition</span>: <span style="color:#e5c07b;">width 2s, background 0.5s</span>;
 }
+
 .box:hover {
-  <span style="color:#56b6c2;">transform</span>: <span style="color:#e5c07b;">scale(1.2) rotate(10deg)</span>;
+  <span style="color:#56b6c2;">width</span>: <span style="color:#e5c07b;">300px</span>;
+  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">red</span>;
 }</code></pre>
 </div>
 
-<p><strong>What happens when you hover over the box?</strong></p>
-<p>A) Box instantly becomes 120% larger and rotates 10°</p>
-<p>B) Box smoothly grows to 120% and rotates 10° over 0.3s</p>
-<p>C) Box only scales (rotate is ignored because of transition property)</p>
-<p>D) Nothing — transition doesn't work with transform</p>
+<p>鼠标悬停时 (on hover)，先发生什么？  </p>
+<p><em>On hover, which change happens first (visually)?</em></p>
 
-<p><em>(答案在下方投票后揭晓！)</em></p>
+<p><strong>A.</strong> 宽度先变化 (width changes first — both at same time)  </p>
+<p><strong>B.</strong> 背景颜色先变化，然后宽度变化 (background changes first, then width)  </p>
+<p><strong>C.</strong> 两者同时开始，背景先完成 (both start together, background finishes first)  </p>
+<p><strong>D.</strong> 两者同时开始并同时完成 (both start and finish at the same time)</p>
 
-<hr/>
-
-<p><strong>🗺️ Transition vs Animation 速查</strong></p>
-
-<div class="diagram-block">transition:                     animation:
-  触发条件: 状态变化 (hover等)     触发条件: 自动播放/手动触发
-  控制: 起点 → 终点               控制: 多个关键帧 @keyframes
-  次数: 一次 (每次触发)            次数: 可无限循环
-  适用: 简单交互效果               适用: 复杂/持续动画</div>
+<p><em>(答案在最后 / Answer at the end)</em></p>
 
 <hr/>
 
-<p><strong>代码示例</strong></p>
+<h2>📐 Transition vs Animation</h2>
+
+<h3>Transition（过渡）— "A 到 B"</h3>
+
+<p>触发式的，从一个状态到另一个状态。<em>Triggered change between two states.</em></p>
 
 <div class="code-block">
-  <button class="copy-btn" type="button" data-copy="/* Transition — 简单悬停效果 */&#10;.button {&#10;  background: #7c5cfc;&#10;  transition: background 0.2s ease, transform 0.2s ease;&#10;}&#10;.button:hover {&#10;  background: #6344e0;&#10;  transform: translateY(-2px); /* 微微上浮 */&#10;}&#10;&#10;/* Animation — 持续脉冲效果 */&#10;@keyframes pulse {&#10;  0%, 100% { transform: scale(1); }&#10;  50%      { transform: scale(1.05); }&#10;}&#10;.notification-badge {&#10;  animation: pulse 2s ease-in-out infinite;&#10;}&#10;&#10;/* Animation — 淡入 */&#10;@keyframes fadeIn {&#10;  from { opacity: 0; transform: translateY(20px); }&#10;  to   { opacity: 1; transform: translateY(0); }&#10;}&#10;.card {&#10;  animation: fadeIn 0.5s ease-out forwards;&#10;}">Copy</button>
-  <pre><code class="language-css"><span style="color:#5c6370;">/* Transition — 简单悬停效果 */</span>
+  <button class="copy-btn" type="button" data-copy="/* 基础语法 / Basic syntax */&#10;.button {&#10;  background: blue;&#10;  transform: scale(1);&#10;  &#10;  /* property | duration | timing-function | delay */&#10;  transition: background 0.3s ease-in-out,&#10;              transform 0.2s ease;&#10;}&#10;&#10;.button:hover {&#10;  background: darkblue;&#10;  transform: scale(1.05); /* 轻微放大 / slight scale-up */&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* 基础语法 / Basic syntax */</span>
 <span style="color:#e06c75;">.button</span>{
-  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">#7c5cfc</span>;
-  <span style="color:#56b6c2;">transition</span>: <span style="color:#e5c07b;">background 0.2s ease, transform 0.2s ease</span>;
+  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">blue</span>;
+  <span style="color:#56b6c2;">transform</span>: <span style="color:#e5c07b;">scale(1)</span>;
+  
+<span style="color:#5c6370;">  /* property | duration | timing-function | delay */</span>
+  <span style="color:#56b6c2;">transition</span>: <span style="color:#e5c07b;">background 0.3s ease-in-out,</span>
+              transform 0.2s ease;
 }
+
 .button:hover {
-  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">#6344e0</span>;
-<span style="color:#5c6370;">  transform: translateY(-2px); /* 微微上浮 */</span>
-}
+  <span style="color:#56b6c2;">background</span>: <span style="color:#e5c07b;">darkblue</span>;
+<span style="color:#5c6370;">  transform: scale(1.05); /* 轻微放大 / slight scale-up */</span>
+}</code></pre>
+</div>
 
-<span style="color:#5c6370;">/* Animation — 持续脉冲效果 */</span>
+<h3>Animation（动画）— "持续循环"</h3>
+
+<p>不需要触发，可以自动运行、重复。<em>Can run automatically, loop indefinitely.</em></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* Step 1: 定义关键帧 / Define keyframes */&#10;@keyframes pulse {&#10;  0%   { transform: scale(1);    opacity: 1; }&#10;  50%  { transform: scale(1.1);  opacity: 0.7; }&#10;  100% { transform: scale(1);    opacity: 1; }&#10;}&#10;&#10;/* Step 2: 应用动画 / Apply animation */&#10;.loading-icon {&#10;  /* name | duration | timing | delay | iteration | direction */&#10;  animation: pulse 1.5s ease-in-out 0s infinite alternate;&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* Step 1: 定义关键帧 / Define keyframes */</span>
 <span style="color:#e06c75;">@keyframes pulse</span>{
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.05); }
-}
-<span style="color:#e06c75;">.notification-badge</span>{
-  <span style="color:#56b6c2;">animation</span>: <span style="color:#e5c07b;">pulse 2s ease-in-out infinite</span>;
+  0%   { transform: scale(1);    opacity: 1; }
+  50%  { transform: scale(1.1);  opacity: 0.7; }
+  100% { transform: scale(1);    opacity: 1; }
 }
 
-<span style="color:#5c6370;">/* Animation — 淡入 */</span>
-<span style="color:#e06c75;">@keyframes fadeIn</span>{
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-<span style="color:#e06c75;">.card</span>{
-  <span style="color:#56b6c2;">animation</span>: <span style="color:#e5c07b;">fadeIn 0.5s ease-out forwards</span>;
+<span style="color:#5c6370;">/* Step 2: 应用动画 / Apply animation */</span>
+<span style="color:#e06c75;">.loading-icon</span>{
+<span style="color:#5c6370;">  /* name | duration | timing | delay | iteration | direction */</span>
+  <span style="color:#56b6c2;">animation</span>: <span style="color:#e5c07b;">pulse 1.5s ease-in-out 0s infinite alternate</span>;
 }</code></pre>
 </div>
 
 <hr/>
 
-<p><strong>你可能不知道 / Common Gotchas</strong></p>
+<h2>⏱️ Timing Functions — 让动画有灵魂 / Giving Motion Soul</h2>
 
-<p>⚠️ <strong><code>transition: all</code> 的性能陷阱</strong></p>
-<p><code>transition: all 0.3s</code> 看起来方便，但会监听所有属性变化 — 包括 <code>width</code>, <code>height</code> 等触发 layout 的属性。只 transition 你需要的属性！</p>
+<div class="diagram-block">ease (default): 慢开始，加速，慢结束
+ease-in:        慢开始，快结束 → 适合"进入"
+ease-out:       快开始，慢结束 → 适合"退出"
+ease-in-out:    两端慢，中间快 → 最自然
+linear:         匀速 → 适合旋转加载图标
+cubic-bezier(): 完全自定义！
 
-<p>⚠️ <strong><code>display: none</code> 无法过渡</strong></p>
-<p>从 <code>display: none</code> 到 <code>display: block</code> 没有过渡效果。替代方案：用 <code>opacity</code> + <code>visibility</code> + <code>pointer-events</code>。</p>
-
-<p>⚠️ <strong>GPU 加速属性</strong></p>
-<p><code>transform</code> 和 <code>opacity</code> 由 GPU 合成，性能极好。<code>width</code>, <code>height</code>, <code>top</code>, <code>left</code> 触发 layout reflow，性能差。<strong>永远优先用 transform！</strong></p>
+Visual:
+ease:       ___/‾‾‾
+ease-in:    __/‾‾‾‾
+ease-out:   ‾‾‾‾\__
+linear:     ///////</div>
 
 <hr/>
 
-<p><strong>🎯 Mini Challenge</strong></p>
+<h2>🔥 实际代码对比 / Real Code Comparison</h2>
 
-<p>写一个加载动画：三个圆点依次上下跳动（staggered bounce）：</p>
+<h3>❌ 没有过渡 / No Transition (Jarring)</h3>
 <div class="code-block">
-  <button class="copy-btn" type="button" data-copy="  ●     ●     ●&#10;  ↕     ↕     ↕">Copy</button>
-  <pre><code class="language-text">  ●     ●     ●
-  ↕     ↕     ↕</code></pre>
+  <button class="copy-btn" type="button" data-copy=".menu {&#10;  display: none; /* 瞬间消失/出现 — 体验差 / Instant — bad UX */&#10;}">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.menu</span>{
+<span style="color:#5c6370;">  display: none; /* 瞬间消失/出现 — 体验差 / Instant — bad UX */</span>
+}</code></pre>
 </div>
-<p>提示：同一个 <code>@keyframes</code>，三个元素用 <code>animation-delay</code> 错开时间。</p>
+
+<h3>✅ 用 opacity + visibility 平滑过渡</h3>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy=".menu {&#10;  opacity: 0;&#10;  visibility: hidden;&#10;  transition: opacity 0.3s ease, visibility 0.3s ease;&#10;}&#10;&#10;.menu.active {&#10;  opacity: 1;&#10;  visibility: visible;&#10;}&#10;/* 注意：display:none 不能过渡! 用 opacity + visibility 代替 */&#10;/* Note: display:none can't transition! Use opacity + visibility instead */">Copy</button>
+  <pre><code class="language-css"><span style="color:#e06c75;">.menu</span>{
+  <span style="color:#56b6c2;">opacity</span>: <span style="color:#e5c07b;">0</span>;
+  <span style="color:#56b6c2;">visibility</span>: <span style="color:#e5c07b;">hidden</span>;
+  <span style="color:#56b6c2;">transition</span>: <span style="color:#e5c07b;">opacity 0.3s ease, visibility 0.3s ease</span>;
+}
+
+<span style="color:#e06c75;">.menu.active</span>{
+  <span style="color:#56b6c2;">opacity</span>: <span style="color:#e5c07b;">1</span>;
+  <span style="color:#56b6c2;">visibility</span>: <span style="color:#e5c07b;">visible</span>;
+}
+<span style="color:#5c6370;">/* 注意：display:none 不能过渡! 用 opacity + visibility 代替 */</span>
+<span style="color:#5c6370;">/* Note: display:none can't transition! Use opacity + visibility instead */</span></code></pre>
+</div>
+
+<h3>⚡ 性能陷阱 / Performance Gotcha</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* ❌ 触发 Layout Reflow — 慢！*/&#10;.bad { transition: width 0.3s, height 0.3s, margin 0.3s; }&#10;&#10;/* ✅ 只触发 Composite — 快！*/&#10;.good { transition: transform 0.3s, opacity 0.3s; }&#10;/*     transform 和 opacity 在 GPU 上运行，性能最佳 */&#10;/*     transform and opacity run on GPU — best performance */">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* ❌ 触发 Layout Reflow — 慢！*/</span>
+.bad { transition: width 0.3s, height 0.3s, margin 0.3s; }
+
+<span style="color:#5c6370;">/* ✅ 只触发 Composite — 快！*/</span>
+.good { transition: transform 0.3s, opacity 0.3s; }
+<span style="color:#5c6370;">/*     transform 和 opacity 在 GPU 上运行，性能最佳 */</span>
+<span style="color:#5c6370;">/*     transform and opacity run on GPU — best performance */</span></code></pre>
+</div>
+
+<p><strong>规则 / Rule:</strong> 动画时优先使用 <code>transform</code> 和 <code>opacity</code>，避免 <code>width/height/margin/top/left</code>（会触发 reflow）。  </p>
+<p><em>Prefer <code>transform</code> and <code>opacity</code> for animations; avoid <code>width/height/margin/top/left</code> (triggers layout reflow).</em></p>
 
 <hr/>
 
-<p>📚 <strong>深入学习 / Learn More:</strong></p>
-<p>• <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_transitions/Using_CSS_transitions">MDN: Using CSS transitions</a></p>
-<p>• <a href="https://web.dev/articles/animations-guide">web.dev: Animations Guide</a></p>
-<p>• <a href="https://css-tricks.com/almanac/properties/a/animation/">CSS-Tricks: A Complete Guide to CSS Animations</a></p>
+<h2>🧩 迷你挑战 / Mini Challenge</h2>
 
-<p>🧒 <strong>ELI5:</strong> CSS transitions are like slowly turning a dimmer switch — things change smoothly instead of suddenly. CSS animations are like a flip-book — you draw each frame, and the browser plays them in order!</p>
+<p>用 CSS 实现一个 loading spinner，只用 <code>@keyframes</code> 和 <code>border-radius</code>：</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="/* 试着完成这段代码 / Try completing this */&#10;.spinner {&#10;  width: 40px;&#10;  height: 40px;&#10;  border: 4px solid #f3f3f3;&#10;  border-top: 4px solid #3498db;&#10;  border-radius: 50%;&#10;  /* 添加旋转动画 / Add rotation animation here */&#10;  animation: ??? 1s linear infinite;&#10;}&#10;&#10;@keyframes ??? {&#10;  /* 定义旋转 / Define rotation */&#10;}&#10;&#10;/* 答案 / Answer:&#10;animation: spin 1s linear infinite;&#10;@keyframes spin {&#10;  0%   { transform: rotate(0deg); }&#10;  100% { transform: rotate(360deg); }&#10;}&#10;*/">Copy</button>
+  <pre><code class="language-css"><span style="color:#5c6370;">/* 试着完成这段代码 / Try completing this */</span>
+<span style="color:#e06c75;">.spinner</span>{
+  <span style="color:#56b6c2;">width</span>: <span style="color:#e5c07b;">40px</span>;
+  <span style="color:#56b6c2;">height</span>: <span style="color:#e5c07b;">40px</span>;
+  <span style="color:#56b6c2;">border</span>: <span style="color:#e5c07b;">4px solid #f3f3f3</span>;
+  <span style="color:#56b6c2;">border-top</span>: <span style="color:#e5c07b;">4px solid #3498db</span>;
+  <span style="color:#56b6c2;">border-radius</span>: <span style="color:#e5c07b;">50%</span>;
+<span style="color:#5c6370;">  /* 添加旋转动画 / Add rotation animation here */</span>
+  <span style="color:#56b6c2;">animation</span>: <span style="color:#e5c07b;">??? 1s linear infinite</span>;
+}
+
+<span style="color:#e06c75;">@keyframes ???</span>{
+<span style="color:#5c6370;">  /* 定义旋转 / Define rotation */</span>
+}
+
+<span style="color:#5c6370;">/* 答案 / Answer:</span>
+<span style="color:#56b6c2;">animation</span>: <span style="color:#e5c07b;">spin 1s linear infinite</span>;
+<span style="color:#e06c75;">@keyframes spin</span>{
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+*/</code></pre>
+</div>
+
+<hr/>
+
+<h2>📝 Quiz 答案解析 / Quiz Answer Explanation</h2>
+
+<p><strong>正确答案：C</strong> — 两者同时开始，背景先完成</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="timeline (hover starts at t=0):&#10;t=0ms:   ■ width transition starts (2000ms duration)&#10;t=0ms:   ■ background transition starts (500ms duration)&#10;t=500ms: ✅ background = red (DONE)&#10;t=2000ms:✅ width = 300px (DONE)">Copy</button>
+  <pre><code class="language-text">timeline (hover starts at t=0):
+t=0ms:   ■ width transition starts (2000ms duration)
+t=0ms:   ■ background transition starts (500ms duration)
+t=500ms: ✅ background = red (DONE)
+t=2000ms:✅ width = 300px (DONE)</code></pre>
+</div>
+
+<p><code>transition: width 2s, background 0.5s</code> — 两个属性<strong>同时开始</strong>，但持续时间不同，所以背景 500ms 就完成了，而宽度还要等到 2000ms。</p>
+
+<p><em>Both transitions start at the same moment on hover, but have different durations: background completes in 500ms while width takes 2000ms.</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Transitions/Using_CSS_transitions">MDN: CSS Transitions</a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Using_CSS_animations">MDN: CSS Animations</a></li><li><a href="https://css-tricks.com/css-transitions-101/">CSS Tricks: Transition vs Animation</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+
+<p>过渡就像灯光调光开关——你拨动开关，灯慢慢变亮或变暗。动画就像旋转的风车——不需要你动它，它自己一直转。  </p>
+
+<p><em>Transitions are like a dimmer switch — you flip it and the light slowly changes. Animations are like a spinning pinwheel — it just keeps spinning on its own without you touching it.</em></p>
 
       </div>
     </div>
@@ -1235,116 +1386,170 @@ Output: True</code></pre>
         <span class="section-header-icon">🤖</span>
         <div>
           <div class="section-header-title">🤖 AI</div>
-          <div class="section-header-sub">🤖</div>
+          <div class="section-header-sub">🤖 AI Day 8</div>
         </div>
         <span class="section-header-chevron">▼</span>
       </div>
       <div class="section-content ">
-        <p>🤖 <strong>AI Day 8 (2 min read) — AI 概念 / AI Concept</strong></p>
-<p><strong>Training vs Fine-Tuning vs Prompting — 训练 vs 微调 vs 提示</strong></p>
+        <h1>🤖 AI Day 8</h1>
+<p><strong>主题 / Topic:</strong> 训练 vs 微调 vs 提示工程 / Training vs Fine-Tuning vs Prompting</p>
+<p><strong>分类 / Category:</strong> Foundations · Foundation Phase</p>
 
 <hr/>
 
-<p><strong>直觉理解 / Intuitive Explanation</strong></p>
+<h2>🌍 直觉理解 / Intuitive Explanation</h2>
 
-<p>想象你在培养一个厨师：</p>
+<p>把 LLM 想象成一个<strong>刚毕业的大学生</strong>：</p>
 
-<p>🏫 <strong>Training（训练）</strong> — 从零开始上烹饪学校。学所有菜系、刀工、火候。耗时数年，花费巨大，但出来是个全能厨师。</p>
-<p>→ GPT-4 的预训练：万亿 token，数千 GPU，数百万美元。</p>
+<ul><li><strong>预训练 Pre-training</strong> = 完成大学本科，学习了世界上几乎所有的知识（读了整个互联网）</li><li><strong>微调 Fine-tuning</strong> = 参加专业培训项目（比如医学院），让他专门擅长某个领域</li><li><strong>提示工程 Prompting</strong> = 给这个毕业生发一份工作简报，告诉他今天该做什么、怎么做</li></ul>
 
-<p>🎯 <strong>Fine-Tuning（微调）</strong> — 全能厨师去日本学了 3 个月寿司。基础能力不变，但寿司水平大幅提升。</p>
-<p>→ 在特定数据集上继续训练：医疗、法律、代码等。成本中等，效果显著。</p>
+<p>三种方式的<strong>成本、灵活性、效果</strong>完全不同。</p>
 
-<p>💬 <strong>Prompting（提示）</strong> — 直接告诉厨师"今天做川菜，要麻辣，少油"。不改变厨师本身的能力，只是给出指令。</p>
-<p>→ System prompt、few-shot examples。零成本，即时生效，但受限于模型已有能力。</p>
-
-<hr/>
-
-<p><strong>对比表 / Comparison</strong></p>
-
-<div class="diagram-block">                Training      Fine-Tuning     Prompting
-─────────────────────────────────────────────────────
-数据量          TB级           千~万条          0~几十条
-成本            $$$$$          $$              $0
-时间            周~月          小时~天          秒
-需要 GPU?       是 (大量)      是 (少量)        否
-改变模型?       创建模型       修改权重         不改变
-适用场景        通用基座       领域专精         日常使用</div>
+<p><em>Think of an LLM as a fresh college graduate:</em></p>
+<p><em>- Pre-training = completing a full degree (reading the entire internet)</em></p>
+<p><em>- Fine-tuning = attending medical school (specializing in a domain)</em></p>
+<p><em>- Prompting = giving them a daily briefing (telling them what and how to do today)</em></p>
 
 <hr/>
 
-<p><strong>实际应用 / Real-World Examples</strong></p>
+<h2>⚙️ 工作原理 / How It Works</h2>
 
-<table><thead><tr><th>方法</th><th>例子</th></tr></thead><tbody><tr><td>Training</td><td>Meta 训练 LLaMA 3 — 15T tokens, 数千 H100</td></tr><tr><td>Fine-Tuning</td><td>医院用 GPT-4 微调 → 专业医疗问答模型</td></tr><tr><td>Prompting</td><td>"你是一个资深 Python 开发者，请 review 这段代码"</td></tr></tbody></table>
+<h3>1. 预训练 Pre-Training (从零开始)</h3>
 
-<p><strong>现实中的组合拳：</strong> OpenAI 的 ChatGPT = 预训练 (Training) + RLHF 微调 (Fine-Tuning) + System Prompt (Prompting)。三者不是互斥的！</p>
+<div class="diagram-block">大量文本数据                    → 基础模型
+(互联网+书籍+代码)               (GPT-4, Llama, Claude)
+Massive text corpus            → Foundation model
 
-<hr/>
+成本：数百万美元 + 数周 GPU 时间
+Cost: Millions of dollars + weeks of GPU time
 
-<p><strong>可运行代码 / Runnable Code</strong></p>
+训练目标：预测下一个 token
+Objective: Predict the next token</div>
+
+<h3>2. 微调 Fine-Tuning (在已有模型上继续训练)</h3>
+
+<div class="diagram-block">基础模型 + 专业数据集 → 专用模型
+Foundation model + domain data → Specialized model
+
+例子 / Examples:
+• GPT-4 + 法律文书 → 法律助手
+• Llama + 医疗记录 → 医疗诊断模型
+• Code Llama = Llama + 代码数据集
+
+成本：数百到数万美元
+Cost: Hundreds to tens of thousands of dollars
+
+关键参数：learning rate 要小 (1e-5 to 1e-4)，防止"灾难性遗忘"
+Key: Low learning rate to prevent "catastrophic forgetting"</div>
+
+<h3>3. 提示工程 Prompting (零成本，零训练)</h3>
 
 <div class="code-block">
-  <button class="copy-btn" type="button" data-copy="# pip install openai &amp;&amp; python script.py&#10;# 展示 Prompting 如何改变同一模型的行为&#10;from openai import OpenAI&#10;client = OpenAI()  # uses OPENAI_API_KEY env var&#10;&#10;prompts = [&#10;    (&quot;You are a pirate.&quot;, &quot;What is Python?&quot;),&#10;    (&quot;You are a professor.&quot;, &quot;What is Python?&quot;),&#10;]&#10;for system, user in prompts:&#10;    r = client.chat.completions.create(&#10;        model=&quot;gpt-4o-mini&quot;,&#10;        messages=[{&quot;role&quot;:&quot;system&quot;,&quot;content&quot;:system},&#10;                  {&quot;role&quot;:&quot;user&quot;,&quot;content&quot;:user}],&#10;        max_tokens=60&#10;    )&#10;    print(f&quot;[{system}]\n{r.choices[0].message.content}\n&quot;)">Copy</button>
-  <pre><code class="language-python"><span style="color:#5c6370;"># pip install openai &amp;&amp; python script.py</span>
-<span style="color:#5c6370;"># 展示 Prompting 如何改变同一模型的行为</span>
+  <button class="copy-btn" type="button" data-copy="用户: &quot;你是一个专业的法律助手，...&quot;&#10;基础模型通过上下文调整行为&#10;No training — just clever input formatting&#10;&#10;技术 / Techniques:&#10;• Zero-shot: 直接问&#10;• Few-shot: 给几个例子&#10;• Chain-of-thought: &quot;一步一步想...&quot;&#10;• RAG: 外挂知识库">Copy</button>
+  <pre><code class="language-text">用户: "你是一个专业的法律助手，..."
+基础模型通过上下文调整行为
+No training — just clever input formatting
+
+技术 / Techniques:
+• Zero-shot: 直接问
+• Few-shot: 给几个例子
+• Chain-of-thought: "一步一步想..."
+• RAG: 外挂知识库</code></pre>
+</div>
+
+<hr/>
+
+<h2>📊 三者对比 / Comparison Table</h2>
+
+<table><thead><tr><th></th><th>预训练 Pre-train</th><th>微调 Fine-tune</th><th>提示 Prompting</th></tr></thead><tbody><tr><td>成本 Cost</td><td>💰💰💰💰 极高</td><td>💰💰 中等</td><td>💰 几乎免费</td></tr><tr><td>时间 Time</td><td>数周 weeks</td><td>数小时~天 hours-days</td><td>即时 instant</td></tr><tr><td>数据需求 Data</td><td>万亿 tokens</td><td>数百~数万样本</td><td>0~几个例子</td></tr><tr><td>效果 Performance</td><td>通用基础 general</td><td>专域最优 domain-best</td><td>灵活但有上限</td></tr><tr><td>修改难度 Updates</td><td>极难 very hard</td><td>需重新微调</td><td>实时修改 instant</td></tr><tr><td>使用场景 Use Case</td><td>建大模型</td><td>专业领域</td><td>99%的应用场景</td></tr></tbody></table>
+
+<hr/>
+
+<h2>💻 可运行代码 / Runnable Python Snippet</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# pip install openai&#10;&#10;from openai import OpenAI&#10;&#10;client = OpenAI()  # Reads OPENAI_API_KEY from env&#10;&#10;# ============================================================&#10;# Technique 1: Zero-shot prompting&#10;# ============================================================&#10;zero_shot = client.chat.completions.create(&#10;    model=&quot;gpt-4o-mini&quot;,&#10;    messages=[&#10;        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Classify this tweet as positive/negative/neutral: 'I love this new feature!'&quot;}&#10;    ]&#10;)&#10;print(&quot;Zero-shot:&quot;, zero_shot.choices[0].message.content)&#10;&#10;# ============================================================&#10;# Technique 2: Few-shot prompting (3 examples teach the format)&#10;# ============================================================&#10;few_shot = client.chat.completions.create(&#10;    model=&quot;gpt-4o-mini&quot;,&#10;    messages=[&#10;        {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;Classify tweets. Answer with just: positive, negative, or neutral.&quot;},&#10;        {&quot;role&quot;: &quot;user&quot;,   &quot;content&quot;: &quot;The food was amazing!&quot;},&#10;        {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;positive&quot;},&#10;        {&quot;role&quot;: &quot;user&quot;,   &quot;content&quot;: &quot;Worst customer service ever.&quot;},&#10;        {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;negative&quot;},&#10;        {&quot;role&quot;: &quot;user&quot;,   &quot;content&quot;: &quot;Package arrived.&quot;},&#10;        {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;neutral&quot;},&#10;        # Now the real question:&#10;        {&quot;role&quot;: &quot;user&quot;,   &quot;content&quot;: &quot;I love this new feature!&quot;},&#10;    ]&#10;)&#10;print(&quot;Few-shot:&quot;, few_shot.choices[0].message.content)&#10;# Output: &quot;positive&quot; — much more consistent format!">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># pip install openai</span>
+
 <span style="color:#c678dd;">from</span> openai <span style="color:#c678dd;">import</span> OpenAI
-client = OpenAI()  <span style="color:#5c6370;"># uses OPENAI_API_KEY env var</span>
 
-prompts = [
-    (<span style="color:#e5c07b;">"You are a pirate."</span>, <span style="color:#e5c07b;">"What is Python?"</span>),
-    (<span style="color:#e5c07b;">"You are a professor."</span>, <span style="color:#e5c07b;">"What is Python?"</span>),
-]
-<span style="color:#c678dd;">for</span> system, user <span style="color:#c678dd;">in</span> prompts:
-    r = client.chat.completions.create(
-        model=<span style="color:#e5c07b;">"gpt-4o-mini"</span>,
-        messages=[{<span style="color:#e5c07b;">"role"</span>:<span style="color:#e5c07b;">"system"</span>,<span style="color:#e5c07b;">"content"</span>:system},
-                  {<span style="color:#e5c07b;">"role"</span>:<span style="color:#e5c07b;">"user"</span>,<span style="color:#e5c07b;">"content"</span>:user}],
-        max_tokens=<span style="color:#56b6c2;">60</span>
-    )
-    print(f<span style="color:#e5c07b;">"[{system}]\n{r.choices[0].message.content}\n"</span>)</code></pre>
+client = OpenAI()  <span style="color:#5c6370;"># Reads OPENAI_API_KEY from env</span>
+
+<span style="color:#5c6370;"># ============================================================</span>
+<span style="color:#5c6370;"># Technique 1: Zero-shot prompting</span>
+<span style="color:#5c6370;"># ============================================================</span>
+zero_shot = client.chat.completions.create(
+    model=<span style="color:#e5c07b;">"gpt-4o-mini"</span>,
+    messages=[
+        {<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"user"</span>, <span style="color:#e5c07b;">"content"</span>: <span style="color:#e5c07b;">"Classify this tweet as positive/negative/neutral: 'I love this new feature!'"</span>}
+    ]
+)
+print(<span style="color:#e5c07b;">"Zero-shot:"</span>, zero_shot.choices[<span style="color:#56b6c2;">0</span>].message.content)
+
+<span style="color:#5c6370;"># ============================================================</span>
+<span style="color:#5c6370;"># Technique 2: Few-shot prompting (3 examples teach the format)</span>
+<span style="color:#5c6370;"># ============================================================</span>
+few_shot = client.chat.completions.create(
+    model=<span style="color:#e5c07b;">"gpt-4o-mini"</span>,
+    messages=[
+        {<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"system"</span>, <span style="color:#e5c07b;">"content"</span>: <span style="color:#e5c07b;">"Classify tweets. Answer with just: positive, negative, or neutral."</span>},
+        {<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"user"</span>,   <span style="color:#e5c07b;">"content"</span>: <span style="color:#e5c07b;">"The food was amazing!"</span>},
+        {<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"assistant"</span>, <span style="color:#e5c07b;">"content"</span>: <span style="color:#e5c07b;">"positive"</span>},
+        {<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"user"</span>,   <span style="color:#e5c07b;">"content"</span>: <span style="color:#e5c07b;">"Worst customer service ever."</span>},
+        {<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"assistant"</span>, <span style="color:#e5c07b;">"content"</span>: <span style="color:#e5c07b;">"negative"</span>},
+        {<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"user"</span>,   <span style="color:#e5c07b;">"content"</span>: <span style="color:#e5c07b;">"Package arrived."</span>},
+        {<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"assistant"</span>, <span style="color:#e5c07b;">"content"</span>: <span style="color:#e5c07b;">"neutral"</span>},
+        <span style="color:#5c6370;"># Now the real question:</span>
+        {<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"user"</span>,   <span style="color:#e5c07b;">"content"</span>: <span style="color:#e5c07b;">"I love this new feature!"</span>},
+    ]
+)
+print(<span style="color:#e5c07b;">"Few-shot:"</span>, few_shot.choices[<span style="color:#56b6c2;">0</span>].message.content)
+<span style="color:#5c6370;"># Output: "positive" — much more consistent format!</span></code></pre>
 </div>
 
 <hr/>
 
-<p><strong>什么时候用什么？/ Decision Tree</strong></p>
+<h2>🎯 什么时候用哪种？/ When to Use Which?</h2>
 
-<div class="diagram-block">需要全新能力？ → Training（但你可能不需要）
-     ↓ 不需要
-现有模型 + 提示不够好？ → Fine-Tuning
-     ↓ 够好
-直接 Prompting！ → 90% 的场景用这个就够了</div>
+<div class="diagram-block">你的问题                         推荐方案
+Your problem                    Recommended approach
 
-<p><strong>黄金法则：先试 Prompting，不行再 Fine-Tune，极少数情况才需要 Training。</strong></p>
+"我要做一个通用聊天机器人"          → Prompting (系统提示词)
+General chatbot                 → Prompting (system prompt)
+
+"客服需要理解我们专有术语"          → Fine-tuning (100-1000个示例)
+Support bot with domain jargon  → Fine-tuning (100-1000 examples)
+
+"要让模型写代码更像我们团队风格"     → Fine-tuning 或 RAG+Prompting
+Code style consistency          → Fine-tuning or RAG+Prompting
+
+"从零做下一个 GPT-4"              → Pre-training (别这么想)
+Build next GPT-4 from scratch   → Pre-training (don't)</div>
+
+<div class="diagram-block">**经验法则 / Rule of thumb:** 先试 prompting → 不行试 fine-tuning → 绝不要自己预训练
+*Try prompting first → fine-tune if needed → never pre-train from scratch*</div>
 
 <hr/>
 
-<p>📚 <strong>深入学习 / Learn More:</strong></p>
-<p>• <a href="https://platform.openai.com/docs/guides/fine-tuning">OpenAI Fine-Tuning Guide</a></p>
-<p>• <a href="https://huggingface.co/docs/transformers/training">Hugging Face: Training &amp; Fine-Tuning</a></p>
-<p>• <a href="https://www.promptingguide.ai/">Prompt Engineering Guide</a></p>
+<h2>🧠 2026 前沿 / 2026 Cutting Edge</h2>
 
-<p>🧒 <strong>ELI5:</strong> Training is like going to school for years to learn everything; fine-tuning is like taking a special class to get really good at one thing; and prompting is like asking your smart friend a question — they already know stuff, you just tell them what you need!</p>
+<ul><li><strong>LoRA / QLoRA</strong> — 用极少参数做高效微调，只需一张消费级 GPU（A100 → RTX 4090）</li><li><strong>RLHF</strong> — 用人类反馈强化训练，让模型更"安全"（ChatGPT 的秘诀之一）</li><li><strong>DPO</strong> — Direct Preference Optimization，比 RLHF 更简单，效果相当</li></ul>
 
-<div class="attention-card">
-  <h3>Attention Heatmap</h3>
-  <p>When the model processes <code>it</code>, it attends most strongly to <code>animal</code>.</p>
-  <div class="heatmap-wrap">
-    <table class="heatmap">
-      <thead>
-        <tr>
-          <th></th>
-          <th class="heatmap-axis">The</th><th class="heatmap-axis">animal</th><th class="heatmap-axis">didnt</th><th class="heatmap-axis">cross</th><th class="heatmap-axis">the</th><th class="heatmap-axis">street</th><th class="heatmap-axis">because</th><th class="heatmap-axis">it</th><th class="heatmap-axis">was</th><th class="heatmap-axis">too</th><th class="heatmap-axis">tired</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th class="heatmap-axis row-label">it →</th>
-          <td><div class="heatmap-cell" title="The: 0.02" aria-label="The attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="animal: 0.86" aria-label="animal attention weight 0.86" style="background:rgba(167, 139, 250, 0.86);"></div></td><td><div class="heatmap-cell" title="didnt: 0.03" aria-label="didnt attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="cross: 0.04" aria-label="cross attention weight 0.04" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="the: 0.02" aria-label="the attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="street: 0.08" aria-label="street attention weight 0.08" style="background:rgba(167, 139, 250, 0.08);"></div></td><td><div class="heatmap-cell" title="because: 0.05" aria-label="because attention weight 0.05" style="background:rgba(167, 139, 250, 0.05);"></div></td><td><div class="heatmap-cell" title="it: 0.03" aria-label="it attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="was: 0.07" aria-label="was attention weight 0.07" style="background:rgba(167, 139, 250, 0.07);"></div></td><td><div class="heatmap-cell" title="too: 0.10" aria-label="too attention weight 0.10" style="background:rgba(167, 139, 250, 0.10);"></div></td><td><div class="heatmap-cell" title="tired: 0.30" aria-label="tired attention weight 0.30" style="background:rgba(167, 139, 250, 0.30);"></div></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li><a href="https://platform.openai.com/docs/guides/fine-tuning">OpenAI Fine-tuning Guide</a></li><li><a href="https://huggingface.co/docs/peft/index">Hugging Face: LoRA &amp; PEFT Documentation</a></li><li><a href="https://www.youtube.com/watch?v=kCc8FmEb1nY">Andrej Karpathy: Let's build GPT (YouTube)</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你要教一条狗学新把戏：</p>
+<ul><li>预训练 = 把狗从小养大，它学会了所有基本技能</li><li>微调 = 专门训练它学"装死"这一个把戏，练了一个月</li><li>提示工程 = 你每次说话前告诉它"你是一只很聪明的狗，我想让你..."</li></ul>
+
+<p>最简单的方法永远是先"说话"，实在不行才去"专门训练"。</p>
+
+<p><em>To teach a dog tricks: pre-training = raising it from a puppy (learns everything). Fine-tuning = a month of "play dead" training. Prompting = just telling it what you want before each command. Always try talking first.</em></p>
+
       </div>
     </div>
 </main>
