@@ -5,8 +5,4910 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 14 Mar 2026 18:47:04 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 24 Mar 2026 01:21:14 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-03-23</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-23</guid>
+      <pubDate>Mon, 23 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 Day 8 / System Design Day 8</h2>
+<p><strong>主题 / Topic:</strong> 数据库索引与查询优化 / Database Indexing &amp; Query Optimization</p>
+<p><strong>分类 / Category:</strong> Fundamentals · Beginner · Foundation Phase</p>
+
+<hr/>
+
+<h2>🌍 真实场景 / Real-World Scenario</h2>
+
+<p>想象你在设计 Twitter 的搜索功能。用户搜索某条推文，数据库里有 <strong>5 亿条记录</strong>——如果没有索引，数据库必须逐行扫描，花几分钟才能返回结果。有了索引，查询可以在 <strong>几毫秒内</strong> 完成。</p>
+
+<p><em>Imagine you&#x27;re designing Twitter&#x27;s search feature. Users search for tweets, and there are 500 million records in the database — without indexing, the database must scan row-by-row, taking minutes. With indexes, queries return in milliseconds.</em></p>
+
+<hr/>
+
+<h2>🏛️ 架构图 / ASCII Architecture Diagram</h2>
+
+<pre><code>
+User Query: &quot;SELECT * FROM tweets WHERE user_id = 42 AND created_at &gt; &#x27;2026-01-01&#x27;&quot;
+
+WITHOUT INDEX:                     WITH INDEX:
+┌─────────────────────┐           ┌─────────────────────┐
+│   Full Table Scan   │           │   B-Tree Index      │
+│   Row 1: user_id=1  │           │   (user_id, date)   │
+│   Row 2: user_id=15 │           │        Root         │
+│   Row 3: user_id=42 │           │       /    \        │
+│   ...               │           │    Node    Node     │
+│   Row 500M: ???     │           │   /  \    /  \      │
+│   ❌ 500M reads     │           │  L1  L2  L3  L4     │
+└─────────────────────┘           │  ✅ ~log(N) reads   │
+                                  └─────────────────────┘
+
+Index Storage:
+┌──────────┬──────────┬─────────────────┐
+│ user_id  │   date   │  row_pointer →  │
+│    42    │ 2026-01  │  page 1042, r3  │
+│    42    │ 2026-02  │  page 2891, r7  │
+└──────────┴──────────┴─────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>⚖️ 关键权衡 / Key Tradeoffs (为什么这样设计？)</h2>
+
+<h3>索引加速读，但拖慢写 / Indexes Speed Reads, Slow Writes</h3>
+
+<p>| 指标 / Metric | 无索引 Without Index | 有索引 With Index |</p>
+<p>|---|---|---|</p>
+<p>| SELECT 查询 | O(N) 全表扫描 | O(log N) B-Tree 遍历 |</p>
+<p>| INSERT / UPDATE | 快 ⚡ | 慢（需维护索引）|</p>
+<p>| 存储空间 Storage | 小 | 更大（索引占空间）|</p>
+
+<p><strong>为什么用 B-Tree？</strong> B-Tree 保持数据有序，支持范围查询（<code>BETWEEN</code>, <code>&gt;</code>），适合绝大多数业务场景。</p>
+<p><em>Why B-Tree? It keeps data sorted, supports range queries (<code>BETWEEN</code>, <code>&gt;</code>), fitting most business use cases.</em></p>
+
+<p><strong>复合索引的列顺序很重要 / Column order in composite indexes matters:</strong></p>
+<pre><code>
+-- Index on (user_id, created_at)
+-- ✅ Can use: WHERE user_id = 42 AND created_at &gt; &#x27;2026-01-01&#x27;
+-- ✅ Can use: WHERE user_id = 42
+-- ❌ Cannot use: WHERE created_at &gt; &#x27;2026-01-01&#x27; (alone)
+-- 最左前缀原则 / Leftmost prefix rule!
+</code></pre>
+
+<hr/>
+
+<h2>⚠️ 常见错误 / Common Mistakes (别踩这个坑)</h2>
+
+<p>1. <strong>过度索引 Over-indexing</strong> — 给每列都加索引？写操作会变得极慢。生产中见过 INSERT 耗时 10 秒的案例。</p>
+<p><em>Adding an index to every column? Writes become painfully slow.</em></p>
+
+<p>2. <strong>索引列上做函数运算 Function on indexed column</strong> — <code>WHERE YEAR(created_at) = 2026</code> 无法使用索引！改用 <code>WHERE created_at BETWEEN &#x27;2026-01-01&#x27; AND &#x27;2026-12-31&#x27;</code>。</p>
+<p><em><code>WHERE YEAR(created_at) = 2026</code> can&#x27;t use the index! Use range instead.</em></p>
+
+<p>3. <strong>忽视 EXPLAIN / Ignoring EXPLAIN</strong> — 不跑 <code>EXPLAIN SELECT ...</code> 怎么知道是否用到了索引？</p>
+<p><em>Never running <code>EXPLAIN SELECT ...</code> — how do you even know if the index is used?</em></p>
+
+<p>4. <strong>N+1 查询问题 / N+1 Query Problem</strong> — 循环里查询数据库，100 次查询 vs 1 次 JOIN。</p>
+<p><em>Querying inside a loop: 100 queries vs 1 JOIN.</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [PostgreSQL Index Documentation](https://www.postgresql.org/docs/current/indexes.html)</p>
+<p>- [Use The Index, Luke — Free SQL Indexing Guide](https://use-the-index-luke.com/)</p>
+<p>- [MySQL EXPLAIN Output Format](https://dev.mysql.com/doc/refman/8.0/en/explain-output.html)</p>
+
+<h2>🧒 ELI5 (小朋友也能懂)</h2>
+
+<p>索引就像书的<strong>目录</strong>。没有目录，你要找&quot;索引&quot;这个词，就得从第1页翻到最后。有了目录，直接翻到第 283 页。数据库索引做的是同样的事情——不用&quot;翻遍所有数据&quot;，直接跳到你要找的地方。</p>
+
+<p><em>An index is like a book&#x27;s table of contents. Without it, you&#x27;d flip through every page to find &quot;indexing.&quot; With a table of contents, you jump right to page 283. Database indexes do the same thing — skip straight to what you need.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 Day 8 / Algorithms Day 8</h2>
+<p><strong>题目 / Problem:</strong> #36 Valid Sudoku · 🟡 Medium</p>
+<p><strong>模式 / Pattern:</strong> Arrays &amp; Hashing</p>
+
+<p>🔗 [LeetCode #36](https://leetcode.com/problems/valid-sudoku/) · 📹 [NeetCode Video](https://www.youtube.com/watch?v=TjFXEUCMqI8)</p>
+
+<hr/>
+
+<h2>🌍 真实类比 / Real-World Analogy</h2>
+
+<p>想象你是数独游戏的裁判。你不需要<strong>解开</strong>这个数独——只需要检查当前状态是否<strong>合法</strong>（没有行、列、3×3格子里有重复数字）。就像检查停车场：不是找空位，而是确认没有两辆车占同一个格子。</p>
+
+<p><em>Imagine you&#x27;re a Sudoku referee. You don&#x27;t need to solve the puzzle — just verify the current state is valid (no duplicate numbers in any row, column, or 3×3 box). Like checking a parking lot: not finding empty spots, but confirming no two cars share the same space.</em></p>
+
+<hr/>
+
+<h2>🧩 题目 / Problem</h2>
+
+<p>给定一个 9×9 的数独棋盘，判断是否有效。规则：</p>
+<p>- 每行数字 1-9 不重复</p>
+<p>- 每列数字 1-9 不重复</p>
+<p>- 每个 3×3 子格数字 1-9 不重复</p>
+<p>- 空格用 <code>&#x27;.&#x27;</code> 表示</p>
+
+<p><em>Given a 9×9 Sudoku board, determine if it is valid. Rules: no duplicates in any row, column, or 3×3 box. Empty cells are <code>&#x27;.&#x27;</code>.</em></p>
+
+<hr/>
+
+<h2>💡 关键洞察 / Key Insight</h2>
+
+<p><strong>用哈希集合跟踪所见数字。</strong> 同时遍历三种结构：行、列、3×3格。</p>
+<p><strong>关键公式：</strong> 位于 <code>(r, c)</code> 的格子属于哪个 3×3 格？ → <code>box_id = (r // 3) * 3 + (c // 3)</code></p>
+
+<p><em>Use hash sets to track seen numbers simultaneously across rows, columns, and 3×3 boxes.</em></p>
+<p><em>Key formula: which box does cell <code>(r, c)</code> belong to? → <code>box_id = (r // 3) </em> 3 + (c // 3)</code>*</p>
+
+<pre><code>
+Box IDs:
+┌───────┬───────┬───────┐
+│ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │
+│ box 0 │ box 1 │ box 2 │
+├───────┼───────┼───────┤
+│ box 3 │ box 4 │ box 5 │
+├───────┼───────┼───────┤
+│ box 6 │ box 7 │ box 8 │
+└───────┴───────┴───────┘
+r=0,c=0: (0//3)*3+(0//3) = 0*3+0 = box 0 ✅
+r=1,c=4: (1//3)*3+(4//3) = 0*3+1 = box 1 ✅
+r=4,c=7: (4//3)*3+(7//3) = 1*3+2 = box 5 ✅
+</code></pre>
+
+<hr/>
+
+<h2>🐍 Python 解法 / Python Solution</h2>
+
+<pre><code>
+from collections import defaultdict
+
+def isValidSudoku(board):
+    # Use sets for each row, col, box
+    rows = defaultdict(set)   # rows[r] = set of digits seen in row r
+    cols = defaultdict(set)   # cols[c] = set of digits seen in col c
+    boxes = defaultdict(set)  # boxes[b] = set of digits seen in box b
+
+    for r in range(9):
+        for c in range(9):
+            val = board[r][c]
+            if val == &#x27;.&#x27;:
+                continue  # Skip empty cells
+
+            box_id = (r // 3) * 3 + (c // 3)
+
+            # Check for duplicates
+            if val in rows[r] or val in cols[c] or val in boxes[box_id]:
+                return False
+
+            # Record this value
+            rows[r].add(val)
+            cols[c].add(val)
+            boxes[box_id].add(val)
+
+    return True
+</code></pre>
+
+<hr/>
+
+<h2>🔍 代码追踪 / Code Trace</h2>
+
+<p>Using a small example focusing on the top-left 3×3 box (box 0):</p>
+
+<pre><code>
+board[0] = [&quot;5&quot;,&quot;3&quot;,&quot;.&quot;,&quot;.&quot;,&quot;7&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;]
+board[1] = [&quot;6&quot;,&quot;.&quot;,&quot;.&quot;,&quot;1&quot;,&quot;9&quot;,&quot;5&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;]
+board[2] = [&quot;.&quot;,&quot;9&quot;,&quot;8&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;.&quot;,&quot;6&quot;,&quot;.&quot;]
+
+Processing r=0, c=0: val=&quot;5&quot;
+  box_id = (0//3)*3 + (0//3) = 0
+  &quot;5&quot; not in rows[0]={}, cols[0]={}, boxes[0]={} → OK
+  rows[0]={&quot;5&quot;}, cols[0]={&quot;5&quot;}, boxes[0]={&quot;5&quot;}
+
+Processing r=0, c=1: val=&quot;3&quot;
+  box_id = (0//3)*3 + (1//3) = 0
+  &quot;3&quot; not in rows[0]={&quot;5&quot;}, cols[1]={}, boxes[0]={&quot;5&quot;} → OK
+  rows[0]={&quot;5&quot;,&quot;3&quot;}, cols[1]={&quot;3&quot;}, boxes[0]={&quot;5&quot;,&quot;3&quot;}
+
+Processing r=1, c=0: val=&quot;6&quot;
+  box_id = (1//3)*3 + (0//3) = 0
+  &quot;6&quot; not in rows[1]={}, cols[0]={&quot;5&quot;}, boxes[0]={&quot;5&quot;,&quot;3&quot;} → OK
+  boxes[0]={&quot;5&quot;,&quot;3&quot;,&quot;6&quot;}
+
+Processing r=2, c=1: val=&quot;9&quot;
+  box_id = (2//3)*3 + (1//3) = 0
+  &quot;9&quot; not in boxes[0]={&quot;5&quot;,&quot;3&quot;,&quot;6&quot;} → OK
+
+Processing r=2, c=2: val=&quot;8&quot;
+  box_id = 0
+  &quot;8&quot; not in boxes[0]={&quot;5&quot;,&quot;3&quot;,&quot;6&quot;,&quot;9&quot;} → OK
+  boxes[0]={&quot;5&quot;,&quot;3&quot;,&quot;6&quot;,&quot;9&quot;,&quot;8&quot;}
+
+Final result: True ✅ (valid board)
+</code></pre>
+
+<hr/>
+
+<h2>⏱️ 复杂度 / Complexity</h2>
+
+<p>| | 时间 Time | 空间 Space |</p>
+<p>|---|---|---|</p>
+<p>| 复杂度 | O(9²) = <strong>O(81) = O(1)</strong> | O(9²) = <strong>O(1)</strong> |</p>
+<p>| 说明 | 固定 81 格，常数时间 | 最多存 81 个数字 |</p>
+
+<p><em>Board is always 9×9 — technically O(1) since input size is fixed!</em></p>
+
+<hr/>
+
+<h2>🔄 举一反三 / Pattern Recognition</h2>
+
+<p>掌握&quot;哈希集合去重&quot;模式后，还能解：</p>
+<p><em>Once you master &quot;hash set deduplication,&quot; apply it to:</em></p>
+
+<p>- [#48 Rotate Image](https://leetcode.com/problems/rotate-image/) — in-place matrix transformation</p>
+<p>- [#54 Spiral Matrix](https://leetcode.com/problems/spiral-matrix/) — matrix traversal order</p>
+<p>- [#289 Game of Life](https://leetcode.com/problems/game-of-life/) — state tracking in grids</p>
+<p>- [#73 Set Matrix Zeroes](https://leetcode.com/problems/set-matrix-zeroes/) — flagging with sets</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [LeetCode #36 Valid Sudoku](https://leetcode.com/problems/valid-sudoku/)</p>
+<p>- [NeetCode Solution Video](https://www.youtube.com/watch?v=TjFXEUCMqI8)</p>
+<p>- [Python defaultdict docs](https://docs.python.org/3/library/collections.html#collections.defaultdict)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你有9张纸，每张代表一行。遇到数字就写到对应行的纸上。如果那张纸上<strong>已经有了</strong>这个数字，就说明不合法！同样对列和3×3格子也这样检查。</p>
+
+<p><em>Imagine 9 sheets of paper, one per row. When you see a number, write it on that row&#x27;s sheet. If the sheet already has that number — invalid! Do the same for columns and 3×3 boxes.</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 Day 8 / Soft Skills Day 8</h2>
+<p><strong>题目 / Question:</strong> 你如何处理模糊不清的需求？ / How do you approach working with ambiguous requirements?</p>
+<p><strong>分类 / Category:</strong> Ambiguity · Senior/Staff Level · Foundation Phase</p>
+
+<hr/>
+
+<h2>🎯 为什么这很重要 / Why This Matters</h2>
+
+<p>在大厂，<strong>模糊是常态，而非例外</strong>。产品经理不可能把每个细节都想清楚，业务方也不总知道自己真正想要什么。能优雅处理模糊需求，是区分 senior 工程师和 staff 工程师的核心能力之一。</p>
+
+<p><em>In big tech, ambiguity is the norm, not the exception. PMs can&#x27;t anticipate every detail, and stakeholders don&#x27;t always know what they really want. Navigating ambiguity gracefully separates senior engineers from staff engineers.</em></p>
+
+<hr/>
+
+<h2>⭐ STAR 拆解 / STAR Breakdown</h2>
+
+<p><strong>情境 Situation:</strong> 描述一个需求不清晰的真实场景</p>
+<p><em>Describe a real scenario where requirements were unclear</em></p>
+
+<p><strong>任务 Task:</strong> 你被分配了什么？你需要负责什么？</p>
+<p><em>What were you assigned? What were you accountable for?</em></p>
+
+<p><strong>行动 Action:</strong> 你具体做了哪些事来厘清需求、推进工作？</p>
+<p><em>What specific steps did you take to clarify and move forward?</em></p>
+
+<p><strong>结果 Result:</strong> 量化影响——节省了多少时间？避免了什么返工？</p>
+<p><em>Quantify impact — time saved, rework avoided, team unblocked?</em></p>
+
+<hr/>
+
+<h2>❌ 差的回答 vs ✅ 好的回答 / Bad vs Good Answer</h2>
+
+<h3>❌ 差的回答</h3>
+<p>&gt; &quot;需求不清楚的时候，我就等产品经理把需求整理清楚，再开始做。&quot;</p>
+<p>&gt; &quot;When requirements are unclear, I wait for the PM to clarify everything before starting.&quot;</p>
+
+<p><strong>问题：</strong> 被动等待，没有主动推进。这在面试中是红牌。</p>
+<p><em>Problem: Passive waiting shows no ownership or initiative — a red flag in interviews.</em></p>
+
+<hr/>
+
+<h3>✅ 好的回答（结构化）</h3>
+
+<p><strong>S:</strong> 我们在设计一个新的通知系统，PM 只说&quot;用户应该能收到重要通知&quot;，但没有定义什么是&quot;重要&quot;，也没有给出频率和渠道的要求。</p>
+
+<p><em>S: We were designing a new notification system. The PM only said &quot;users should receive important notifications&quot; — no definition of &quot;important,&quot; no frequency or channel requirements.</em></p>
+
+<p><strong>T:</strong> 我是 tech lead，需要在两周内给出技术方案，但需求太模糊无法开始。</p>
+
+<p><em>T: I was the tech lead, needing to deliver a technical plan in two weeks, but the requirements were too vague to start.</em></p>
+
+<p><strong>A:</strong> 我做了三件事：</p>
+<p>1. <strong>先列假设清单</strong>：把我理解的&quot;默认行为&quot;写成文档，发给 PM 确认（&quot;我假设通知包括订单状态变更和系统告警，是否正确？&quot;）</p>
+<p>2. <strong>识别 reversible vs irreversible 决策</strong>：渠道选择（邮件/推送）容易改，数据库 schema 难改——对难改的部分花更多时间对齐</p>
+<p>3. <strong>用 spike + timebox</strong>：花一天做技术调研验证假设，而不是等两周后再发现方向错了</p>
+
+<p><em>A: I did three things:</em></p>
+<p><em>1. Made an assumption document — wrote down my &quot;default understanding,&quot; sent to PM for confirmation</em></p>
+<p><em>2. Identified reversible vs irreversible decisions — channel choice is easy to change; DB schema is hard — spent more alignment time on hard decisions</em></p>
+<p><em>3. Used a spike + timebox — one day of research to validate assumptions rather than discover wrong direction two weeks later</em></p>
+
+<p><strong>R:</strong> 提前 4 天完成方案，避免了一次因误解&quot;重要通知&quot;而可能导致的数据库重新设计（估计 1.5 周返工）。</p>
+
+<p><em>R: Delivered the plan 4 days early, avoiding a potential DB redesign from misunderstanding &quot;important notifications&quot; (estimated 1.5 weeks of rework).</em></p>
+
+<hr/>
+
+<h2>👑 Senior/Staff 进阶技巧 / Senior/Staff Tips</h2>
+
+<p>1. <strong>区分&quot;紧急不可逆&quot;和&quot;可以先行&quot;</strong> — 并非所有模糊都需要澄清后才能动手。</p>
+<p><em>Distinguish &quot;critical &amp; irreversible&quot; ambiguity from &quot;can start anyway.&quot; Not all ambiguity blocks progress.</em></p>
+
+<p>2. <strong>用&quot;约束条件反问&quot;</strong> — 不要问&quot;你想要什么&quot;，而是&quot;有哪些约束条件？&quot;（deadline、预算、不能动哪些系统）</p>
+<p><em>Ask about constraints rather than desires: &quot;What can&#x27;t change?&quot; uncovers real requirements faster.</em></p>
+
+<p>3. <strong>两次沟通法则</strong> — 如果你向同一个人问了两次同样的问题还没答案，换个方式：写 RFC，开会对齐，或者向上升级。</p>
+<p><em>Two-ask rule: If you&#x27;ve asked the same person twice with no answer, escalate the format — write an RFC, schedule alignment, or escalate.</em></p>
+
+<p>4. <strong>让数据说话</strong> — &quot;我们先做一个小实验来验证假设&quot;比&quot;我不确定需求是什么&quot;更有说服力。</p>
+<p><em>Let data clarify: &quot;Let&#x27;s run a small experiment&quot; is more powerful than &quot;I&#x27;m not sure what we need.&quot;</em></p>
+
+<hr/>
+
+<h2>🎯 关键要点 / Key Takeaways</h2>
+
+<p>- 🔑 模糊是工程师的日常，主动澄清是职业素养</p>
+<p>- 🔑 区分&quot;必须澄清&quot;和&quot;可以默认处理&quot;的需求</p>
+<p>- 🔑 把假设写成文档，发出去确认，保留记录</p>
+<p>- 🔑 先行动，后优化——不要等到 100% 清晰</p>
+
+<p><em>Ambiguity is daily life in engineering. Proactive clarification is professional maturity. Document assumptions. Move forward on reversible decisions, pause on irreversible ones.</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Gergely Orosz: &quot;The Art of Asking Questions&quot;](https://newsletter.pragmaticengineer.com/)</p>
+<p>- [StaffEng.com: Staff-level behaviors](https://staffeng.com/guides/engineering-strategy)</p>
+<p>- [Amazon LP: &quot;Bias for Action&quot; principle](https://www.amazon.jobs/content/en/our-workplace/leadership-principles)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>如果老师说&quot;画一幅漂亮的画&quot;，你不知道要画什么。聪明的做法是先问：&quot;可以是动物吗？用什么颜色？多大？&quot; 然后开始画，完成后再调整。而不是坐在那里什么都不做，等老师来告诉你每一步。</p>
+
+<p><em>If a teacher says &quot;draw something beautiful&quot; without details, the smart move is to ask: &quot;Can it be an animal? What colors? How big?&quot; Then start drawing and adjust. Not sit frozen waiting for the teacher to specify every brushstroke.</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 Day 8 / Frontend Day 8</h2>
+<p><strong>主题 / Topic:</strong> CSS 动画与过渡 / CSS Animations &amp; Transitions</p>
+<p><strong>分类 / Category:</strong> CSS Fundamentals · Week 2 · Foundation Phase</p>
+
+<hr/>
+
+<h2>🤔 猜猜输出 / What&#x27;s the Output?</h2>
+
+<pre><code>
+.box {
+  width: 100px;
+  background: blue;
+  transition: width 2s, background 0.5s;
+}
+
+.box:hover {
+  width: 300px;
+  background: red;
+}
+</code></pre>
+
+<p>鼠标悬停时 (on hover)，先发生什么？</p>
+<p><em>On hover, which change happens first (visually)?</em></p>
+
+<p><strong>A.</strong> 宽度先变化 (width changes first — both at same time)</p>
+<p><strong>B.</strong> 背景颜色先变化，然后宽度变化 (background changes first, then width)</p>
+<p><strong>C.</strong> 两者同时开始，背景先完成 (both start together, background finishes first)</p>
+<p><strong>D.</strong> 两者同时开始并同时完成 (both start and finish at the same time)</p>
+
+<p><em>(答案在最后 / Answer at the end)</em></p>
+
+<hr/>
+
+<h2>📐 Transition vs Animation</h2>
+
+<h3>Transition（过渡）— &quot;A 到 B&quot;</h3>
+
+<p>触发式的，从一个状态到另一个状态。<em>Triggered change between two states.</em></p>
+
+<pre><code>
+/* 基础语法 / Basic syntax */
+.button {
+  background: blue;
+  transform: scale(1);
+  
+  /* property | duration | timing-function | delay */
+  transition: background 0.3s ease-in-out,
+              transform 0.2s ease;
+}
+
+.button:hover {
+  background: darkblue;
+  transform: scale(1.05); /* 轻微放大 / slight scale-up */
+}
+</code></pre>
+
+<h3>Animation（动画）— &quot;持续循环&quot;</h3>
+
+<p>不需要触发，可以自动运行、重复。<em>Can run automatically, loop indefinitely.</em></p>
+
+<pre><code>
+/* Step 1: 定义关键帧 / Define keyframes */
+@keyframes pulse {
+  0%   { transform: scale(1);    opacity: 1; }
+  50%  { transform: scale(1.1);  opacity: 0.7; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+/* Step 2: 应用动画 / Apply animation */
+.loading-icon {
+  /* name | duration | timing | delay | iteration | direction */
+  animation: pulse 1.5s ease-in-out 0s infinite alternate;
+}
+</code></pre>
+
+<hr/>
+
+<h2>⏱️ Timing Functions — 让动画有灵魂 / Giving Motion Soul</h2>
+
+<pre><code>
+ease (default): 慢开始，加速，慢结束
+ease-in:        慢开始，快结束 → 适合&quot;进入&quot;
+ease-out:       快开始，慢结束 → 适合&quot;退出&quot;
+ease-in-out:    两端慢，中间快 → 最自然
+linear:         匀速 → 适合旋转加载图标
+cubic-bezier(): 完全自定义！
+
+Visual:
+ease:       ___/‾‾‾
+ease-in:    __/‾‾‾‾
+ease-out:   ‾‾‾‾\__
+linear:     ///////
+</code></pre>
+
+<hr/>
+
+<h2>🔥 实际代码对比 / Real Code Comparison</h2>
+
+<h3>❌ 没有过渡 / No Transition (Jarring)</h3>
+<pre><code>
+.menu {
+  display: none; /* 瞬间消失/出现 — 体验差 / Instant — bad UX */
+}
+</code></pre>
+
+<h3>✅ 用 opacity + visibility 平滑过渡</h3>
+<pre><code>
+.menu {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.menu.active {
+  opacity: 1;
+  visibility: visible;
+}
+/* 注意：display:none 不能过渡! 用 opacity + visibility 代替 */
+/* Note: display:none can&#x27;t transition! Use opacity + visibility instead */
+</code></pre>
+
+<h3>⚡ 性能陷阱 / Performance Gotcha</h3>
+
+<pre><code>
+/* ❌ 触发 Layout Reflow — 慢！*/
+.bad { transition: width 0.3s, height 0.3s, margin 0.3s; }
+
+/* ✅ 只触发 Composite — 快！*/
+.good { transition: transform 0.3s, opacity 0.3s; }
+/*     transform 和 opacity 在 GPU 上运行，性能最佳 */
+/*     transform and opacity run on GPU — best performance */
+</code></pre>
+
+<p><strong>规则 / Rule:</strong> 动画时优先使用 <code>transform</code> 和 <code>opacity</code>，避免 <code>width/height/margin/top/left</code>（会触发 reflow）。</p>
+<p><em>Prefer <code>transform</code> and <code>opacity</code> for animations; avoid <code>width/height/margin/top/left</code> (triggers layout reflow).</em></p>
+
+<hr/>
+
+<h2>🧩 迷你挑战 / Mini Challenge</h2>
+
+<p>用 CSS 实现一个 loading spinner，只用 <code>@keyframes</code> 和 <code>border-radius</code>：</p>
+
+<pre><code>
+/* 试着完成这段代码 / Try completing this */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  /* 添加旋转动画 / Add rotation animation here */
+  animation: ??? 1s linear infinite;
+}
+
+@keyframes ??? {
+  /* 定义旋转 / Define rotation */
+}
+
+/* 答案 / Answer:
+animation: spin 1s linear infinite;
+@keyframes spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+*/
+</code></pre>
+
+<hr/>
+
+<h2>📝 Quiz 答案解析 / Quiz Answer Explanation</h2>
+
+<p><strong>正确答案：C</strong> — 两者同时开始，背景先完成</p>
+
+<pre><code>
+timeline (hover starts at t=0):
+t=0ms:   ■ width transition starts (2000ms duration)
+t=0ms:   ■ background transition starts (500ms duration)
+t=500ms: ✅ background = red (DONE)
+t=2000ms:✅ width = 300px (DONE)
+</code></pre>
+
+<p><code>transition: width 2s, background 0.5s</code> — 两个属性<strong>同时开始</strong>，但持续时间不同，所以背景 500ms 就完成了，而宽度还要等到 2000ms。</p>
+
+<p><em>Both transitions start at the same moment on hover, but have different durations: background completes in 500ms while width takes 2000ms.</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [MDN: CSS Transitions](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Transitions/Using_CSS_transitions)</p>
+<p>- [MDN: CSS Animations](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Using_CSS_animations)</p>
+<p>- [CSS Tricks: Transition vs Animation](https://css-tricks.com/css-transitions-101/)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>过渡就像灯光调光开关——你拨动开关，灯慢慢变亮或变暗。动画就像旋转的风车——不需要你动它，它自己一直转。</p>
+
+<p><em>Transitions are like a dimmer switch — you flip it and the light slowly changes. Animations are like a spinning pinwheel — it just keeps spinning on its own without you touching it.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI Day 8</h2>
+<p><strong>主题 / Topic:</strong> 训练 vs 微调 vs 提示工程 / Training vs Fine-Tuning vs Prompting</p>
+<p><strong>分类 / Category:</strong> Foundations · Foundation Phase</p>
+
+<hr/>
+
+<h2>🌍 直觉理解 / Intuitive Explanation</h2>
+
+<p>把 LLM 想象成一个<strong>刚毕业的大学生</strong>：</p>
+
+<p>- <strong>预训练 Pre-training</strong> = 完成大学本科，学习了世界上几乎所有的知识（读了整个互联网）</p>
+<p>- <strong>微调 Fine-tuning</strong> = 参加专业培训项目（比如医学院），让他专门擅长某个领域</p>
+<p>- <strong>提示工程 Prompting</strong> = 给这个毕业生发一份工作简报，告诉他今天该做什么、怎么做</p>
+
+<p>三种方式的<strong>成本、灵活性、效果</strong>完全不同。</p>
+
+<p><em>Think of an LLM as a fresh college graduate:</em></p>
+<p><em>- Pre-training = completing a full degree (reading the entire internet)</em></p>
+<p><em>- Fine-tuning = attending medical school (specializing in a domain)</em></p>
+<p><em>- Prompting = giving them a daily briefing (telling them what and how to do today)</em></p>
+
+<hr/>
+
+<h2>⚙️ 工作原理 / How It Works</h2>
+
+<h3>1. 预训练 Pre-Training (从零开始)</h3>
+
+<pre><code>
+大量文本数据                    → 基础模型
+(互联网+书籍+代码)               (GPT-4, Llama, Claude)
+Massive text corpus            → Foundation model
+
+成本：数百万美元 + 数周 GPU 时间
+Cost: Millions of dollars + weeks of GPU time
+
+训练目标：预测下一个 token
+Objective: Predict the next token
+</code></pre>
+
+<h3>2. 微调 Fine-Tuning (在已有模型上继续训练)</h3>
+
+<pre><code>
+基础模型 + 专业数据集 → 专用模型
+Foundation model + domain data → Specialized model
+
+例子 / Examples:
+• GPT-4 + 法律文书 → 法律助手
+• Llama + 医疗记录 → 医疗诊断模型
+• Code Llama = Llama + 代码数据集
+
+成本：数百到数万美元
+Cost: Hundreds to tens of thousands of dollars
+
+关键参数：learning rate 要小 (1e-5 to 1e-4)，防止&quot;灾难性遗忘&quot;
+Key: Low learning rate to prevent &quot;catastrophic forgetting&quot;
+</code></pre>
+
+<h3>3. 提示工程 Prompting (零成本，零训练)</h3>
+
+<pre><code>
+用户: &quot;你是一个专业的法律助手，...&quot;
+基础模型通过上下文调整行为
+No training — just clever input formatting
+
+技术 / Techniques:
+• Zero-shot: 直接问
+• Few-shot: 给几个例子
+• Chain-of-thought: &quot;一步一步想...&quot;
+• RAG: 外挂知识库
+</code></pre>
+
+<hr/>
+
+<h2>📊 三者对比 / Comparison Table</h2>
+
+<p>| | 预训练 Pre-train | 微调 Fine-tune | 提示 Prompting |</p>
+<p>|---|---|---|---|</p>
+<p>| 成本 Cost | 💰💰💰💰 极高 | 💰💰 中等 | 💰 几乎免费 |</p>
+<p>| 时间 Time | 数周 weeks | 数小时~天 hours-days | 即时 instant |</p>
+<p>| 数据需求 Data | 万亿 tokens | 数百~数万样本 | 0~几个例子 |</p>
+<p>| 效果 Performance | 通用基础 general | 专域最优 domain-best | 灵活但有上限 |</p>
+<p>| 修改难度 Updates | 极难 very hard | 需重新微调 | 实时修改 instant |</p>
+<p>| 使用场景 Use Case | 建大模型 | 专业领域 | 99%的应用场景 |</p>
+
+<hr/>
+
+<h2>💻 可运行代码 / Runnable Python Snippet</h2>
+
+<pre><code>
+# pip install openai
+
+from openai import OpenAI
+
+client = OpenAI()  # Reads OPENAI_API_KEY from env
+
+# ============================================================
+# Technique 1: Zero-shot prompting
+# ============================================================
+zero_shot = client.chat.completions.create(
+    model=&quot;gpt-4o-mini&quot;,
+    messages=[
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Classify this tweet as positive/negative/neutral: &#x27;I love this new feature!&#x27;&quot;}
+    ]
+)
+print(&quot;Zero-shot:&quot;, zero_shot.choices[0].message.content)
+
+# ============================================================
+# Technique 2: Few-shot prompting (3 examples teach the format)
+# ============================================================
+few_shot = client.chat.completions.create(
+    model=&quot;gpt-4o-mini&quot;,
+    messages=[
+        {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;Classify tweets. Answer with just: positive, negative, or neutral.&quot;},
+        {&quot;role&quot;: &quot;user&quot;,   &quot;content&quot;: &quot;The food was amazing!&quot;},
+        {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;positive&quot;},
+        {&quot;role&quot;: &quot;user&quot;,   &quot;content&quot;: &quot;Worst customer service ever.&quot;},
+        {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;negative&quot;},
+        {&quot;role&quot;: &quot;user&quot;,   &quot;content&quot;: &quot;Package arrived.&quot;},
+        {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;neutral&quot;},
+        # Now the real question:
+        {&quot;role&quot;: &quot;user&quot;,   &quot;content&quot;: &quot;I love this new feature!&quot;},
+    ]
+)
+print(&quot;Few-shot:&quot;, few_shot.choices[0].message.content)
+# Output: &quot;positive&quot; — much more consistent format!
+</code></pre>
+
+<hr/>
+
+<h2>🎯 什么时候用哪种？/ When to Use Which?</h2>
+
+<pre><code>
+你的问题                         推荐方案
+Your problem                    Recommended approach
+
+&quot;我要做一个通用聊天机器人&quot;          → Prompting (系统提示词)
+General chatbot                 → Prompting (system prompt)
+
+&quot;客服需要理解我们专有术语&quot;          → Fine-tuning (100-1000个示例)
+Support bot with domain jargon  → Fine-tuning (100-1000 examples)
+
+&quot;要让模型写代码更像我们团队风格&quot;     → Fine-tuning 或 RAG+Prompting
+Code style consistency          → Fine-tuning or RAG+Prompting
+
+&quot;从零做下一个 GPT-4&quot;              → Pre-training (别这么想)
+Build next GPT-4 from scratch   → Pre-training (don&#x27;t)
+</code></pre>
+
+<p><strong>经验法则 / Rule of thumb:</strong> 先试 prompting → 不行试 fine-tuning → 绝不要自己预训练</p>
+<p><em>Try prompting first → fine-tune if needed → never pre-train from scratch</em></p>
+
+<hr/>
+
+<h2>🧠 2026 前沿 / 2026 Cutting Edge</h2>
+
+<p>- <strong>LoRA / QLoRA</strong> — 用极少参数做高效微调，只需一张消费级 GPU（A100 → RTX 4090）</p>
+<p>- <strong>RLHF</strong> — 用人类反馈强化训练，让模型更&quot;安全&quot;（ChatGPT 的秘诀之一）</p>
+<p>- <strong>DPO</strong> — Direct Preference Optimization，比 RLHF 更简单，效果相当</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [OpenAI Fine-tuning Guide](https://platform.openai.com/docs/guides/fine-tuning)</p>
+<p>- [Hugging Face: LoRA &amp; PEFT Documentation](https://huggingface.co/docs/peft/index)</p>
+<p>- [Andrej Karpathy: Let&#x27;s build GPT (YouTube)](https://www.youtube.com/watch?v=kCc8FmEb1nY)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你要教一条狗学新把戏：</p>
+<p>- 预训练 = 把狗从小养大，它学会了所有基本技能</p>
+<p>- 微调 = 专门训练它学&quot;装死&quot;这一个把戏，练了一个月</p>
+<p>- 提示工程 = 你每次说话前告诉它&quot;你是一只很聪明的狗，我想让你...&quot;</p>
+
+<p>最简单的方法永远是先&quot;说话&quot;，实在不行才去&quot;专门训练&quot;。</p>
+
+<p><em>To teach a dog tricks: pre-training = raising it from a puppy (learns everything). Fine-tuning = a month of &quot;play dead&quot; training. Prompting = just telling it what you want before each command. Always try talking first.</em></p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-03-21</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-21</guid>
+      <pubDate>Sat, 21 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<h2>🔬 Saturday Deep Dive: Valid Sudoku (15 min read)</h2>
+
+<p>📊 Day 8/150 · NeetCode: 8/150 · SysDesign: 8/40 · Behavioral: 8/40 · Frontend: 8/50 · AI: 4/30</p>
+<p>🔥 8-day streak!</p>
+
+<p>🔗 [LeetCode #36: Valid Sudoku](https://leetcode.com/problems/valid-sudoku/) 🟡 Medium</p>
+<p>📹 [NeetCode Solution](https://neetcode.io/problems/valid-sudoku)</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p>今天我们深入研究一道经典的中等难度题：验证数独盘面的合法性。</p>
+<p>Today we deep-dive into a classic Medium problem: checking whether a Sudoku board is valid.</p>
+
+<p>这道题看起来简单，实则考察你对<strong>多维哈希</strong>、<strong>坐标映射</strong>和<strong>边界条件</strong>的掌握。</p>
+<p>It looks approachable, but tests your grasp of <strong>multi-dimensional hashing</strong>, <strong>coordinate mapping</strong>, and <strong>edge conditions</strong>.</p>
+
+<p>面试中它频繁出现，因为它考察的不是&quot;你能不能写循环&quot;，而是&quot;你能不能系统地对数据建模&quot;。</p>
+<p>It appears often in interviews not to test loop-writing, but to test <strong>systematic data modeling</strong>.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>什么是数独验证？/ What Are We Validating?</h3>
+
+<p>一个合法的数独盘面满足三个约束：</p>
+<p>A valid Sudoku board satisfies exactly three constraints:</p>
+
+<pre><code>
+┌─────────────────────────────────┐
+│  CONSTRAINT 1: Each ROW         │
+│  每一行：数字1-9不能重复        │
+│  No digit 1-9 repeated in a row │
+├─────────────────────────────────┤
+│  CONSTRAINT 2: Each COLUMN      │
+│  每一列：数字1-9不能重复        │
+│  No digit 1-9 repeated in col   │
+├─────────────────────────────────┤
+│  CONSTRAINT 3: Each 3×3 BOX     │
+│  每个3×3宫格：数字1-9不能重复   │
+│  No digit 1-9 repeated in box   │
+└─────────────────────────────────┘
+</code></pre>
+
+<p><strong>关键点：我们不需要验证数独能否被解出，只需要验证当前已填数字是否合法。</strong></p>
+<p><strong>Key insight: We don&#x27;t need to verify the puzzle is solvable — only that existing digits don&#x27;t violate rules.</strong></p>
+
+<p><code>&#x27;.&#x27;</code> 代表空格，忽略不计。/ <code>&#x27;.&#x27;</code> means empty cell — skip it.</p>
+
+<h3>数据建模：核心思想 / Data Modeling: The Core Idea</h3>
+
+<p>最直观的暴力解法是：分别对每行、每列、每个宫格做验证，嵌套循环九次。</p>
+<p>The naive approach: check rows, columns, and boxes separately — nine nested loops.</p>
+
+<p>更优雅的方式：<strong>一次遍历，同时维护三个集合字典</strong>。</p>
+<p>Better: <strong>one pass, three sets of dictionaries updated simultaneously</strong>.</p>
+
+<pre><code>
+For cell (r, c) containing digit d:
+
+  rows[r]    → must not contain d yet
+  cols[c]    → must not contain d yet
+  boxes[b]   → must not contain d yet
+
+where b = (r // 3, c // 3)  ← box index!
+</code></pre>
+
+<p>这个 <code>(r // 3, c // 3)</code> 是本题最优雅的技巧：将坐标映射为0-8的盒子索引。</p>
+<p>The <code>(r // 3, c // 3)</code> trick maps any cell to its 3×3 box index — this is the elegance of the problem.</p>
+
+<pre><code>
+Box indices visualized:
+┌───┬───┬───┐
+│0,0│0,1│0,2│
+├───┼───┼───┤
+│1,0│1,1│1,2│
+├───┼───┼───┤
+│2,0│2,1│2,2│
+└───┴───┴───┘
+row 0-2, col 0-2 → box (0,0)
+row 0-2, col 3-5 → box (0,1)
+row 3-5, col 6-8 → box (1,2)
+... etc.
+</code></pre>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Approach 1: Naive (brute force) — O(9²) time but ugly</h3>
+
+<p>验证每行、每列、每宫格需要9次独立循环。可读性差，容易出错。</p>
+<p>Nine separate loops for rows, columns, boxes. Hard to read, error-prone.</p>
+
+<pre><code>
+# Approach 1: Naive — DO NOT use in interview (too verbose)
+def isValidSudoku_naive(board):
+    # Check rows
+    for row in board:
+        seen = set()
+        for c in row:
+            if c == &#x27;.&#x27;: continue
+            if c in seen: return False
+            seen.add(c)
+    
+    # Check cols (transpose and repeat)
+    for col in range(9):
+        seen = set()
+        for row in range(9):
+            c = board[row][col]
+            if c == &#x27;.&#x27;: continue
+            if c in seen: return False
+            seen.add(c)
+    
+    # Check 3x3 boxes
+    for box_row in range(3):
+        for box_col in range(3):
+            seen = set()
+            for r in range(box_row*3, box_row*3+3):
+                for c in range(box_col*3, box_col*3+3):
+                    val = board[r][c]
+                    if val == &#x27;.&#x27;: continue
+                    if val in seen: return False
+                    seen.add(val)
+    return True
+# Time: O(81) = O(1) technically since board is fixed 9x9
+# Space: O(9) per iteration
+# Problem: 3 separate passes, harder to extend, verbose
+</code></pre>
+
+<h3>Approach 2: Optimal — Single Pass, Three Dicts ✅</h3>
+
+<p><strong>这是面试中应该给出的答案。</strong> / <strong>This is the answer you should give in an interview.</strong></p>
+
+<pre><code>
+from collections import defaultdict
+
+def isValidSudoku(board):
+    # Three dictionaries: rows, columns, boxes
+    # Each maps an index to a set of seen digits
+    rows = defaultdict(set)   # rows[r] = {digits seen in row r}
+    cols = defaultdict(set)   # cols[c] = {digits seen in col c}
+    boxes = defaultdict(set)  # boxes[(r//3, c//3)] = {digits seen in box}
+
+    for r in range(9):
+        for c in range(9):
+            val = board[r][c]
+            
+            # Skip empty cells
+            if val == &#x27;.&#x27;:
+                continue
+            
+            # Calculate box index — THE KEY TRICK
+            box_key = (r // 3, c // 3)
+            
+            # Check all three constraints simultaneously
+            if (val in rows[r] or
+                val in cols[c] or
+                val in boxes[box_key]):
+                return False  # Duplicate found — invalid!
+            
+            # Add to all three tracking sets
+            rows[r].add(val)
+            cols[c].add(val)
+            boxes[box_key].add(val)
+    
+    return True  # No violations found
+</code></pre>
+
+<h3>Visual Trace / 逐步追踪</h3>
+
+<p>Let&#x27;s trace through a small part of the board:</p>
+
+<pre><code>
+Board (first 3 rows shown):
+[&quot;5&quot;,&quot;3&quot;,&quot;.&quot;,  &quot;.&quot;,&quot;7&quot;,&quot;.&quot;,  &quot;.&quot;,&quot;.&quot;,&quot;.&quot;]
+[&quot;6&quot;,&quot;.&quot;,  &quot;.&quot;,  &quot;1&quot;,&quot;9&quot;,&quot;5&quot;,  &quot;.&quot;,&quot;.&quot;,&quot;.&quot;]
+[&quot;.&quot;,&quot;9&quot;,&quot;8&quot;,  &quot;.&quot;,&quot;.&quot;,  &quot;.&quot;,  &quot;.&quot;,&quot;6&quot;,&quot;.&quot;]
+</code></pre>
+
+<p><strong>Step-by-step trace:</strong></p>
+
+<pre><code>
+(r=0, c=0) val=&#x27;5&#x27;:
+  box_key = (0//3, 0//3) = (0,0)
+  rows[0]={}, cols[0]={}, boxes[(0,0)]={}  → no conflict
+  Add: rows[0]={&#x27;5&#x27;}, cols[0]={&#x27;5&#x27;}, boxes[(0,0)]={&#x27;5&#x27;}
+
+(r=0, c=1) val=&#x27;3&#x27;:
+  box_key = (0,0)
+  rows[0]={&#x27;5&#x27;}, &#x27;3&#x27; not in it ✓
+  cols[1]={},    &#x27;3&#x27; not in it ✓
+  boxes[(0,0)]={&#x27;5&#x27;}, &#x27;3&#x27; not in it ✓
+  Add: rows[0]={&#x27;5&#x27;,&#x27;3&#x27;}, cols[1]={&#x27;3&#x27;}, boxes[(0,0)]={&#x27;5&#x27;,&#x27;3&#x27;}
+
+(r=0, c=2) val=&#x27;.&#x27;: SKIP
+
+(r=0, c=4) val=&#x27;7&#x27;:
+  box_key = (0//3, 4//3) = (0,1)  ← different box!
+  Add to rows[0], cols[4], boxes[(0,1)]
+
+(r=1, c=0) val=&#x27;6&#x27;:
+  box_key = (1//3, 0//3) = (0,0)  ← same box as row 0!
+  rows[1]={}, &#x27;6&#x27; not in it ✓
+  cols[0]={&#x27;5&#x27;}, &#x27;6&#x27; not in it ✓
+  boxes[(0,0)]={&#x27;5&#x27;,&#x27;3&#x27;}, &#x27;6&#x27; not in it ✓
+  Add successfully.
+
+Imagine if we had another &#x27;5&#x27; at (1,0):
+  cols[0] already has &#x27;5&#x27; → return False immediately! ✅
+</code></pre>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<h3>Edge Case 1: Empty Board</h3>
+<pre><code>
+board = [[&#x27;.&#x27;]*9 for _ in range(9)]
+# Result: True — empty board is valid
+# Our code handles this: all &#x27;.&#x27; cells are skipped
+</code></pre>
+
+<h3>Edge Case 2: Same digit in same box, different row AND column</h3>
+<pre><code>
+# Trap: this is invalid even though row 0 and col 3 look different
+# &#x27;5&#x27; at (0,0) and &#x27;5&#x27; at (2,2) — same 3×3 box!
+# The box_key trick catches this: both map to (0,0)
+</code></pre>
+
+<h3>Edge Case 3: The &quot;it looks valid row-wise&quot; trap</h3>
+<pre><code>
+# Each row and column could be valid individually,
+# but a 3×3 box might have duplicates
+# Always check all THREE constraints — don&#x27;t shortcut!
+</code></pre>
+
+<h3>常见面试坑 / Common Interview Traps</h3>
+<pre><code>
+❌ Trap 1: Using (r // 3) * 3 + (c // 3) as box index
+   → This creates 0-8 integer keys, works but harder to read
+   → Tuple (r//3, c//3) is cleaner and equally correct
+
+❌ Trap 2: Validating the full 1-9 range
+   → We only need to check for duplicates among present digits
+   → If a row has [1,2,3,...,8] with one empty, it&#x27;s still valid!
+
+❌ Trap 3: Modifying the input board
+   → Never do this. The problem says &quot;determine if valid&quot;, not &quot;solve it&quot;
+
+✅ Best practice: defaultdict(set) avoids KeyError on first access
+✅ Best practice: check all 3 constraints before adding — order matters!
+</code></pre>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p>数独验证器不只是一道面试题——它的底层思路在很多地方都有应用。</p>
+<p>Valid Sudoku isn&#x27;t just an interview puzzle — its core pattern appears everywhere.</p>
+
+<h3>Pattern: Multi-Key Set Membership Check</h3>
+
+<p><strong>1. Database Uniqueness Constraints</strong></p>
+<pre><code>
+In databases, a UNIQUE constraint across multiple columns is the same idea:
+  UNIQUE(user_id, date) — same as &quot;no two rows share both values&quot;
+  
+PostgreSQL internally uses hash indexes (like our sets) per constraint.
+</code></pre>
+
+<p><strong>2. Spreadsheet Validation</strong></p>
+<pre><code>
+Google Sheets &quot;no duplicates in range&quot; validation:
+  Checks each row, column, named range simultaneously
+  Exact same three-constraint structure
+</code></pre>
+
+<p><strong>3. Compiler Symbol Tables</strong></p>
+<pre><code>
+A compiler tracks variable names per scope:
+  rows    → local scope
+  cols    → class scope  
+  boxes   → module scope
+  
+&quot;Variable already declared&quot; = duplicate in the same scope (set)
+</code></pre>
+
+<p><strong>4. Form Validation in UI</strong></p>
+<pre><code>
+// Same pattern: check uniqueness across multiple dimensions
+const seen = { byEmail: new Set(), byUsername: new Set() };
+users.forEach(user =&gt; {
+  if (seen.byEmail.has(user.email)) throw Error(&quot;duplicate email&quot;);
+  seen.byEmail.add(user.email);
+});
+</code></pre>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p>假设你已经给出了最优解。面试官可能会问这些问题：</p>
+<p>Assume you&#x27;ve presented the optimal solution. Here are follow-up questions interviewers typically ask:</p>
+
+<hr/>
+
+<p><strong>Q1: &quot;What&#x27;s the time and space complexity?&quot;</strong></p>
+
+<pre><code>
+Time: O(81) = O(1)
+  → Fixed 9×9 board: exactly 81 cells, constant work per cell
+  → In general: O(n²) for an n×n Sudoku variant
+
+Space: O(81) = O(1) 
+  → At most 81 entries across all sets (each cell appears once per set)
+  → In general: O(n²)
+
+⚠️ Interviewer follow-up: &quot;But you&#x27;re using three defaultdicts...&quot;
+→ Still O(1) because board size is fixed. For variable n, it&#x27;s O(n²).
+</code></pre>
+
+<p><strong>Q2: &quot;Could you do this without any extra space?&quot;</strong></p>
+
+<pre><code>
+不完全能，但可以压缩。/ Not quite, but you can compress.
+
+You could encode sets as bitmasks (bit 1 = digit 1 seen, bit 2 = digit 2, etc.):
+  rows = [0] * 9   # 9 integers, each bit i = digit i+1 seen
+  cols = [0] * 9
+  boxes = [0] * 9
+
+  For digit d (1-9), check: if rows[r] &amp; (1 &lt;&lt; d): return False
+                            rows[r] |= (1 &lt;&lt; d)
+
+Space: O(27 integers) = O(1). Faster in practice due to cache locality.
+</code></pre>
+
+<p><strong>Q3: &quot;How would you extend this to validate a 16×16 Sudoku (Hexadoku)?&quot;</strong></p>
+
+<pre><code>
+# Same code, parameterized:
+def isValidSudokuNxN(board, n=9, box_size=3):
+    rows = defaultdict(set)
+    cols = defaultdict(set)
+    boxes = defaultdict(set)
+    for r in range(n):
+        for c in range(n):
+            val = board[r][c]
+            if val == &#x27;.&#x27;: continue
+            box_key = (r // box_size, c // box_size)
+            if val in rows[r] or val in cols[c] or val in boxes[box_key]:
+                return False
+            rows[r].add(val); cols[c].add(val); boxes[box_key].add(val)
+    return True
+# For 16×16: n=16, box_size=4 → same logic, bigger constants
+</code></pre>
+
+<p><strong>Q4: &quot;What if you needed to not just validate but also solve the Sudoku?&quot;</strong></p>
+
+<pre><code>
+验证是求解的子问题。/ Validation is a sub-problem of solving.
+
+Solving requires backtracking:
+1. Find an empty cell
+2. Try digits 1-9
+3. For each digit: call isValid (our function!) to check constraints
+4. If valid, place digit, recurse
+5. If recursion fails, backtrack (remove digit, try next)
+
+Time: O(9^m) where m = number of empty cells — exponential worst case
+Typical Sudoku (m~50 empty cells) solves in milliseconds due to pruning.
+</code></pre>
+
+<p><strong>Q5: &quot;If this were a production system checking millions of Sudoku boards per second, what would you optimize?&quot;</strong></p>
+
+<pre><code>
+1. Bitmask instead of sets → 9 ints vs 27 sets, better cache performance
+2. Early termination → return False as soon as first conflict found (already done!)
+3. SIMD/vectorization → process 4 rows simultaneously with 256-bit registers
+4. GPU parallelism → each 81-cell check is independent; batch 10k boards on GPU
+5. Pre-compute valid digit sets → use lookup tables for box → allowed digits
+
+In practice: bitmask version on CPU is 3-5x faster than set version.
+</code></pre>
+
+<hr/>
+
+<h2>Complexity Summary / 复杂度总结</h2>
+
+<pre><code>
+┌─────────────────┬──────────┬──────────────┐
+│ Approach        │ Time     │ Space        │
+├─────────────────┼──────────┼──────────────┤
+│ Naive (3 loops) │ O(81)    │ O(27) sets   │
+│ Single pass     │ O(81)    │ O(27) sets   │  ← Best readability
+│ Bitmask         │ O(81)    │ O(27) ints   │  ← Best performance
+└─────────────────┴──────────┴──────────────┘
+
+All O(1) for fixed 9×9 board.
+For general n×n Sudoku: O(n²) time and space.
+</code></pre>
+
+<hr/>
+
+<h2>📚 References / 深入学习</h2>
+
+<p>• 🔗 [LeetCode #36: Valid Sudoku](https://leetcode.com/problems/valid-sudoku/) 🟡 Medium</p>
+<p>• 📹 [NeetCode Solution Video](https://neetcode.io/problems/valid-sudoku)</p>
+<p>• 📖 [NeetCode Arrays &amp; Hashing Roadmap](https://neetcode.io/roadmap) — Visual learning path for this pattern</p>
+<p>• 🔗 [LeetCode #37: Sudoku Solver](https://leetcode.com/problems/sudoku-solver/) — Natural follow-up (backtracking)</p>
+<p>• 🔗 [LeetCode #187: Repeated DNA Sequences](https://leetcode.com/problems/repeated-dna-sequences/) — Same multi-key hashing pattern</p>
+
+<hr/>
+
+<p>🧒 <strong>ELI5:</strong> Checking if a Sudoku is valid is like making sure no two kids in the same row, column, or team have the same number on their shirt — you write down each number as you see it, and yell &quot;STOP!&quot; if you see it twice in the same group.</p>
+
+<hr/>
+
+<p><em>Saturday Deep Dive — Day 8 · Generated 2026-03-21</em></p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-03-20</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-20</guid>
+      <pubDate>Fri, 20 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 Day 7 (3 min read) / System Design Day 7</h2>
+<h2>Database Types: SQL vs NoSQL — 数据库类型：关系型 vs 非关系型</h2>
+
+<hr/>
+
+<p>想象你在设计一个新的社交媒体平台…</p>
+
+<p>你的用户数据整齐划一：每人都有 ID、用户名、邮箱、注册时间。这很适合用 <strong>SQL 数据库</strong> — 就像一张结构清晰的 Excel 表格，行和列整整齐齐。</p>
+
+<p>但是，用户发的帖子呢？有人只写文字，有人附图片，有人嵌入视频，有人加了位置标签… 每条帖子的结构都不同。这时候 <strong>NoSQL</strong> 就大放异彩 — 像一个灵活的 JSON 文档，想放什么字段就放什么。</p>
+
+<hr/>
+
+<h3>架构对比 / Architecture Comparison</h3>
+
+<pre><code>
+         SQL Database                    NoSQL Database
+    ┌─────────────────────┐         ┌─────────────────────────┐
+    │      USERS TABLE    │         │    users collection     │
+    ├──────┬──────┬───────┤         │                         │
+    │  id  │ name │ email │         │ { id: 1,                │
+    ├──────┼──────┼───────┤         │   name: &quot;Alice&quot;,        │
+    │  1   │Alice │a@x.com│         │   email: &quot;a@x.com&quot;,     │
+    │  2   │ Bob  │b@y.com│         │   preferences: {...},   │
+    └──────┴──────┴───────┘         │   badges: [&quot;🏆&quot;,&quot;⭐&quot;] } │
+                                    └─────────────────────────┘
+    Schema enforced upfront          Schema flexible / per doc
+    JOIN across tables               Embed related data
+    ACID transactions                Eventual consistency (often)
+    Scale: vertical (bigger server)  Scale: horizontal (more servers)
+</code></pre>
+
+<hr/>
+
+<h3>核心概念 / Key Concepts</h3>
+
+<p><strong>SQL (关系型数据库) — MySQL, PostgreSQL, SQLite</strong></p>
+<p>- <strong>结构化数据</strong>: 表、行、列，schema 固定</p>
+<p>- <strong>ACID 事务</strong>: Atomicity（原子性）, Consistency（一致性）, Isolation（隔离性）, Durability（持久性）— 银行转账不能丢数据！</p>
+<p>- <strong>JOIN 操作</strong>: 多表关联查询，数据不冗余</p>
+<p>- <strong>强一致性</strong>: 写入后立即可读</p>
+
+<p><strong>NoSQL — MongoDB (文档), Redis (键值), Cassandra (列族), Neo4j (图)</strong></p>
+<p>- <strong>灵活 schema</strong>: 每条记录结构可以不同</p>
+<p>- <strong>水平扩展</strong>: 分片（sharding）轻松加机器</p>
+<p>- <strong>最终一致性</strong>: 写入后可能有短暂延迟才全局可见</p>
+<p>- <strong>高吞吐量</strong>: 读写速度极快（尤其键值存储）</p>
+
+<hr/>
+
+<h3>为什么这样设计？How to Choose?</h3>
+
+<p>| 场景 | 推荐 | 原因 |</p>
+<p>|------|------|------|</p>
+<p>| 用户账户、订单、财务 | SQL | 需要 ACID，数据关系明确 |</p>
+<p>| 用户会话、缓存、排行榜 | Redis (NoSQL) | 极速读写，TTL 支持 |</p>
+<p>| 产品目录、内容管理 | MongoDB (NoSQL) | 结构多变，嵌套文档 |</p>
+<p>| 社交图谱、推荐系统 | Neo4j (Graph) | 关系查询是核心需求 |</p>
+<p>| 日志、时序数据 | Cassandra (NoSQL) | 海量写入，时间范围查询 |</p>
+
+<p><strong>经验法则</strong>: 先问&quot;我的数据关系是否复杂？事务是否关键？&quot; → 是则 SQL。&quot;数据量是否巨大？结构是否多变？&quot; → 是则 NoSQL。</p>
+
+<p><strong>现实中：两者共存！</strong></p>
+<p>- Instagram: PostgreSQL（用户/帖子关系） + Cassandra（活动 feed） + Redis（缓存）</p>
+<p>- 单一数据库解决所有问题是反模式</p>
+
+<hr/>
+
+<h3>别踩这个坑 / Common Mistakes</h3>
+
+<p>❌ <strong>&quot;NoSQL 比 SQL 更快&quot;</strong> — 错！取决于使用场景。复杂 JOIN 查询 SQL 更高效；简单键值查找 Redis 秒杀一切。</p>
+
+<p>❌ <strong>&quot;NoSQL 不支持事务&quot;</strong> — MongoDB 4.0+ 已支持多文档 ACID 事务，只是使用场景不同。</p>
+
+<p>❌ <strong>&quot;选了就不能换&quot;</strong> — 实践中，随着业务演进经常需要引入第二种数据库。提前规划数据访问层（DAL）让切换更容易。</p>
+
+<p>❌ <strong>过早优化</strong> — 99% 的创业公司用 PostgreSQL 就够了。等真正有 scale 问题再引入 NoSQL。</p>
+
+<hr/>
+
+<p>📚 <strong>深入学习 / Learn More:</strong></p>
+<p>- [Uber Engineering: Postgres to MySQL Migration](https://www.uber.com/blog/postgres-to-mysql-migration/) — 真实案例：为什么 Uber 从 PostgreSQL 迁移到 MySQL</p>
+<p>- [ByteByteGo: SQL vs NoSQL](https://www.youtube.com/watch?v=_Ss42Vb1SU4) — 可视化对比讲解（YouTube）</p>
+<p>- [Designing Data-Intensive Applications, Ch. 2](https://dataintensive.net/) — Martin Kleppmann 的权威参考书</p>
+
+<p>🧒 <strong>ELI5:</strong> A SQL database is like a super organized binder with divider tabs where everything goes in exactly the right slot; a NoSQL database is like a big backpack where you can throw in anything — a book, a lunchbox, a basketball — whatever shape it is.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 Day 7 (4 min read) / Algorithms Day 7</h2>
+<h2>#238 Product of Array Except Self (Medium) — Arrays &amp; Hashing / Prefix Products</h2>
+
+<p>🔗 [LeetCode #238: Product of Array Except Self](https://leetcode.com/problems/product-of-array-except-self/) 🟡 Medium</p>
+<p>📹 [NeetCode Solution](https://neetcode.io/problems/products-of-array-discluding-self)</p>
+
+<hr/>
+
+<h3>🌎 Real-World Analogy / 现实类比</h3>
+
+<p>想象你是一家工厂的质检员，流水线上有 N 个零件，每个都有一个重量。你的任务是：对于每个零件，快速计算出<strong>其他所有零件的总重量之积</strong>（不能把该零件自己算进去）。</p>
+
+<p>最笨的方法？每次都把其他所有零件重新乘一遍 — O(n²)，太慢了。</p>
+<p>聪明的方法？先从左到右算一遍&quot;前缀积&quot;，再从右到左算一遍&quot;后缀积&quot;，两个一乘就得到答案！</p>
+
+<hr/>
+
+<h3>📋 Problem Statement / 题目</h3>
+
+<p>Given an integer array <code>nums</code>, return an array <code>answer</code> such that <code>answer[i]</code> is equal to the product of all elements of <code>nums</code> except <code>nums[i]</code>.</p>
+
+<p>给定整数数组 <code>nums</code>，返回数组 <code>answer</code>，使得 <code>answer[i]</code> 等于 <code>nums</code> 中除 <code>nums[i]</code> 之外所有元素的乘积。</p>
+
+<p><strong>Constraint</strong>: Must run in O(n) time, <strong>without using division</strong> (不能用除法).</p>
+
+<p><strong>Example:</strong></p>
+<pre><code>
+Input:  nums = [1, 2, 3, 4]
+Output:       [24, 12,  8,  6]
+
+Check: 
+  answer[0] = 2 * 3 * 4 = 24  ✓
+  answer[1] = 1 * 3 * 4 = 12  ✓
+  answer[2] = 1 * 2 * 4 =  8  ✓
+  answer[3] = 1 * 2 * 3 =  6  ✓
+</code></pre>
+
+<hr/>
+
+<h3>🔍 Step-by-Step Walkthrough / 逐步分析</h3>
+
+<p><strong>Key Insight</strong>: For position <code>i</code>, the answer = (product of everything to the LEFT of i) × (product of everything to the RIGHT of i)</p>
+
+<pre><code>
+nums =   [ 1,   2,   3,   4 ]
+index:     0    1    2    3
+
+Left prefix products (prefix[i] = product of nums[0..i-1]):
+prefix = [ 1,   1,   2,   6 ]
+          ^     ^    ^    ^
+          i=0   1*1  1*2  1*2*3
+         (nothing (only (1,2   (1,2,3
+          left)   nums[0])  left) left)
+
+Right suffix products (suffix[i] = product of nums[i+1..end]):
+suffix = [24,  12,   4,   1 ]
+          ^     ^    ^    ^
+        2*3*4  3*4   4   (nothing
+                          right)
+
+answer[i] = prefix[i] * suffix[i]:
+  [0]: 1 * 24 = 24
+  [1]: 1 * 12 = 12
+  [2]: 2 *  4 =  8
+  [3]: 6 *  1 =  6
+</code></pre>
+
+<p><strong>Space Optimization</strong>: We can do this in O(1) extra space (output array doesn&#x27;t count) by computing prefix in the output array first, then multiplying suffix on-the-fly from right to left.</p>
+
+<hr/>
+
+<h3>🐍 Python Solution / Python 解法</h3>
+
+<pre><code>
+def productExceptSelf(nums: list[int]) -&gt; list[int]:
+    n = len(nums)
+    answer = [1] * n
+    
+    # Pass 1: Fill answer[i] with the PREFIX product (product of everything LEFT of i)
+    # After this pass: answer = [1, 1, 2, 6] for input [1, 2, 3, 4]
+    prefix = 1
+    for i in range(n):
+        answer[i] = prefix      # store product of everything before i
+        prefix *= nums[i]       # update running prefix
+    
+    # Pass 2: Multiply answer[i] by the SUFFIX product (product of everything RIGHT of i)
+    # We traverse right-to-left, tracking running suffix product
+    suffix = 1
+    for i in range(n - 1, -1, -1):
+        answer[i] *= suffix     # multiply in the suffix product
+        suffix *= nums[i]       # update running suffix
+
+    return answer
+
+# Test it:
+print(productExceptSelf([1, 2, 3, 4]))    # → [24, 12, 8, 6]
+print(productExceptSelf([-1, 1, 0, -3, 3]))  # → [0, 0, 9, 0, 0]
+</code></pre>
+
+<p><strong>Trace with [1, 2, 3, 4]:</strong></p>
+<pre><code>
+After Pass 1 (prefix):
+  i=0: answer[0] = 1,  prefix = 1
+  i=1: answer[1] = 1,  prefix = 2
+  i=2: answer[2] = 2,  prefix = 6
+  i=3: answer[3] = 6,  prefix = 24
+  answer = [1, 1, 2, 6]
+
+After Pass 2 (suffix, right to left):
+  i=3: answer[3] = 6  * 1 = 6,   suffix = 4
+  i=2: answer[2] = 2  * 4 = 8,   suffix = 12
+  i=1: answer[1] = 1  * 12 = 12, suffix = 24
+  i=0: answer[0] = 1  * 24 = 24, suffix = 24
+  answer = [24, 12, 8, 6]  ✓
+</code></pre>
+
+<hr/>
+
+<h3>⏱️ Complexity / 复杂度</h3>
+
+<p>| | Complexity |</p>
+<p>|---|---|</p>
+<p>| <strong>Time</strong> | O(n) — two linear passes |</p>
+<p>| <strong>Space</strong> | O(1) extra (output array doesn&#x27;t count per problem rules) |</p>
+
+<hr/>
+
+<h3>举一反三 / Pattern Recognition</h3>
+
+<p><strong>The Prefix/Suffix Pattern</strong> unlocks many problems:</p>
+<p>- Any time you need &quot;everything except me&quot; → think prefix × suffix</p>
+<p>- <strong>Variant</strong>: [LeetCode #42: Trapping Rain Water](https://leetcode.com/problems/trapping-rain-water/) — uses max-prefix and max-suffix arrays</p>
+<p>- <strong>Variant</strong>: [LeetCode #152: Maximum Product Subarray](https://leetcode.com/problems/maximum-product-subarray/) — track both max and min prefix (negatives flip signs!)</p>
+<p>- <strong>Variant</strong>: [LeetCode #724: Find Pivot Index](https://leetcode.com/problems/find-pivot-index/) — prefix sum version of the same idea</p>
+
+<p><strong>Follow-up interview questions:</strong></p>
+<p>1. &quot;What if the array contains zeros?&quot; → The code already handles it correctly (the zero propagates into the suffix/prefix)</p>
+<p>2. &quot;Can you solve it with O(n²) first, then optimize?&quot; → Always a good way to start</p>
+<p>3. &quot;What about overflow?&quot; → Use Python (arbitrary precision) or modular arithmetic</p>
+
+<hr/>
+
+<p>📚 <strong>深入学习 / Learn More:</strong></p>
+<p>- 📹 [NeetCode Solution Video](https://neetcode.io/problems/products-of-array-discluding-self) — best visual explanation of the prefix/suffix approach</p>
+<p>- [Arrays &amp; Hashing Pattern Guide — NeetCode Roadmap](https://neetcode.io/roadmap) — see the Arrays &amp; Hashing section for this pattern</p>
+<p>- Related: [LeetCode #42: Trapping Rain Water](https://leetcode.com/problems/trapping-rain-water/) 🔴 Hard | [LeetCode #152: Maximum Product Subarray](https://leetcode.com/problems/maximum-product-subarray/) 🟡 Medium</p>
+
+<p>🧒 <strong>ELI5:</strong> If you have 4 friends and you want to know how many handshakes happen when you&#x27;re NOT included, you count all the handshakes to your left, then all the handshakes to your right, and multiply them together — that&#x27;s your answer!</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 Day 7 (2 min read) / Soft Skills Day 7</h2>
+<h2>Technical Leadership: &quot;Tell me about a time you simplified a complex system&quot;</h2>
+<h2>技术领导力：&quot;讲一个你简化复杂系统的经历&quot;</h2>
+
+<hr/>
+
+<h3>为什么这很重要 / Why This Matters</h3>
+
+<p>这道题考查的不是&quot;你删了多少行代码&quot;，而是：</p>
+<p>1. <strong>你能识别真正的复杂性来源</strong>（accidental vs essential complexity）</p>
+<p>2. <strong>你有勇气说&quot;这个可以更简单&quot;</strong>，并推动改变</p>
+<p>3. <strong>你理解简化的代价</strong> — 有时候&quot;复杂&quot;是有原因的</p>
+
+<p>Senior/Staff 工程师最重要的技能之一：<strong>抵抗系统熵增</strong>，不让复杂性悄悄积累。</p>
+
+<p><em>This question tests whether you can identify the root of complexity, have the courage to push for change, and understand the tradeoffs of simplification.</em></p>
+
+<hr/>
+
+<h3>STAR Framework Breakdown / STAR 框架拆解</h3>
+
+<p><strong>Situation (情境):</strong></p>
+<p>描述系统状态 + 为什么它变复杂了</p>
+<p>- 关键信息：系统规模、团队背景、复杂性的历史原因</p>
+<p>- 例：&quot;我们的支付服务经历了 3 年迭代，有 7 个微服务处理同一笔交易的不同阶段…&quot;</p>
+
+<p><strong>Task (任务):</strong></p>
+<p>你的角色 + 为什么这个简化很重要</p>
+<p>- 不只是&quot;我负责这个&quot; — 说清楚商业影响</p>
+<p>- 例：&quot;每次新支付方式上线需要 6 周，竞对只需 2 周。我主导了简化工作。&quot;</p>
+
+<p><strong>Action (行动):</strong></p>
+<p>这是最重要的部分！展示技术深度：</p>
+<p>- 你如何诊断复杂性来源（画架构图？追踪请求链路？）</p>
+<p>- 你如何区分哪些复杂性可以去掉，哪些必须保留</p>
+<p>- 你如何获得团队 buy-in（技术评审、数据支撑、渐进迁移）</p>
+<p>- 你如何降低风险（feature flags、灰度发布、监控）</p>
+
+<p><strong>Result (结果):</strong></p>
+<p>量化影响，不要含糊：</p>
+<p>- ✅ &quot;上线时间从 6 周降至 1.5 周&quot;</p>
+<p>- ✅ &quot;代码行数减少 40%，P99 延迟从 800ms 降到 200ms&quot;</p>
+<p>- ✅ &quot;新工程师上手时间从 2 周缩短到 3 天&quot;</p>
+
+<hr/>
+
+<h3>❌ Bad Approach vs ✅ Good Approach</h3>
+
+<p><strong>❌ Bad:</strong></p>
+<p>&gt; &quot;我们的旧系统很乱，我重写了它。现在好多了，代码更干净，大家都很满意。&quot;</p>
+
+<p>问题所在：</p>
+<p>- 没说清楚复杂性的来源</p>
+<p>- &quot;重写&quot;是危险词（没提风险管理）</p>
+<p>- 结果模糊，没有数据</p>
+<p>- 听起来像个人英雄主义，不像团队领导力</p>
+
+<p><strong>✅ Good:</strong></p>
+<p>&gt; &quot;我们有一个支付编排服务，最初设计是 2021 年给 3 种支付方式用的，到 2023 年已经支持 12 种，服务里充满了 if/else 分支和特殊 case 处理。每次新方式上线，QA 要测试所有 12 种，因为改动影响面不可预测。</p>
+<p>&gt;</p>
+<p>&gt; 我花了两周时间梳理请求流，发现核心问题：所有支付方式被平等对待，但实际上 80% 的代码只和 2 种高复杂度方式有关。我提出用策略模式（Strategy Pattern）重构，让每种支付方式封装自己的逻辑。</p>
+<p>&gt;</p>
+<p>&gt; 说服团队是最难的部分 — 大家怕改出 bug。我做了一个 spike，证明可以在不改变任何外部 API 的情况下完成重构，并用 feature flags 控制灰度。我们花了 6 周分批迁移，每批覆盖 2 种支付方式。</p>
+<p>&gt;</p>
+<p>&gt; 最终：新支付方式上线时间从 6 周降至 1.5 周，QA 测试范围减少 60%，事故率下降了 35%。&quot;</p>
+
+<hr/>
+
+<h3>Scenario Template to Adapt / 可复用场景模板</h3>
+
+<pre><code>
+Context: [系统名] had grown from [原始状态] to [当前状态] over [时间],
+         resulting in [具体问题].
+
+My Role: As [你的角色], I was responsible for [范围].
+         The business impact was [影响] — [量化].
+
+Diagnosis: I [诊断方式 — 画图/追链路/分析指标], and identified that
+           the core source of complexity was [根本原因].
+
+Solution: I proposed [方案], which addressed [核心问题] while
+          preserving [必须保留的复杂性原因].
+
+Risk Management: To validate, I [验证方法]. For rollout, I [迁移策略].
+
+Result: [定量结果 1], [定量结果 2], [定量结果 3].
+</code></pre>
+
+<hr/>
+
+<h3>Senior/Staff Level Tips / Senior/Staff 级别加分点</h3>
+
+<p>🎯 <strong>区分 accidental vs essential complexity</strong></p>
+<p>- Essential: 业务本身就是复杂的（监管要求、多租户架构）— 必须接受</p>
+<p>- Accidental: 历史债务、过度工程、沟通问题导致的 — 可以消除</p>
+<p>- 在回答中明确说&quot;这部分复杂性是必要的，我们保留了它&quot;</p>
+
+<p>🎯 <strong>说清楚你是如何 sell 这个方案的</strong></p>
+<p>Staff 工程师的简化工作往往需要跨团队协作。说说你如何：</p>
+<p>- 用数据/可视化说服怀疑者</p>
+<p>- 处理&quot;如果没坏为什么要修&quot;的反对声</p>
+<p>- 建立渐进迁移计划让团队安心</p>
+
+<p>🎯 <strong>提到你保留了什么</strong></p>
+<p>最好的答案会说&quot;我们考虑过把 X 也简化掉，但决定保留，因为…&quot; — 这体现了成熟的判断力。</p>
+
+<hr/>
+
+<h3>关键要点 / Key Takeaways</h3>
+
+<p>1. <strong>简化不是删代码，是降低认知负担</strong> — 衡量标准是新工程师理解系统需要多久</p>
+<p>2. <strong>诊断先于方案</strong> — 先说&quot;我如何找到问题根源&quot;，再说方案</p>
+<p>3. <strong>量化一切</strong> — 上线时间、延迟、事故率、代码规模</p>
+<p>4. <strong>展示工程领导力</strong> — 技术判断 + 团队推动 + 风险管理</p>
+
+<hr/>
+
+<p>📚 <strong>深入学习 / Learn More:</strong></p>
+<p>- [The Wrong Abstraction — Sandi Metz](https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction) — classic post on when simplification actually makes things worse</p>
+<p>- [A Philosophy of Software Design — John Ousterhout](https://web.stanford.edu/~ouster/cgi-bin/book.php) — the definitive book on managing complexity in software</p>
+<p>- [Simple Made Easy — Rich Hickey (Strange Loop Talk)](https://www.youtube.com/watch?v=SxdOUGdseq4) — legendary talk distinguishing &quot;simple&quot; from &quot;easy&quot;</p>
+
+<p>🧒 <strong>ELI5:</strong> Simplifying a complex system is like cleaning your messy backpack — you take everything out, throw away what you don&#x27;t need, and put the rest back in a way that makes it easy to find your pencil without dumping everything on the floor.</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 Day 7 (2 min read) / Frontend Day 7</h2>
+<h2>CSS Positioning: relative, absolute, fixed, sticky</h2>
+<h2>CSS 定位：相对、绝对、固定、粘性</h2>
+
+<hr/>
+
+<h3>猜猜这段代码输出什么？/ What does this code output?</h3>
+
+<pre><code>
+&lt;style&gt;
+  .container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    background: lightblue;
+  }
+
+  .box {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    width: 60px;
+    height: 60px;
+    background: coral;
+  }
+&lt;/style&gt;
+
+&lt;div class=&quot;container&quot;&gt;
+  &lt;div class=&quot;box&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+
+<p><strong>Where does the coral <code>.box</code> appear?</strong></p>
+<p>A) 20px from the top of the <strong>page</strong>, 30px from the left of the <strong>page</strong></p>
+<p>B) 20px from the top of <code>.container</code>, 30px from the left of <code>.container</code> ← ✅</p>
+<p>C) 20px from the top of the <strong>viewport</strong>, 30px from the left of the <strong>viewport</strong></p>
+<p>D) It won&#x27;t move — absolute positioning only works without a parent</p>
+
+<p><em>Answer: B — because <code>.container</code> has <code>position: relative</code>, it becomes the <strong>containing block</strong> for <code>.box</code>.</em></p>
+
+<hr/>
+
+<h3>🗺️ Visual Map of All 4 Positioning Modes</h3>
+
+<pre><code>
+┌─────────────────────────────────────────────────────────────┐
+│                         WEBPAGE                             │
+│                                                             │
+│  ┌─────────────────────────────────────┐                    │
+│  │   position: relative                │                    │
+│  │   └─ stays in flow                 │                    │
+│  │   └─ offset from WHERE IT WOULD BE │                    │
+│  └─────────────────────────────────────┘                    │
+│                                                             │
+│  ┌─────────────────────────────────────┐                    │
+│  │   position: absolute                │                    │
+│  │   ┌─────────────────────────────┐  │                    │
+│  │   │ nearest positioned ancestor │  │                    │
+│  │   │      ← offsets from HERE   │  │                    │
+│  │   └─────────────────────────────┘  │                    │
+│  └─────────────────────────────────────┘                    │
+│                                                             │
+│  ╔══════════════════════════════════════╗ ← VIEWPORT TOP    │
+│  ║   position: fixed                    ║                   │
+│  ║   └─ always relative to VIEWPORT    ║                   │
+│  ║   └─ stays even when you scroll     ║                   │
+│  ╚══════════════════════════════════════╝                   │
+│                                                             │
+│  ┌─────────────────────────────────────┐                    │
+│  │   position: sticky                  │                    │
+│  │   └─ relative UNTIL you scroll     │                    │
+│  │      past threshold → then FIXED   │                    │
+│  └─────────────────────────────────────┘                    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>Code Examples / 代码示例</h3>
+
+<pre><code>
+/* 1. RELATIVE — offset from its normal position, stays in document flow */
+.badge {
+  position: relative;
+  top: -2px;   /* nudge up 2px from where it would normally sit */
+  /* still takes up its original space in the layout! */
+}
+
+/* 2. ABSOLUTE — removed from flow, positioned relative to nearest 
+   positioned ancestor (or &lt;html&gt; if none exists) */
+.tooltip {
+  position: absolute;
+  top: 100%;     /* just below the parent */
+  left: 50%;
+  transform: translateX(-50%);  /* center it */
+  /* KEY: the parent must have position: relative! */
+}
+
+/* 3. FIXED — always relative to the viewport, never scrolls away */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;  /* stay above everything */
+}
+
+/* 4. STICKY — hybrid: relative until threshold, then fixed */
+.section-header {
+  position: sticky;
+  top: 60px;   /* becomes &quot;fixed&quot; 60px from top once scrolled past */
+  background: white;
+  z-index: 10;
+}
+</code></pre>
+
+<hr/>
+
+<h3>你可能不知道 / You Might Not Know</h3>
+
+<p>⚠️ <strong><code>absolute</code> 的&quot;陷阱&quot;：containing block 是谁？</strong></p>
+
+<p><code>absolute</code> 定位是相对于&quot;最近的已定位祖先&quot;（nearest positioned ancestor = any element with <code>position</code> other than <code>static</code>）。</p>
+
+<p>如果没有任何祖先设置了 <code>position</code>，那就相对于 <code>&lt;html&gt;</code> 根元素！</p>
+
+<pre><code>
+/* Common bug: forgot to add position: relative to parent */
+.card {
+  /* position: relative; ← forgot this! */
+}
+.card .badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  /* This badge will now position relative to the page, not .card! */
+}
+</code></pre>
+
+<p>⚠️ <strong><code>sticky</code> 需要高度限制！</strong></p>
+
+<p><code>sticky</code> 只在其<strong>父容器的范围内</strong>有效。如果父容器太短，或者 <code>overflow: hidden</code> 被设置，<code>sticky</code> 会&quot;不工作&quot;。这是最常见的 sticky bug！</p>
+
+<pre><code>
+/* sticky won&#x27;t work if parent has overflow: hidden/scroll/auto */
+.parent {
+  overflow: hidden;  /* this BREAKS sticky! */
+}
+.child {
+  position: sticky;
+  top: 0;  /* won&#x27;t stick — parent clips it */
+}
+</code></pre>
+
+<hr/>
+
+<h3>🎯 Mini Challenge</h3>
+
+<p>Create a <strong>notification badge</strong> that sits in the top-right corner of an avatar image, like this:</p>
+
+<pre><code>
+┌──────────┐
+│  👤      │🔴  ← red dot badge, top-right corner
+│          │
+└──────────┘
+</code></pre>
+
+<p>Write the HTML/CSS. (Hint: you need ONE element with <code>position: relative</code> and ONE with <code>position: absolute</code>.)</p>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;Solution / 答案&lt;/summary&gt;</p>
+
+<pre><code>
+&lt;div class=&quot;avatar-wrapper&quot;&gt;
+  &lt;img src=&quot;avatar.png&quot; alt=&quot;User&quot; /&gt;
+  &lt;span class=&quot;badge&quot;&gt;3&lt;/span&gt;
+&lt;/div&gt;
+</code></pre>
+
+<pre><code>
+.avatar-wrapper {
+  position: relative;  /* containing block for the badge */
+  display: inline-block;
+  width: 60px;
+  height: 60px;
+}
+
+.avatar-wrapper img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: red;
+  color: white;
+  font-size: 11px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</code></pre>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>📚 <strong>深入学习 / Learn More:</strong></p>
+<p>- [MDN: CSS position property](https://developer.mozilla.org/en-US/docs/Web/CSS/position) — the authoritative reference with live examples</p>
+<p>- [CSS-Tricks: Absolute, Relative, Fixed Positioning: How Do They Differ?](https://css-tricks.com/absolute-relative-fixed-positioining-how-do-they-differ/) — clear visual explainer</p>
+<p>- [Sticky CSS Headers](https://css-tricks.com/position-sticky-2/) — CSS-Tricks deep dive on the sticky gotchas</p>
+
+<p>🧒 <strong>ELI5:</strong> CSS positioning is like choosing where to put your toys — <code>relative</code> means &quot;move a little from where you already are,&quot; <code>absolute</code> means &quot;go to a specific spot inside your room,&quot; <code>fixed</code> means &quot;stay on the door no matter where I walk,&quot; and <code>sticky</code> means &quot;follow me around, but only once I&#x27;ve passed a certain point.&quot;</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI Day 7 (2 min read) — AI 新闻速递 / AI News Roundup</h2>
+
+<p><em>Week of March 17–20, 2026</em></p>
+
+<hr/>
+
+<h3>📰 Story 1: Meta 用 AI 替代内容审核员</h3>
+
+<p><strong>What happened:</strong> Meta 宣布大规模推出 AI 内容支持助手，将大幅减少对第三方内容审核承包商的依赖。Meta 表示 AI 系统将处理&quot;重复性的图形内容审核&quot;以及诈骗、毒品销售等对抗性内容的识别。</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>这不只是 Meta 的内部决策 — 它标志着 AI 在<strong>高风险判断任务</strong>中正式进入规模化应用。争议点在于：AI 审核仍然会有偏差和漏判，而当人类被从循环中移除，谁来负责？对于工程师而言，这意味着 AI 安全和内容策略将成为未来几年的关键工程挑战。</p>
+
+<hr/>
+
+<h3>📰 Story 2: Samsung 宣布 730 亿美元 AI 芯片扩张计划</h3>
+
+<p><strong>What happened:</strong> 三星宣布 2026 年将 AI 相关投入增加 22%，押注 Agentic AI 的算力需求激增。目标是超越 SK Hynix，成为 Nvidia 最大的 HBM（高带宽内存）供应商。</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>GPU 之争的下一个战场是 <strong>HBM 内存</strong>。LLM 推理的瓶颈越来越不是算力本身，而是内存带宽 — 这也是为什么 Agentic AI（需要长上下文、多轮推理）会带来如此巨大的内存需求。关注 Samsung vs SK Hynix 的竞争，本质上是在关注 AI 基础设施的下一个瓶颈。</p>
+
+<hr/>
+
+<h3>📰 Story 3: Signal 创始人与 Meta 合作加密 AI</h3>
+
+<p><strong>What happened:</strong> Signal 创始人 Moxie Marlinspike 宣布其加密 AI 聊天机器人 Confer 将与 Meta AI 集成，为 Meta 的 AI 提供端到端隐私保护技术。目标：让 AI 对话内容对 Meta 服务器本身也不可见。</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p><strong>隐私保护 AI（Privacy-Preserving AI）</strong> 是下一个重要技术方向。目前几乎所有 AI 推理都在云端完成，服务商可以看到你的所有对话。Moxie 提出的方向（结合 TEE/可信执行环境 + 同态加密）如果成功，将彻底改变 AI 应用的隐私模型。这对医疗 AI、法律 AI 等敏感场景意义巨大。</p>
+
+<hr/>
+
+<h3>📰 Story 4: Microsoft 发布 MAI-Image-2 图像生成模型</h3>
+
+<p><strong>What happened:</strong> 微软发布第二代 AI 图像生成模型 MAI-Image-2，主打&quot;增强照片真实感&quot;和&quot;图像内文字生成更可靠&quot;。现已在 Copilot 和 Bing Image Creator 上线。</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>文字渲染（text rendering in images）一直是图像 AI 的&quot;耻辱角落&quot; — GPT-4 画出来的招牌字往往是乱码。MAI-Image-2 将文字生成列为核心改进点，这对营销、设计、UI 素材生成有直接影响。同时，这也表明微软正在摆脱对 OpenAI DALL-E 的依赖，建立自己的图像模型能力。</p>
+
+<hr/>
+
+<h3>📰 Story 5: Amazon Alexa Plus 登陆英国 — Agentic AI 助手首个欧洲落地</h3>
+
+<p><strong>What happened:</strong> 亚马逊宣布 Alexa Plus（搭载 agentic AI 能力的升级版）在英国上线，早期访问阶段免费，之后每月 £19.99（约 $26.50），Prime 会员免费。亚马逊特别强调其&quot;genuinely British&quot;——理解&quot;cuppa&quot;、&quot;knackered&quot;、&quot;nippy&quot;等英式表达。</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>AI 助手本地化（localization）不只是翻译，还包括文化理解和方言处理。Alexa Plus 的&quot;Agentic&quot;定位意味着它不再只是问答，而是可以执行多步任务（预订、购物、控制智能家居）。这是 AI 助手从&quot;聊天机器人&quot;向&quot;数字代理人&quot;演进的关键节点，也是 OpenAI、Google、Apple 都在争夺的市场。</p>
+
+<hr/>
+
+<p>📚 <strong>深入学习 / Learn More:</strong></p>
+<p>- [Meta AI Content Moderation Announcement](https://about.fb.com/news/2026/03/boosting-your-support-and-safety-on-metas-apps-with-ai/) — 官方博客原文</p>
+<p>- [Moxie on Confer + Meta AI Integration](https://confer.to/blog/2026/03/encrypted-meta/) — 技术细节和隐私保护 AI 原理</p>
+<p>- [Microsoft MAI-Image-2 Announcement](https://microsoft.ai/news/introducing-MAI-Image-2/) — 官方发布博客</p>
+
+<p>🧒 <strong>ELI5:</strong> This week in AI: robots are learning to be internet safety guards, phone chips are getting a huge upgrade to handle smarter AI, someone figured out how to make AI chats private like a secret code, and AI assistants are learning to speak in different accents — even British English!</p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-03-19</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-19</guid>
+      <pubDate>Thu, 19 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<p>🏗️ <strong>系统设计 Day 6 / System Design Day 6</strong></p>
+<p><strong>CDN (Content Delivery Network) — 内容分发网络</strong></p>
+
+<hr/>
+
+<p><strong>想象你在设计... / Imagine You&#x27;re Building...</strong></p>
+
+<p>你在上海开了一家咖啡豆网店，客户遍布全球。每次有人从纽约访问你的网站，请求要飞越太平洋到上海服务器取图片、CSS、JS，再飞回去。往返 200ms+，用户等得花都谢了 🌸。</p>
+
+<p>解决方案？在纽约、伦敦、东京都放一份你网站的静态资源副本。用户访问时，就近取货。</p>
+
+<p>这就是 <strong>CDN（内容分发网络）</strong>。</p>
+
+<p>You run a coffee bean shop in Shanghai with global customers. Every request from NYC flies across the Pacific and back — 200ms+ round trip. Solution? Cache copies of your static assets in NYC, London, Tokyo. Users get served from the nearest copy. That&#x27;s a <strong>CDN</strong>.</p>
+
+<hr/>
+
+<p><strong>架构图 / Architecture Diagram</strong></p>
+
+<pre><code>
+                     用户请求 User Request
+                           │
+                     ┌──────┴──────┐
+                     │  DNS 解析    │
+                     │ (返回最近的  │
+                     │  CDN 节点)   │
+                     └──────┬──────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        ▼                   ▼                   ▼
+  ┌──────────┐       ┌──────────┐       ┌──────────┐
+  │ CDN Edge │       │ CDN Edge │       │ CDN Edge │
+  │  纽约    │       │  伦敦    │       │  东京    │
+  │ ████████ │       │ ████     │       │ ██████   │
+  │ (cached) │       │ (cached) │       │ (cached) │
+  └────┬─────┘       └────┬─────┘       └────┬─────┘
+       │                   │                   │
+       └───────────────────┼───────────────────┘
+                           │ cache miss 时回源
+                           ▼
+                    ┌──────────────┐
+                    │ Origin Server│
+                    │  源站 (上海)  │
+                    └──────────────┘
+</code></pre>
+
+<hr/>
+
+<p><strong>核心概念 / Key Concepts</strong></p>
+
+<p><strong>1. Cache Hit vs Cache Miss</strong></p>
+<p>- <strong>Hit（命中）：</strong> CDN 节点有缓存 → 直接返回，超快（&lt; 50ms）</p>
+<p>- <strong>Miss（未命中）：</strong> CDN 没有 → 回源站取，存一份，下次就 Hit 了</p>
+
+<p><strong>2. TTL (Time To Live)</strong></p>
+<p>- 缓存过期时间。太短 → 频繁回源；太长 → 用户看到旧内容</p>
+<p>- 静态资源（图片/CSS/JS）：TTL 长（1天-1年），文件名带 hash（<code>app.a3f2b1.js</code>）</p>
+<p>- API 响应：TTL 短（几秒-几分钟）或不缓存</p>
+
+<p><strong>3. Cache Invalidation（缓存失效）</strong></p>
+<p>- 发布新版本时需要清除旧缓存</p>
+<p>- 方法 1：Purge API（主动清除指定 URL）</p>
+<p>- 方法 2：文件名 hash（新版本 = 新文件名 = 自动绕过旧缓存）✅ 推荐</p>
+
+<p><strong>4. Push vs Pull CDN</strong></p>
+<p>- <strong>Pull：</strong> CDN 节点在第一次请求时从源站拉取（大多数 CDN 默认行为）</p>
+<p>- <strong>Push：</strong> 你主动上传内容到 CDN（适合大文件、已知内容）</p>
+
+<hr/>
+
+<p><strong>别踩这个坑 / Don&#x27;t Fall Into This Trap</strong></p>
+
+<p>❌ 把带用户个人信息的 API 响应（如 <code>/api/me</code>）也放 CDN 缓存</p>
+<p>→ 用户 A 看到用户 B 的数据！</p>
+
+<p>✅ 只缓存公开、不含个人信息的内容。私有内容设 <code>Cache-Control: private, no-store</code>。</p>
+
+<p>⚠️ CDN 缓存了错误的 response（比如 500 错误页面）</p>
+<p>→ 设置：只缓存 2xx 响应，或设置很短的负缓存 TTL</p>
+
+<p>⚠️ 源站宕机时 CDN 还能服务（这是优点！）但如果 TTL 过了且源站还没恢复 → &quot;stale-while-revalidate&quot; 策略可以继续用旧缓存</p>
+
+<hr/>
+
+<p><strong>面试要点 / Interview Key Points</strong></p>
+
+<p>1. CDN 降低延迟（地理距离）+ 减轻源站压力</p>
+<p>2. 适合静态资源；动态内容需要谨慎（考虑 Edge Computing）</p>
+<p>3. 常见 CDN：CloudFront (AWS), Cloudflare, Akamai, Fastly</p>
+<p>4. CDN + Load Balancer + Cache = 高性能系统的三驾马车</p>
+
+<hr/>
+
+<p><em>Day 6 / 150 — 系统设计基础系列</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<p>💻 <strong>算法 Day 6 / Algorithms Day 6 — #271 Encode and Decode Strings (Medium) — Arrays &amp; Hashing</strong></p>
+<p>🔗 https://leetcode.com/problems/encode-and-decode-strings/</p>
+
+<hr/>
+
+<p><strong>现实类比 / Real-World Analogy</strong></p>
+
+<p>你要把一堆购物清单放进一个信封里寄出去。问题是：收件人怎么知道哪里是一个清单的结束、另一个的开始？</p>
+
+<p>笨办法：用逗号分隔 → 但如果清单内容本身有逗号呢？</p>
+<p>聪明办法：每个清单前面写上它的长度 → <code>&quot;5#Hello3#Bye&quot;</code> → 无歧义！</p>
+
+<hr/>
+
+<p><strong>题目 / Problem Statement</strong></p>
+
+<p>设计一个算法，将字符串列表编码为单个字符串，再解码回原始列表。</p>
+<p>Design an algorithm to encode a list of strings into a single string, and decode it back.</p>
+
+<pre><code>
+Input:  [&quot;Hello&quot;, &quot;World&quot;]
+Encode: &quot;5#Hello5#World&quot;
+Decode: [&quot;Hello&quot;, &quot;World&quot;]
+</code></pre>
+
+<p>编码后的字符串可以包含任何字符（包括 <code>#</code>、空字符串等），必须无歧义。</p>
+
+<hr/>
+
+<p><strong>追踪过程 / Trace Through</strong></p>
+
+<p>编码 <code>[&quot;Hi&quot;, &quot;&quot;, &quot;a#b&quot;]</code>：</p>
+
+<pre><code>
+&quot;Hi&quot;  → len=2  → &quot;2#Hi&quot;
+&quot;&quot;    → len=0  → &quot;0#&quot;
+&quot;a#b&quot; → len=3  → &quot;3#a#b&quot;
+
+encoded = &quot;2#Hi0#3#a#b&quot;
+</code></pre>
+
+<p>解码 <code>&quot;2#Hi0#3#a#b&quot;</code>：</p>
+
+<pre><code>
+i=0: find &#x27;#&#x27; at index 1 → length=2 → read &quot;Hi&quot; → i=4
+i=4: find &#x27;#&#x27; at index 5 → length=0 → read &quot;&quot; → i=6
+i=6: find &#x27;#&#x27; at index 7 → length=3 → read &quot;a#b&quot; → i=11
+Done! → [&quot;Hi&quot;, &quot;&quot;, &quot;a#b&quot;] ✅
+</code></pre>
+
+<p>注意 <code>&quot;a#b&quot;</code> 内部的 <code>#</code> 不会造成混淆，因为我们是按<strong>长度</strong>读取的，不是按分隔符！</p>
+
+<hr/>
+
+<p><strong>Python 解法 / Python Solution</strong></p>
+
+<pre><code>
+class Codec:
+    def encode(self, strs: list[str]) -&gt; str:
+        # Format: &quot;length#string&quot; for each string
+        result = []
+        for s in strs:
+            result.append(f&quot;{len(s)}#{s}&quot;)
+        return &quot;&quot;.join(result)
+
+    def decode(self, s: str) -&gt; list[str]:
+        result = []
+        i = 0
+        while i &lt; len(s):
+            # Find the &#x27;#&#x27; delimiter
+            j = s.index(&#x27;#&#x27;, i)
+            # Characters before &#x27;#&#x27; are the length
+            length = int(s[i:j])
+            # Read exactly &#x27;length&#x27; characters after &#x27;#&#x27;
+            result.append(s[j + 1 : j + 1 + length])
+            # Move pointer past the string
+            i = j + 1 + length
+        return result
+</code></pre>
+
+<hr/>
+
+<p><strong>复杂度 / Complexity</strong></p>
+
+<p>- <strong>时间 Time:</strong> O(n) — n 是所有字符串总长度</p>
+<p>- <strong>空间 Space:</strong> O(1) — 不算输出空间（编码和解码都是线性扫描）</p>
+
+<hr/>
+
+<p><strong>边界情况 / Edge Cases</strong></p>
+
+<pre><code>
+codec = Codec()
+
+# Empty list
+codec.decode(codec.encode([])) == []  # ✅
+
+# List with empty string
+codec.decode(codec.encode([&quot;&quot;])) == [&quot;&quot;]  # ✅ &quot;0#&quot; → [&quot;&quot;]
+
+# Strings containing &#x27;#&#x27;
+codec.decode(codec.encode([&quot;a#b&quot;, &quot;#&quot;])) == [&quot;a#b&quot;, &quot;#&quot;]  # ✅
+
+# Very long string
+codec.decode(codec.encode([&quot;a&quot; * 10000])) == [&quot;a&quot; * 10000]  # ✅
+</code></pre>
+
+<hr/>
+
+<p><strong>举一反三 / Pattern Recognition</strong></p>
+
+<p><strong>模式：长度前缀编码（Length-Prefixed Encoding）</strong></p>
+
+<p>这和网络协议（TCP、HTTP/2）、序列化格式（Protocol Buffers）用的是同一个思路：先告诉你&quot;接下来有多少字节&quot;，然后精确读取。</p>
+
+<p>为什么不用特殊分隔符（如 <code>|</code> 或 <code>\0</code>）？</p>
+<p>→ 字符串可能包含任何字符！长度前缀永远不会歧义。</p>
+
+<p><strong>相关题目：</strong></p>
+<p>- #443 String Compression（类似的编码思维）</p>
+<p>- 序列化/反序列化（#297 Serialize and Deserialize Binary Tree）</p>
+
+<hr/>
+
+<p><em>Day 6 / 150 — Arrays &amp; Hashing 系列</em></p>
+<p><em>昨天 Day 4：Group Anagrams | 明天 Day 7：Product of Array Except Self</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<p>🗣️ <strong>软技能 Day 6 / Soft Skills Day 6</strong></p>
+<p><strong>Leadership — 领导力（不靠头衔）</strong></p>
+
+<p><strong>问题 / Question:</strong></p>
+<p>&gt; &quot;Describe how you&#x27;ve mentored or grown other engineers.&quot;</p>
+<p>&gt; &quot;描述你是如何指导或培养其他工程师的。&quot;</p>
+
+<hr/>
+
+<p><strong>为什么这很重要 / Why This Matters</strong></p>
+
+<p>Senior/Staff 工程师的核心职责之一不是写更多代码，而是<strong>让团队里每个人都变得更强</strong>。面试官问这题是想看：</p>
+<p>1. 你有没有&quot;利他&quot;意识（不只关心自己的 output）</p>
+<p>2. 你的指导方式是否有结构、有结果</p>
+<p>3. 你能不能识别他人的成长需求</p>
+
+<p>At senior+ levels, your impact is measured by the engineers you&#x27;ve grown, not just the code you&#x27;ve shipped.</p>
+
+<hr/>
+
+<p><strong>❌ 糟糕的回答 / Bad Approach</strong></p>
+
+<p>&gt; &quot;我经常帮初级工程师 review 代码，给他们指出问题，告诉他们怎么改。&quot;</p>
+
+<p>问题：</p>
+<p>- 这只是日常工作，不算 mentoring</p>
+<p>- &quot;告诉他们怎么改&quot; = 给答案，不是教思考</p>
+<p>- 没有具体故事、没有成长轨迹</p>
+
+<hr/>
+
+<p><strong>✅ 好的回答框架 / Good Approach (STAR)</strong></p>
+
+<p><strong>Situation:</strong> &quot;团队来了一位从 bootcamp 毕业的新工程师 Alex。他代码能 work，但 PR 里经常缺乏边界处理和测试，review 来回很多轮。&quot;</p>
+
+<p><strong>Task:</strong> &quot;作为他的 buddy engineer，我的目标不只是帮他过 PR，而是让他在 3 个月内能独立负责一个模块。&quot;</p>
+
+<p><strong>Action:</strong></p>
+<p>- &quot;我没有直接告诉他&#x27;加个 null check&#x27;，而是在 PR comment 里问引导性问题：&#x27;如果这个参数是 undefined 会发生什么？&#x27;让他自己发现问题&quot;</p>
+<p>- &quot;每周 1:1 花 30 分钟，前 15 分钟他讲本周遇到的困难，后 15 分钟我分享一个设计决策的背景（为什么我们用 Redis 而不是 Memcached）&quot;</p>
+<p>- &quot;第 6 周开始让他 lead 一个小 feature 的设计 doc，我只 review 不动手&quot;</p>
+
+<p><strong>Result:</strong> &quot;3 个月后，他的 PR 首次 review 通过率从 20% 提升到 75%。第 4 个月他独立 ship 了用户通知系统。半年后他成了团队里 on-call 最可靠的人之一。&quot;</p>
+
+<hr/>
+
+<p><strong>Senior/Staff 级别技巧 / Senior/Staff Tips</strong></p>
+
+<p>🎯 <strong>从&quot;给答案&quot;到&quot;问问题&quot;</strong></p>
+<p>- 初级：直接告诉他怎么做（他需要 unblock）</p>
+<p>- 中级：给方向，让他自己找路</p>
+<p>- 高级：只问问题，让他自己发现问题和答案</p>
+
+<p>🎯 <strong>Mentoring ≠ 只有 1:1</strong></p>
+<p>- 写好的设计文档 = 一次写，教会所有人</p>
+<p>- 做技术分享 / lunch &amp; learn = 批量 mentoring</p>
+<p>- 建立团队 wiki / onboarding guide = 可扩展的知识传播</p>
+
+<p>🎯 <strong>跟踪成长，不只是感觉</strong></p>
+<p>- 用具体指标说话（PR 通过率、独立完成的 feature 数、on-call 表现）</p>
+<p>- &quot;他成长了&quot;太模糊，&quot;他从需要 3 轮 review 到 1 轮&quot;才有说服力</p>
+
+<hr/>
+
+<p><strong>关键要点 / Key Takeaways</strong></p>
+
+<p>1. Mentoring 的核心是<strong>授人以渔</strong> — 教思考方式，不只是给答案</p>
+<p>2. 好的 mentor 会<strong>有意识地退后</strong> — 让 mentee 犯可控的错误并从中学习</p>
+<p>3. 用<strong>具体的成长指标</strong>证明你的 mentoring 有效果</p>
+<p>4. 最高级的 leadership：建立系统和文化，让 mentoring 自然发生（不依赖你个人）</p>
+
+<hr/>
+
+<p><em>Day 6 / 150 — 软技能系列</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<p>🎨 <strong>前端 Day 6 / Frontend Day 6</strong></p>
+<p><strong>CSS Variables &amp; Modern CSS Features — CSS 自定义属性</strong></p>
+
+<hr/>
+
+<p><strong>猜猜这段代码输出什么？/ What does this layout look like?</strong></p>
+
+<pre><code>
+:root {
+  --primary: #3b82f6;
+  --spacing: 16px;
+  --radius: 8px;
+}
+
+.card {
+  --primary: #ef4444;  /* 局部覆盖 */
+  padding: var(--spacing);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius);
+}
+
+.card .badge {
+  background: var(--primary);
+  color: white;
+  padding: calc(var(--spacing) / 4) calc(var(--spacing) / 2);
+  border-radius: var(--radius);
+}
+</code></pre>
+
+<p>🤔 <code>.badge</code> 的 <code>background</code> 是蓝色 <code>#3b82f6</code> 还是红色 <code>#ef4444</code>？</p>
+
+<p>✅ <strong>答案：红色 <code>#ef4444</code>！</strong></p>
+
+<p>CSS Variables 遵循<strong>继承规则</strong> — <code>.card</code> 里重新定义了 <code>--primary</code>，它的所有后代元素（包括 <code>.badge</code>）都会继承这个新值。这和 Sass/Less 变量完全不同（它们是编译时替换，不支持继承）。</p>
+
+<hr/>
+
+<p><strong>CSS Variables 核心 / Key Concepts</strong></p>
+
+<p><strong>1. 定义与使用</strong></p>
+<pre><code>
+/* 定义：用 -- 前缀 */
+:root {
+  --color-text: #1a1a1a;
+  --font-size-base: 16px;
+}
+
+/* 使用：用 var() 函数 */
+body {
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+}
+
+/* 带 fallback 值 */
+p {
+  color: var(--color-accent, #666);  /* 如果 --color-accent 未定义，用 #666 */
+}
+</code></pre>
+
+<p><strong>2. 运行时 vs 编译时</strong></p>
+<pre><code>
+Sass:   $primary: blue → 编译后变成 → color: blue（写死了）
+CSS:    --primary: blue → 运行时读取 → 可以随时改！
+</code></pre>
+
+<p>这意味着你可以：</p>
+<p>- 用 JS 动态改变 → <code>document.documentElement.style.setProperty(&#x27;--primary&#x27;, &#x27;red&#x27;)</code></p>
+<p>- 根据 media query 改变 → 深色模式只需重新定义变量</p>
+<p>- 组件内局部覆盖 → 不影响全局</p>
+
+<p><strong>3. Dark Mode 只需几行</strong></p>
+<pre><code>
+:root {
+  --bg: #ffffff;
+  --text: #1a1a1a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a1a;
+    --text: #f0f0f0;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+</code></pre>
+
+<hr/>
+
+<p><strong>你可能不知道 / You Might Not Know</strong></p>
+
+<p>CSS Variables 可以用在 <code>calc()</code> 里做数学运算：</p>
+
+<pre><code>
+:root {
+  --base: 8px;
+}
+
+.component {
+  padding: calc(var(--base) * 2);      /* 16px */
+  margin: calc(var(--base) * 3);       /* 24px */
+  border-radius: calc(var(--base) / 2); /* 4px */
+}
+</code></pre>
+
+<p>这就是 <strong>Design Token</strong> 的基础 — 用一个基数推导出整个间距系统（4px, 8px, 12px, 16px, 24px, 32px...），改一个值就改全部。Tailwind CSS 内部就是这个原理。</p>
+
+<hr/>
+
+<p><strong>⚠️ 常见陷阱 / Gotcha</strong></p>
+
+<pre><code>
+.box {
+  --size: 100;
+  width: var(--size)px;  /* ❌ 不行！不会变成 100px */
+  width: calc(var(--size) * 1px);  /* ✅ 这样才行 */
+}
+</code></pre>
+
+<p>CSS Variables 存的是<strong>字符串</strong>，<code>var(--size)px</code> 会变成 <code>100 px</code>（中间有空格），无效。必须用 <code>calc()</code> 做单位转换。</p>
+
+<hr/>
+
+<p><strong>Mini Challenge 🧩</strong></p>
+
+<p>不看上面的内容，回答：</p>
+
+<pre><code>
+:root { --gap: 10px; }
+.parent { --gap: 20px; }
+.parent .child { margin: var(--gap); }
+</code></pre>
+
+<p><code>.child</code> 的 <code>margin</code> 是多少？</p>
+
+<p>答案：<strong>20px</strong> — <code>.parent</code> 覆盖了 <code>--gap</code>，<code>.child</code> 作为后代继承 <code>.parent</code> 的值。</p>
+
+<hr/>
+
+<p><em>Day 6 / 150 — CSS 基础系列</em></p>
+<p><em>昨天 Day 4：Responsive Design &amp; Media Queries | 明天 Day 7：JavaScript DOM 基础</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<p>🤖 <strong>AI Day 6 — 新闻速递 / News Roundup</strong></p>
+<p><em>2026年3月 | March 2026</em></p>
+
+<p>&gt; ⚠️ 以下为基于公开报道的摘要，具体数字以原始来源为准。</p>
+<p>&gt; Based on public reporting; verify specifics at original sources.</p>
+
+<hr/>
+
+<p><strong>📰 1. Claude 4 发布 — Anthropic 的新旗舰</strong></p>
+
+<p>Anthropic 发布了 Claude 4 系列模型，包含 Claude 4 Opus（旗舰推理模型）和 Claude 4 Sonnet（平衡性能/速度）。据报道在编码、数学推理和长文档分析上有显著提升。</p>
+
+<p><strong>为什么你应该关心：</strong></p>
+<p>Claude 4 是 GPT-5 之后的又一个&quot;代际跳跃&quot;。如果你在做 AI 产品，现在有两个顶级推理模型可选。对开发者来说，更强的编码能力意味着 AI pair programming 又升了一个台阶。</p>
+
+<hr/>
+
+<p><strong>📰 2. 开源模型追赶闭源 — Llama 4 / Qwen 3</strong></p>
+
+<p>Meta 的 Llama 4 和阿里的 Qwen 3 系列在基准测试上接近 GPT-4 级别。Llama 4 Scout（17B 参数）在 MMLU 上接近 GPT-4o 水平。</p>
+
+<p><strong>为什么你应该关心：</strong></p>
+<p>开源模型的质量已经到了&quot;够用&quot;的临界点。对创业公司意味着：不再被 OpenAI/Anthropic 的定价绑定。对大公司意味着：可以在私有基础设施上部署，数据不出内网。如果你在选模型，先评估开源方案——可能省 90% 的 API 成本。</p>
+
+<hr/>
+
+<p><strong>📰 3. AI Agent 框架爆发</strong></p>
+
+<p>2026年初，AI Agent（智能体）从概念变成了产品。OpenAI 的 Operator、Anthropic 的 Computer Use、以及开源的 browser-use 等项目让 AI 能直接操作浏览器、写代码、管理文件。</p>
+
+<p><strong>为什么你应该关心：</strong></p>
+<p>&quot;AI 能帮你查东西&quot;和&quot;AI 能帮你做事&quot;是两个完全不同的级别。Agent 意味着 AI 从&quot;回答问题&quot;升级到&quot;执行任务&quot;。工程师需要思考：你的产品/API 是否对 Agent 友好？是否有好的错误提示让 Agent 能自动恢复？</p>
+
+<hr/>
+
+<p><strong>📰 4. 欧盟 AI Act 正式执行</strong></p>
+
+<p>欧盟的 AI 法案（AI Act）开始分阶段执行。高风险 AI 系统（医疗诊断、招聘筛选、信用评分）需要通过合规审查，包括数据来源透明度、偏见测试、人工审核机制。</p>
+
+<p><strong>为什么你应该关心：</strong></p>
+<p>如果你的产品面向欧洲用户，这不是&quot;以后再说&quot;——它现在就是法律了。即使你在美国，欧盟用户的 GDPR 合规 + AI Act 合规 = 你需要知道你的模型用了什么数据、做了什么决策。文档化不是可选的。</p>
+
+<hr/>
+
+<p><strong>📰 5. Vibe Coding 成为主流开发方式</strong></p>
+
+<p>&quot;Vibe Coding&quot;——用自然语言描述需求、让 AI 生成代码、开发者做审查和架构决策——在 2026 年成为被广泛接受的开发方式。Cursor、Copilot、Claude Code 等工具的日活用户据报道已超百万。</p>
+
+<p><strong>为什么你应该关心：</strong></p>
+<p>不是&quot;AI 会不会取代工程师&quot;，而是&quot;用 AI 的工程师会不会取代不用的&quot;。核心变化：<strong>写代码的成本降低了，但设计正确系统的能力反而更值钱了</strong>。算法理解、系统设计、代码审查能力变得更重要，因为你要能审查 AI 写的代码。</p>
+
+<hr/>
+
+<p><em>Day 6 / 150 — AI 新闻系列</em></p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-03-18</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-18</guid>
+      <pubDate>Wed, 18 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 Day 5 / Review Day 5</h2>
+
+<p>📊 Day 5/150 · NeetCode: 4/150 · SysDesign: 4/40 · Behavioral: 4/40 · Frontend: 4/50 · AI: 2/30</p>
+<p>🔥 3-day streak!</p>
+
+<p>今天是复习日！回顾过去4天的内容。</p>
+<p>Today is a review day! Let&#x27;s revisit the past 4 days.</p>
+
+<hr/>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+
+<p>从系统设计、算法、前端三个板块各出一题——先别看答案，想想你记得多少！</p>
+<p>One question each from System Design, Algorithms, and Frontend — try to answer before peeking!</p>
+
+<hr/>
+
+<p><strong>Q1: [🏗️ System Design]</strong> From Day 4 — Load Balancing</p>
+
+<p>你有一个 Load Balancer 后面跟着 3 台服务器。用户登录后，Session 存在 Server 1 的内存里。下一个请求被路由到 Server 2——用户发现自己被登出了。</p>
+
+<p>You have a load balancer in front of 3 servers. User logs in, session stored in Server 1&#x27;s memory. Next request routes to Server 2 — user is logged out.</p>
+
+<p><strong>问 / Question:</strong> 这个问题叫什么？列出两种解决方案，并说明各自的取舍。</p>
+<p>What is this problem called? Name two solutions and explain the tradeoff of each.</p>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>这叫 Session Affinity（会话粘性）问题，或 Sticky Session 问题。</strong></p>
+
+<p>服务器无状态（Stateless）是 REST 的核心原则，但当状态存在单台服务器内存时，负载均衡就破坏了这个假设。</p>
+
+<p><strong>解决方案 1：Sticky Sessions（粘性会话）</strong></p>
+<p>Load Balancer 记住&quot;用户 A → 永远去 Server 1&quot;。</p>
+<p>- ✅ 简单，无需改动应用层</p>
+<p>- ❌ 如果 Server 1 宕机，所有绑定它的用户 session 丢失；负载不均衡</p>
+
+<p><strong>解决方案 2：Shared Session Store（共享 Session 存储）</strong></p>
+<p>Session 不存在各服务器内存，而是存在 Redis 等共享缓存里。所有服务器读写同一个 Redis。</p>
+<p>- ✅ 任何服务器都能处理任何请求，真正无状态</p>
+<p>- ❌ 引入 Redis 作为额外依赖；Redis 本身需要高可用设计</p>
+
+<p><strong>关键洞察（From Day 4）：</strong> 负载均衡解决了&quot;一台服务器扛不住&quot;的问题，但同时暴露了&quot;状态共享&quot;的问题。真正可扩展的系统需要无状态的应用层 + 独立的状态层（数据库/缓存）。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [💻 Algorithms]</strong> From Days 2–4 — Arrays &amp; Hashing Pattern</p>
+
+<p>下面这段代码是什么算法的思路？时间复杂度是多少？它和 Day 2 的 Valid Anagram 有什么共同的核心思想？</p>
+
+<p>What algorithm pattern does this code skeleton represent? What&#x27;s the time complexity? How does it share a core idea with Day 2&#x27;s Valid Anagram?</p>
+
+<pre><code>
+def mystery(nums):
+    seen = {}
+    for i, num in enumerate(nums):
+        complement = target - num
+        if complement in seen:
+            return [seen[complement], i]
+        seen[num] = i
+</code></pre>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>这是 Day 3 的 Two Sum 解法。</strong></p>
+
+<p><strong>时间复杂度：O(n)</strong> — 只遍历一次数组，<code>dict</code> 的查找是 O(1)。</p>
+<p><strong>空间复杂度：O(n)</strong> — 最坏情况存储 n 个元素。</p>
+
+<p><strong>和 Valid Anagram 的共同核心思想：</strong></p>
+
+<p>Two Sum 和 Valid Anagram 都是 <strong>Arrays &amp; Hashing</strong> 模式的经典题。核心思想是：</p>
+<p>&gt; <em>&quot;用哈希表把 O(n²) 的&quot;两层循环查找&quot;压缩成 O(n) 的&quot;一次遍历 + 字典查询&quot;。&quot;</em></p>
+<p>&gt; <em>Use a hash map to trade O(n²) nested search for O(n) single-pass lookup.</em></p>
+
+<p>- <strong>Valid Anagram</strong>：用哈希表统计字符频率，把&quot;逐个比对&quot;变成&quot;对比频率表&quot;</p>
+<p>- <strong>Two Sum</strong>：用哈希表记录&quot;已见过的数&quot;，把&quot;两层循环找配对&quot;变成&quot;一次扫描找补集&quot;</p>
+
+<p>这个思路是 NeetCode 150 中出现频率最高的模式之一——遇到&quot;在数组里找某种关系&quot;的题，先想哈希表！</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [🎨 Frontend]</strong> From Day 4 — Responsive Design &amp; Media Queries</p>
+
+<p>不看代码，回答：<code>@media (min-width: 768px)</code> 这条规则，在什么情况下<strong>生效</strong>，在什么情况下<strong>不生效</strong>？</p>
+
+<p>Without looking at code: when does <code>@media (min-width: 768px)</code> apply, and when does it not?</p>
+
+<p>然后：如果同时有 <code>min-width: 768px</code> 和 <code>min-width: 1200px</code> 两条媒体查询，都在 1400px 宽度下，会发生什么？</p>
+
+<p>Then: if you have both <code>min-width: 768px</code> and <code>min-width: 1200px</code> rules, what happens at 1400px width?</p>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong><code>@media (min-width: 768px)</code> 生效条件：</strong></p>
+<p>- 视口宽度 <strong>≥ 768px</strong> → 规则生效（应用样式）</p>
+<p>- 视口宽度 <strong>&lt; 768px</strong> → 规则不生效（忽略样式）</p>
+<p>- 这是&quot;Mobile-First&quot;写法的基础——默认样式给手机，<code>min-width</code> 逐步增强给更大屏幕。</p>
+
+<p><strong>两条规则同时存在时（1400px 宽度）：</strong></p>
+
+<p>1400px ≥ 768px → 第一条生效 ✅</p>
+<p>1400px ≥ 1200px → 第二条也生效 ✅</p>
+
+<p><strong>两条都生效！CSS 的层叠规则决定最终样式：</strong></p>
+<p>- 两条规则中相同的属性，<strong>后写的（声明顺序靠后的）优先</strong></p>
+<p>- 所以应该总是把 <code>min-width</code> 从小到大排列写：先 768px，再 1200px</p>
+<p>- 这样大屏幕的样式会自然覆盖中等屏幕的样式</p>
+
+<p><strong>关键记忆（From Day 4）：</strong> Media queries don&#x27;t &quot;turn off&quot; — they cascade. The last rule wins. Order matters!</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。</em></p>
+<p><em>Review reinforces memory — spiral upward.</em></p>
+
+<p>📅 明天继续新内容！/ New content resumes tomorrow!</p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-03-17</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-17</guid>
+      <pubDate>Tue, 17 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 Day 4 / System Design Day 4 — 负载均衡 / Load Balancing</h2>
+
+<p>&gt; <strong>基础阶段 Foundation Phase</strong> | 预计阅读时间 ~3-4 分钟</p>
+
+<hr/>
+
+<h2>场景引入 / Scenario</h2>
+
+<p>想象你开了一家超级火爆的奶茶店 🧋。第一天只有一个收银台，没问题。但第二天去大众点评上了热搜，突然排队排到门外一百米。怎么办？你开了第二个、第三个收银台，还派了一个引导员在门口，告诉每个客人该去哪个收银台排队。</p>
+
+<p>这个&quot;引导员&quot;就是<strong>负载均衡器（Load Balancer）</strong>。</p>
+
+<p>Imagine you open a super-popular boba tea shop. Day one: one cashier, no problem. Day two: you go viral, and there&#x27;s a 100-meter queue outside. Solution? You open more cashier lanes and station someone at the entrance directing each customer to the shortest line.</p>
+
+<p>That person at the entrance is your <strong>Load Balancer</strong>.</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+                        ┌─────────────────────────────┐
+                        │         用户请求             │
+                        │     Incoming Requests        │
+                        └──────────────┬──────────────┘
+                                       │
+                                       ▼
+                        ┌─────────────────────────────┐
+                        │       Load Balancer          │
+                        │     负载均衡器               │
+                        │  (Nginx / AWS ALB / HAProxy) │
+                        └───────┬──────┬──────┬───────┘
+                                │      │      │
+                     ┌──────────┘      │      └──────────┐
+                     ▼                 ▼                  ▼
+              ┌────────────┐  ┌────────────┐  ┌────────────┐
+              │  Server 1  │  │  Server 2  │  │  Server 3  │
+              │  服务器 1  │  │  服务器 2  │  │  服务器 3  │
+              │  ████████  │  │  ████      │  │  ██        │
+              │ (80% load) │  │ (40% load) │  │ (20% load) │
+              └────────────┘  └────────────┘  └────────────┘
+                                       │
+                        ┌──────────────┘
+                        │
+                        ▼
+              ┌─────────────────────┐
+              │   Shared Database   │
+              │    共享数据库        │
+              └─────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>核心概念 / Key Concepts</h2>
+
+<h3>负载均衡算法 / Load Balancing Algorithms</h3>
+
+<p><strong>1. Round Robin（轮询）</strong></p>
+<p>- 依次把请求分给每台服务器，循环往复</p>
+<p>- 类比：收银台依次叫号</p>
+<p>- 适用：服务器性能相同、请求处理时间相近的场景</p>
+
+<p><strong>2. Weighted Round Robin（加权轮询）</strong></p>
+<p>- 性能强的服务器分配更多请求（权重更高）</p>
+<p>- 类比：有个收银员超快，就多给她排队</p>
+<p>- 适用：服务器配置不均匀的场景</p>
+
+<p><strong>3. Least Connections（最少连接）</strong></p>
+<p>- 把新请求分给当前连接数最少的服务器</p>
+<p>- 类比：去排队最短的那个收银台</p>
+<p>- 适用：请求处理时长差异大的场景（如文件上传 vs 简单查询）</p>
+
+<p><strong>4. IP Hash（IP 哈希）</strong></p>
+<p>- 根据客户端 IP 地址决定路由到哪台服务器</p>
+<p>- 同一个用户总是被路由到同一台服务器</p>
+<p>- 适用：需要会话粘性（Session Stickiness）的场景</p>
+
+<h3>为什么这样设计？/ Why This Design?</h3>
+
+<p>| 目标 Goal | 解决方案 Solution |</p>
+<p>|----------|-----------------|</p>
+<p>| 高可用 High Availability | 一台服务器挂了，流量自动转移 |</p>
+<p>| 水平扩展 Horizontal Scaling | 加新服务器，不改代码 |</p>
+<p>| 性能 Performance | 避免单点瓶颈，减少响应时间 |</p>
+<p>| 健康检查 Health Checks | LB 自动剔除故障节点 |</p>
+
+<h3>两种类型 / Two Types</h3>
+
+<p><strong>Layer 4 (Transport Layer) LB</strong></p>
+<p>- 基于 IP + TCP/UDP 端口路由</p>
+<p>- 速度快，但&quot;看不懂&quot;请求内容</p>
+<p>- 类比：只看信封地址，不看信的内容</p>
+
+<p><strong>Layer 7 (Application Layer) LB</strong></p>
+<p>- 基于 HTTP 头、URL、Cookie 等路由</p>
+<p>- 更智能（可以把 <code>/api</code> 路由到 API 服务器，把 <code>/static</code> 路由到 CDN）</p>
+<p>- 类比：根据信的内容决定投递给哪个部门</p>
+<p>- 性能稍低，但灵活得多</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Don&#x27;t Fall Into This Trap</h2>
+
+<h3>坑 1：有状态的服务器（Stateful Servers）</h3>
+
+<p>❌ <strong>错误做法：</strong> 把用户 Session 存在单台服务器的内存里</p>
+<pre><code>
+用户第1次请求 → Server 1 (Session 存在这里)
+用户第2次请求 → Server 2 (找不到 Session！用户被登出)
+</code></pre>
+
+<p>✅ <strong>正确做法：</strong> Session 外置到共享存储</p>
+<pre><code>
+用户第1次请求 → Server 1 → 把 Session 写入 Redis
+用户第2次请求 → Server 2 → 从 Redis 读 Session ✓
+</code></pre>
+
+<p><strong>关键原则：服务器要做到&quot;无状态&quot;(Stateless)，所有状态都存外部！</strong></p>
+
+<h3>坑 2：负载均衡器自身成为单点故障</h3>
+
+<p>如果 LB 本身挂了怎么办？</p>
+
+<p>✅ <strong>解决方案：</strong> 部署主备 LB（Active-Passive）或使用 DNS 轮询 + 多 LB</p>
+
+<h3>坑 3：健康检查不够频繁</h3>
+
+<p>LB 依赖健康检查（Health Check）来知道哪台服务器挂了。如果检查间隔太长（比如 60s），可能有 1 分钟的流量打到死服务器上。</p>
+
+<p>✅ 生产环境通常设置：每 5-10 秒一次健康检查。</p>
+
+<hr/>
+
+<h2>延伸阅读 / Going Deeper</h2>
+
+<p>- 昨天（Day 3）我们聊了 HTTP/REST，现在你知道 LB 就工作在 HTTP 这一层之上</p>
+<p>- 下周我们会聊<strong>数据库扩展</strong>，届时 LB 的概念还会出现（读写分离 + 连接池）</p>
+<p>- 如果你听说过 <strong>Nginx、HAProxy、AWS ALB/NLB</strong>，它们都是负载均衡器的具体实现</p>
+
+<hr/>
+
+<p><em>Day 4 / 100 — 系统设计基础系列 System Design Foundations</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 Day 4 / Algorithms Day 4 — #49 Group Anagrams (Medium) — Arrays &amp; Hashing</h2>
+
+<p>&gt; <strong>基础阶段 Foundation Phase</strong> | 预计阅读时间 ~3-4 分钟</p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象你在邮局分拣包裹。每个包裹上写的是打乱顺序的地址，比如 &quot;acts&quot;, &quot;cats&quot;, &quot;tacs&quot; 其实都是同一个地方（字母相同，顺序不同）。你的任务是把所有&quot;相同地址&quot;的包裹放到同一个箱子里。</p>
+
+<p>怎么判断两个地址&quot;本质相同&quot;？把字母排个序，如果排序后一样，就是同一个地址！</p>
+
+<p>At the post office, sorting packages with scrambled addresses: &quot;acts&quot;, &quot;cats&quot;, &quot;tacs&quot; all go to the same place. Your job: group them together. The trick? Sort the letters — if they match after sorting, they&#x27;re anagrams!</p>
+
+<hr/>
+
+<h2>题目 / Problem Statement</h2>
+
+<p><strong>给定一个字符串数组，将所有字母异位词（anagram）分组在一起。</strong></p>
+
+<p>Given an array of strings, group the anagrams together.</p>
+
+<pre><code>
+输入 Input:  [&quot;eat&quot;,&quot;tea&quot;,&quot;tan&quot;,&quot;ate&quot;,&quot;nat&quot;,&quot;bat&quot;]
+输出 Output: [[&quot;bat&quot;],[&quot;nat&quot;,&quot;tan&quot;],[&quot;ate&quot;,&quot;eat&quot;,&quot;tea&quot;]]
+</code></pre>
+
+<p>字母异位词 = 由相同字母以不同顺序构成的单词</p>
+<p>Anagram = words with the same letters in different order</p>
+
+<hr/>
+
+<h2>思路解析 / Step-by-Step Walkthrough</h2>
+
+<p><strong>关键洞察 Key Insight：</strong></p>
+<p>两个字符串互为 anagram，当且仅当它们排序后相同。</p>
+<p>Two strings are anagrams if and only if their sorted versions are identical.</p>
+
+<p>所以我们用排序后的字符串作为<strong>哈希表的 key</strong>，把所有 anagram 归到同一个桶（bucket）里。</p>
+
+<h3>追踪过程 / Trace Through the Example</h3>
+
+<p>输入：<code>[&quot;eat&quot;,&quot;tea&quot;,&quot;tan&quot;,&quot;ate&quot;,&quot;nat&quot;,&quot;bat&quot;]</code></p>
+
+<p>| 当前单词 Word | 排序后 Sorted Key | 哈希表状态 HashMap State |</p>
+<p>|------------|----------------|----------------------|</p>
+<p>| &quot;eat&quot; | &quot;aet&quot; | {&quot;aet&quot;: [&quot;eat&quot;]} |</p>
+<p>| &quot;tea&quot; | &quot;aet&quot; | {&quot;aet&quot;: [&quot;eat&quot;,&quot;tea&quot;]} |</p>
+<p>| &quot;tan&quot; | &quot;ant&quot; | {&quot;aet&quot;: [&quot;eat&quot;,&quot;tea&quot;], &quot;ant&quot;: [&quot;tan&quot;]} |</p>
+<p>| &quot;ate&quot; | &quot;aet&quot; | {&quot;aet&quot;: [&quot;eat&quot;,&quot;tea&quot;,&quot;ate&quot;], &quot;ant&quot;: [&quot;tan&quot;]} |</p>
+<p>| &quot;nat&quot; | &quot;ant&quot; | {&quot;aet&quot;: [&quot;eat&quot;,&quot;tea&quot;,&quot;ate&quot;], &quot;ant&quot;: [&quot;tan&quot;,&quot;nat&quot;]} |</p>
+<p>| &quot;bat&quot; | &quot;abt&quot; | {&quot;aet&quot;: [...], &quot;ant&quot;: [...], &quot;abt&quot;: [&quot;bat&quot;]} |</p>
+
+<p>最终取哈希表的所有 values → <code>[[&quot;eat&quot;,&quot;tea&quot;,&quot;ate&quot;], [&quot;tan&quot;,&quot;nat&quot;], [&quot;bat&quot;]]</code></p>
+
+<hr/>
+
+<h2>Python 解法 / Python Solution</h2>
+
+<pre><code>
+from collections import defaultdict
+
+def groupAnagrams(strs: list[str]) -&gt; list[list[str]]:
+    # Use a defaultdict so we can append without checking if key exists
+    # 用 defaultdict，省去手动判断 key 是否存在的麻烦
+    anagram_map = defaultdict(list)
+    
+    for word in strs:
+        # Sort the word&#x27;s characters to create the canonical key
+        # 对字母排序，得到这组 anagram 的&quot;标准形式&quot;
+        # e.g., &quot;eat&quot; -&gt; sorted(&quot;eat&quot;) -&gt; [&#x27;a&#x27;,&#x27;e&#x27;,&#x27;t&#x27;] -&gt; &quot;aet&quot;
+        key = &quot;&quot;.join(sorted(word))
+        
+        # Append this word to the bucket for its key
+        # 把当前单词放入对应的桶
+        anagram_map[key].append(word)
+    
+    # Return all the groups (values of the map)
+    # 返回所有分组
+    return list(anagram_map.values())
+</code></pre>
+
+<h3>手动验证 / Manual Verification</h3>
+
+<p>让我们用 <code>[&quot;eat&quot;,&quot;tea&quot;,&quot;tan&quot;,&quot;ate&quot;,&quot;nat&quot;,&quot;bat&quot;]</code> 逐步跑代码：</p>
+
+<p>1. <code>word = &quot;eat&quot;</code> → <code>sorted(&quot;eat&quot;)</code> = <code>[&#x27;a&#x27;,&#x27;e&#x27;,&#x27;t&#x27;]</code> → <code>key = &quot;aet&quot;</code> → <code>anagram_map = {&quot;aet&quot;: [&quot;eat&quot;]}</code></p>
+<p>2. <code>word = &quot;tea&quot;</code> → <code>sorted(&quot;tea&quot;)</code> = <code>[&#x27;a&#x27;,&#x27;e&#x27;,&#x27;t&#x27;]</code> → <code>key = &quot;aet&quot;</code> → <code>anagram_map = {&quot;aet&quot;: [&quot;eat&quot;,&quot;tea&quot;]}</code></p>
+<p>3. <code>word = &quot;tan&quot;</code> → <code>sorted(&quot;tan&quot;)</code> = <code>[&#x27;a&#x27;,&#x27;n&#x27;,&#x27;t&#x27;]</code> → <code>key = &quot;ant&quot;</code> → <code>anagram_map = {&quot;aet&quot;: [...], &quot;ant&quot;: [&quot;tan&quot;]}</code></p>
+<p>4. <code>word = &quot;ate&quot;</code> → <code>sorted(&quot;ate&quot;)</code> = <code>[&#x27;a&#x27;,&#x27;e&#x27;,&#x27;t&#x27;]</code> → <code>key = &quot;aet&quot;</code> → <code>anagram_map = {&quot;aet&quot;: [&quot;eat&quot;,&quot;tea&quot;,&quot;ate&quot;], &quot;ant&quot;: [&quot;tan&quot;]}</code></p>
+<p>5. <code>word = &quot;nat&quot;</code> → <code>sorted(&quot;nat&quot;)</code> = <code>[&#x27;a&#x27;,&#x27;n&#x27;,&#x27;t&#x27;]</code> → <code>key = &quot;ant&quot;</code> → <code>anagram_map = {&quot;aet&quot;: [...], &quot;ant&quot;: [&quot;tan&quot;,&quot;nat&quot;]}</code></p>
+<p>6. <code>word = &quot;bat&quot;</code> → <code>sorted(&quot;bat&quot;)</code> = <code>[&#x27;a&#x27;,&#x27;b&#x27;,&#x27;t&#x27;]</code> → <code>key = &quot;abt&quot;</code> → <code>anagram_map = {&quot;aet&quot;: [...], &quot;ant&quot;: [...], &quot;abt&quot;: [&quot;bat&quot;]}</code></p>
+
+<p>最终返回 <code>[[&quot;eat&quot;,&quot;tea&quot;,&quot;ate&quot;], [&quot;tan&quot;,&quot;nat&quot;], [&quot;bat&quot;]]</code> ✅ 与题目期望输出一致！</p>
+
+<hr/>
+
+<h2>时间/空间复杂度 / Complexity Analysis</h2>
+
+<p><strong>时间复杂度 Time Complexity: O(n × k log k)</strong></p>
+<p>- n = 字符串数量（number of strings）</p>
+<p>- k = 最长字符串的长度（max string length）</p>
+<p>- 对每个字符串排序 = O(k log k)，总共 n 个字符串</p>
+
+<p><strong>空间复杂度 Space Complexity: O(n × k)</strong></p>
+<p>- 哈希表存储所有字符串的副本</p>
+<p>- 最坏情况：所有字符串都不是 anagram，每个单独一个桶</p>
+
+<hr/>
+
+<h2>边界情况 / Edge Cases</h2>
+
+<pre><code>
+# 空数组 Empty input
+groupAnagrams([])  # → []
+
+# 单个字符串 Single string
+groupAnagrams([&quot;a&quot;])  # → [[&quot;a&quot;]]
+
+# 所有字符串都是 anagram All are anagrams
+groupAnagrams([&quot;abc&quot;,&quot;bca&quot;,&quot;cab&quot;])  # → [[&quot;abc&quot;,&quot;bca&quot;,&quot;cab&quot;]]
+
+# 没有 anagram 对 No anagram pairs
+groupAnagrams([&quot;abc&quot;,&quot;def&quot;,&quot;ghi&quot;])  # → [[&quot;abc&quot;],[&quot;def&quot;],[&quot;ghi&quot;]]
+</code></pre>
+
+<hr/>
+
+<h2>举一反三 / Pattern Recognition</h2>
+
+<p><strong>这道题的模式：用排序/哈希创建&quot;规范形式&quot;（Canonical Form）</strong></p>
+
+<p>当你需要&quot;把等价的东西归类&quot;时，找到一个好的 key 是关键。</p>
+
+<p><strong>同类变体 / Follow-up Variations:</strong></p>
+
+<p>1. <strong>#242 Valid Anagram（Day 2 做过！）</strong> — 判断两个字符串是否互为 anagram，现在你应该更理解为什么用哈希表了</p>
+
+<p>2. <strong>用字符计数作 key（优化版）</strong> — 不排序，而是统计 26 个字母的频率，构成一个 tuple 作 key。时间复杂度降到 O(n × k)：</p>
+<pre><code>
+   key = tuple(Counter(word).values())  # 不推荐，顺序不固定
+   # 更好的方式：
+   count = [0] * 26
+   for c in word:
+       count[ord(c) - ord(&#x27;a&#x27;)] += 1
+   key = tuple(count)  # e.g., &quot;eat&quot; -&gt; (1,0,0,0,1,0,...,1,...) [a=1,e=1,t=1]
+</code></pre>
+
+<p>3. <strong>思考扩展：</strong> 如果字符串包含 Unicode 字符怎么办？用 <code>Counter</code> 而非固定 26 位数组</p>
+
+<hr/>
+
+<p><em>Day 4 / 100 — Arrays &amp; Hashing 系列</em></p>
+<p><em>昨天 Day 3：Two Sum | 明天 Day 5：Top K Frequent Elements</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 Day 4 / Soft Skills Day 4 — 失败与成长 / Failure &amp; Growth</h2>
+
+<p>&gt; <strong>基础阶段 Foundation Phase</strong> | 预计阅读时间 ~2-3 分钟</p>
+
+<hr/>
+
+<h2>今日问题 / Today&#x27;s Question</h2>
+
+<p>&gt; &quot;Describe a project that failed or didn&#x27;t meet expectations. What did you learn?&quot;</p>
+<p>&gt; 描述一个失败的或未达到预期的项目。你从中学到了什么？</p>
+
+<hr/>
+
+<h2>为什么这很重要 / Why This Matters</h2>
+
+<p>这个问题是面试官用来区分<strong>普通候选人</strong>和<strong>优秀候选人</strong>的分水岭。</p>
+
+<p>大多数人要么：</p>
+<p>- 找借口（&quot;那个产品经理需求一直在变…&quot;）</p>
+<p>- 给出假失败（&quot;我太追求完美了！&quot;）</p>
+
+<p>真正优秀的工程师知道：失败是学习的压缩包。能清晰复盘失败，说明你有自我意识、有成长心态、有责任感。</p>
+
+<p>This question separates candidates who are self-aware from those who aren&#x27;t. Great engineers treat failure as dense learning. If you can articulate a real failure with clarity, you signal maturity, accountability, and a growth mindset.</p>
+
+<hr/>
+
+<h2>STAR 框架拆解 / STAR Framework Breakdown</h2>
+
+<p><strong>Situation（情境）:</strong> 设置背景 — 项目是什么？团队多大？时间线如何？</p>
+
+<p><strong>Task（任务）:</strong> 你的角色 — 你负责什么？期望是什么？</p>
+
+<p><strong>Action（行动）:</strong> 你做了什么 — 包括那些事后回想起来的&quot;错误决定&quot;</p>
+
+<p><strong>Result（结果）:</strong> 真实的结果 — 项目延期？功能被砍？用户不买账？</p>
+
+<p><strong>+Learning（学习）:</strong> ⭐ 这是整个回答的精华 — 你具体学到了什么？有什么改变？</p>
+
+<hr/>
+
+<h2>❌ 糟糕的回答 / Bad Approach</h2>
+
+<p>&gt; &quot;我们做了一个推荐系统，但效果没有预期好。这让我意识到我应该更仔细地沟通需求。&quot;</p>
+
+<p><strong>问题在哪？</strong></p>
+<p>- 没有具体细节（什么推荐系统？多大的影响？）</p>
+<p>- &quot;更仔细地沟通&quot;——太泛了，面试官听到这句话已经睡着了</p>
+<p>- 没有说明<strong>你个人</strong>在失败中的角色</p>
+<p>- 学到的教训没有被<strong>后续行动</strong>验证</p>
+
+<hr/>
+
+<h2>✅ 好的回答 / Good Approach</h2>
+
+<p>&gt; &quot;In my second year at [Company], I led a migration of our user notification system from a monolithic service to an event-driven architecture. The business goal was to reduce notification latency from ~3 seconds to under 500ms and improve reliability.</p>
+<p>&gt;</p>
+<p>&gt; 我的任务是设计新架构并协调三个团队的迁移工作，预期 Q2 上线。</p>
+<p>&gt;</p>
+<p>&gt; 我犯的关键错误：我低估了消息幂等性（idempotency）的问题。我假设下游消费者已经处理好了重复消息，但实际上没有。上线后，部分用户在一次事件中收到了 3-5 条重复通知，引发了大量投诉，我们不得不回滚。</p>
+<p>&gt;</p>
+<p>&gt; We rolled back within 6 hours, which itself was a success — but the original go-live failed.</p>
+<p>&gt;</p>
+<p>&gt; 从这次失败中，我有两个具体改变：</p>
+<p>&gt; 1. <strong>我开始在所有 event-driven 设计的 design doc 里加一节 &#x27;Idempotency Guarantees&#x27;</strong>，明确列出哪一层负责去重</p>
+<p>&gt; 2. <strong>我们建立了 chaos testing 流程</strong>，在 staging 环境模拟消息重投递，在那以后我们再没有出现类似问题</p>
+<p>&gt;</p>
+<p>&gt; 三个月后，同一个团队完成了迁移，延迟确实降到了 420ms。我认为能拿到这个结果，部分原因就是第一次的失败让我们想清楚了真正的难点。&quot;</p>
+
+<hr/>
+
+<h2>为什么这个回答好？/ Why This Works</h2>
+
+<p>✅ <strong>具体技术细节</strong> — 幂等性问题，不是模糊的&quot;沟通问题&quot;</p>
+<p>✅ <strong>诚实承担责任</strong> — &quot;我犯的关键错误&quot;，没有推锅</p>
+<p>✅ <strong>量化影响</strong> — 3-5 条重复通知，回滚 6 小时内完成</p>
+<p>✅ <strong>学习有证据</strong> — 不是说&quot;我学会了要考虑幂等性&quot;，而是说&quot;我在所有后续 design doc 里加了这一节&quot;</p>
+<p>✅ <strong>故事有结尾</strong> — 三个月后成功了，说明学习真的有效</p>
+
+<hr/>
+
+<h2>Senior/Staff 级别加分项 / Senior/Staff Level Tips</h2>
+
+<p>如果你是 Senior 或 Staff 候选人，面试官想听到更多的是<strong>系统性改变</strong>，而非个人教训：</p>
+
+<p>- &quot;我把这个 checklist 推广到了整个团队&quot; (team impact)</p>
+<p>- &quot;我们更新了 runbook，现在新 engineer onboarding 时会学到这个&quot; (process change)</p>
+<p>- &quot;这次失败推动了我们建立 incident review 文化&quot; (cultural change)</p>
+
+<p><strong>层级越高，你的学习边界越大。</strong> Junior 学到的是&quot;我应该更仔细地测试&quot;；Staff 学到的是&quot;我们整个组织的测试文化需要改变&quot;。</p>
+
+<hr/>
+
+<h2>你可以改编的模板 / Scenario Template</h2>
+
+<pre><code>
+情境: 我在 [公司/项目] 负责 [技术项目]，目标是 [业务目标]。
+错误: 我的关键判断失误是 [具体技术/流程错误]。
+影响: 导致了 [具体后果，数字化]。
+学习1: 从此以后，我 [具体新习惯/流程，可验证]。
+学习2: 我把这个教训 [推广/文档化] 到了 [范围]。
+后续: [N 个月后，最终的结果是...]。
+</code></pre>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>1. <strong>选真实的失败</strong> — 面试官能辨别出假失败。真失败才有说服力</p>
+<p>2. <strong>从个人行动出发</strong> — &quot;我们失败了&quot;比&quot;我做了错误决定&quot;弱 10 倍</p>
+<p>3. <strong>学习要有后续行动</strong> — &quot;我意识到&quot;不够，&quot;我从那以后改变了&quot;才有力量</p>
+<p>4. <strong>结局不一定非要成功</strong> — &quot;项目被取消，但我建立的系统依然在生产环境跑着&quot;也是好结尾</p>
+
+<hr/>
+
+<p><em>Day 4 / 100 — 行为面试系列 Behavioral Interview Series</em></p>
+<p><em>昨天 Day 3：与领导意见相左 | 明天 Day 5：时间管理与优先级</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 Day 4 / Frontend Day 4 — 响应式设计与媒体查询 / Responsive Design &amp; Media Queries</h2>
+
+<p>&gt; <strong>基础阶段 Foundation Phase</strong> | 预计阅读时间 ~2-3 分钟</p>
+
+<hr/>
+
+<h2>猜猜这段代码的行为？/ What Does This Code Do?</h2>
+
+<pre><code>
+.container {
+  width: 100%;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1140px;
+    padding: 0 60px;
+  }
+}
+</code></pre>
+
+<p><strong>问：当浏览器宽度是 800px 时，<code>.container</code> 的实际宽度和 padding 是多少？</strong></p>
+<p><strong>Q: When the browser is 800px wide, what are the actual width and padding?</strong></p>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;点击查看答案 / Click for Answer&lt;/summary&gt;</p>
+
+<p><strong>答案：宽度 = 800px（100% of viewport），padding = 0 40px</strong></p>
+
+<p>理由：</p>
+<p>- 800px &gt; 768px → 第一个 <code>@media</code> 规则生效 ✓</p>
+<p>- 800px &lt; 1200px → 第二个 <code>@media</code> 规则不生效 ✗</p>
+<p>- <code>max-width: 960px</code> 生效，但 800px &lt; 960px，所以实际宽度被 <code>width: 100%</code> 控制 = 800px</p>
+<p>- <code>margin: 0 auto</code> 生效（container 会居中，但由于宽度是 100%，看不出来）</p>
+<p>- <code>padding</code> 被第一个媒体查询覆盖为 <code>0 40px</code></p>
+
+<p><strong>所以：width = 800px，padding = 0 40px</strong> ✅</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>核心概念 / Core Concepts</h2>
+
+<h3>什么是响应式设计？/ What Is Responsive Design?</h3>
+
+<p>同一套 HTML/CSS，在手机、平板、电脑上都好看好用。</p>
+<p>不是做三个不同的页面，而是用<strong>弹性布局 + 媒体查询</strong>适配所有屏幕。</p>
+
+<p>One codebase, all screen sizes. Not three separate pages — flexible layouts + media queries.</p>
+
+<h3>媒体查询语法 / Media Query Syntax</h3>
+
+<pre><code>
+/* 基础语法 Basic syntax */
+@media [media-type] [and/not/only] (condition) {
+  /* CSS rules */
+}
+
+/* 常见断点 Common breakpoints */
+/* Mobile first approach (推荐!) */
+/* Base styles: mobile */
+.element { font-size: 14px; }
+
+@media (min-width: 576px)  { /* sm - Large phones */ }
+@media (min-width: 768px)  { /* md - Tablets */ }
+@media (min-width: 992px)  { /* lg - Desktops */ }
+@media (min-width: 1200px) { /* xl - Large desktops */ }
+</code></pre>
+
+<hr/>
+
+<h2>两种策略 / Two Approaches</h2>
+
+<pre><code>
+Mobile First (推荐 ✓)          Desktop First (常见但不推荐)
+────────────────────           ──────────────────────────
+先写手机样式，                   先写桌面样式，
+用 min-width 往上覆盖            用 max-width 往下覆盖
+
+Base → small screens            Base → large screens
+↑ override for larger           ↓ override for smaller
+
+好处:                            缺点:
+✅ 性能更好 (mobile loads less)  ❌ 移动端加载冗余样式
+✅ 优先考虑移动端体验            ❌ 思维反直觉
+✅ Progressive enhancement       ❌ Graceful degradation
+</code></pre>
+
+<hr/>
+
+<h2>实战代码 / Practical Example</h2>
+
+<pre><code>
+/* Mobile First: 先写最小屏幕的样式 */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;  /* 1 column on mobile */
+  gap: 16px;
+  padding: 16px;
+}
+
+/* 平板: 2 列 */
+@media (min-width: 768px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);  /* 2 columns */
+    gap: 24px;
+    padding: 24px;
+  }
+}
+
+/* 桌面: 3 列 */
+@media (min-width: 1200px) {
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);  /* 3 columns */
+    gap: 32px;
+    padding: 32px;
+  }
+}
+</code></pre>
+
+<pre><code>
+手机 (&lt; 768px)    平板 (768-1199px)    桌面 (≥ 1200px)
+──────────────    ─────────────────    ───────────────
+┌──────────┐      ┌─────┐ ┌─────┐     ┌───┐ ┌───┐ ┌───┐
+│  Card 1  │      │Card1│ │Card2│     │ 1 │ │ 2 │ │ 3 │
+├──────────┤      ├─────┤ ├─────┤     ├───┤ ├───┤ ├───┤
+│  Card 2  │      │Card3│ │Card4│     │ 4 │ │ 5 │ │ 6 │
+├──────────┤      └─────┘ └─────┘     └───┘ └───┘ └───┘
+│  Card 3  │
+└──────────┘
+</code></pre>
+
+<hr/>
+
+<h2>你可能不知道 / You Might Not Know</h2>
+
+<h3>Viewport Meta Tag — 必不可少！</h3>
+
+<pre><code>
+&lt;!-- 没有这个，媒体查询在手机上不会正常工作！ --&gt;
+&lt;!-- Without this, media queries won&#x27;t work on mobile! --&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+</code></pre>
+
+<p><strong>为什么？</strong> 手机浏览器默认假装自己是 980px 宽的桌面（为了渲染老网站）。加了这个 meta tag，才告诉它&quot;就用设备真实宽度&quot;。</p>
+
+<p>Why? Mobile browsers default to pretending they&#x27;re a ~980px desktop viewport (legacy web compatibility). This tag tells them: use the real device width.</p>
+
+<h3>媒体查询也能针对其他特性 / Other Media Features</h3>
+
+<pre><code>
+/* 暗色模式 Dark mode */
+@media (prefers-color-scheme: dark) {
+  body { background: #1a1a1a; color: #f0f0f0; }
+}
+
+/* 减少动画（无障碍）Reduced motion (accessibility) */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* 横竖屏 Orientation */
+@media (orientation: landscape) {
+  .sidebar { display: block; }
+}
+</code></pre>
+
+<hr/>
+
+<h2>Mini Challenge 小挑战</h2>
+
+<pre><code>
+/* 这段代码中，如果屏幕宽度是 600px，
+   .box 的背景色是什么？ */
+/* What is the background color of .box at 600px? */
+
+.box { background: red; }
+
+@media (min-width: 500px) {
+  .box { background: blue; }
+}
+
+@media (max-width: 700px) {
+  .box { background: green; }
+}
+
+@media (min-width: 550px) and (max-width: 650px) {
+  .box { background: yellow; }
+}
+</code></pre>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;答案 / Answer&lt;/summary&gt;</p>
+
+<p><strong>答案：yellow（黄色）</strong></p>
+
+<p>在 600px 时：</p>
+<p>1. <code>red</code> — 基础样式 ✓</p>
+<p>2. <code>min-width: 500px</code> → 600 ≥ 500 → 覆盖为 <code>blue</code> ✓</p>
+<p>3. <code>max-width: 700px</code> → 600 ≤ 700 → 覆盖为 <code>green</code> ✓</p>
+<p>4. <code>min-width: 550px and max-width: 650px</code> → 550 ≤ 600 ≤ 650 → 覆盖为 <code>yellow</code> ✓</p>
+
+<p>CSS 层叠规则：后声明的规则（同优先级时）覆盖先声明的。最后生效的是 <code>yellow</code>。</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><em>Day 4 / 100 — CSS 基础系列 CSS Fundamentals</em></p>
+<p><em>昨天 Day 3：CSS Grid | 明天 Day 5：CSS 动画与 Transitions</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI Day 4 — 分词（Tokenization）：LLM 眼中的文字 / Tokenization: How LLMs See Text</h2>
+
+<p>&gt; <strong>基础阶段 Foundation Phase</strong> | 预计阅读时间 ~2-3 分钟</p>
+
+<hr/>
+
+<h2>直觉解释 / Intuitive Explanation</h2>
+
+<p>你有没有想过，为什么 ChatGPT 有时候连字都数不清楚？比如问它&quot;&#x27;strawberry&#x27; 这个词里有几个 r？&quot;，它可能回答&quot;2 个&quot;而不是正确答案&quot;3 个&quot;？</p>
+
+<p>这就是<strong>分词（Tokenization）</strong>在背后作怪。</p>
+
+<p>LLM 看到的世界，不是一个个字母，也不是一个个单词——而是<strong>tokens（词元）</strong>。一个 token 可能是：</p>
+<p>- 一个完整的英语单词（如 <code>hello</code>）</p>
+<p>- 一个常见单词的一部分（如 <code>token</code> → <code>tok</code> + <code>en</code>）</p>
+<p>- 一个标点符号或空格</p>
+<p>- 一个汉字（通常 1 个汉字 = 1 个 token）</p>
+
+<p>Have you ever wondered why ChatGPT struggles to count letters? Ask &quot;how many &#x27;r&#x27;s in strawberry?&quot; and it might say 2 instead of 3. That&#x27;s tokenization at work — the model never sees individual letters.</p>
+
+<hr/>
+
+<h2>Tokenization 是怎么工作的？/ How Does It Work?</h2>
+
+<h3>主流算法：BPE（Byte Pair Encoding）</h3>
+
+<p><strong>训练阶段（一次性，在模型训练前）:</strong></p>
+
+<p>1. 从字母级别开始：把所有文字拆成单个字符</p>
+<p>2. 统计最常出现的相邻字符对，合并成一个新 token</p>
+<p>3. 重复 N 次（N 通常是几万次），直到词汇表大小达标</p>
+
+<p><strong>效果：</strong>常见的词/词根保持完整，罕见的词被拆开。</p>
+
+<pre><code>
+&quot;tokenization&quot; 可能被拆成：
+&quot;token&quot; + &quot;ization&quot;
+或
+&quot;token&quot; + &quot;iz&quot; + &quot;ation&quot;
+（取决于训练数据中这些片段的频率）
+</code></pre>
+
+<hr/>
+
+<h2>可视化追踪 / Visual Trace</h2>
+
+<pre><code>
+原始文本 Raw Text:
+&quot;LLMs are transformers&quot;
+
+          ↓ Tokenizer
+
+Token IDs:   [  47,    2860,    527,   83386 ]
+             &quot;LL&quot;  &quot;Ms are&quot;  &quot; trans&quot;  &quot;formers&quot;
+              ↑
+           注意 &quot;LLMs&quot; 被拆成多个 token！
+
+(以上是示意，实际 token 边界取决于具体模型的词汇表)
+</code></pre>
+
+<pre><code>
+模型看到的不是:   L L M s   a r e   t r a n s f o r m e r s
+而是:            [token1] [token2] [token3] [token4]
+
+就像把句子看成 LEGO 块，而不是沙粒
+Like seeing sentences as LEGO bricks, not individual grains of sand
+</code></pre>
+
+<hr/>
+
+<h2>为什么这很重要？/ Why Does This Matter?</h2>
+
+<h3>1. 解释了&quot;数字母&quot;的 bug 🔢</h3>
+
+<p><code>&quot;strawberry&quot;</code> → 可能被 token 化为 <code>&quot;straw&quot;</code> + <code>&quot;berry&quot;</code></p>
+<p>模型数 r 时是数 token 里的 r，不是逐字母数。</p>
+<p>这是已知的 LLM 局限，不是 bug，而是架构的内在特性。</p>
+
+<h3>2. 解释了 Token 计费 💰</h3>
+
+<p>OpenAI 按 token 而非单词收费：</p>
+<p>- 英文：1 token ≈ 0.75 个单词</p>
+<p>- 中文：1 个汉字 ≈ 1 个 token（有时更多）</p>
+<p>- 代码：注释和空格也算 token，很&quot;贵&quot;</p>
+
+<pre><code>
+&quot;Hello, world!&quot; = 4 tokens: [&quot;Hello&quot;, &quot;,&quot;, &quot; world&quot;, &quot;!&quot;]
+&quot;你好世界&quot; = 4 tokens: [&quot;你&quot;,&quot;好&quot;,&quot;世&quot;,&quot;界&quot;]（每个汉字一个）
+</code></pre>
+
+<h3>3. 解释了 Context Window 的实际限制 📏</h3>
+
+<p>GPT-4 的 128K context window 是 token 数，不是字数。</p>
+<p>如果你的提示词里中文很多，等效&quot;容量&quot;就比英文少。</p>
+
+<hr/>
+
+<h2>代码片段 / Code Snippet</h2>
+
+<pre><code>
+# 用 tiktoken 查看 GPT 系列模型如何分词
+# pip install tiktoken
+import tiktoken
+
+# Load GPT-4&#x27;s tokenizer
+enc = tiktoken.encoding_for_model(&quot;gpt-4&quot;)
+
+# Encode a string into token IDs
+tokens = enc.encode(&quot;tokenization is fascinating&quot;)
+print(tokens)
+# Output: [4037, 2065, 374, 27387] (actual IDs may vary)
+
+# Decode back
+decoded = [enc.decode([t]) for t in tokens]
+print(decoded)
+# Output: [&#x27;token&#x27;, &#x27;ization&#x27;, &#x27; is&#x27;, &#x27; fascinating&#x27;]
+# Notice: &quot;tokenization&quot; is split into 2 tokens!
+
+# Count tokens in a prompt
+text = &quot;strawberry&quot;
+count = len(enc.encode(text))
+print(f&quot;&#x27;{text}&#x27; = {count} token(s)&quot;)
+# Output: &#x27;strawberry&#x27; = 1 token(s)
+# 所以 GPT-4 看 &quot;strawberry&quot; 是 1 整个 token，
+# 难怪数不出来里面有 3 个 r！
+</code></pre>
+
+<hr/>
+
+<h2>实际应用 / Applications</h2>
+
+<p>| 场景 Use Case | Tokenization 的影响 Impact |</p>
+<p>|-------------|--------------------------|</p>
+<p>| Prompt Engineering | 压缩 token 数 → 降低成本、扩大 context 空间 |</p>
+<p>| RAG 系统 | Chunking 时要按 token 数切，不按字符数切 |</p>
+<p>| 微调 Fine-tuning | 训练数据的 token 分布影响模型性能 |</p>
+<p>| 多语言支持 | 不同语言的 token 效率差异很大（英文 &gt; 中文 &gt; 某些小语种）|</p>
+
+<hr/>
+
+<h2>有趣彩蛋 / Fun Fact</h2>
+
+<p>GPT-4 的词汇表有 ~100,256 个 token（cl100k_base encoding）。</p>
+<p>其中包括：整个英文单词、代码关键词，甚至 <code> Python</code>（带前置空格）和 <code>Python</code> 是<strong>不同的 token</strong>！</p>
+
+<p>空格有时候是 token 的一部分，这就是为什么 prompt 里的格式细节可能影响输出——模型在 token 层面感知到了差异。</p>
+
+<hr/>
+
+<p><em>Day 4 / 100 — AI 基础系列 AI Foundations</em></p>
+<p><em>昨天 Day 3：AI News Roundup | 明天 Day 5：Embeddings — 语义的数学表达</em></p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-03-16</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-16</guid>
+      <pubDate>Mon, 16 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 Day 3 / System Design Day 3</h2>
+<p><strong>HTTP/HTTPS &amp; REST APIs</strong></p>
+<p><em>Category: Fundamentals | Difficulty: Beginner | Phase: Foundation</em></p>
+
+<hr/>
+
+<h2>想象你在设计... / Imagine You&#x27;re Building...</h2>
+
+<p>想象你是一家餐厅的服务员。客人（浏览器）坐下来，告诉你他想要什么（HTTP请求），你去厨房（服务器）取回食物，然后送回来（HTTP响应）。这就是HTTP的本质——一种双方约定好的&quot;点餐协议&quot;。</p>
+
+<p>Imagine you&#x27;re a waiter at a restaurant. The customer (browser) tells you what they want (HTTP request), you go to the kitchen (server), and bring back the food (HTTP response). That&#x27;s HTTP in a nutshell — a standardized &quot;ordering protocol&quot; both sides agree on.</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+  CLIENT (Browser/App)
+        │
+        │  HTTP Request
+        │  GET /api/users/123
+        │  Headers: {Authorization: &quot;Bearer token...&quot;}
+        ▼
+  ┌─────────────────────┐
+  │    LOAD BALANCER     │
+  │  (distributes load)  │
+  └──────┬──────┬────────┘
+         │      │
+         ▼      ▼
+  ┌──────────┐ ┌──────────┐
+  │ Server 1 │ │ Server 2 │   ← Stateless REST servers
+  └──────┬───┘ └──────┬───┘
+         │             │
+         └──────┬──────┘
+                ▼
+        ┌───────────────┐
+        │   DATABASE    │
+        │  (source of   │
+        │    truth)     │
+        └───────────────┘
+                │
+        HTTP Response
+        200 OK
+        {&quot;id&quot;: 123, &quot;name&quot;: &quot;Alice&quot;}
+        │
+        ▼
+  CLIENT receives data
+</code></pre>
+
+<hr/>
+
+<h2>HTTP vs HTTPS — 核心区别 / Core Difference</h2>
+
+<p><strong>HTTP</strong> — HyperText Transfer Protocol</p>
+<p>- 明文传输，数据可被中间人截获</p>
+<p>- Plaintext transmission; data can be intercepted</p>
+
+<p><strong>HTTPS</strong> — HTTP + TLS/SSL 加密</p>
+<p>- 所有数据加密传输，第三方无法读取内容</p>
+<p>- All data encrypted; third parties can&#x27;t read the content</p>
+<p>- 通过证书验证服务器身份（你真的是在和 google.com 说话吗？）</p>
+<p>- Certificate verifies server identity (are you really talking to google.com?)</p>
+
+<pre><code>
+HTTP:   你的密码 → [网络] → 服务器       ← 路由器能看到！
+HTTPS:  你的密码 → [加密] → [网络] → [解密] → 服务器  ← 中间人只看到乱码
+</code></pre>
+
+<hr/>
+
+<h2>REST API — 六个约束 / Six Constraints</h2>
+
+<p>REST (Representational State Transfer) 不是技术，是一套设计风格：</p>
+
+<p>1. <strong>Stateless（无状态）</strong> — 服务器不记住你。每个请求自带所有信息。</p>
+<p>Server doesn&#x27;t remember you. Each request carries all needed info.</p>
+
+<p>2. <strong>Client-Server（客户端-服务器分离）</strong> — 前端和后端独立演化。</p>
+<p>Frontend and backend evolve independently.</p>
+
+<p>3. <strong>Cacheable（可缓存）</strong> — 响应可以被缓存，减少重复请求。</p>
+<p>Responses can be cached to reduce redundant requests.</p>
+
+<p>4. <strong>Uniform Interface（统一接口）</strong> — 用标准HTTP方法操作资源。</p>
+<p>Use standard HTTP verbs to manipulate resources.</p>
+
+<p>5. <strong>Layered System（分层系统）</strong> — 客户端不关心中间有几层。</p>
+<p>Client doesn&#x27;t care how many layers exist in between.</p>
+
+<p>6. <strong>Code on Demand (Optional)</strong> — 服务器可返回可执行代码（如JS）。</p>
+<p>Server can return executable code (e.g., JavaScript).</p>
+
+<hr/>
+
+<h2>HTTP 方法 CRUD 对应关系 / HTTP Methods → CRUD</h2>
+
+<pre><code>
+HTTP Method    CRUD Operation    Example
+──────────────────────────────────────────────────
+GET            Read              GET /users/123
+POST           Create            POST /users  {body}
+PUT            Replace (全量)    PUT /users/123  {full body}
+PATCH          Update (部分)     PATCH /users/123 {partial}
+DELETE         Delete            DELETE /users/123
+</code></pre>
+
+<p><strong>状态码速查 / Status Code Cheat Sheet:</strong></p>
+<pre><code>
+2xx  ✅  成功 / Success
+  200 OK           — 请求成功
+  201 Created      — 资源已创建
+  204 No Content   — 成功但无返回体
+
+3xx  ↩️  重定向 / Redirect
+  301 Moved Permanently  — 永久跳转
+  304 Not Modified       — 用缓存
+
+4xx  ❌  客户端错误 / Client Error
+  400 Bad Request    — 你的请求有问题
+  401 Unauthorized   — 没登录
+  403 Forbidden      — 登录了但没权限
+  404 Not Found      — 资源不存在
+  429 Too Many Reqs  — 限流了
+
+5xx  💥  服务器错误 / Server Error
+  500 Internal Server Error — 服务器崩了
+  503 Service Unavailable   — 服务不可用
+</code></pre>
+
+<hr/>
+
+<h2>为什么这样设计？/ Why This Design?</h2>
+
+<p><strong>为什么REST选择无状态（Stateless）？</strong></p>
+
+<p>如果服务器记住每个用户的状态，那扩展到100台服务器时，你必须确保每次请求都打到同一台机器（叫做&quot;粘性会话&quot;sticky session）。这非常麻烦。</p>
+
+<p>无状态的好处：任何服务器都能处理任何请求，水平扩展极其简单。</p>
+
+<p>If servers remembered user state, scaling to 100 servers would require routing each user to the same server every time (&quot;sticky sessions&quot;) — a maintenance nightmare. Stateless = any server can handle any request = horizontal scaling is trivial.</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Don&#x27;t Fall Into This Trap</h2>
+
+<p><strong>坑 1: 在GET请求中修改数据</strong></p>
+<pre><code>
+❌  GET /deleteUser?id=123    # 语义错误，GET应该是只读的
+✅  DELETE /users/123
+</code></pre>
+
+<p><strong>坑 2: 用动词命名资源（URL应该是名词）</strong></p>
+<pre><code>
+❌  POST /createUser
+❌  GET  /getUserById?id=123
+✅  POST /users
+✅  GET  /users/123
+</code></pre>
+
+<p><strong>坑 3: 忘记区分401和403</strong></p>
+<pre><code>
+401 Unauthorized → &quot;你是谁？请先登录&quot; (Who are you? Please log in)
+403 Forbidden    → &quot;我知道你是谁，但你没权限&quot; (I know who you are, but you can&#x27;t)
+</code></pre>
+
+<p><strong>坑 4: 滥用200 OK返回错误信息</strong></p>
+<pre><code>
+❌  200 OK  {&quot;error&quot;: &quot;User not found&quot;}   # 前端要额外解析body判断成功失败
+✅  404 Not Found  {&quot;message&quot;: &quot;User not found&quot;}
+</code></pre>
+
+<hr/>
+
+<h2>与昨天的联系 / Connection to Day 2</h2>
+
+<p>昨天我们学了DNS和TCP/IP。现在你明白了完整链路：</p>
+
+<p>1. 你在浏览器输入 <code>https://api.example.com/users</code></p>
+<p>2. <strong>DNS</strong> 解析域名 → IP地址</p>
+<p>3. <strong>TCP</strong> 建立连接（三次握手）</p>
+<p>4. <strong>TLS</strong> 握手，建立加密通道（HTTPS）</p>
+<p>5. <strong>HTTP</strong> 发送请求，服务器返回响应</p>
+<p>6. 浏览器渲染数据</p>
+
+<p>Yesterday we covered DNS and TCP/IP. Now you see the full picture: DNS → TCP → TLS → HTTP → response. Each layer builds on the one before it.</p>
+
+<hr/>
+
+<p><em>Day 3 | 系统设计基础系列 | 明天：数据库基础</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 Day 3 / Algorithms Day 3</h2>
+<p><strong>#1 Two Sum (Easy) — Arrays &amp; Hashing</strong></p>
+<p>🔗 https://leetcode.com/problems/two-sum/</p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象你在一家超市，口袋里有 $11，你想找到两件商品，价格加起来正好等于 $11。</p>
+
+<p>笨方法：把每件商品和其他所有商品逐一配对比较 — 效率太低了 O(n²)。</p>
+
+<p>聪明方法：每次拿起一件商品（价格 x），立刻检查你的&quot;已看过价格&quot;笔记本里有没有 <code>11 - x</code>。有就找到了！这就是哈希表的思路。</p>
+
+<p>Imagine you&#x27;re in a supermarket with $11 and want two items that add up to exactly $11. Brute force: compare every pair. Smart way: for each item (price x), instantly check if <code>11 - x</code> is already in your &quot;seen prices&quot; notebook. That&#x27;s the hash map approach.</p>
+
+<hr/>
+
+<h2>题目 / Problem Statement</h2>
+
+<p><strong>中文：</strong> 给定一个整数数组 <code>nums</code> 和一个目标值 <code>target</code>，找出数组中和为 <code>target</code> 的两个数的<strong>下标</strong>。假设每道题恰好只有一个答案，且同一个元素不能使用两次。</p>
+
+<p><strong>English:</strong> Given an array of integers <code>nums</code> and an integer <code>target</code>, return the indices of the two numbers that add up to <code>target</code>. You may assume exactly one solution exists, and you may not use the same element twice.</p>
+
+<pre><code>
+Input:  nums = [2, 7, 11, 15], target = 9
+Output: [0, 1]   (because nums[0] + nums[1] = 2 + 7 = 9)
+</code></pre>
+
+<hr/>
+
+<h2>逐步思路 / Step-by-Step Walkthrough</h2>
+
+<h3>方法1：暴力 O(n²) — 先理解，别用它</h3>
+
+<pre><code>
+For i = 0 (num = 2):
+  For j = 1 (num = 7):  2 + 7 = 9 ✅ → return [0, 1]
+</code></pre>
+
+<h3>方法2：哈希表 O(n) — 这才是正解</h3>
+
+<p>核心思路：遍历时，对每个数 <code>num</code>，我们不是找&quot;谁加上 num 等于 target&quot;，而是找&quot;target - num 在不在我们之前见过的数里&quot;。</p>
+
+<p><strong>具体示例追踪：</strong></p>
+<pre><code>
+nums = [2, 7, 11, 15], target = 9
+seen = {}  (空字典)
+
+i=0, num=2:
+  complement = 9 - 2 = 7
+  7 in seen? → No (seen is empty)
+  → 把 2 存入 seen: seen = {2: 0}
+
+i=1, num=7:
+  complement = 9 - 7 = 2
+  2 in seen? → Yes! seen[2] = 0
+  → 返回 [seen[2], i] = [0, 1] ✅
+</code></pre>
+
+<p><strong>再来一个不那么直接的例子：</strong></p>
+<pre><code>
+nums = [3, 2, 4], target = 6
+seen = {}
+
+i=0, num=3:
+  complement = 6 - 3 = 3
+  3 in seen? → No
+  seen = {3: 0}
+
+i=1, num=2:
+  complement = 6 - 2 = 4
+  4 in seen? → No
+  seen = {3: 0, 2: 1}
+
+i=2, num=4:
+  complement = 6 - 4 = 2
+  2 in seen? → Yes! seen[2] = 1
+  → 返回 [seen[2], i] = [1, 2] ✅
+  (nums[1] + nums[2] = 2 + 4 = 6 ✓)
+</code></pre>
+
+<hr/>
+
+<h2>Python 解法 / Python Solution</h2>
+
+<pre><code>
+def twoSum(nums: list[int], target: int) -&gt; list[int]:
+    # Hash map: value → index
+    # We store numbers we&#x27;ve already visited
+    seen = {}
+    
+    for i, num in enumerate(nums):
+        # What number do we NEED to complete the pair?
+        complement = target - num
+        
+        # Check if that number is already in our map
+        if complement in seen:
+            # Found it! Return both indices
+            return [seen[complement], i]
+        
+        # Haven&#x27;t found a pair yet; record this number and its index
+        seen[num] = i
+    
+    # Problem guarantees a solution exists, so we won&#x27;t reach here
+    return []
+
+
+# Test cases
+print(twoSum([2, 7, 11, 15], 9))   # [0, 1]
+print(twoSum([3, 2, 4], 6))         # [1, 2]
+print(twoSum([3, 3], 6))            # [0, 1]
+</code></pre>
+
+<hr/>
+
+<h2>复杂度分析 / Complexity Analysis</h2>
+
+<pre><code>
+时间复杂度 Time:  O(n)
+  → 只遍历数组一次。哈希表查找是 O(1) 平均。
+
+空间复杂度 Space: O(n)
+  → 最坏情况下，哈希表存储 n-1 个元素（最后一对才匹配）。
+
+vs. 暴力 Brute Force:
+  Time: O(n²)  — 双重循环
+  Space: O(1)  — 不用额外空间
+</code></pre>
+
+<p><strong>权衡：</strong> 用空间换时间。这通常是对的 — 内存便宜，时间贵。</p>
+
+<p><strong>Trade-off:</strong> We trade space for time. Usually the right call — memory is cheap, user time is not.</p>
+
+<hr/>
+
+<h2>边界情况 / Edge Cases</h2>
+
+<pre><code>
+# 两个相同的数字
+twoSum([3, 3], 6)   # → [0, 1] ✅
+# 关键：先检查 complement，再存入 seen
+# 这样避免同一元素用两次
+
+# 负数
+twoSum([-1, -2, -3, -4, -5], -8)   # → [2, 4] (nums[2]+nums[4] = -3+-5)
+
+# 只有两个元素
+twoSum([1, 9], 10)   # → [0, 1]
+</code></pre>
+
+<hr/>
+
+<h2>举一反三 / Pattern Recognition</h2>
+
+<p>掌握了&quot;边遍历边建哈希表&quot;这个模式，你可以解决：</p>
+
+<p>- <strong>Two Sum II</strong> (sorted array) — 用双指针，O(1) 空间</p>
+<p>- <strong>Two Sum III</strong> (data structure) — 设计一个支持 add/find 的类</p>
+<p>- <strong>3Sum</strong> (#15) — 固定一个数，对剩余用双指针</p>
+<p>- <strong>4Sum</strong> (#18) — 嵌套一层再用双指针</p>
+<p>- <strong>Subarray Sum Equals K</strong> (#560) — 前缀和 + 哈希表</p>
+
+<p><strong>核心模式：</strong> &quot;我需要找 X，先问问我见过 X 吗？没见过，就记下现在这个。&quot;</p>
+
+<p><strong>The pattern:</strong> &quot;I need X. Have I seen X? No? Then record what I have now.&quot;</p>
+
+<hr/>
+
+<p><em>Day 3 | 数组与哈希系列 | 昨天：Valid Anagram | 明天：Contains Duplicate</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 Day 3 / Soft Skills Day 3</h2>
+<p><strong>Conflict Resolution — 冲突解决</strong></p>
+
+<p><strong>问题 / Question:</strong></p>
+<p>&gt; &quot;Tell me about a time you disagreed with your manager or a senior engineer. How did you handle it?&quot;</p>
+<p>&gt; &quot;讲一个你与你的经理或高级工程师意见相左的经历。你是怎么处理的？&quot;</p>
+
+<hr/>
+
+<h2>为什么这很重要 / Why This Matters</h2>
+
+<p>这道题考察的不是&quot;谁对谁错&quot;，而是：</p>
+
+<p>1. <strong>你有没有主见？</strong> 没想法的工程师不能独立工作</p>
+<p>2. <strong>你有没有成熟度？</strong> 能否在坚持立场和尊重经验之间取得平衡</p>
+<p>3. <strong>你能不能影响他人？</strong> 在没有直接权力的情况下推动决策</p>
+
+<p>This question isn&#x27;t about who was right. It probes:</p>
+<p>1. Do you have independent judgment?</p>
+<p>2. Are you mature enough to push back respectfully?</p>
+<p>3. Can you influence without authority?</p>
+
+<p>At senior/staff level, this is a daily reality. The inability to navigate technical disagreements is a major signal that someone isn&#x27;t ready to operate at the next level.</p>
+
+<hr/>
+
+<h2>STAR 框架拆解 / STAR Framework Breakdown</h2>
+
+<pre><code>
+S - Situation  (情境)  ← 快速设置场景，30秒内
+T - Task       (任务)  ← 你的目标/责任是什么
+A - Action     (行动)  ← 这是重点，用70%的时间
+R - Result     (结果)  ← 量化 + 反思
+</code></pre>
+
+<hr/>
+
+<h2>❌ 糟糕的回答 / Bad Approach</h2>
+
+<p>&gt; &quot;我们在选数据库。我觉得应该用 PostgreSQL，我的经理说用 MongoDB。我给他看了对比文章，最后他同意了我的观点。&quot;</p>
+
+<p><strong>为什么不好：</strong></p>
+<p>- 没有上下文（为什么要做这个选择？）</p>
+<p>- 没有展示思考过程（你怎么决定提出来的？）</p>
+<p>- &quot;给他看文章&quot;太被动 — 没有体现你如何主动建立共识</p>
+<p>- 听起来像是&quot;我赢了，他输了&quot; — 没有合作感</p>
+
+<hr/>
+
+<h2>✅ 好的回答 / Good Approach</h2>
+
+<p>&gt; &quot;我们要为用户分析平台选择数据存储方案。我的Tech Lead倾向于继续用我们熟悉的MySQL，因为团队对它最熟悉，迁移成本低。我的判断是，我们的查询模式——大量聚合、时间序列、不规则的事件结构——更适合列式存储，比如ClickHouse。</p>
+<p>&gt;</p>
+<p>&gt; 我没有直接开会说&#x27;你错了&#x27;。我先花了两天做了一个小型基准测试：用两套方案各跑了我们最慢的5个查询，把性能数据整理成表格。同时我也整理了迁移的风险点和成本估算。</p>
+<p>&gt;</p>
+<p>&gt; 然后我约了Tech Lead 1-on-1，先说：&#x27;我想和你讨论一下数据库选型，我做了一些数据，想听听你的想法。&#x27;我们发现他的核心顾虑是迁移风险，而不是性能。于是我们达成了折中方案：新的分析pipeline用ClickHouse，老的业务数据留在MySQL，不做迁移。</p>
+<p>&gt;</p>
+<p>&gt; 最终上线后，分析查询从平均 8 秒降到 0.3 秒，用户投诉减少了 80%。而且我和Tech Lead的关系没有受损——他后来还把我当成这个领域的go-to person。&quot;</p>
+
+<p><strong>为什么好：</strong></p>
+<p>- 清楚的商业背景</p>
+<p>- 展示了&quot;先做数据再谈分歧&quot;的成熟判断</p>
+<p>- 用1-on-1而不是公开会议处理分歧（情商高）</p>
+<p>- 承认对方顾虑有道理，找到折中</p>
+<p>- 量化结果</p>
+<p>- 关系反而变好了</p>
+
+<hr/>
+
+<h2>场景模板 / Scenario Template</h2>
+
+<p>用这个框架构建你自己的故事：</p>
+
+<pre><code>
+情境：我们在 [项目] 做 [技术决策]
+分歧：我的 [经理/Tech Lead] 倾向于 [方案A]
+      我的判断是 [方案B] 更合适，因为 [数据/理由]
+行动：
+  1. 我先 [做了什么验证工作]，而不是直接开会争论
+  2. 我通过 [1-on-1/小型演示/数据报告] 分享我的发现
+  3. 我先理解了对方的核心顾虑是 [XXX]
+  4. 我们达成了 [折中方案/对方被说服/我更新了我的判断]
+结果：[量化结果] + [关系/团队影响]
+</code></pre>
+
+<hr/>
+
+<h2>Senior/Staff 级别的加分点 / Senior/Staff Level Tips</h2>
+
+<p><strong>1. 展示你知道何时该放手 / Show you know when to let go</strong></p>
+<p>&gt; &quot;我做了充分的论证，但最终决策权在他。我接受了这个决定，全力支持执行。六个月后，我们确实遇到了我预料的问题，但那时我们一起复盘，而不是我说&#x27;我早就说过了&#x27;。&quot;</p>
+
+<p><strong>2. 主动建立共识而非赢得辩论 / Build alignment, don&#x27;t win debates</strong></p>
+<p>Staff工程师知道：即使你是对的，如果你让别人&quot;输了&quot;，你长期付出的代价更大。</p>
+
+<p>Staff engineers know: even if you&#x27;re right, making someone else &quot;lose&quot; costs you more in the long run.</p>
+
+<p><strong>3. 把技术分歧和人际关系分开 / Separate technical disagreement from personal conflict</strong></p>
+<p>&gt; &quot;我特别注意在表达不同意见时，聚焦在数据和影响上，而不是质疑他的判断能力。&quot;</p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<pre><code>
+✅ DO:
+  - 先做功课（数据、原型、基准测试）再提出异议
+  - 用1-on-1，不要在大会议上让人难堪
+  - 理解对方顾虑，找折中点
+  - 量化你的结果
+  - 即使不同意，也要优雅地接受最终决策
+
+❌ DON&#x27;T:
+  - &quot;我最终说服了他&quot; 式的叙述（听起来自大）
+  - 描述一个你完全错了的故事（除非重点是你从中学到了什么）
+  - 没有结果（&quot;我们还在讨论…&quot;）
+  - 批评你的前经理（面试官会想：他会不会也这么说我？）
+</code></pre>
+
+<hr/>
+
+<p><em>Day 3 | 软技能系列 | 昨天：影响力（无直接权力）| 明天：处理模糊需求</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 Day 3 / Frontend Day 3</h2>
+<p><strong>CSS Grid — Two-Dimensional Layouts / 二维布局</strong></p>
+<p><em>Week 1 | CSS Fundamentals</em></p>
+
+<hr/>
+
+<h2>猜猜这段代码输出什么？/ What Does This Layout Look Like?</h2>
+
+<pre><code>
+&lt;div class=&quot;grid&quot;&gt;
+  &lt;div&gt;A&lt;/div&gt;
+  &lt;div&gt;B&lt;/div&gt;
+  &lt;div&gt;C&lt;/div&gt;
+  &lt;div&gt;D&lt;/div&gt;
+  &lt;div&gt;E&lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+
+<pre><code>
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-rows: 100px 100px;
+  gap: 10px;
+}
+</code></pre>
+
+<p><strong>猜猜结果 / Guess the output:</strong></p>
+
+<pre><code>
+┌────────┬───────────────┬────────┐
+│   A    │       B       │   C    │
+│ (1fr)  │     (2fr)     │ (1fr)  │
+│        │               │        │  ← row 1: 100px tall
+│────────┼───────────────┼────────│
+│   D    │       E       │(empty) │
+│ (1fr)  │     (2fr)     │        │  ← row 2: 100px tall
+└────────┴───────────────┴────────┘
+
+Total 4fr per row → A=25%, B=50%, C=25%
+</code></pre>
+
+<p>✅ <strong>答案：</strong> 3列布局，比例 1:2:1。B 的宽度是 A 和 C 的两倍。第五个元素 E 占第二行第二格，第三格为空。</p>
+
+<hr/>
+
+<h2>Grid vs Flexbox — 一句话记住 / One-Liner to Remember</h2>
+
+<pre><code>
+Flexbox = 一维  (一行 or 一列)     Think: 导航栏, 按钮组
+Grid    = 二维  (行 AND 列同时)    Think: 页面布局, 卡片网格
+</code></pre>
+
+<p>昨天（Day 2）我们学了 Flexbox。今天 Grid 是它的二维升级版。</p>
+
+<hr/>
+
+<h2>核心概念图解 / Core Concepts Illustrated</h2>
+
+<pre><code>
+display: grid;
+grid-template-columns: 1fr 1fr 1fr;  ← 3 equal columns
+grid-template-rows: auto auto;        ← 2 rows, height = content
+
+Grid Container (父元素)
+┌──────────┬──────────┬──────────┐
+│  cell    │  cell    │  cell    │ ← row 1
+│  [0,0]   │  [0,1]   │  [0,2]  │
+├──────────┼──────────┼──────────┤
+│  cell    │  cell    │  cell    │ ← row 2
+│  [1,0]   │  [1,1]   │  [1,2]  │
+└──────────┴──────────┴──────────┘
+     ↑            ↑           ↑
+   col 1        col 2       col 3
+</code></pre>
+
+<hr/>
+
+<h2>让子元素跨格 / Spanning Multiple Cells</h2>
+
+<pre><code>
+/* 这个元素跨越2列 */
+.item-a {
+  grid-column: 1 / 3;   /* start at line 1, end at line 3 */
+  /* shorthand: grid-column: span 2; */
+}
+
+/* 这个元素跨越2行 */
+.item-b {
+  grid-row: 1 / 3;      /* start at line 1, end at line 3 */
+}
+</code></pre>
+
+<pre><code>
+Before span:          After .item-a spans 2 cols:
+┌───┬───┬───┐         ┌─────────┬───┐
+│ A │ B │ C │         │    A    │ C │   ← A now takes col 1+2
+├───┼───┼───┤         ├───┬─────┴───┤
+│ D │ E │ F │         │ D │ E   │ F │
+└───┴───┴───┘         └───┴─────┴───┘
+</code></pre>
+
+<hr/>
+
+<h2>代码示例：经典页面布局 / Classic Page Layout</h2>
+
+<pre><code>
+.page {
+  display: grid;
+  grid-template-areas:
+    &quot;header  header  header&quot;
+    &quot;sidebar main    main  &quot;
+    &quot;footer  footer  footer&quot;;
+  grid-template-columns: 200px 1fr 1fr;
+  grid-template-rows: 60px 1fr 40px;
+  min-height: 100vh;
+  gap: 8px;
+}
+
+.header  { grid-area: header; }
+.sidebar { grid-area: sidebar; }
+.main    { grid-area: main; }
+.footer  { grid-area: footer; }
+</code></pre>
+
+<pre><code>
+Visual Result:
+┌──────────────────────────────────┐
+│           HEADER (full width)    │  60px
+├───────────┬──────────────────────┤
+│           │                      │
+│  SIDEBAR  │        MAIN          │  flex-grow
+│  (200px)  │      (remaining)     │
+│           │                      │
+├───────────┴──────────────────────┤
+│           FOOTER (full width)    │  40px
+└──────────────────────────────────┘
+</code></pre>
+
+<p><strong><code>grid-template-areas</code> 的魔法：</strong> 用 ASCII 艺术描述布局，可读性极强。</p>
+
+<hr/>
+
+<h2>你可能不知道 / You Might Not Know</h2>
+
+<h3>1. `fr` 单位只分配**剩余**空间</h3>
+
+<pre><code>
+grid-template-columns: 200px 1fr 1fr;
+</code></pre>
+
+<p>先分配固定的 200px，<strong>然后</strong> 把剩余宽度按 1:1 分给后两列。不是三等分！</p>
+
+<p><code>fr</code> only distributes <em>remaining</em> space after fixed sizes are allocated.</p>
+
+<h3>2. `auto-fill` vs `auto-fit`</h3>
+
+<pre><code>
+/* auto-fill: 尽可能多地创建列（即使是空的） */
+grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+
+/* auto-fit: 拉伸现有列填满空间（不创建空列） */
+grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+</code></pre>
+
+<p>这是响应式布局的神器——不写任何 media query 就能自适应！</p>
+
+<p>This is the secret to responsive grid layouts without media queries.</p>
+
+<h3>3. Grid 也能嵌套</h3>
+
+<pre><code>
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.card {
+  display: grid;  /* nested grid! */
+  grid-template-rows: auto 1fr auto;  /* image | content | button */
+}
+</code></pre>
+
+<hr/>
+
+<h2>Mini Challenge / 小挑战</h2>
+
+<p>用 CSS Grid 创建一个响应式卡片布局，要求：</p>
+<p>- 大屏显示4列，中等屏幕3列，小屏2列</p>
+<p>- <strong>只用一行 CSS，不用任何 media query</strong></p>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;提示 / Hint&lt;/summary&gt;</p>
+
+<pre><code>
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+</code></pre>
+
+<p>当容器宽度变化时，<code>minmax(200px, 1fr)</code> 会自动计算可以放多少列！</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>Flexbox vs Grid 决策树 / Decision Tree</h2>
+
+<pre><code>
+你需要对齐内容吗？
+│
+├─ 只在一个方向（行 OR 列）→ 用 Flexbox
+│   例：导航栏、按钮组、居中一个元素
+│
+└─ 同时在两个方向（行 AND 列）→ 用 Grid
+    例：页面整体布局、图片画廊、仪表盘
+</code></pre>
+
+<hr/>
+
+<p><em>Day 3 | CSS 布局系列 | 昨天：Flexbox | 明天：响应式设计 &amp; Media Queries</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI Day 3 — News Roundup / AI 新闻速递</h2>
+<p><em>2026年3月第三周 | March 2026, Week 3</em></p>
+
+<p>&gt; ⚠️ <strong>注意 / Note:</strong> AI 领域动态极快。以下新闻基于截至本文生成时的公开报道，具体数字与细节以原始来源为准。</p>
+
+<hr/>
+
+<h2>📰 Story 1: Meta 的 &quot;Avocado&quot; 模型推迟发布</h2>
+
+<p>根据报道，Meta 的下一代 AI 大模型（内部代号 &quot;Avocado&quot;）被推迟至至少 2026 年 5 月，原因是性能尚未达到 Google 等竞争对手的水平。</p>
+
+<p><strong>背景：</strong> Meta 此前招募了 Scale AI CEO Alexandr Wang，并投入数十亿美元试图追赶。Avocado 将是这一系列努力的首个重大发布。</p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+
+<p>Meta 的 AI 布局直接影响整个生态——LLaMA 系列是很多开源项目的基础。如果 Avocado 继续落后于 GPT-4o 级别的模型，开源社区的&quot;平替方案&quot;质量也会受影响。对前端/全栈工程师来说：Meta AI 功能的集成（Facebook、Instagram、WhatsApp）会滞后，这可能影响你所在产品的 AI feature timeline。</p>
+
+<hr/>
+
+<h2>📰 Story 2: Palantir 的 Maven Smart System — AI 军事应用的争议</h2>
+
+<p>Palantir 在其 AIPCon 会议上展示了 Maven Smart System，这是一个 AI 驱动的军事目标识别系统。演示视频显示，用户可以用&quot;左键点击、右键点击、左键点击&quot;的方式锁定打击目标，引发了广泛争议。</p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+
+<p>这不只是道德话题——它是工程师职业生涯中越来越难以回避的现实问题。AI 的军事应用正在快速落地，而关于&quot;工程师是否应该为武器系统写代码&quot;的讨论也在硅谷持续升温（参考 Google 的 Project Maven 员工抗议事件）。面试中，你可能会被问到对这类项目的看法。答案没有对错，但你需要有自己的立场。</p>
+
+<hr/>
+
+<h2>📰 Story 3: BuzzFeed 的 AI 教训 — 内容农场的警示</h2>
+
+<p>BuzzFeed 2025 年亏损达 $5730 万，股价跌至 $0.70，部分原因是大量使用 AI 生成文章和测验内容。尽管如此，CEO Jonah Peretti 仍表示将推出&quot;新的 AI 应用&quot;。</p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+
+<p>这是一个&quot;AI 用错地方&quot;的典型案例。内容农场式的 AI 应用（用 AI 批量生产无差异化内容）正在被市场惩罚。读者不傻，算法（Google SEO、推荐算法）也越来越能识别低质量 AI 内容。</p>
+
+<p><strong>工程师视角：</strong> 如果你在构建 AI 内容工具，问题不是&quot;能不能生成&quot;，而是&quot;用户为什么要看这个而不是其他的&quot;。差异化 &gt; 数量。</p>
+
+<hr/>
+
+<h2>📰 Story 4: Amazon Alexa Plus 新增&quot;Sassy&quot;个性模式</h2>
+
+<p>Amazon 为 Alexa Plus 推出了新的&quot;Sassy&quot;个性风格，特点是&quot;不加滤镜的个性、机智的讽刺、以及偶尔被屏蔽的脏话&quot;。该功能仅限成人，需要额外身份验证。</p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+
+<p>这其实是一个有趣的 UX / AI 产品设计信号——用户对 AI 助手的&quot;人格化&quot;需求越来越强。语音 AI 的个性化是下一个竞争维度（而不只是&quot;准确性&quot;）。</p>
+
+<p><strong>技术角度：</strong> 实现&quot;可切换人格&quot;需要在 prompt 层面和 safety filter 层面同时设计。&quot;偶尔允许脏话&quot;这个边界的实现本身就是个有趣的工程问题。</p>
+
+<hr/>
+
+<h2>📰 Story 5: Meta 收购 Moltbook — AI 代理的&quot;社交网络&quot;</h2>
+
+<p>Meta 近期收购了 Moltbook，一个&quot;AI 代理社交网络&quot;平台。收购后，平台更新了服务条款：用户（不是 Meta）对其 AI 代理的所有行为负责，无论行为是否有意为之、是否自主发生。</p>
+
+<p><strong>为什么你应该关心 / Why You Should Care:</strong></p>
+
+<p>这是 AI 代理（Agent）时代的法律雏形。谁对 AI Agent 的行为负责？目前答案是&quot;你，用户&quot;。这对于正在构建 AI Agent 产品的工程师来说是重要信号：你需要设计审计日志、权限边界、和&quot;人类在回路&quot;（human-in-the-loop）机制，不只是因为产品好，而是因为法律会要求你这么做。</p>
+
+<hr/>
+
+<h2>本周 AI 关键词 / This Week&#x27;s AI Keywords</h2>
+
+<pre><code>
+Agentic AI (代理式AI)    — AI 不只回答问题，而是自主行动
+Human-in-the-loop (HITL) — 关键决策需要人类确认
+AI Liability (AI责任归属) — 谁为 AI 的行为负责？
+Model Delay (模型推迟)   — 发布时间表 ≠ 实际发布时间
+AI + Military (AI军事化)  — 工程伦理的新战场
+</code></pre>
+
+<hr/>
+
+<p><em>Day 3 | AI 新闻系列 | 昨天：Transformer 工作原理 | 明天：RAG（检索增强生成）</em></p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-03-15</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-15</guid>
+      <pubDate>Sun, 15 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 Day 2 / System Design Day 2</h2>
+<p><strong>Topic: DNS, IP, and TCP/UDP — 互联网的&quot;电话本&quot;与&quot;快递公司&quot;</strong></p>
+
+<hr/>
+
+<h2>场景引入 / Scenario</h2>
+
+<p>想象你在设计一个全球用户访问的网站。你写了 <code>https://myblog.com</code>，浏览器是怎么找到你服务器的？从你按下 Enter 到页面出现，背后发生了什么魔法？</p>
+
+<p><em>Imagine you&#x27;re building a website for global users. You type <code>https://myblog.com</code> — how does your browser find your server? What magic happens between pressing Enter and seeing the page?</em></p>
+
+<hr/>
+
+<h2>DNS：互联网的电话本 / DNS: The Internet&#x27;s Phone Book</h2>
+
+<p>人类记得 <code>google.com</code>，机器只认识 <code>142.250.80.46</code>。DNS（Domain Name System）就是把&quot;人话&quot;翻译成&quot;机器话&quot;的翻译官。</p>
+
+<p><em>Humans remember <code>google.com</code>, machines only understand <code>142.250.80.46</code>. DNS translates human-readable names into machine-readable IPs.</em></p>
+
+<h3>DNS 查询流程 / DNS Resolution Flow</h3>
+
+<pre><code>
+你的浏览器
+    │
+    ▼
+[1] 本地缓存 / Local Cache
+    │  (找到了? 直接返回 / Found? Return immediately)
+    │  (没找到? 继续 / Not found? Continue)
+    ▼
+[2] 操作系统 hosts 文件 / OS hosts file
+    │  (/etc/hosts on Linux/Mac)
+    ▼
+[3] 递归解析器 / Recursive Resolver
+    │  (通常是你的 ISP 或 8.8.8.8)
+    │  (Usually your ISP or 8.8.8.8)
+    ▼
+[4] 根域名服务器 / Root Nameserver
+    │  (&quot;我不知道 myblog.com，但 .com 服务器知道&quot;)
+    │  (&quot;I don&#x27;t know myblog.com, but .com nameserver does&quot;)
+    ▼
+[5] TLD 服务器 / TLD Nameserver (.com)
+    │  (&quot;myblog.com 的权威服务器在这里&quot;)
+    │  (&quot;myblog.com&#x27;s authoritative server is here&quot;)
+    ▼
+[6] 权威 DNS 服务器 / Authoritative Nameserver
+    │  &quot;myblog.com → 203.0.113.42&quot;
+    ▼
+IP 地址返回给浏览器 / IP returned to browser
+</code></pre>
+
+<p><strong>真实类比 / Real-world analogy:</strong></p>
+<p>根服务器 = 全国电话总机 → TLD 服务器 = 城市区号本 → 权威服务器 = 某公司的直线</p>
+<p><em>Root server = National operator → TLD = City directory → Authoritative = Company&#x27;s direct line</em></p>
+
+<hr/>
+
+<h2>IP：你在网络上的&quot;门牌号&quot; / IP: Your Network &quot;Address&quot;</h2>
+
+<p>- <strong>IPv4</strong>: <code>203.0.113.42</code> — 32位，约43亿个地址，已经快用完了</p>
+<p>- <strong>IPv6</strong>: <code>2001:0db8:85a3::8a2e:0370:7334</code> — 128位，几乎无限</p>
+
+<p><em>IPv4 is 32-bit (~4.3 billion addresses, nearly exhausted). IPv6 is 128-bit, essentially unlimited.</em></p>
+
+<p><strong>公网 vs 私网 / Public vs Private IP:</strong></p>
+<pre><code>
+家庭网络 / Home Network:
+  你的电脑      → 192.168.1.100 (私网/Private)
+  你的手机      → 192.168.1.101 (私网/Private)
+  路由器对外    → 203.0.113.42  (公网/Public)  ← 互联网只看到这个
+                                                  ← Internet only sees this
+NAT（网络地址转换）帮你把私网地址映射到公网
+NAT (Network Address Translation) maps private to public
+</code></pre>
+
+<hr/>
+
+<h2>TCP vs UDP：快递公司 vs 广播电台</h2>
+
+<p>| 特性 / Feature | TCP | UDP |</p>
+<p>|---|---|---|</p>
+<p>| 连接方式 / Connection | 三次握手 / 3-way handshake | 无连接 / Connectionless |</p>
+<p>| 可靠性 / Reliability | ✅ 保证送达 / Guaranteed | ❌ 尽力而为 / Best-effort |</p>
+<p>| 顺序 / Order | ✅ 有序 / Ordered | ❌ 可能乱序 / May arrive out of order |</p>
+<p>| 速度 / Speed | 较慢 / Slower | 更快 / Faster |</p>
+<p>| 适用场景 / Use cases | HTTP, Email, File transfer | Video streaming, Gaming, DNS |</p>
+
+<h3>TCP 三次握手 / TCP 3-Way Handshake</h3>
+
+<pre><code>
+客户端 / Client          服务器 / Server
+     │                        │
+     │──── SYN ──────────────&gt;│  &quot;我想连接你 / I want to connect&quot;
+     │                        │
+     │&lt;─── SYN-ACK ───────────│  &quot;好的，收到 / OK, received&quot;
+     │                        │
+     │──── ACK ──────────────&gt;│  &quot;我也确认了 / Confirmed&quot;
+     │                        │
+     │══════ 连接建立 / Connection Established ══════│
+</code></pre>
+
+<p><strong>为什么需要3次？/ Why 3 handshakes?</strong></p>
+<p>2次不够——服务器无法确认客户端收到了回复。就像打电话：&quot;喂？&quot; &quot;喂，听到了吗？&quot; &quot;听到了，开始说吧。&quot;</p>
+<p><em>2 isn&#x27;t enough — the server can&#x27;t confirm the client received its reply. Like a phone call: &quot;Hello?&quot; &quot;Hello, can you hear me?&quot; &quot;Yes, go ahead.&quot;</em></p>
+
+<hr/>
+
+<h2>为什么这样设计？/ Why This Design?</h2>
+
+<p><strong>DNS 分层设计的好处 / Benefits of hierarchical DNS:</strong></p>
+<p>- <strong>可扩展性</strong>: 根服务器只有13个，但全球有数十亿个域名</p>
+<p>- <strong>缓存</strong>: 每层都可以缓存，减少重复查询</p>
+<p>- <strong>容错</strong>: 多个根服务器，一个挂了其他继续工作</p>
+
+<p><em>Scalability (13 root servers handle billions of domains via delegation), caching at every layer, and fault tolerance through redundancy.</em></p>
+
+<hr/>
+
+<h2>别踩这个坑 / Don&#x27;t Fall Into This Trap</h2>
+
+<p><strong>坑1: DNS 缓存污染面试题</strong></p>
+<p>面试问：&quot;为什么我改了 DNS 记录，但用户还是访问旧服务器？&quot;</p>
+<p>答：TTL（Time To Live）没过期。DNS 记录有缓存时间，改了之后要等 TTL 归零才会全面生效。<strong>上线前提前降低 TTL！</strong></p>
+
+<p><em>DNS cache: after changing DNS records, users still hit old servers until TTL expires. Best practice: lower TTL hours before a migration.</em></p>
+
+<p><strong>坑2: TCP 不等于安全</strong></p>
+<p>TCP 保证送达，但不加密。<code>http://</code> 用 TCP，但数据是明文。需要加密要用 TLS（即 <code>https://</code>）。</p>
+
+<p><em>TCP guarantees delivery, not security. HTTP over TCP is plaintext. TLS (HTTPS) is needed for encryption.</em></p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>1. <strong>DNS</strong> = 域名 → IP 的翻译，分层设计，有缓存</p>
+<p>2. <strong>IPv4</strong> 快用完了，<strong>IPv6</strong> 是未来</p>
+<p>3. <strong>TCP</strong> = 可靠但慢（文件、网页）；<strong>UDP</strong> = 快但不可靠（直播、游戏）</p>
+<p>4. 三次握手确保双向通信可靠建立</p>
+
+<p><em>DNS translates domains to IPs with hierarchical caching. IPv4 is nearly exhausted, IPv6 is the future. TCP = reliable but slower; UDP = fast but lossy. 3-way handshake ensures both ends can send and receive.</em></p>
+
+<hr/>
+<p><em>Day 2 of 100 | #ByteByByte | 系统设计基础系列</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 Day 2 / Algorithms Day 2</h2>
+<p><strong>#242 Valid Anagram（有效的字母异位词）— Easy | Pattern: Arrays &amp; Hashing</strong></p>
+
+<hr/>
+
+<h2>生活类比 / Real-World Analogy</h2>
+
+<p>想象你有两袋相同字母的乐高积木。不管你怎么排列，只要袋子里的积木种类和数量完全一样，就是&quot;字母异位词&quot;。我们要做的，就是<strong>数清楚每个袋子里有什么积木</strong>。</p>
+
+<p><em>Imagine two bags of Lego pieces. As long as both bags contain the exact same types and counts of pieces — no matter how they&#x27;re arranged — they&#x27;re anagrams. Our job: count the pieces in each bag and compare.</em></p>
+
+<hr/>
+
+<h2>题目 / Problem Statement</h2>
+
+<p><strong>中文:</strong> 给定两个字符串 <code>s</code> 和 <code>t</code>，判断 <code>t</code> 是否是 <code>s</code> 的字母异位词（即用完全相同的字母，重新排列而成）。</p>
+
+<p><strong>English:</strong> Given two strings <code>s</code> and <code>t</code>, return <code>true</code> if <code>t</code> is an anagram of <code>s</code>, and <code>false</code> otherwise. An anagram uses the same characters with the same frequencies.</p>
+
+<pre><code>
+Input: s = &quot;anagram&quot;, t = &quot;nagaram&quot;   → Output: True
+Input: s = &quot;rat&quot;,     t = &quot;car&quot;       → Output: False
+</code></pre>
+
+<hr/>
+
+<h2>解题思路 / Step-by-Step Walkthrough</h2>
+
+<p><strong>核心想法 / Core Idea:</strong></p>
+<p>字母异位词 = 每个字符出现的次数完全相同。</p>
+<p><em>Anagrams have identical character frequency distributions.</em></p>
+
+<p><strong>方法: 哈希表计数 / Method: Hash Map Counting</strong></p>
+
+<p>用一个字典，遍历 <code>s</code> 时 +1，遍历 <code>t</code> 时 -1。最后所有值都是 0 → 是异位词。</p>
+<p><em>Use one dictionary: +1 for each char in <code>s</code>, -1 for each char in <code>t</code>. If all values are 0 → anagram.</em></p>
+
+<h3>具体追踪 / Concrete Trace</h3>
+
+<p><code>s = &quot;anagram&quot;</code>, <code>t = &quot;nagaram&quot;</code></p>
+
+<p><strong>遍历 s (+1):</strong></p>
+<pre><code>
+&#x27;a&#x27; → count[&#x27;a&#x27;] = 1
+&#x27;n&#x27; → count[&#x27;n&#x27;] = 1
+&#x27;a&#x27; → count[&#x27;a&#x27;] = 2
+&#x27;g&#x27; → count[&#x27;g&#x27;] = 1
+&#x27;r&#x27; → count[&#x27;r&#x27;] = 1
+&#x27;a&#x27; → count[&#x27;a&#x27;] = 3
+&#x27;m&#x27; → count[&#x27;m&#x27;] = 1
+</code></pre>
+<p>状态 / State: <code>{&#x27;a&#x27;:3, &#x27;n&#x27;:1, &#x27;g&#x27;:1, &#x27;r&#x27;:1, &#x27;m&#x27;:1}</code></p>
+
+<p><strong>遍历 t (-1):</strong></p>
+<pre><code>
+&#x27;n&#x27; → count[&#x27;n&#x27;] = 0
+&#x27;a&#x27; → count[&#x27;a&#x27;] = 2
+&#x27;g&#x27; → count[&#x27;g&#x27;] = 0
+&#x27;a&#x27; → count[&#x27;a&#x27;] = 1
+&#x27;r&#x27; → count[&#x27;r&#x27;] = 0
+&#x27;a&#x27; → count[&#x27;a&#x27;] = 0
+&#x27;m&#x27; → count[&#x27;m&#x27;] = 0
+</code></pre>
+<p>状态 / State: <code>{&#x27;a&#x27;:0, &#x27;n&#x27;:0, &#x27;g&#x27;:0, &#x27;r&#x27;:0, &#x27;m&#x27;:0}</code></p>
+
+<p><strong>所有值为 0 → True ✅</strong></p>
+
+<hr/>
+
+<h2>Python 解法 / Python Solution</h2>
+
+<pre><code>
+from collections import defaultdict
+
+def isAnagram(s: str, t: str) -&gt; bool:
+    # Quick check: different lengths can&#x27;t be anagrams
+    # 长度不同直接排除
+    if len(s) != len(t):
+        return False
+    
+    # Count character frequencies
+    # 统计每个字符出现的频率
+    count = defaultdict(int)
+    
+    # +1 for every char in s
+    for char in s:
+        count[char] += 1
+    
+    # -1 for every char in t
+    for char in t:
+        count[char] -= 1
+    
+    # If all zeros, they have the same characters
+    # 所有计数为零，说明字符完全匹配
+    return all(v == 0 for v in count.values())
+
+
+# 更 Pythonic 的写法 / More Pythonic version:
+from collections import Counter
+
+def isAnagram_v2(s: str, t: str) -&gt; bool:
+    return Counter(s) == Counter(t)
+</code></pre>
+
+<hr/>
+
+<h2>复杂度分析 / Complexity Analysis</h2>
+
+<p>| | 复杂度 / Complexity | 说明 / Explanation |</p>
+<p>|---|---|---|</p>
+<p>| 时间 / Time | O(n) | n = len(s)，遍历两次 / two passes |</p>
+<p>| 空间 / Space | O(k) | k = 字符集大小，最多26个字母 / at most 26 letters |</p>
+
+<p><strong>为什么不排序？/ Why not sort?</strong></p>
+<p>排序是 O(n log n)，哈希表是 O(n)，更快。面试时提出这个比较能加分。</p>
+<p><em>Sorting is O(n log n) vs O(n) for hash map. Always worth mentioning this tradeoff in interviews.</em></p>
+
+<hr/>
+
+<h2>边界情况 / Edge Cases</h2>
+
+<pre><code>
+isAnagram(&quot;a&quot;, &quot;a&quot;)     # True  — single char match
+isAnagram(&quot;a&quot;, &quot;b&quot;)     # False — single char mismatch
+isAnagram(&quot;&quot;, &quot;&quot;)       # True  — both empty (Counter({}) == Counter({}))
+isAnagram(&quot;ab&quot;, &quot;a&quot;)    # False — length check catches this early
+isAnagram(&quot;aa&quot;, &quot;bb&quot;)   # False — same length, different chars
+</code></pre>
+
+<hr/>
+
+<h2>举一反三 / Pattern Recognition</h2>
+
+<p>这道题的核心模式：<strong>用哈希表统计频率，再比较</strong>。以下题目用同一个模式：</p>
+
+<p><em>Core pattern: <strong>use a hash map to count frequencies, then compare</strong>. Same pattern appears in:</em></p>
+
+<p>| 题目 / Problem | 变化 / Twist |</p>
+<p>|---|---|</p>
+<p>| #49 Group Anagrams | 把所有互为异位词的字符串分组 / group all anagrams together |</p>
+<p>| #438 Find All Anagrams in a String | 滑动窗口找所有异位词位置 / sliding window to find positions |</p>
+<p>| #383 Ransom Note | 一个字符串能否由另一个构成 / can s be built from t&#x27;s chars |</p>
+
+<p><strong>进阶思考 / Follow-up:</strong></p>
+<p>如果字符串包含 Unicode（中文、emoji）怎么办？用 <code>Counter</code> 依然 work，因为它对任何 hashable 字符都有效。</p>
+<p><em>What if strings contain Unicode (Chinese, emoji)? <code>Counter</code> still works — it handles any hashable character.</em></p>
+
+<hr/>
+<p><em>Day 2 of 100 | #ByteByByte | Arrays &amp; Hashing 系列</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 Day 2 / Soft Skills Day 2</h2>
+<p><strong>Topic: 没有直接权力如何影响他人 / Influencing Without Authority</strong></p>
+
+<hr/>
+
+<h2>为什么这很重要 / Why This Matters</h2>
+
+<p>在大公司里，真正的工作不是独自完成任务，而是让<strong>别人</strong>帮你完成任务——在你没有权力命令他们的情况下。这是 Senior 和 Staff 工程师的核心技能，也是最常被问到的行为面试题之一。</p>
+
+<p><em>In big tech, the real job isn&#x27;t doing work alone — it&#x27;s getting <strong>others</strong> to do work without being able to order them. This is the core skill separating senior from staff engineers, and one of the most common behavioral interview questions.</em></p>
+
+<hr/>
+
+<h2>经典面试题 / Classic Question</h2>
+
+<p>&gt; &quot;描述一次你需要在没有直接管理权限的情况下影响他人的经历。&quot;</p>
+<p>&gt; <em>&quot;Describe a situation where you had to influence others without having direct authority.&quot;</em></p>
+
+<hr/>
+
+<h2>STAR 框架拆解 / STAR Framework Breakdown</h2>
+
+<p><strong>S — Situation（情境）</strong></p>
+<p>设定背景：你在哪个团队，影响的是谁（另一个团队、高级别同事、跨职能合作者），以及为什么他们没有义务听你的。</p>
+
+<p><em>Set the scene: which team, who you needed to influence (cross-team, senior colleague, partner org), and crucially — why they had no obligation to listen to you.</em></p>
+
+<p><strong>T — Task（任务）</strong></p>
+<p>你的目标是什么？为什么这件事很重要？影响失败会有什么后果？</p>
+
+<p><em>What was your goal? Why did it matter? What was at stake if influence failed?</em></p>
+
+<p><strong>A — Action（行动）</strong> ← 这是重点 / This is where you shine</p>
+
+<p>Senior 级别要展示的不是&quot;我很能说服人&quot;，而是<strong>系统性的影响力策略</strong>：</p>
+
+<p>1. <strong>理解对方的激励机制</strong> — 他们关心什么？什么对他们有利？</p>
+<p>2. <strong>用数据说话</strong> — 不是&quot;我觉得应该这样&quot;，而是&quot;数据显示这会影响 X% 用户&quot;</p>
+<p>3. <strong>建立盟友</strong> — 先和愿意接受的人对齐，再扩大影响范围</p>
+<p>4. <strong>给对方一个赢的理由</strong> — frame 成对他们也有好处，不是你求他们帮忙</p>
+
+<p><em>Don&#x27;t just say &quot;I convinced them.&quot; Show a systematic influence strategy: understand their incentives, use data, build allies, frame it as their win too.</em></p>
+
+<p><strong>R — Result（结果）</strong></p>
+<p>量化结果。不只是&quot;成功了&quot;，而是&quot;减少了 X 毫秒延迟&quot;、&quot;帮助团队提前 2 周上线&quot;。</p>
+
+<p><em>Quantify outcomes. Not &quot;it worked&quot; but &quot;reduced P99 latency by 40ms&quot; or &quot;helped the team ship 2 weeks early.&quot;</em></p>
+
+<hr/>
+
+<h2>❌ 坏回答 vs ✅ 好回答 / Bad vs Good Answer</h2>
+
+<p><strong>❌ 坏回答：</strong></p>
+<p>&gt; &quot;我们的设计文档需要安全团队 review，但他们很忙不想做。我就发了很多邮件催他们，最后他们 review 了。&quot;</p>
+
+<p>问题：被动、无策略、显示影响力只是&quot;坚持催&quot;，没有展示任何高级技能。</p>
+
+<p><em>Bad: &quot;The security team was busy, so I kept emailing until they reviewed it.&quot; — Passive, no strategy, just persistence.</em></p>
+
+<hr/>
+
+<p><strong>✅ 好回答：</strong></p>
+<p>&gt; &quot;我需要安全团队 review 一个涉及用户数据的新功能，但他们的 Q4 排期已经满了，而我们的 launch date 是固定的。我没有直接汇报关系。</p>
+<p>&gt;</p>
+<p>&gt; 我先花时间了解了安全团队的 OKR——他们那季度的目标之一是&#x27;减少高风险数据暴露事件&#x27;。我把这个功能的 review 包装成他们达成 OKR 的机会，而不是额外负担。</p>
+<p>&gt;</p>
+<p>&gt; 我准备了一份 1 页的风险摘要，聚焦于如果不 review 可能的合规风险，并提议缩小 review 范围（只看数据流部分，而不是整个 PR）来降低他们的时间成本。</p>
+<p>&gt;</p>
+<p>&gt; 同时，我找到了一位之前和安全团队合作过的 Staff Engineer，请他帮我引荐，建立了初始信任。</p>
+<p>&gt;</p>
+<p>&gt; 最终安全团队在 3 天内完成了 review，我们按时上线，功能还因为 review 过程发现并修复了一个边界条件。&quot;</p>
+
+<p><em>Good: Understood their OKRs, reframed as their win, reduced their cost, used a warm introduction to build trust. Showed systematic strategy.</em></p>
+
+<hr/>
+
+<h2>场景模板 / Scenario Template to Adapt</h2>
+
+<pre><code>
+情境: 我需要 [另一个团队/高级工程师/PM] 在 [时间节点] 前完成 [X]，
+     但他们没有义务优先处理我的需求。
+
+策略:
+  1. 我研究了他们的 [优先级/OKR/痛点]
+  2. 我将需求包装成对他们的 [利益/风险规避/认可机会]
+  3. 我降低了他们的参与成本，通过 [缩小范围/提供草稿/async 方式]
+  4. 我通过 [共同认识的人/过去的合作] 建立了信任基础
+
+结果: [量化的结果]
+</code></pre>
+
+<hr/>
+
+<h2>Senior/Staff 级别加分项 / Senior/Staff Level Tips</h2>
+
+<p>1. <strong>展示系统性思维，而不是一次性技巧。</strong> Staff 工程师影响的不是一个人，而是建立了一套让他人自愿对齐的系统（写 RFC、建立 review 文化、设计 API 让正确做法成为默认）。</p>
+
+<p>2. <strong>提到失败的尝试。</strong> &quot;我第一次直接发需求，他们无视了。然后我调整策略…&quot; — 这比一帆风顺更真实，也更展示学习能力。</p>
+
+<p>3. <strong>区分说服和操纵。</strong> 好的影响力是基于真实利益对齐，不是包装欺骗。面试官会探究&quot;你是如何确保这对他们也真的有好处的？&quot;</p>
+
+<p><em>Show systematic thinking not one-off tricks. Mention what didn&#x27;t work first — shows learning. Distinguish persuasion (real alignment) from manipulation (packaging deception).</em></p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>1. <strong>理解对方的激励，而不是假设他们应该配合你</strong></p>
+<p>2. <strong>用数据和风险框架，而不是个人请求</strong></p>
+<p>3. <strong>降低对方的参与成本</strong> — 帮他们更容易说&quot;好&quot;</p>
+<p>4. <strong>量化结果</strong> — &quot;成功了&quot;不够，需要具体数字</p>
+
+<p><em>Understand their incentives. Use data/risk framing, not personal favors. Lower their cost to say yes. Always quantify results.</em></p>
+
+<hr/>
+<p><em>Day 2 of 100 | #ByteByByte | 行为面试系列</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 Day 2 / Frontend Day 2</h2>
+<p><strong>Topic: Flexbox — 一维布局的瑞士军刀 / One-Dimensional Layouts Made Easy</strong></p>
+
+<hr/>
+
+<h2>猜猜这段代码输出什么？/ What Does This Code Output?</h2>
+
+<pre><code>
+&lt;div class=&quot;container&quot;&gt;
+  &lt;div class=&quot;box&quot;&gt;A&lt;/div&gt;
+  &lt;div class=&quot;box&quot;&gt;B&lt;/div&gt;
+  &lt;div class=&quot;box&quot;&gt;C&lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+
+<pre><code>
+.container {
+  display: flex;
+  justify-content: space-between;
+  width: 300px;
+}
+.box {
+  width: 80px;
+  height: 80px;
+  background: steelblue;
+}
+</code></pre>
+
+<p><strong>你的猜测 / Your guess:</strong></p>
+<p>A) 三个方块左对齐，紧靠在一起</p>
+<p>B) 三个方块均匀分布，A 在最左，C 在最右，B 在中间</p>
+<p>C) 三个方块居中显示</p>
+<p>D) 报错，因为 80×3=240 &lt; 300</p>
+
+<hr/>
+
+<p><strong>答案: B ✅</strong></p>
+
+<pre><code>
+|容器 300px / container 300px|
+|A       |        B        |       C|
+ ←80px→  ←←←30px gap→→→  ←80px→
+         (C 也是 80px，右端对齐 / C is also 80px, flush right)
+</code></pre>
+
+<p><code>space-between</code> 的含义：第一个元素靠左边，最后一个元素靠右边，中间的间距<strong>平均分配</strong>。</p>
+<p><em><code>space-between</code>: first item at start, last item at end, remaining space distributed equally between items.</em></p>
+
+<p>剩余空间 = 300 - 80×3 = 60px，分成 2 份间距 = 每份 <strong>30px</strong>。</p>
+<p><em>Remaining space = 300 - 240 = 60px, split into 2 gaps = <strong>30px</strong> each.</em></p>
+
+<hr/>
+
+<h2>Flexbox 心智模型 / Mental Model</h2>
+
+<p>Flexbox 的核心：一个<strong>主轴（main axis）</strong>和一个<strong>交叉轴（cross axis）</strong>。</p>
+
+<pre><code>
+flex-direction: row (默认/default)
+
+主轴 main axis →→→→→→→→→→→→→→→→→→→→→→→
+                ┌──────┐  ┌──────┐  ┌──────┐
+                │  A   │  │  B   │  │  C   │
+                └──────┘  └──────┘  └──────┘
+交叉轴 cross axis ↓ (垂直方向/vertical)
+
+flex-direction: column
+
+主轴 main axis ↓  ┌──────┐
+               ↓  │  A   │
+               ↓  ├──────┤
+               ↓  │  B   │
+               ↓  ├──────┤
+               ↓  │  C   │
+                  └──────┘
+交叉轴 cross axis → (水平方向/horizontal)
+</code></pre>
+
+<hr/>
+
+<h2>核心属性速查 / Key Properties Cheat Sheet</h2>
+
+<h3>父容器属性 / Container Properties</h3>
+
+<pre><code>
+.container {
+  display: flex;
+  
+  /* 主轴方向 / Main axis direction */
+  flex-direction: row | row-reverse | column | column-reverse;
+  
+  /* 主轴对齐 / Main axis alignment */
+  justify-content: flex-start | flex-end | center 
+                 | space-between | space-around | space-evenly;
+  
+  /* 交叉轴对齐 / Cross axis alignment */
+  align-items: stretch | flex-start | flex-end | center | baseline;
+  
+  /* 换行 / Wrapping */
+  flex-wrap: nowrap | wrap | wrap-reverse;
+  
+  /* gap (现代写法/modern) */
+  gap: 16px;  /* 比 margin 更优雅 / cleaner than margin hacks */
+}
+</code></pre>
+
+<h3>子元素属性 / Item Properties</h3>
+
+<pre><code>
+.item {
+  /* 伸长比例 / Grow ratio */
+  flex-grow: 0;    /* 默认不伸长 / default: don&#x27;t grow */
+  flex-grow: 1;    /* 占据剩余空间 / take remaining space */
+  
+  /* 收缩比例 / Shrink ratio */
+  flex-shrink: 1;  /* 默认允许收缩 / default: can shrink */
+  flex-shrink: 0;  /* 禁止收缩 / don&#x27;t shrink */
+  
+  /* 基准尺寸 / Base size */
+  flex-basis: auto | 200px | 30%;
+  
+  /* 简写 / Shorthand */
+  flex: 1;        /* = flex-grow: 1, flex-shrink: 1, flex-basis: 0 */
+  flex: 0 0 200px; /* = 固定200px，不伸不缩 / fixed 200px */
+}
+</code></pre>
+
+<hr/>
+
+<h2>你可能不知道 / You Might Not Know (Gotcha!)</h2>
+
+<p><strong><code>flex: 1</code> 和 <code>flex: 1 1 auto</code> 不一样！</strong></p>
+
+<pre><code>
+/* flex: 1 → flex-grow:1, flex-shrink:1, flex-basis: 0 */
+/* 基准是 0，意思是从 0 开始按比例分配空间 */
+/* base is 0: space is distributed purely by ratio */
+
+/* flex: 1 1 auto → flex-grow:1, flex-shrink:1, flex-basis: auto */
+/* 基准是内容大小，先按内容分，剩余的再按比例分 */
+/* base is content size: content first, then distribute remaining */
+
+.container { display: flex; width: 300px; }
+.a { flex: 1; }          /* a 和 b 各得 150px */
+.b { flex: 1; }          /* split evenly from 0 */
+
+/* vs */
+.a { flex: 1 1 auto; content: &quot;longer text&quot;; }  /* a 会更宽！*/
+.b { flex: 1 1 auto; content: &quot;hi&quot;; }           /* a gets more space! */
+</code></pre>
+
+<p><em><code>flex: 1</code> splits space from zero (equal shares). <code>flex: 1 1 auto</code> splits from content size (content-biased). This trips up many senior devs!</em></p>
+
+<hr/>
+
+<h2>经典布局示例 / Classic Layout Example</h2>
+
+<p><strong>圣杯布局（Header + Sidebar + Main + Footer）</strong></p>
+
+<pre><code>
+/* 用 Flexbox 实现三列布局 / Three-column layout */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content-area {
+  display: flex;
+  flex: 1;  /* 占据剩余高度 / fill remaining height */
+}
+
+.sidebar {
+  flex: 0 0 240px;  /* 固定宽度，不伸不缩 / fixed width */
+}
+
+.main {
+  flex: 1;  /* 占据剩余宽度 / take remaining width */
+}
+</code></pre>
+
+<hr/>
+
+<h2>Mini Challenge 🎯</h2>
+
+<p>用纯 CSS Flexbox（不用 Grid），实现这个布局：</p>
+
+<pre><code>
+┌─────────────────────────────┐
+│         Header              │
+├────────┬────────────────────┤
+│Sidebar │   Main Content     │
+│(200px) │   (flexible)       │
+├────────┴────────────────────┤
+│         Footer              │
+└─────────────────────────────┘
+</code></pre>
+
+<p>侧边栏固定 200px，主内容区自适应，整体高度 100vh。</p>
+<p><em>Sidebar fixed at 200px, main content flexible, total height 100vh.</em></p>
+
+<p>答案明天揭晓！/ Answer revealed tomorrow!</p>
+
+<hr/>
+<p><em>Day 2 of 100 | #ByteByByte | CSS Fundamentals 系列</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI Day 2</h2>
+<p><strong>Topic: Transformer 是怎么工作的？— &quot;Attention Is All You Need&quot;</strong></p>
+
+<hr/>
+
+<h2>从&quot;翻译&quot;说起 / Start With Translation</h2>
+
+<p>2017年之前，翻译系统用 RNN（循环神经网络）：<strong>逐字读取，逐字生成</strong>。就像一个翻译员，读完一个字才能记下来，再读下一个，记忆有限，长句子容易忘记开头。</p>
+
+<p><em>Before 2017, translation used RNNs: process word by word, like a translator who reads one word at a time with limited working memory. Long sentences = forgotten beginnings.</em></p>
+
+<p>2017年，Google 发了一篇论文：&quot;Attention Is All You Need&quot;。核心思想震惊了整个 AI 界：</p>
+
+<p>&gt; <strong>&quot;你不需要按顺序读句子。你可以一次性看整个句子，然后决定每个词该&#x27;关注&#x27;哪些其他词。&quot;</strong></p>
+<p>&gt; <em>&quot;You don&#x27;t need to read sequentially. Look at the whole sentence at once, and let each word &#x27;attend&#x27; to whichever other words are most relevant.&quot;</em></p>
+
+<hr/>
+
+<h2>直觉解释 / Intuitive Explanation</h2>
+
+<p><strong>为什么需要 Attention（注意力机制）？</strong></p>
+
+<p>翻译 &quot;The animal didn&#x27;t cross the street because <strong>it</strong> was too tired.&quot;</p>
+
+<p>&quot;it&quot; 指的是什么？是 &quot;animal&quot; 还是 &quot;street&quot;？</p>
+
+<p>人类一眼就知道是 &quot;animal&quot;（动物会累，街道不会累）。</p>
+<p>RNN 在处理 &quot;it&quot; 的时候，离 &quot;animal&quot; 已经太远了，可能已经&quot;忘了&quot;。</p>
+
+<p><strong>Attention 的解法：</strong> 处理 &quot;it&quot; 时，让模型自动&quot;回头看&quot;整个句子，计算 &quot;it&quot; 和每个其他词的相关性分数。</p>
+
+<pre><code>
+&quot;it&quot; 与各词的 attention 分数示意 / Attention scores for &quot;it&quot;:
+The     → 0.05
+animal  → 0.72  ← 高分！/ High score!
+didn&#x27;t  → 0.03
+cross   → 0.04
+the     → 0.02
+street  → 0.08
+because → 0.03
+it      → 0.03
+</code></pre>
+
+<p><em>Attention solves the &quot;it&quot; problem: when processing &quot;it&quot;, the model looks back at all words, assigns a relevance score to each, and &quot;pays attention&quot; to &quot;animal&quot; the most.</em></p>
+
+<hr/>
+
+<h2>Transformer 核心机制 / Core Mechanism</h2>
+
+<h3>Self-Attention 三步走 / Three Steps</h3>
+
+<p>每个词（token）会生成三个向量：</p>
+<p><em>Each word generates three vectors:</em></p>
+
+<pre><code>
+                     ┌─────────────────────────────────────┐
+输入词 / Input word  │  Q (Query)  K (Key)   V (Value)     │
+&quot;animal&quot;             │  &quot;我想问什么&quot; &quot;我是什么&quot; &quot;我代表什么信息&quot;  │
+                     │  &quot;what I ask&quot; &quot;what I am&quot; &quot;my info&quot; │
+                     └─────────────────────────────────────┘
+</code></pre>
+
+<p><strong>计算过程 / Computation:</strong></p>
+
+<pre><code>
+步骤1: Score = Q · K^T / √d_k
+       用&quot;查询&quot;和每个词的&quot;键&quot;做点积，得到相关性分数
+       Dot product of Query with all Keys → relevance scores
+
+步骤2: Softmax(Score)
+       把分数转成概率分布（所有词的权重加起来 = 1）
+       Convert scores to probability distribution (weights sum to 1)
+
+步骤3: Output = Σ(weight × V)
+       用权重加权所有词的&quot;值&quot;向量，得到最终表示
+       Weighted sum of all Value vectors → final representation
+</code></pre>
+
+<hr/>
+
+<h2>Transformer 整体架构 / Overall Architecture</h2>
+
+<pre><code>
+输入文本 / Input Text: &quot;I love cats&quot;
+         │
+         ▼
+[词嵌入 + 位置编码]
+[Token Embedding + Positional Encoding]
+  (告诉模型每个词的位置，因为 Attention 本身没有位置感)
+  (adds position info, since Attention has no inherent order)
+         │
+         ▼
+┌─────────────────────────────┐
+│   Encoder Block × N        │  ← N 层叠加 / N stacked layers
+│  ┌──────────────────────┐   │
+│  │   Multi-Head         │   │  ← 多个 Attention &quot;头&quot;并行
+│  │   Self-Attention     │   │    multiple Attention heads in parallel
+│  └──────────┬───────────┘   │
+│             │ (+ residual)  │
+│  ┌──────────▼───────────┐   │
+│  │   Feed Forward       │   │  ← 每个位置独立的 MLP
+│  │   Network (FFN)      │   │    per-position MLP
+│  └──────────────────────┘   │
+└─────────────────────────────┘
+         │
+         ▼
+[丰富的上下文表示 / Rich contextual representation]
+</code></pre>
+
+<p><strong>多头注意力 / Multi-Head Attention:</strong> 同时用多个 Attention（比如 8 个），每个关注不同的语义关系（语法、指代、情感等），最后拼接。就像同时从 8 个角度看一张照片。</p>
+
+<p><em>Multi-head: run 8 attention mechanisms in parallel, each learning different relationship types (syntax, coreference, sentiment). Concatenate results. Like viewing a photo from 8 angles simultaneously.</em></p>
+
+<hr/>
+
+<h2>为什么 Transformer 改变了一切？/ Why Did It Change Everything?</h2>
+
+<p>| 特性 / Feature | RNN | Transformer |</p>
+<p>|---|---|---|</p>
+<p>| 并行计算 / Parallelizable | ❌ 必须顺序 / Must be sequential | ✅ 所有位置同时处理 / All positions at once |</p>
+<p>| 长距离依赖 / Long-range | ❌ 容易遗忘 / Forgets | ✅ 直接 Attention / Direct connection |</p>
+<p>| 可扩展性 / Scalability | 差 / Poor | 优秀 / Excellent |</p>
+<p>| GPU 利用率 / GPU usage | 低 / Low | 高 / High |</p>
+
+<p><strong>这就是 GPT、BERT、Claude、Gemini 的核心。</strong> 这篇 2017 年的论文，启动了整个现代 AI 时代。</p>
+
+<p><em>This is the foundation of GPT, BERT, Claude, Gemini — every modern LLM. The 2017 paper that started the modern AI era.</em></p>
+
+<hr/>
+
+<h2>代码片段：简化版 Attention / Simplified Attention in Code</h2>
+
+<pre><code>
+import numpy as np
+
+def scaled_dot_product_attention(Q, K, V):
+    &quot;&quot;&quot;
+    Q: Query matrix  (seq_len, d_k)
+    K: Key matrix    (seq_len, d_k)
+    V: Value matrix  (seq_len, d_v)
+    &quot;&quot;&quot;
+    d_k = Q.shape[-1]
+    
+    # Step 1: Compute attention scores
+    # scores[i][j] = how much position i should attend to position j
+    scores = Q @ K.T / np.sqrt(d_k)
+    
+    # Step 2: Softmax — convert scores to probabilities
+    # exp for numerical stability trick usually applied here
+    exp_scores = np.exp(scores - scores.max(axis=-1, keepdims=True))
+    attention_weights = exp_scores / exp_scores.sum(axis=-1, keepdims=True)
+    
+    # Step 3: Weighted sum of values
+    output = attention_weights @ V
+    
+    return output, attention_weights
+
+# Example: 3 tokens, d_k=4
+np.random.seed(42)
+Q = np.random.randn(3, 4)  # 3 tokens asking questions
+K = np.random.randn(3, 4)  # 3 tokens presenting keys
+V = np.random.randn(3, 4)  # 3 tokens&#x27; actual info
+
+output, weights = scaled_dot_product_attention(Q, K, V)
+print(&quot;Attention weights shape:&quot;, weights.shape)  # (3, 3)
+# Each row sums to 1.0 — how much each token attends to each other
+</code></pre>
+
+<hr/>
+
+<h2>一句话总结 / One-Liner</h2>
+
+<p>&gt; Transformer = &quot;让每个词直接看所有其他词，用相关性加权求和，并行计算，堆叠多层&quot;</p>
+<p>&gt; <em>Transformer = &quot;let every word directly look at all others, weight by relevance, compute in parallel, stack many layers&quot;</em></p>
+
+<hr/>
+
+<h2>延伸阅读 / Going Deeper</h2>
+
+<p>- 原始论文 / Original paper: &quot;Attention Is All You Need&quot; (Vaswani et al., 2017)</p>
+<p>- 可视化工具 / Visualization: [The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/)</p>
+<p>- 明天 Day 3 AI 主题预告：BERT vs GPT — 为什么双向比单向更聪明（有时候）</p>
+
+<p><em>Tomorrow Day 3 AI preview: BERT vs GPT — why bidirectional beats unidirectional (sometimes).</em></p>
+
+<hr/>
+<p><em>Day 2 of 100 | #ByteByByte | AI Foundations 系列</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-03-14</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

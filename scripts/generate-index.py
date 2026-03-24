@@ -791,9 +791,11 @@ SECTION_META = {
     "frontend":      {"icon": "🎨", "label": "Frontend",      "color": "#f472b6"},
     "ai":            {"icon": "🤖", "label": "AI",            "color": "#fbbf24"},
     "review":        {"icon": "📝", "label": "Review Quiz",   "color": "#a78bfa"},
+    "deepdive":      {"icon": "🔬", "label": "Deep Dive",     "color": "#f59e0b"},
+    "week-review":   {"icon": "📅", "label": "Week in Review", "color": "#6ee7b7"},
 }
 
-SECTION_ORDER = ["system-design", "algorithms", "soft-skills", "frontend", "ai", "review"]
+SECTION_ORDER = ["system-design", "algorithms", "soft-skills", "frontend", "ai", "review", "deepdive", "week-review"]
 
 
 def escape_html(text: str) -> str:
@@ -1604,6 +1606,7 @@ def generate_archive_html(days: dict) -> str:
   <meta property="og:title" content="Archive — byte-by-byte" />
   <meta property="og:description" content="Browse all past byte-by-byte daily bilingual tech lessons." />
   <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/archive.html" />
+  <link rel="alternate" type="application/rss+xml" title="byte-by-byte RSS Feed" href="feed.xml" />
 
   <style>
     :root {{
@@ -1712,6 +1715,7 @@ def generate_archive_html(days: dict) -> str:
     <a href="index.html#subscribe">Subscribe</a>
     <a href="index.html#self-host">Self-Host</a>
     <a href="archive.html" style="color: var(--accent3)">Archive</a>
+    <a href="feed.xml" title="RSS Feed">📡 RSS</a>
   </div>
 </nav>
 
@@ -1742,6 +1746,7 @@ def generate_archive_html(days: dict) -> str:
 <footer>
   <a href="index.html">← Back to byte-by-byte</a> ·
   <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a> ·
+  <a href="feed.xml" title="RSS Feed">📡 RSS Feed</a> ·
   MIT License
   <br/><br/>
   <span style="opacity:0.5; font-size:0.8rem;">

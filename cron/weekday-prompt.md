@@ -102,7 +102,7 @@ For each section (1-5), read `/tmp/bbb-section-N.txt` and write content to its A
 
 ### Section 5: AI (2 min)
 🤖 **AI Day N**
-- **NEWS mode**: Use `web_search` to find 3-5 real current AI stories. DO NOT write from memory. Each story: source URL + "为什么你应该关心"
+- **NEWS mode**: Use `web_search` to find 3-5 real current AI stories. DO NOT write from memory. Each story: source URL + "为什么你应该关心". If web_search is unavailable or returns no results, fall back to CONCEPT mode instead: read the CONCEPT topic from `/tmp/bbb-section-5.txt` and generate a concept explanation.
 - **CONCEPT mode**: Intuitive explanation → how it works → applications → runnable Python snippet (≤15 lines, include pip install)
 - 📚 References + 🧒 ELI5
 
@@ -152,3 +152,4 @@ bash {{BBB_REPO_DIR}}/scripts/commit.sh
 - All references must be real URLs — never fabricate
 - Code comments in English
 - Each section standalone and readable
+- If any Telegram message exceeds 4000 characters, split it into 2 messages at a natural section break (e.g., after a `---` divider). Telegram's limit is 4096 chars.

@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-03-21</title>
+  <meta name="description" content="byte-by-byte daily lessons for Saturday, March 21, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Saturday, March 21, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-03-21.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-03-20.html" style="color:var(--text2)">← 2026-03-20</a>
+    <a href="2026-03-23.html" style="color:var(--text2)">2026-03-23 →</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-03-21</span>
+    <h1>Saturday, March 21, 2026</h1>
+    <div class="page-header-meta">
+      <span>1 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-deepdive" class="nav-day-btn">🔬 Deep Dive</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-03-20.html" class="day-nav-btn">← 2026-03-20</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <a href="2026-03-23.html" class="day-nav-btn">2026-03-23 →</a>
+  </div>
+
+  
+    <div class="section-block" id="section-deepdive">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🔬</span>
+        <div>
+          <div class="section-header-title">🔬 Deep Dive</div>
+          <div class="section-header-sub">🔬 Saturday Deep Dive: Valid Sudoku (15 min read)</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🔬 Saturday Deep Dive: Valid Sudoku (15 min read)</h1>
+
+<p>📊 Day 8/150 · NeetCode: 8/150 · SysDesign: 8/40 · Behavioral: 8/40 · Frontend: 8/50 · AI: 4/30</p>
+<p>🔥 8-day streak!</p>
+
+<p>🔗 <a href="https://leetcode.com/problems/valid-sudoku/">LeetCode #36: Valid Sudoku</a> 🟡 Medium</p>
+<p>📹 <a href="https://neetcode.io/problems/valid-sudoku">NeetCode Solution</a></p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p>今天我们深入研究一道经典的中等难度题：验证数独盘面的合法性。</p>
+<p>Today we deep-dive into a classic Medium problem: checking whether a Sudoku board is valid.</p>
+
+<p>这道题看起来简单，实则考察你对<strong>多维哈希</strong>、<strong>坐标映射</strong>和<strong>边界条件</strong>的掌握。</p>
+<p>It looks approachable, but tests your grasp of <strong>multi-dimensional hashing</strong>, <strong>coordinate mapping</strong>, and <strong>edge conditions</strong>.</p>
+
+<p>面试中它频繁出现，因为它考察的不是"你能不能写循环"，而是"你能不能系统地对数据建模"。</p>
+<p>It appears often in interviews not to test loop-writing, but to test <strong>systematic data modeling</strong>.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>什么是数独验证？/ What Are We Validating?</h3>
+
+<p>一个合法的数独盘面满足三个约束：</p>
+<p>A valid Sudoku board satisfies exactly three constraints:</p>
+
+<div class="diagram-block">┌─────────────────────────────────┐
+│  CONSTRAINT 1: Each ROW         │
+│  每一行：数字1-9不能重复        │
+│  No digit 1-9 repeated in a row │
+├─────────────────────────────────┤
+│  CONSTRAINT 2: Each COLUMN      │
+│  每一列：数字1-9不能重复        │
+│  No digit 1-9 repeated in col   │
+├─────────────────────────────────┤
+│  CONSTRAINT 3: Each 3×3 BOX     │
+│  每个3×3宫格：数字1-9不能重复   │
+│  No digit 1-9 repeated in box   │
+└─────────────────────────────────┘</div>
+
+<p><strong>关键点：我们不需要验证数独能否被解出，只需要验证当前已填数字是否合法。</strong></p>
+<p><strong>Key insight: We don't need to verify the puzzle is solvable — only that existing digits don't violate rules.</strong></p>
+
+<p><code>'.'</code> 代表空格，忽略不计。/ <code>'.'</code> means empty cell — skip it.</p>
+
+<h3>数据建模：核心思想 / Data Modeling: The Core Idea</h3>
+
+<p>最直观的暴力解法是：分别对每行、每列、每个宫格做验证，嵌套循环九次。</p>
+<p>The naive approach: check rows, columns, and boxes separately — nine nested loops.</p>
+
+<p>更优雅的方式：<strong>一次遍历，同时维护三个集合字典</strong>。</p>
+<p>Better: <strong>one pass, three sets of dictionaries updated simultaneously</strong>.</p>
+
+<div class="diagram-block">For cell (r, c) containing digit d:
+
+  rows[r]    → must not contain d yet
+  cols[c]    → must not contain d yet
+  boxes[b]   → must not contain d yet
+
+where b = (r // 3, c // 3)  ← box index!</div>
+
+<p>这个 <code>(r // 3, c // 3)</code> 是本题最优雅的技巧：将坐标映射为0-8的盒子索引。</p>
+<p>The <code>(r // 3, c // 3)</code> trick maps any cell to its 3×3 box index — this is the elegance of the problem.</p>
+
+<div class="diagram-block">Box indices visualized:
+┌───┬───┬───┐
+│0,0│0,1│0,2│
+├───┼───┼───┤
+│1,0│1,1│1,2│
+├───┼───┼───┤
+│2,0│2,1│2,2│
+└───┴───┴───┘
+row 0-2, col 0-2 → box (0,0)
+row 0-2, col 3-5 → box (0,1)
+row 3-5, col 6-8 → box (1,2)
+... etc.</div>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Approach 1: Naive (brute force) — O(9²) time but ugly</h3>
+
+<p>验证每行、每列、每宫格需要9次独立循环。可读性差，容易出错。</p>
+<p>Nine separate loops for rows, columns, boxes. Hard to read, error-prone.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Approach 1: Naive — DO NOT use in interview (too verbose)&#10;def isValidSudoku_naive(board):&#10;    # Check rows&#10;    for row in board:&#10;        seen = set()&#10;        for c in row:&#10;            if c == '.': continue&#10;            if c in seen: return False&#10;            seen.add(c)&#10;    &#10;    # Check cols (transpose and repeat)&#10;    for col in range(9):&#10;        seen = set()&#10;        for row in range(9):&#10;            c = board[row][col]&#10;            if c == '.': continue&#10;            if c in seen: return False&#10;            seen.add(c)&#10;    &#10;    # Check 3x3 boxes&#10;    for box_row in range(3):&#10;        for box_col in range(3):&#10;            seen = set()&#10;            for r in range(box_row*3, box_row*3+3):&#10;                for c in range(box_col*3, box_col*3+3):&#10;                    val = board[r][c]&#10;                    if val == '.': continue&#10;                    if val in seen: return False&#10;                    seen.add(val)&#10;    return True&#10;# Time: O(81) = O(1) technically since board is fixed 9x9&#10;# Space: O(9) per iteration&#10;# Problem: 3 separate passes, harder to extend, verbose">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Approach 1: Naive — DO NOT use in interview (too verbose)</span>
+<span style="color:#c678dd;">def</span> isValidSudoku_naive(board):
+    <span style="color:#5c6370;"># Check rows</span>
+    <span style="color:#c678dd;">for</span> row <span style="color:#c678dd;">in</span> board:
+        seen = set()
+        <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> row:
+            <span style="color:#c678dd;">if</span> c == <span style="color:#e5c07b;">'.'</span>: <span style="color:#c678dd;">continue</span>
+            <span style="color:#c678dd;">if</span> c <span style="color:#c678dd;">in</span> seen: <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+            seen.add(c)
+    
+    <span style="color:#5c6370;"># Check cols (transpose and repeat)</span>
+    <span style="color:#c678dd;">for</span> col <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">9</span>):
+        seen = set()
+        <span style="color:#c678dd;">for</span> row <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">9</span>):
+            c = board[row][col]
+            <span style="color:#c678dd;">if</span> c == <span style="color:#e5c07b;">'.'</span>: <span style="color:#c678dd;">continue</span>
+            <span style="color:#c678dd;">if</span> c <span style="color:#c678dd;">in</span> seen: <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+            seen.add(c)
+    
+    <span style="color:#5c6370;"># Check 3x3 boxes</span>
+    <span style="color:#c678dd;">for</span> box_row <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">3</span>):
+        <span style="color:#c678dd;">for</span> box_col <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">3</span>):
+            seen = set()
+            <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> range(box_row*<span style="color:#56b6c2;">3</span>, box_row*<span style="color:#56b6c2;">3</span>+<span style="color:#56b6c2;">3</span>):
+                <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> range(box_col*<span style="color:#56b6c2;">3</span>, box_col*<span style="color:#56b6c2;">3</span>+<span style="color:#56b6c2;">3</span>):
+                    val = board[r][c]
+                    <span style="color:#c678dd;">if</span> val == <span style="color:#e5c07b;">'.'</span>: <span style="color:#c678dd;">continue</span>
+                    <span style="color:#c678dd;">if</span> val <span style="color:#c678dd;">in</span> seen: <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+                    seen.add(val)
+    <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+<span style="color:#5c6370;"># Time: O(81) = O(1) technically since board is fixed 9x9</span>
+<span style="color:#5c6370;"># Space: O(9) per iteration</span>
+<span style="color:#5c6370;"># Problem: 3 separate passes, harder to extend, verbose</span></code></pre>
+</div>
+
+<h3>Approach 2: Optimal — Single Pass, Three Dicts ✅</h3>
+
+<p><strong>这是面试中应该给出的答案。</strong> / <strong>This is the answer you should give in an interview.</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from collections import defaultdict&#10;&#10;def isValidSudoku(board):&#10;    # Three dictionaries: rows, columns, boxes&#10;    # Each maps an index to a set of seen digits&#10;    rows = defaultdict(set)   # rows[r] = {digits seen in row r}&#10;    cols = defaultdict(set)   # cols[c] = {digits seen in col c}&#10;    boxes = defaultdict(set)  # boxes[(r//3, c//3)] = {digits seen in box}&#10;&#10;    for r in range(9):&#10;        for c in range(9):&#10;            val = board[r][c]&#10;            &#10;            # Skip empty cells&#10;            if val == '.':&#10;                continue&#10;            &#10;            # Calculate box index — THE KEY TRICK&#10;            box_key = (r // 3, c // 3)&#10;            &#10;            # Check all three constraints simultaneously&#10;            if (val in rows[r] or&#10;                val in cols[c] or&#10;                val in boxes[box_key]):&#10;                return False  # Duplicate found — invalid!&#10;            &#10;            # Add to all three tracking sets&#10;            rows[r].add(val)&#10;            cols[c].add(val)&#10;            boxes[box_key].add(val)&#10;    &#10;    return True  # No violations found">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> collections <span style="color:#c678dd;">import</span> defaultdict
+
+<span style="color:#c678dd;">def</span> isValidSudoku(board):
+    <span style="color:#5c6370;"># Three dictionaries: rows, columns, boxes</span>
+    <span style="color:#5c6370;"># Each maps an index to a set of seen digits</span>
+    rows = defaultdict(set)   <span style="color:#5c6370;"># rows[r] = {digits seen in row r}</span>
+    cols = defaultdict(set)   <span style="color:#5c6370;"># cols[c] = {digits seen in col c}</span>
+    boxes = defaultdict(set)  <span style="color:#5c6370;"># boxes[(r//3, c//3)] = {digits seen in box}</span>
+
+    <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">9</span>):
+        <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">9</span>):
+            val = board[r][c]
+            
+            <span style="color:#5c6370;"># Skip empty cells</span>
+            <span style="color:#c678dd;">if</span> val == <span style="color:#e5c07b;">'.'</span>:
+                <span style="color:#c678dd;">continue</span>
+            
+            <span style="color:#5c6370;"># Calculate box index — THE KEY TRICK</span>
+            box_key = (r // <span style="color:#56b6c2;">3</span>, c // <span style="color:#56b6c2;">3</span>)
+            
+            <span style="color:#5c6370;"># Check all three constraints simultaneously</span>
+            <span style="color:#c678dd;">if</span> (val <span style="color:#c678dd;">in</span> rows[r] <span style="color:#c678dd;">or</span>
+                val <span style="color:#c678dd;">in</span> cols[c] <span style="color:#c678dd;">or</span>
+                val <span style="color:#c678dd;">in</span> boxes[box_key]):
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>  <span style="color:#5c6370;"># Duplicate found — invalid!</span>
+            
+            <span style="color:#5c6370;"># Add to all three tracking sets</span>
+            rows[r].add(val)
+            cols[c].add(val)
+            boxes[box_key].add(val)
+    
+    <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>  <span style="color:#5c6370;"># No violations found</span></code></pre>
+</div>
+
+<h3>Visual Trace / 逐步追踪</h3>
+
+<p>Let's trace through a small part of the board:</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Board (first 3 rows shown):&#10;[&quot;5&quot;,&quot;3&quot;,&quot;.&quot;,  &quot;.&quot;,&quot;7&quot;,&quot;.&quot;,  &quot;.&quot;,&quot;.&quot;,&quot;.&quot;]&#10;[&quot;6&quot;,&quot;.&quot;,  &quot;.&quot;,  &quot;1&quot;,&quot;9&quot;,&quot;5&quot;,  &quot;.&quot;,&quot;.&quot;,&quot;.&quot;]&#10;[&quot;.&quot;,&quot;9&quot;,&quot;8&quot;,  &quot;.&quot;,&quot;.&quot;,  &quot;.&quot;,  &quot;.&quot;,&quot;6&quot;,&quot;.&quot;]">Copy</button>
+  <pre><code class="language-text">Board (first 3 rows shown):
+["5","3",".",  ".","7",".",  ".",".","."]
+["6",".",  ".",  "1","9","5",  ".",".","."]
+[".","9","8",  ".",".",  ".",  ".","6","."]</code></pre>
+</div>
+
+<p><strong>Step-by-step trace:</strong></p>
+
+<div class="diagram-block">(r=0, c=0) val='5':
+  box_key = (0//3, 0//3) = (0,0)
+  rows[0]={}, cols[0]={}, boxes[(0,0)]={}  → no conflict
+  Add: rows[0]={'5'}, cols[0]={'5'}, boxes[(0,0)]={'5'}
+
+(r=0, c=1) val='3':
+  box_key = (0,0)
+  rows[0]={'5'}, '3' not in it ✓
+  cols[1]={},    '3' not in it ✓
+  boxes[(0,0)]={'5'}, '3' not in it ✓
+  Add: rows[0]={'5','3'}, cols[1]={'3'}, boxes[(0,0)]={'5','3'}
+
+(r=0, c=2) val='.': SKIP
+
+(r=0, c=4) val='7':
+  box_key = (0//3, 4//3) = (0,1)  ← different box!
+  Add to rows[0], cols[4], boxes[(0,1)]
+
+(r=1, c=0) val='6':
+  box_key = (1//3, 0//3) = (0,0)  ← same box as row 0!
+  rows[1]={}, '6' not in it ✓
+  cols[0]={'5'}, '6' not in it ✓
+  boxes[(0,0)]={'5','3'}, '6' not in it ✓
+  Add successfully.
+
+Imagine if we had another '5' at (1,0):
+  cols[0] already has '5' → return False immediately! ✅</div>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<h3>Edge Case 1: Empty Board</h3>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="board = [['.']*9 for _ in range(9)]&#10;# Result: True — empty board is valid&#10;# Our code handles this: all '.' cells are skipped">Copy</button>
+  <pre><code class="language-python">board = [[<span style="color:#e5c07b;">'.'</span>]*<span style="color:#56b6c2;">9</span> <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">9</span>)]
+<span style="color:#5c6370;"># Result: True — empty board is valid</span>
+<span style="color:#5c6370;"># Our code handles this: all '.' cells are skipped</span></code></pre>
+</div>
+
+<h3>Edge Case 2: Same digit in same box, different row AND column</h3>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Trap: this is invalid even though row 0 and col 3 look different&#10;# '5' at (0,0) and '5' at (2,2) — same 3×3 box!&#10;# The box_key trick catches this: both map to (0,0)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Trap: this is invalid even though row 0 and col 3 look different</span>
+<span style="color:#5c6370;"># '5' at (0,0) and '5' at (2,2) — same 3×3 box!</span>
+<span style="color:#5c6370;"># The box_key trick catches this: both map to (0,0)</span></code></pre>
+</div>
+
+<h3>Edge Case 3: The "it looks valid row-wise" trap</h3>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Each row and column could be valid individually,&#10;# but a 3×3 box might have duplicates&#10;# Always check all THREE constraints — don't shortcut!">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Each row and column could be valid individually,</span>
+<span style="color:#5c6370;"># but a 3×3 box might have duplicates</span>
+<span style="color:#5c6370;"># Always check all THREE constraints — don't shortcut!</span></code></pre>
+</div>
+
+<h3>常见面试坑 / Common Interview Traps</h3>
+<div class="diagram-block">❌ Trap 1: Using (r // 3) * 3 + (c // 3) as box index
+   → This creates 0-8 integer keys, works but harder to read
+   → Tuple (r//3, c//3) is cleaner and equally correct
+
+❌ Trap 2: Validating the full 1-9 range
+   → We only need to check for duplicates among present digits
+   → If a row has [1,2,3,...,8] with one empty, it's still valid!
+
+❌ Trap 3: Modifying the input board
+   → Never do this. The problem says "determine if valid", not "solve it"
+
+✅ Best practice: defaultdict(set) avoids KeyError on first access
+✅ Best practice: check all 3 constraints before adding — order matters!</div>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p>数独验证器不只是一道面试题——它的底层思路在很多地方都有应用。</p>
+<p>Valid Sudoku isn't just an interview puzzle — its core pattern appears everywhere.</p>
+
+<h3>Pattern: Multi-Key Set Membership Check</h3>
+
+<p><strong>1. Database Uniqueness Constraints</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="In databases, a UNIQUE constraint across multiple columns is the same idea:&#10;  UNIQUE(user_id, date) — same as &quot;no two rows share both values&quot;&#10;  &#10;PostgreSQL internally uses hash indexes (like our sets) per constraint.">Copy</button>
+  <pre><code class="language-text">In databases, a UNIQUE constraint across multiple columns is the same idea:
+  UNIQUE(user_id, date) — same as "no two rows share both values"
+  
+PostgreSQL internally uses hash indexes (like our sets) per constraint.</code></pre>
+</div>
+
+<p><strong>2. Spreadsheet Validation</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Google Sheets &quot;no duplicates in range&quot; validation:&#10;  Checks each row, column, named range simultaneously&#10;  Exact same three-constraint structure">Copy</button>
+  <pre><code class="language-text">Google Sheets "no duplicates in range" validation:
+  Checks each row, column, named range simultaneously
+  Exact same three-constraint structure</code></pre>
+</div>
+
+<p><strong>3. Compiler Symbol Tables</strong></p>
+<div class="diagram-block">A compiler tracks variable names per scope:
+  rows    → local scope
+  cols    → class scope  
+  boxes   → module scope
+  
+"Variable already declared" = duplicate in the same scope (set)</div>
+
+<p><strong>4. Form Validation in UI</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// Same pattern: check uniqueness across multiple dimensions&#10;const seen = { byEmail: new Set(), byUsername: new Set() };&#10;users.forEach(user =&gt; {&#10;  if (seen.byEmail.has(user.email)) throw Error(&quot;duplicate email&quot;);&#10;  seen.byEmail.add(user.email);&#10;});">Copy</button>
+  <pre><code class="language-javascript">// Same pattern: check uniqueness across multiple dimensions
+const seen = { byEmail: new Set(), byUsername: new Set() };
+users.forEach(user =&gt; {
+  if (seen.byEmail.has(user.email)) throw Error("duplicate email");
+  seen.byEmail.add(user.email);
+});</code></pre>
+</div>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p>假设你已经给出了最优解。面试官可能会问这些问题：</p>
+<p>Assume you've presented the optimal solution. Here are follow-up questions interviewers typically ask:</p>
+
+<hr/>
+
+<p><strong>Q1: "What's the time and space complexity?"</strong></p>
+
+<div class="diagram-block">Time: O(81) = O(1)
+  → Fixed 9×9 board: exactly 81 cells, constant work per cell
+  → In general: O(n²) for an n×n Sudoku variant
+
+Space: O(81) = O(1) 
+  → At most 81 entries across all sets (each cell appears once per set)
+  → In general: O(n²)
+
+⚠️ Interviewer follow-up: "But you're using three defaultdicts..."
+→ Still O(1) because board size is fixed. For variable n, it's O(n²).</div>
+
+<p><strong>Q2: "Could you do this without any extra space?"</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="不完全能，但可以压缩。/ Not quite, but you can compress.&#10;&#10;You could encode sets as bitmasks (bit 1 = digit 1 seen, bit 2 = digit 2, etc.):&#10;  rows = [0] * 9   # 9 integers, each bit i = digit i+1 seen&#10;  cols = [0] * 9&#10;  boxes = [0] * 9&#10;&#10;  For digit d (1-9), check: if rows[r] &amp; (1 &lt;&lt; d): return False&#10;                            rows[r] |= (1 &lt;&lt; d)&#10;&#10;Space: O(27 integers) = O(1). Faster in practice due to cache locality.">Copy</button>
+  <pre><code class="language-text">不完全能，但可以压缩。/ Not quite, but you can compress.
+
+You could encode sets as bitmasks (bit 1 = digit 1 seen, bit 2 = digit 2, etc.):
+  rows = [0] * 9   # 9 integers, each bit i = digit i+1 seen
+  cols = [0] * 9
+  boxes = [0] * 9
+
+  For digit d (1-9), check: if rows[r] &amp; (1 &lt;&lt; d): return False
+                            rows[r] |= (1 &lt;&lt; d)
+
+Space: O(27 integers) = O(1). Faster in practice due to cache locality.</code></pre>
+</div>
+
+<p><strong>Q3: "How would you extend this to validate a 16×16 Sudoku (Hexadoku)?"</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Same code, parameterized:&#10;def isValidSudokuNxN(board, n=9, box_size=3):&#10;    rows = defaultdict(set)&#10;    cols = defaultdict(set)&#10;    boxes = defaultdict(set)&#10;    for r in range(n):&#10;        for c in range(n):&#10;            val = board[r][c]&#10;            if val == '.': continue&#10;            box_key = (r // box_size, c // box_size)&#10;            if val in rows[r] or val in cols[c] or val in boxes[box_key]:&#10;                return False&#10;            rows[r].add(val); cols[c].add(val); boxes[box_key].add(val)&#10;    return True&#10;# For 16×16: n=16, box_size=4 → same logic, bigger constants">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Same code, parameterized:</span>
+<span style="color:#c678dd;">def</span> isValidSudokuNxN(board, n=<span style="color:#56b6c2;">9</span>, box_size=<span style="color:#56b6c2;">3</span>):
+    rows = defaultdict(set)
+    cols = defaultdict(set)
+    boxes = defaultdict(set)
+    <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> range(n):
+        <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> range(n):
+            val = board[r][c]
+            <span style="color:#c678dd;">if</span> val == <span style="color:#e5c07b;">'.'</span>: <span style="color:#c678dd;">continue</span>
+            box_key = (r // box_size, c // box_size)
+            <span style="color:#c678dd;">if</span> val <span style="color:#c678dd;">in</span> rows[r] <span style="color:#c678dd;">or</span> val <span style="color:#c678dd;">in</span> cols[c] <span style="color:#c678dd;">or</span> val <span style="color:#c678dd;">in</span> boxes[box_key]:
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+            rows[r].add(val); cols[c].add(val); boxes[box_key].add(val)
+    <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+<span style="color:#5c6370;"># For 16×16: n=16, box_size=4 → same logic, bigger constants</span></code></pre>
+</div>
+
+<p><strong>Q4: "What if you needed to not just validate but also solve the Sudoku?"</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="验证是求解的子问题。/ Validation is a sub-problem of solving.&#10;&#10;Solving requires backtracking:&#10;1. Find an empty cell&#10;2. Try digits 1-9&#10;3. For each digit: call isValid (our function!) to check constraints&#10;4. If valid, place digit, recurse&#10;5. If recursion fails, backtrack (remove digit, try next)&#10;&#10;Time: O(9^m) where m = number of empty cells — exponential worst case&#10;Typical Sudoku (m~50 empty cells) solves in milliseconds due to pruning.">Copy</button>
+  <pre><code class="language-text">验证是求解的子问题。/ Validation is a sub-problem of solving.
+
+Solving requires backtracking:
+1. Find an empty cell
+2. Try digits 1-9
+3. For each digit: call isValid (our function!) to check constraints
+4. If valid, place digit, recurse
+5. If recursion fails, backtrack (remove digit, try next)
+
+Time: O(9^m) where m = number of empty cells — exponential worst case
+Typical Sudoku (m~50 empty cells) solves in milliseconds due to pruning.</code></pre>
+</div>
+
+<p><strong>Q5: "If this were a production system checking millions of Sudoku boards per second, what would you optimize?"</strong></p>
+
+<div class="diagram-block">1. Bitmask instead of sets → 9 ints vs 27 sets, better cache performance
+2. Early termination → return False as soon as first conflict found (already done!)
+3. SIMD/vectorization → process 4 rows simultaneously with 256-bit registers
+4. GPU parallelism → each 81-cell check is independent; batch 10k boards on GPU
+5. Pre-compute valid digit sets → use lookup tables for box → allowed digits
+
+In practice: bitmask version on CPU is 3-5x faster than set version.</div>
+
+<hr/>
+
+<h2>Complexity Summary / 复杂度总结</h2>
+
+<div class="diagram-block">┌─────────────────┬──────────┬──────────────┐
+│ Approach        │ Time     │ Space        │
+├─────────────────┼──────────┼──────────────┤
+│ Naive (3 loops) │ O(81)    │ O(27) sets   │
+│ Single pass     │ O(81)    │ O(27) sets   │  ← Best readability
+│ Bitmask         │ O(81)    │ O(27) ints   │  ← Best performance
+└─────────────────┴──────────┴──────────────┘
+
+All O(1) for fixed 9×9 board.
+For general n×n Sudoku: O(n²) time and space.</div>
+
+<hr/>
+
+<h2>📚 References / 深入学习</h2>
+
+<p>• 🔗 <a href="https://leetcode.com/problems/valid-sudoku/">LeetCode #36: Valid Sudoku</a> 🟡 Medium</p>
+<p>• 📹 <a href="https://neetcode.io/problems/valid-sudoku">NeetCode Solution Video</a></p>
+<p>• 📖 <a href="https://neetcode.io/roadmap">NeetCode Arrays &amp; Hashing Roadmap</a> — Visual learning path for this pattern</p>
+<p>• 🔗 <a href="https://leetcode.com/problems/sudoku-solver/">LeetCode #37: Sudoku Solver</a> — Natural follow-up (backtracking)</p>
+<p>• 🔗 <a href="https://leetcode.com/problems/repeated-dna-sequences/">LeetCode #187: Repeated DNA Sequences</a> — Same multi-key hashing pattern</p>
+
+<hr/>
+
+<p>🧒 <strong>ELI5:</strong> Checking if a Sudoku is valid is like making sure no two kids in the same row, column, or team have the same number on their shirt — you write down each number as you see it, and yell "STOP!" if you see it twice in the same group.</p>
+
+<hr/>
+
+<p><em>Saturday Deep Dive — Day 8 · Generated 2026-03-21</em></p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>

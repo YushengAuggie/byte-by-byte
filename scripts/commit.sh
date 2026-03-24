@@ -42,6 +42,11 @@ pathlib.Path("README.md").write_text(readme)
 print("✓ Updated README progress table")
 PYEOF
 
+# Regenerate RSS feed
+if python3 scripts/generate-rss.py 2>/dev/null; then
+  echo "✓ Regenerated docs/feed.xml (RSS)"
+fi
+
 # Regenerate archive index
 if python3 scripts/generate-index.py 2>/dev/null; then
   echo "✓ Regenerated docs/archive index"

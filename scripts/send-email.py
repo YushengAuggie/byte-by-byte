@@ -587,12 +587,12 @@ def main():
     plain_text = 'byte-by-byte{} - {}\n\n'.format(day_label, today)
     plain_text += '\n\n---\n\n'.join(plain_parts)
     plain_text += '\n\n---\nA little bit every day. A lot over time.'
-    plain_text += '\n\nUnsubscribe: reply with "unsubscribe"'
+    plain_text += "\n\nReply to this email with 'UNSUBSCRIBE' to stop receiving byte-by-byte"
 
     # Add unsubscribe note to HTML footer
     full_html = full_html.replace(
         'open source daily learning</p>',
-        'open source daily learning<br><small>Reply "unsubscribe" to stop receiving emails</small></p>'
+        "open source daily learning<br><small>Reply to this email with 'UNSUBSCRIBE' to stop receiving byte-by-byte</small></p>"
     )
 
     # Send to all recipients
