@@ -5,8 +5,644 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 24 Mar 2026 01:21:14 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 24 Mar 2026 15:07:29 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-03-24</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-24</guid>
+      <pubDate>Tue, 24 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 Day 9 / System Design Day 9</h2>
+
+<p><strong>主题 / Topic:</strong> 数据库复制与分片 / Database Replication &amp; Sharding</p>
+
+<hr/>
+
+<h2>🌏 真实场景 / Real-World Scenario</h2>
+
+<p>想象你在设计一个像微信读书或 Goodreads 的阅读应用——用户突破 5000 万，每天产生几亿条阅读记录、笔记和评论。单一数据库服务器已经撑不住了：写操作堵住读操作，单点故障导致整个 App 不可用，数据量超出单机磁盘上限。</p>
+
+<p>你需要两把利器：<strong>复制（Replication）</strong>解决可用性和读性能，<strong>分片（Sharding）</strong>解决写性能和存储规模。</p>
+
+<p>Imagine you&#x27;re designing a reading app like Goodreads at 50M users, with hundreds of millions of reading records daily. A single database server buckles under load. You need <strong>Replication</strong> for availability &amp; read scale, and <strong>Sharding</strong> for write scale &amp; storage capacity.</p>
+
+<hr/>
+
+<h2>🏛️ 架构图 / Architecture Diagram</h2>
+
+<pre><code>
+┌─────────────────────────────────────────────────────────┐
+│                    应用服务层 / App Layer                │
+│         [API Server 1] [API Server 2] [API Server 3]    │
+└─────────┬──────────────────────────┬────────────────────┘
+          │ Writes                    │ Reads
+          ▼                           ▼
+┌─────────────────┐        ┌────────────────────────┐
+│   Primary DB    │──────► │  Read Replica 1        │
+│ (Leader/Master) │──────► │  Read Replica 2        │
+│                 │──────► │  Read Replica 3        │
+└────────┬────────┘        └────────────────────────┘
+         │ Replication Log (WAL / Binlog)
+         │
+         ▼  [After Replication → Add Sharding]
+┌────────────────────────────────────────────────────┐
+│                  Shard Router / Proxy              │
+│           (e.g. Vitess, ProxySQL, PgBouncer)       │
+└────┬──────────────────┬───────────────────┬────────┘
+     │                  │                   │
+     ▼                  ▼                   ▼
+┌─────────┐       ┌─────────┐        ┌─────────┐
+│ Shard 0 │       │ Shard 1 │        │ Shard 2 │
+│user 0-33M│      │user33-66M│       │user66M+ │
+│+Replicas│       │+Replicas│        │+Replicas│
+└─────────┘       └─────────┘        └─────────┘
+</code></pre>
+
+<hr/>
+
+<h2>⚖️ 关键权衡 / Key Tradeoffs</h2>
+
+<h3>复制 / Replication</h3>
+
+<p>| 方案 | 优点 | 缺点 |</p>
+<p>|------|------|------|</p>
+<p>| <strong>同步复制</strong> | 强一致性，不丢数据 | 写延迟高（等所有副本确认） |</p>
+<p>| <strong>异步复制</strong> | 写延迟低，吞吐高 | 副本可能有延迟（replication lag） |</p>
+<p>| <strong>半同步</strong> | 折中：至少 1 个副本确认 | 稍高写延迟，部分一致性 |</p>
+
+<p><strong>为什么这样设计？</strong></p>
+<p>- 读多写少的业务（如阅读记录）：异步复制 + 多读副本，读吞吐可水平扩展</p>
+<p>- 金融、支付场景：同步复制或 Raft/Paxos 保证强一致</p>
+
+<h3>分片 / Sharding</h3>
+
+<p>| 策略 | 原理 | 适合场景 |</p>
+<p>|------|------|------|</p>
+<p>| <strong>Range Sharding</strong> | 按 user_id 范围切分 | 范围查询友好，但热点风险高 |</p>
+<p>| <strong>Hash Sharding</strong> | <code>shard = hash(user_id) % N</code> | 均匀分布，但范围查询跨 shard |</p>
+<p>| <strong>Directory Sharding</strong> | 查表确定归属 shard | 灵活，但查表本身是瓶颈 |</p>
+
+<hr/>
+
+<h2>🚫 常见坑 / Common Mistakes</h2>
+
+<p><strong>坑 1：过早分片</strong></p>
+<p>&gt; 分片大幅增加系统复杂度。复制 + 读副本能抗住大多数流量，先用它，真正撑不住再分片。</p>
+
+<p><strong>坑 2：选错 Shard Key</strong></p>
+<p>&gt; 按时间分片会导致最新 shard 永远是热点（写都打到最新月份）。按用户 ID hash 分片更均匀。</p>
+
+<p><strong>坑 3：跨 Shard 事务</strong></p>
+<p>&gt; 分布式事务极复杂。设计 schema 时尽量让同一用户的数据在同一 shard，避免跨 shard join。</p>
+
+<p><strong>坑 4：忽略 Replication Lag</strong></p>
+<p>&gt; 用户刚发评论，立刻刷新却看不到——因为读副本还没同步。对强一致性操作，读 Primary 或使用 read-your-writes 路由。</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>1. [AWS Database Replication — RDS Read Replicas](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html)</p>
+<p>2. [Vitess — MySQL Sharding at YouTube Scale](https://vitess.io/docs/concepts/sharding/)</p>
+<p>3. [Designing Data-Intensive Applications — Chapter 5 &amp; 6 (Kleppmann)](https://dataintensive.net/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 / 用小孩能理解的话说</h2>
+
+<p><strong>复制</strong>就像把书抄写多份，放在不同图书馆。每个图书馆都能借给你看（读副本），但只有总馆能修改（Primary）。</p>
+
+<p><strong>分片</strong>就像把全班同学的作业按学号分给 3 个老师批改——不再一个老师批所有作业，每个老师只负责一段。</p>
+
+<p><strong>Replication</strong> = Make copies of the book so more people can read at once.</p>
+<p><strong>Sharding</strong> = Split the library into sections so no single librarian is overwhelmed.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 Day 10 / Algorithms Day 10</h2>
+
+<p><strong>#125 Valid Palindrome (Easy)</strong> — 双指针模式 / Two Pointers</p>
+
+<hr/>
+
+<h2>🧩 新模式 / New Pattern: 双指针模式 (Two Pointers)</h2>
+
+<p>📍 这个模式块共 5 道题 / This block: 5 problems</p>
+
+<p>| # | 题目 | 难度 |</p>
+<p>|---|------|------|</p>
+<p>| 1 | #125 Valid Palindrome ← <strong>今天 / TODAY</strong> | 🟢 Easy |</p>
+<p>| 2 | #167 Two Sum II | 🟡 Medium |</p>
+<p>| 3 | #15 3Sum | 🟡 Medium |</p>
+<p>| 4 | #11 Container With Most Water | 🟡 Medium |</p>
+<p>| 5 | #42 Trapping Rain Water | 🔴 Hard |</p>
+
+<hr/>
+
+<h3>什么时候用 / When to Use</h3>
+
+<p>排序数组中找配对、回文检测、原地操作时，想到双指针。</p>
+
+<p>Use Two Pointers when: sorted array + find a pair, palindrome detection, in-place removal, merging sorted arrays.</p>
+
+<h3>识别信号 / Signals</h3>
+
+<p>&gt; sorted array · find pair with sum · palindrome · remove in-place · merge sorted · container/water problems</p>
+
+<h3>通用模版 / Template</h3>
+
+<pre><code>
+def two_pointer_template(arr, target):
+    left, right = 0, len(arr) - 1
+    
+    while left &lt; right:
+        current = arr[left] + arr[right]      # or some condition on left/right
+        
+        if current == target:
+            return [left, right]              # found it
+        elif current &lt; target:
+            left += 1                         # need bigger value → move left pointer right
+        else:
+            right -= 1                        # need smaller value → move right pointer left
+    
+    return []                                 # not found
+</code></pre>
+
+<p><strong>核心洞察 / Key Insight:</strong> 排序 + 两端逼近，从 O(n²) 嵌套循环降到 O(n) 单次扫描。</p>
+<p>Sorted order + converging from both ends → eliminates the need for nested loops.</p>
+
+<hr/>
+
+<h2>📖 今日题目 / Today&#x27;s Problem</h2>
+
+<p>🔗 [LeetCode #125 — Valid Palindrome](https://leetcode.com/problems/valid-palindrome/) 🟢 Easy</p>
+<p>📹 [NeetCode 讲解](https://neetcode.io/problems/is-palindrome)</p>
+
+<hr/>
+
+<h3>🌍 现实类比 / Real-World Analogy</h3>
+
+<p>想象你是一个质检员，要验证一条传送带上的字符串&quot;从两头读是否一样&quot;。你派两个检查员分别站在传送带两端，同时向中间走，每步对比字母（跳过非字母数字的字符）。两人相遇时没有发现不同，就通过！</p>
+
+<p>Think of two inspectors walking from both ends of a conveyor belt toward the middle, each checking only alphanumeric items and skipping punctuation/spaces.</p>
+
+<hr/>
+
+<h3>🧩 如何映射到模版 / Mapping to Template</h3>
+
+<p>经典双指针，但有两个变化：</p>
+<p>1. <strong>不是排序数组</strong>——我们用双指针做&quot;对比&quot;而不是&quot;求和&quot;</p>
+<p>2. <strong>需要跳过非字母数字字符</strong>——在移动指针前先跳过无效字符</p>
+
+<p>Classic Two Pointers, with two modifications:</p>
+<p>1. No sorted array → use pointers for <strong>comparison</strong>, not sum-seeking</p>
+<p>2. Skip non-alphanumeric chars before comparing</p>
+
+<pre><code>
+def isPalindrome(s: str) -&gt; bool:
+    left, right = 0, len(s) - 1
+    
+    while left &lt; right:
+        # Skip non-alphanumeric from the left
+        while left &lt; right and not s[left].isalnum():
+            left += 1
+        # Skip non-alphanumeric from the right
+        while left &lt; right and not s[right].isalnum():
+            right -= 1
+        
+        # Compare (case-insensitive)
+        if s[left].lower() != s[right].lower():
+            return False
+        
+        left += 1
+        right -= 1
+    
+    return True
+</code></pre>
+
+<hr/>
+
+<h3>🔍 代码追踪 / Code Trace</h3>
+
+<p>Input: <code>&quot;A man, a plan, a canal: Panama&quot;</code></p>
+
+<pre><code>
+left=0  right=29  → &#x27;A&#x27; vs &#x27;a&#x27; → match  → left=1,  right=28
+left=1  right=28  → skip &#x27; &#x27;   → left=2
+left=2  right=28  → &#x27;m&#x27; vs &#x27;m&#x27; → match  → left=3,  right=27
+left=3  right=27  → &#x27;a&#x27; vs &#x27;a&#x27; → match  → left=4,  right=26
+left=4  right=26  → &#x27;n&#x27; vs &#x27;n&#x27; → match  → ...
+...
+→ All chars match → return True ✅
+</code></pre>
+
+<p>Input: <code>&quot;race a car&quot;</code></p>
+
+<pre><code>
+left=0  right=9   → &#x27;r&#x27; vs &#x27;r&#x27; → match
+left=1  right=8   → &#x27;a&#x27; vs &#x27;a&#x27; → match
+left=2  right=7   → &#x27;c&#x27; vs &#x27;c&#x27; → match
+left=3  right=6   → &#x27;e&#x27; vs &#x27;a&#x27; → ❌ MISMATCH → return False
+</code></pre>
+
+<hr/>
+
+<h3>📊 复杂度 / Complexity</h3>
+
+<p>| | Time | Space |</p>
+<p>|---|------|-------|</p>
+<p>| Two Pointer | <strong>O(n)</strong> | <strong>O(1)</strong> |</p>
+<p>| Built-in reverse | O(n) | O(n) — creates new string |</p>
+
+<p><strong>Space O(1) is the win here</strong> — we never create a cleaned copy of the string.</p>
+
+<hr/>
+
+<h3>🔄 举一反三 / Pattern Connections</h3>
+
+<p>这道题是双指针的&quot;热身&quot;——纯粹的左右逼近。接下来的题目会在这个基础上加难度：</p>
+
+<p>| 题目 | 变化 | 核心差异 |</p>
+<p>|------|------|---------|</p>
+<p>| <strong>#167 Two Sum II</strong> | 有序数组找和 | 移动指针基于 sum vs target |</p>
+<p>| <strong>#15 3Sum</strong> | 三数之和 | 固定一个数 + 双指针找剩余两个 |</p>
+<p>| <strong>#11 Container With Most Water</strong> | 面积最大化 | 移动较短的那边指针 |</p>
+<p>| <strong>#42 Trapping Rain Water</strong> | 复杂水位计算 | 双指针维护左右最大高度 |</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>1. [LeetCode #125 — Valid Palindrome](https://leetcode.com/problems/valid-palindrome/)</p>
+<p>2. [NeetCode — Two Pointers Pattern](https://neetcode.io/roadmap)</p>
+<p>3. [Python str.isalnum() docs](https://docs.python.org/3/library/stdtypes.html#str.isalnum)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 / 用小孩能理解的话说</h2>
+
+<p>回文就像照镜子——左边和右边要一样。我们用两只手，一只从左摸，一只从右摸，跳过空格和标点，对比每个字母。如果两只手中间相遇了都没发现不同，就是回文！</p>
+
+<p>A palindrome is like a mirror — left side = right side. We use two fingers, one from each end, skip spaces/punctuation, compare each letter. If both fingers meet in the middle without finding a mismatch → palindrome!</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 Day 9 / Soft Skills Day 9</h2>
+
+<p><strong>主题 / Topic:</strong> 利益相关方管理 / Stakeholder Management</p>
+<p><strong>问题 / Question:</strong> Describe a time you had to push back on a feature or requirement. Why?</p>
+
+<hr/>
+
+<h2>💡 为什么这道题很重要 / Why This Matters</h2>
+
+<p>在高级工程师面试中，面试官不只想知道你&quot;会写代码&quot;——他们想知道你能不能独立判断、有没有勇气说出&quot;这个需求有问题&quot;。盲目执行坏需求是初级工程师的行为；能够用数据和逻辑推动正确方向，是 Senior/Staff 的核心能力。</p>
+
+<p>Interviewers want to know you&#x27;re not just a &quot;feature factory.&quot; Senior engineers own outcomes, not just outputs. Pushing back constructively — with data, not attitude — is a core competency at L5+.</p>
+
+<hr/>
+
+<h2>⭐ STAR 拆解 / STAR Breakdown</h2>
+
+<h3>Situation（情境）</h3>
+<p>&gt; 设置背景：什么团队？什么项目阶段？紧迫程度？</p>
+
+<p>&quot;我们的 PM 要求在发布前两周新增一个实时用户追踪功能，当时系统负载已经接近上限。&quot;</p>
+
+<p>&quot;Our PM requested a real-time user tracking feature two weeks before a major launch, when our system load was already near capacity.&quot;</p>
+
+<h3>Task（任务）</h3>
+<p>&gt; 你的职责是什么？你为什么有发言权？</p>
+
+<p>&quot;作为负责后端基础设施的 Senior Engineer，我需要评估这个需求的可行性和风险。&quot;</p>
+
+<p>&quot;As the Senior Engineer owning backend infra, I needed to assess feasibility and surface the technical risk.&quot;</p>
+
+<h3>Action（行动）</h3>
+<p>&gt; 这是核心！展示你如何<strong>有据可查地</strong>推回，而不是情绪化地拒绝。</p>
+
+<p>1. <strong>量化风险：</strong> 我跑了负载测试，展示新功能会把 P99 延迟从 120ms 推高到 650ms</p>
+<p>2. <strong>提出替代方案：</strong> 建议将实时追踪改为批量日志，延迟 24h 但不影响核心体验</p>
+<p>3. <strong>对齐业务目标：</strong> 确认 PM 真正想要的是&quot;数据分析能力&quot;而不是&quot;实时性&quot;——批量方案完全满足</p>
+<p>4. <strong>共识达成：</strong> 带着数据找 PM + 工程总监开了 30 分钟会议，最终采用我的方案</p>
+
+<p>&quot;I ran load tests showing P99 latency would spike from 120ms to 650ms. I proposed batch logging instead — same data, 24h delay, zero performance impact. I aligned with PM on the real goal (analytics, not real-time), and brought data to a 30-min meeting with PM and Eng Director. We shipped the batch solution.&quot;</p>
+
+<h3>Result（结果）</h3>
+<p>&gt; 用数字说话。</p>
+
+<p>&quot;发布如期进行，零性能事故。批量数据方案在发布后三个月上线，PM 反馈数据质量超出预期。这次经验也推动团队建立了需求评审中的技术可行性评估流程。&quot;</p>
+
+<p>&quot;Launch shipped on time with zero incidents. The batch analytics shipped 3 months post-launch and exceeded data quality expectations. The experience led to establishing a technical feasibility step in our requirements review process.&quot;</p>
+
+<hr/>
+
+<h2>❌ 别这么说 / Bad vs ✅ 这么说 / Good</h2>
+
+<p>| ❌ 踩坑 | ✅ 正解 |</p>
+<p>|--------|--------|</p>
+<p>| &quot;我直接告诉 PM 这个要求太蠢了&quot; | &quot;我跑了测试，把风险用数据量化&quot; |</p>
+<p>| &quot;我认为这不重要，所以不做&quot; | &quot;我先理解他们的真实目标，再提替代方案&quot; |</p>
+<p>| &quot;最终我没能阻止，还是做了&quot; | &quot;我确保所有决策者都了解风险，决策有据可查&quot; |</p>
+<p>| &quot;我们就这么做了&quot; → 没有结果 | 说清楚结果：上线情况、用户影响、后续改进 |</p>
+
+<hr/>
+
+<h2>🚀 Senior/Staff 加分点 / Senior+ Tips</h2>
+
+<p>1. <strong>系统化推回，而非感情化拒绝。</strong> 数据 &gt; 直觉。Load test、cost model、用户影响分析——让数字说话。</p>
+<p>2. <strong>先理解&quot;为什么&quot;，再评估&quot;怎么做&quot;。</strong> 很多&quot;坏需求&quot;背后有合理的业务原因，找到根本目标才能提出真正有价值的替代方案。</p>
+<p>3. <strong>建立信任储备。</strong> 平时 deliver 靠谱，关键时刻的推回才会被认真对待。</p>
+<p>4. <strong>把决策过程文档化。</strong> 即使你没能推回成功，确保风险已被知晓和记录，保护自己也保护团队。</p>
+
+<hr/>
+
+<h2>🎯 Key Takeaways</h2>
+
+<p>- 推回 ≠ 拒绝。推回 = 用专业判断守护产品质量。</p>
+<p>- Push back = professional judgment, not obstruction.</p>
+<p>- 永远带着数据和替代方案去谈，而不是空手说&quot;不行&quot;。</p>
+<p>- Always come with data + alternatives, never just &quot;no.&quot;</p>
+<p>- 好的推回最终是双赢：工程质量 + 业务目标都得到保护。</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>1. [The Engineering Manager&#x27;s Handbook — Pushing Back Effectively](https://www.engmanager.com/)</p>
+<p>2. [Staff Engineer: Leadership Beyond the Management Track (Will Larson)](https://staffeng.com/book)</p>
+<p>3. [How to Disagree Productively — First Round Review](https://review.firstround.com/how-to-disagree-productively-and-find-common-ground/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 / 用小孩能理解的话说</h2>
+
+<p>如果你的朋友说&quot;我们现在去游泳吧&quot;，但你知道外面在下大雨，你不是直接说&quot;不去&quot;，而是说&quot;你想游泳吗？那我们去室内游泳池！&quot;——这就是有建设性的推回。</p>
+
+<p>If a friend says &quot;let&#x27;s swim now!&quot; but it&#x27;s raining, you don&#x27;t just say &quot;no&quot; — you say &quot;want to swim? Let&#x27;s go to the indoor pool!&quot; That&#x27;s constructive pushback.</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 Day 9 / Frontend Day 9</h2>
+
+<p><strong>主题 / Topic:</strong> React <code>useState</code> — 触发重渲染的状态 / State That Triggers Re-renders</p>
+
+<hr/>
+
+<h2>🌏 真实场景 / Real Scenario</h2>
+
+<p>你在做一个任务管理 dashboard，点击按钮需要切换&quot;显示已完成任务&quot;的筛选器。你需要一个变量来记住当前状态，而且每次改变时 UI 要自动更新。这就是 <code>useState</code> 的舞台。</p>
+
+<p>You&#x27;re building a task dashboard. Clicking a button should toggle showing completed tasks. You need a variable that remembers its value AND automatically updates the UI when it changes. That&#x27;s <code>useState</code>.</p>
+
+<hr/>
+
+<h2>💻 代码示例 / Code Snippet</h2>
+
+<pre><code>
+import { useState } from &#x27;react&#x27;
+
+interface Task {
+  id: number
+  title: string
+  completed: boolean
+}
+
+function TaskDashboard() {
+  // useState returns [current value, setter function]
+  const [showCompleted, setShowCompleted] = useState(false)
+  const [tasks] = useState&lt;Task[]&gt;([
+    { id: 1, title: &#x27;Review PR&#x27;, completed: true },
+    { id: 2, title: &#x27;Write tests&#x27;, completed: false },
+    { id: 3, title: &#x27;Deploy staging&#x27;, completed: true },
+  ])
+
+  // Derived state — computed from existing state, no useState needed
+  const visibleTasks = showCompleted
+    ? tasks
+    : tasks.filter(t =&gt; !t.completed)
+
+  return (
+    &lt;div&gt;
+      &lt;button onClick={() =&gt; setShowCompleted(prev =&gt; !prev)}&gt;
+        {showCompleted ? &#x27;Hide&#x27; : &#x27;Show&#x27;} Completed ({tasks.filter(t =&gt; t.completed).length})
+      &lt;/button&gt;
+      &lt;ul&gt;
+        {visibleTasks.map(task =&gt; (
+          &lt;li key={task.id} style={{ opacity: task.completed ? 0.5 : 1 }}&gt;
+            {task.title}
+          &lt;/li&gt;
+        ))}
+      &lt;/ul&gt;
+    &lt;/div&gt;
+  )
+}
+</code></pre>
+
+<hr/>
+
+<h2>🧠 猜猜输出 / What Does This Output?</h2>
+
+<pre><code>
+function Counter() {
+  const [count, setCount] = useState(0)
+  
+  const handleClick = () =&gt; {
+    setCount(count + 1)
+    setCount(count + 1)
+    setCount(count + 1)
+  }
+  
+  return &lt;button onClick={handleClick}&gt;Count: {count}&lt;/button&gt;
+}
+</code></pre>
+
+<p>点击一次后，count 是多少？/ After one click, what is <code>count</code>?</p>
+
+<p><strong>A)</strong> 3 — 调用了三次 setCount</p>
+<p><strong>B)</strong> 1 — React 批量处理，count 是快照</p>
+<p><strong>C)</strong> 0 — setState 是异步的，还没更新</p>
+<p><strong>D)</strong> 报错 — 不能在一个函数里多次调用 setCount</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>答案是 B — count = 1</strong></p>
+
+<p>为什么？因为在同一个事件处理函数中，<code>count</code> 是一个<strong>快照（snapshot）</strong>，值固定为 <code>0</code>。三次 <code>setCount(0 + 1)</code> 都是 <code>setCount(1)</code>，最后只更新一次。</p>
+
+<p>React batches state updates within the same event handler. <code>count</code> is a <strong>snapshot</strong> — it&#x27;s <code>0</code> throughout the whole function. All three calls are <code>setCount(0 + 1)</code> = <code>setCount(1)</code>. Result: 1.</p>
+
+<p><strong>✅ 如果你想累加，用函数式更新 / Use functional updates for increments:</strong></p>
+<pre><code>
+setCount(prev =&gt; prev + 1) // ✅ prev is always latest value
+setCount(prev =&gt; prev + 1) // ✅ prev = 1
+setCount(prev =&gt; prev + 1) // ✅ prev = 2 → final count = 3
+</code></pre>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>❌ 常见错误 / Common Mistakes</h2>
+
+<h3>错误 1：直接修改 state 对象</h3>
+
+<pre><code>
+// ❌ WRONG — mutating state directly, React won&#x27;t re-render!
+const [user, setUser] = useState({ name: &#x27;Alice&#x27;, age: 25 })
+user.age = 26  // ← This doesn&#x27;t trigger a re-render
+
+// ✅ CORRECT — create a new object
+setUser({ ...user, age: 26 })
+</code></pre>
+
+<h3>错误 2：把可以派生的值放进 state</h3>
+
+<pre><code>
+// ❌ WRONG — derived state causes sync issues
+const [items, setItems] = useState([...])
+const [filteredItems, setFilteredItems] = useState([...]) // ← redundant!
+
+// ✅ CORRECT — compute it during render
+const filteredItems = items.filter(item =&gt; item.active) // no useState needed
+</code></pre>
+
+<h3>错误 3：忘记函数式更新导致 stale closure</h3>
+
+<pre><code>
+// ❌ WRONG in async context or event batching
+setCount(count + 1)
+
+// ✅ CORRECT — always use functional update when new value depends on old
+setCount(prev =&gt; prev + 1)
+</code></pre>
+
+<hr/>
+
+<h2>📐 何时用 / 何时不用 / When to Use vs Not</h2>
+
+<p>| ✅ 用 useState | ❌ 不用 useState |</p>
+<p>|--------------|----------------|</p>
+<p>| UI 交互状态（开/关、选中、展开） | 可从其他 state/props 计算的值 |</p>
+<p>| 表单输入值 | 不需要触发渲染的变量（用 <code>useRef</code>） |</p>
+<p>| 组件局部数据（列表项、分页） | 多组件共享状态（用 Context 或状态管理库） |</p>
+<p>| 异步请求结果（loading/data/error） | 服务端状态（用 React Query / SWR） |</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>1. [React Docs — useState](https://react.dev/reference/react/useState)</p>
+<p>2. [React Docs — State as a Snapshot](https://react.dev/learn/state-as-a-snapshot)</p>
+<p>3. [Common useState Mistakes (Kent C. Dodds)](https://kentcdodds.com/blog/dont-sync-state-derive-it)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 / 用小孩能理解的话说</h2>
+
+<p><code>useState</code> 就像一块小白板。你可以在上面写字（set state），每次改变内容，整个教室（组件）都会重新看一遍白板（重渲染）。普通变量就像便利贴——改了 React 不知道，不会重新看。</p>
+
+<p><code>useState</code> is like a whiteboard. When you erase and rewrite it, the whole classroom (component) looks again and updates. A regular variable is like a sticky note only you can see — React doesn&#x27;t know it changed.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI Day 9 — 本周 AI 大事件 / AI News Roundup</h2>
+
+<p><em>来源：web_search，2026年3月24日 / Sources: web_search, March 24, 2026</em></p>
+
+<hr/>
+
+<h2>📰 Story 1: Agentic AI 成为新主流 / Agentic AI Goes Mainstream</h2>
+
+<p><strong>来源 / Source:</strong> [switas.com — The AI Avalanche: 7 Agentic LLM Breakthroughs](https://www.switas.com/articles/the-ai-avalanche-7-agentic-llm-breakthroughs-reshaping-march-2026)</p>
+
+<p>AI 从&quot;生成文本&quot;进化到&quot;自主完成任务&quot;。Gartner 预测 2026 年底 40% 的企业应用将内嵌任务型 AI Agent，作为真正的&quot;数字同事&quot;自动处理端到端业务流程。Oracle 也宣布了专为 Agentic AI 优化的数据库创新。</p>
+
+<p>AI has evolved from &quot;generate text&quot; to &quot;autonomously complete multi-step tasks.&quot; Gartner predicts 40% of enterprise apps will embed task-specific AI agents by end of 2026. Oracle announced new AI Database innovations purpose-built for agentic workloads.</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>作为工程师，你很快会被要求构建或集成 AI Agent。理解 Agent 的工具调用、状态管理、错误恢复机制，会是核心面试考点和工作技能。</p>
+
+<p>As an engineer, you&#x27;ll soon be asked to build or integrate AI agents. Tool calling, state management, and error recovery for agents are becoming core interview topics.</p>
+
+<hr/>
+
+<h2>📰 Story 2: 模型&quot;认知密度&quot;时代——参数不是唯一指标 / Cognitive Density: Parameters Aren&#x27;t Everything</h2>
+
+<p><strong>来源 / Source:</strong> [blog.mean.ceo — New AI Model Releases March 2026](https://blog.mean.ceo/new-ai-model-releases-news-march-2026/)</p>
+
+<p>2026 年 3 月，AI 竞赛焦点从&quot;谁的参数最多&quot;转向&quot;谁的认知密度最高&quot;。Claude Opus 4.6（Anthropic）引入&quot;自适应思考&quot;——模型根据 prompt 复杂度动态决定是否深度推理，无需用户手动配置。OpenAI 的 GPT-5.4 系列专注于每字节更高的知识密度。</p>
+
+<p>The AI race shifted from &quot;most parameters&quot; to &quot;highest cognitive density.&quot; Claude Opus 4.6 introduced &quot;adaptive thinking&quot; — the model dynamically decides when to engage deeper reasoning without user configuration. OpenAI&#x27;s GPT-5.4 focuses on knowledge density per byte.</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>选模型时，benchmark 分数只是一方面。了解&quot;推理成本 vs 质量&quot;的权衡，帮你在实际项目中做出更聪明的模型选型决策。</p>
+
+<p>When choosing models for production, benchmark scores aren&#x27;t everything. Understanding the reasoning-cost vs quality tradeoff helps you make smarter model selection decisions.</p>
+
+<hr/>
+
+<h2>📰 Story 3: 上下文窗口突破 100 万 Token / Context Windows Break 1M Tokens</h2>
+
+<p><strong>来源 / Source:</strong> [alphacorp.ai — Top 5 LLMs for March 2026](https://www.alphacorp.ai/blog/top-5-llms-for-march-2026-benchmarks-pricing-picks)</p>
+
+<p>多个领先模型的上下文窗口已突破 100 万 token，实验性模型甚至推向 1000 万。这意味着可以在单个 prompt 中塞入整个公司知识库、百万行代码库或多年财报数据。</p>
+
+<p>Several leading models now boast 1M+ token context windows, with experimental models pushing toward 10M. You can now feed an entire company knowledge base, massive codebases, or years of financial records into a single prompt.</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>超长上下文改变了 RAG（检索增强生成）的架构选择。某些场景下，直接 long-context 比构建向量数据库更简单、更准确——但成本和速度的权衡需要你来算。</p>
+
+<p>Long contexts change RAG architecture decisions. Sometimes long-context beats building a vector database — but you need to reason about the cost/latency tradeoffs.</p>
+
+<hr/>
+
+<h2>📰 Story 4: LLM 安全新技术 &amp; &quot;能力校准&quot; / LLM Safety &amp; Capability Calibration</h2>
+
+<p><strong>来源 / Source:</strong> [news.ncsu.edu — New Technique Addresses LLM Safety](https://news.ncsu.edu/2026/03/new-technique-addresses-llm-safety/) · [morningstar.com — Appier Capability Calibration](https://www.morningstar.com/news/pr-newswire/20260324cn17690/stop-ai-from-guessing-appier-enables-agents-to-assess-confidence-before-acting)</p>
+
+<p>NC State 研究人员发明了新技术识别保证安全响应的关键组件，同时将&quot;对齐税&quot;（安全训练带来的性能损失）降到最低。Appier 推出&quot;能力校准&quot;框架，让 AI Agent 在行动前先评估自己是否有能力完成任务，降低幻觉和过度自信。</p>
+
+<p>NC State researchers identified key model components that ensure safe responses while minimizing the &quot;alignment tax.&quot; Appier introduced &quot;Capability Calibration&quot; — AI agents assess their own confidence before taking action, reducing hallucinations and overconfidence in enterprise deployments.</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>在企业 AI 部署中，让模型&quot;知道自己不知道什么&quot;比让它无限自信地输出错误答案更重要。Capability calibration 是 AI 工程中的新兴核心模式。</p>
+
+<p>In enterprise AI, knowing what the model doesn&#x27;t know is more valuable than confident-but-wrong outputs. Capability calibration is an emerging core pattern in AI engineering.</p>
+
+<hr/>
+
+<h2>📰 Story 5: 模型发布速度危机——每 72 小时一个重磅发布 / Model Release Velocity Crisis</h2>
+
+<p><strong>来源 / Source:</strong> [ai-weekly.ai — Newsletter 03-24-2026](https://ai-weekly.ai/newsletter-03-24-2026/)</p>
+
+<p>行业分析师追踪到目前约每 72 小时就有一个重大 AI 模型发布。Gemini 3.1 Pro、Claude Opus 4.6、GPT-5.4、DeepSeek V3.2、Qwen 3.5……价格相比去年同期下降 40-80%，开源权重模型与闭源旗舰的差距正在快速收窄。</p>
+
+<p>Analysts are tracking a major AI release approximately every 72 hours. Prices dropped 40-80% year-over-year. Open-weight models are closing the gap with closed-source flagships rapidly.</p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>AI 基础设施成本正在快速商品化。在系统设计中，&quot;用哪个 LLM API&quot;的成本计算将越来越重要，学会对比延迟、成本、质量的三角权衡是工程师的新必备技能。</p>
+
+<p>AI infrastructure is rapidly commoditizing. Cost modeling for LLM API selection — balancing latency, cost, and quality — is becoming a core engineering skill.</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>1. [AI Weekly Newsletter — March 24, 2026](https://ai-weekly.ai/newsletter-03-24-2026/)</p>
+<p>2. [Top LLMs March 2026 — AlphaCorp](https://www.alphacorp.ai/blog/top-5-llms-for-march-2026-benchmarks-pricing-picks)</p>
+<p>3. [NC State LLM Safety Research](https://news.ncsu.edu/2026/03/new-technique-addresses-llm-safety/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 / 用小孩能理解的话说</h2>
+
+<p>AI 现在不只是&quot;会说话&quot;了，而是开始&quot;帮你做事&quot;（Agentic AI）。同时模型越来越聪明但越来越便宜，就像手机——几年前的旗舰价格，现在买到的性能翻了几倍。</p>
+
+<p>AI isn&#x27;t just &quot;talking&quot; anymore — it&#x27;s &quot;doing things for you&quot; (Agentic AI). Meanwhile models keep getting smarter and cheaper, like smartphones — you get 10x more for the same price year after year.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-03-23</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
