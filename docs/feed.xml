@@ -5,8 +5,165 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 24 Mar 2026 16:02:02 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 25 Mar 2026 15:01:44 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-03-25</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-25</guid>
+      <pubDate>Wed, 25 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 Day 10 / Review Day 10</h2>
+
+<p><strong>Date:</strong> 2026-03-25 | <strong>Phase:</strong> Foundation</p>
+
+<p>今天是复习日！回顾第 6-9 天的内容。</p>
+<p>Today is Review Day! Looking back at Days 6–9.</p>
+
+<hr/>
+
+<p>📊 <strong>回顾范围 / Review Scope (Days 6–9):</strong></p>
+<p>- 🏗️ Caching Strategies · Database Types · DB Indexing · DB Replication &amp; Sharding</p>
+<p>- 💻 Top K Frequent Elements · Product of Array Except Self · Valid Sudoku · Valid Palindrome</p>
+<p>- 🗣️ Balancing priorities · Simplifying complex systems · Ambiguous requirements · Pushing back on features</p>
+<p>- 🎨 CSS Specificity · Positioning · Animations &amp; Transitions · React useState</p>
+<p>- 🤖 Embeddings · Training vs Fine-Tuning vs Prompting</p>
+
+<hr/>
+
+<h2>📝 Quick Quiz — 3 Mini-Reviews</h2>
+
+<h3>**Q1: [🏗️ System Design] Caching + Replication**</h3>
+
+<p>你在设计一个读多写少的社交平台（Read-heavy social feed）。你决定同时使用 <strong>缓存</strong> 和 <strong>数据库只读副本（Read Replicas）</strong>。</p>
+
+<p>You&#x27;re designing a read-heavy social feed. You use both <strong>caching</strong> and <strong>read replicas</strong>.</p>
+
+<p><strong>问题 / Question:</strong> 这两者的职责分工是什么？什么情况下读副本仍然不够，你必须依赖缓存？</p>
+
+<p><em>What is the distinct role of each? When are read replicas still insufficient and you MUST rely on the cache?</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>Read replicas</strong> 通过分散读请求到多个数据库副本来提升吞吐量，但每次请求仍然执行完整的 SQL 查询，延迟在毫秒级别。<strong>缓存</strong>（Redis/Memcached）则把热点数据存在内存里，延迟在微秒级别，且完全绕开了数据库。</p>
+
+<p>Read replicas scale <em>throughput</em> by distributing SQL queries across copies, but every request still hits disk and parses SQL — latency stays in the millisecond range. A <strong>cache</strong> holds hot data in RAM (microsecond latency) and bypasses the database entirely.</p>
+
+<p><strong>什么时候必须用缓存 / When you MUST cache:</strong></p>
+<p>1. 热点数据（Hotspot / Celebrity problem）：单个用户/item 被疯狂读取，单个副本也扛不住</p>
+<p>2. 计算昂贵的结果（Aggregations, ranked feeds）：不想每次都重新算</p>
+<p>3. 外部 API 响应缓存：副本根本不存这些数据</p>
+
+<p><strong>关键洞察:</strong> Read replica = 水平扩展数据库。Cache = 彻底逃离数据库。两者互补，不是替代关系。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>**Q2: [💻 Algorithms] Product of Array Except Self**</h3>
+
+<p>给定数组 <code>[1, 2, 3, 4]</code>，Product of Array Except Self 要求返回 <code>[24, 12, 8, 6]</code>——即每个位置是除自身以外所有元素的乘积。</p>
+
+<p>Given <code>[1, 2, 3, 4]</code>, return <code>[24, 12, 8, 6]</code> — each position is the product of all other elements.</p>
+
+<p><strong>问题 / Question:</strong> 不使用除法、O(n) 时间、O(1) 额外空间（输出数组不算）怎么做？解释 <strong>prefix product + suffix product</strong> 的思路。</p>
+
+<p><em>Without division, O(n) time, O(1) extra space — explain the prefix × suffix approach.</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>核心思路 / Core idea:</strong> 位置 <code>i</code> 的答案 = <code>i</code> 左边所有数的乘积 × <code>i</code> 右边所有数的乘积。</p>
+
+<pre><code>
+Array:   [1,  2,  3,  4]
+Prefix:  [1,  1,  2,  6]   # prefix[i] = product of all elements to the LEFT of i
+Suffix:  [24, 12, 4,  1]   # suffix[i] = product of all elements to the RIGHT of i
+Result:  [24, 12, 8,  6]   # prefix[i] * suffix[i]
+</code></pre>
+
+<p><strong>两趟扫描 / Two-pass O(1) space:</strong></p>
+<p>- Pass 1 (left→right): 用输出数组存 prefix product</p>
+<p>- Pass 2 (right→left): 用一个变量 <code>suffix</code> 滚动累乘，直接乘进输出数组</p>
+
+<pre><code>
+def productExceptSelf(nums):
+    n = len(nums)
+    res = [1] * n
+    # Pass 1: res[i] = product of everything to the LEFT
+    for i in range(1, n):
+        res[i] = res[i-1] * nums[i-1]
+    # Pass 2: multiply in suffix product on the fly
+    suffix = 1
+    for i in range(n-1, -1, -1):
+        res[i] *= suffix
+        suffix *= nums[i]
+    return res
+</code></pre>
+
+<p><strong>为什么不用除法？</strong> 因为数组可能含 0，除法会出错（0/0）。</p>
+
+<p><strong>举一反三:</strong> 这个 &quot;prefix + suffix scan&quot; 模式在 <strong>Trapping Rain Water</strong> 中也用到了——左边最大值 × 右边最大值决定每格存水量。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>**Q3: [🎨 Frontend] React useState**</h3>
+
+<p>看这段代码：</p>
+
+<pre><code>
+function Counter() {
+  const [count, setCount] = React.useState(0);
+
+  const handleClick = () =&gt; {
+    setCount(count + 1);
+    setCount(count + 1);
+    setCount(count + 1);
+  };
+
+  return &lt;button onClick={handleClick}&gt;Count: {count}&lt;/button&gt;;
+}
+</code></pre>
+
+<p><strong>问题 / Question:</strong> 点击一次按钮后，count 变成几？为什么？如果想让 count 每次点击增加 3，怎么修改？</p>
+
+<p><em>After one click, what is count? Why? How do you fix it to actually add 3?</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>答案是 1，不是 3。</strong></p>
+
+<p><strong>原因 / Why:</strong> React 在同一个事件处理函数中会<strong>批量处理（batch）</strong> setState 调用。<code>count</code> 在整个 <code>handleClick</code> 执行期间都是 <strong>快照值（stale closure）</strong>，始终是 <code>0</code>。所以三次 <code>setCount(0 + 1)</code> 其实是三次设置同一个值 <code>1</code>。</p>
+
+<p><strong>如何修复 / Fix — 使用函数式更新（functional update form）:</strong></p>
+
+<pre><code>
+const handleClick = () =&gt; {
+  setCount(prev =&gt; prev + 1);  // prev = 0 → 1
+  setCount(prev =&gt; prev + 1);  // prev = 1 → 2
+  setCount(prev =&gt; prev + 1);  // prev = 2 → 3
+};
+</code></pre>
+
+<p>传入函数时，React 会把<strong>最新的 state 值</strong>作为参数传入，而不是用闭包里的快照。</p>
+
+<p><strong>黄金法则 / Golden Rule:</strong> 当新 state 依赖旧 state 时，<strong>永远</strong>用 <code>setX(prev =&gt; ...)</code> 形式，而不是 <code>setX(x + 1)</code>。这在并发模式（React 18+ Concurrent Features）下尤其重要。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。每次复习都是在加深神经连接。</em></p>
+<p><em>Review strengthens memory through spaced repetition — you&#x27;re literally deepening neural pathways each time.</em></p>
+
+<p>📅 <strong>明天继续新内容！Day 11 starts tomorrow!</strong></p>
+
+<hr/>
+
+<p><em>Generated: 2026-03-25 | byte-by-byte Day 10 Review</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-03-24</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
