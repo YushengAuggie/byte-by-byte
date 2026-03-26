@@ -34,6 +34,13 @@ This file tracks issues found during QA reviews to improve content quality over 
 - **Root cause:** Review day content is generated as pattern-recognition quizzes (students identify the algorithm, not run it). Self-review likely validated conceptual correctness without testing whether the code skeleton is syntactically executable.
 - **Fix:** Add an explicit check in review day generation: "For any code snippet in quiz questions, verify all referenced variables are either defined locally, passed as parameters, or explicitly marked as pseudo-code/skeleton with a comment." Consider adding `# target is passed as argument` or simply correcting the signature.
 
+## 2026-03-26 — Day 11
+
+- **Section:** AI (News)
+- **Issue:** Story 1 includes "91% on a legal-document benchmark" as a specific figure. Story 2 claims DoD designated Anthropic as a "supply chain risk" — notable claim sourced only from a personal WordPress blog (radicaldatascience.wordpress.com). Neither figure was independently verifiable at QA time.
+- **Root cause:** This is the 5th+ recurrence of the same pattern. Specific benchmark numbers and notable institutional claims are presented as facts without inline primary source attribution. Self-review does not check whether specific figures are verifiable.
+- **Fix (escalated):** This pattern has now recurred on Days 1, 3, 7, 20, and 26. Escalate to structural fix: add a visible disclaimer at the top of every AI News section ("Figures and claims based on cited sources; verify before sharing"), AND instruct the generator to mark any claim from a non-primary source with "reportedly" or "per [source]".
+
 ## 2026-03-20 — Day 7
 - **Section:** AI (News)
 - **Issue:** Meta story framing overstates source. Content claims Meta will "significantly reduce reliance on third-party content moderation contractors" but the actual Meta blog post (verified via URL fetch) focuses on an AI support assistant and advanced AI enforcement systems — with no mention of contractor workforce reduction. Additionally, Samsung's $73B/22% figures and Alexa Plus UK £19.99/mo price are specific claims that could not be independently verified.
