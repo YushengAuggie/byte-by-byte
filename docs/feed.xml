@@ -5,8 +5,637 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 25 Mar 2026 16:03:01 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 26 Mar 2026 15:07:25 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-03-26</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-26</guid>
+      <pubDate>Thu, 26 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 Day 10 / System Design Day 10</h2>
+<p><strong>Topic: Consistent Hashing (一致性哈希)</strong></p>
+<p><em>预计阅读时间 / Estimated reading time: 3 minutes</em></p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<p>想象你在设计一个分布式缓存系统（比如 Redis 集群），有 10 台缓存服务器存储着数百万用户的数据。</p>
+
+<p><em>Imagine you&#x27;re designing a distributed cache (like a Redis cluster) with 10 servers storing millions of users&#x27; data.</em></p>
+
+<p>一天，服务器 #3 宕机了。用系统的普通哈希 <code>key % 10</code>，你要重新分配 <strong>90% 的数据</strong>！</p>
+
+<p><em>One day, server #3 goes down. With simple modulo hashing <code>key % 10</code>, you&#x27;d need to reassign <strong>90% of your data</strong>!</em></p>
+
+<p><strong>一致性哈希只需要重新分配 ~1/N 的数据。这就是它的魔力。</strong></p>
+
+<p><em>Consistent hashing only reassigns ~1/N of data. That&#x27;s the magic.</em></p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+                    哈希环 / Hash Ring (0 to 360°)
+                         0°
+                         │
+              Server A   │   Server B
+              (90°)      │   (180°)
+                    ┌────┴────┐
+              ──────┤  RING   ├──────
+                    └────┬────┘
+              Server D   │   Server C
+              (315°)     │   (270°)
+                         │
+                        360°
+
+  Key &quot;user:123&quot; hashes to 210° → goes to Server C (next clockwise)
+  Key &quot;user:456&quot; hashes to 95°  → goes to Server B (next clockwise)
+
+  Virtual Nodes (虚拟节点):
+  ┌─────────────────────────────────────────┐
+  │  Physical: A  B  C  D                   │
+  │  Virtual:  A1 B1 C1 D1 A2 B2 C2 D2 ... │
+  │  (150 virtual nodes per physical node)  │
+  └─────────────────────────────────────────┘
+</code></pre>
+
+<p><strong>数据流 / Data Flow:</strong></p>
+<p>1. 计算 key 的哈希值，映射到环上某个角度 → <em>Hash key to a position on the ring</em></p>
+<p>2. 顺时针找到第一个服务器节点 → <em>Find next server clockwise</em></p>
+<p>3. 读写该服务器 → <em>Read/write from that server</em></p>
+<p>4. 服务器宕机：只有它的数据转移到下一个节点 → <em>On failure: only its data migrates to the next node</em></p>
+
+<hr/>
+
+<h2>关键权衡 / Key Tradeoffs</h2>
+
+<p><strong>为什么这样设计？/ Why this design?</strong></p>
+
+<p>| 普通哈希 / Simple Hash | 一致性哈希 / Consistent Hash |</p>
+<p>|---|---|</p>
+<p>| <code>key % N</code> 简单但脆弱 | 环形映射，容错强 |</p>
+<p>| 增减节点 → 大规模重分配 | 增减节点 → 仅影响 ~1/N 数据 |</p>
+<p>| 热点不均匀难处理 | 虚拟节点解决负载均衡 |</p>
+
+<p><strong>虚拟节点的作用 / Virtual Nodes:</strong></p>
+<p>每个物理节点在环上有多个虚拟位置（通常 100-200 个），解决数据分布不均的问题。<em>Each physical node has many virtual positions on the ring, solving uneven data distribution.</em></p>
+
+<p><strong>CAP 定理视角 / CAP Perspective:</strong></p>
+<p>一致性哈希帮助在分区容错（P）下提升可用性（A），但一致性（C）需要额外机制（如 quorum reads）保证。</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>虚拟节点数量太少</strong> — 数据分布会很不均匀，导致热点</p>
+<p><em>Too few virtual nodes → uneven distribution → hot spots</em></p>
+
+<p>❌ <strong>不考虑节点权重</strong> — 新服务器内存更大，应承担更多虚拟节点</p>
+<p><em>Ignoring node weights → underutilizing powerful servers</em></p>
+
+<p>❌ <strong>哈希函数选错</strong> — 用差的哈希函数（如 MD5）导致聚集</p>
+<p><em>Bad hash function → clustering → poor distribution</em></p>
+
+<p>✅ 用 MurmurHash 或 FNV1a，配合 150-200 个虚拟节点，是生产环境的黄金配置。</p>
+<p><em>Use MurmurHash or FNV1a with 150-200 virtual nodes in production.</em></p>
+
+<hr/>
+
+<h2>实际使用 / Real-World Usage</h2>
+
+<p>- <strong>Amazon DynamoDB</strong> — 内部分区路由</p>
+<p>- <strong>Apache Cassandra</strong> — token-based consistent hashing</p>
+<p>- <strong>Memcached / Twemproxy</strong> — 客户端一致性哈希</p>
+<p>- <strong>Nginx upstream hash</strong> — <code>hash $request_uri consistent</code></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>1. [Consistent Hashing — Tom White&#x27;s original paper explanation](https://www.toptal.com/big-data/consistent-hashing)</p>
+<p>2. [Amazon DynamoDB&#x27;s use of consistent hashing](https://aws.amazon.com/blogs/database/amazon-dynamodb-under-the-hood-how-we-built-a-hyper-scale-database/)</p>
+<p>3. [Cassandra&#x27;s consistent hashing implementation](https://cassandra.apache.org/doc/latest/cassandra/architecture/dynamo.html)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 (解释给5岁小孩听)</h2>
+
+<p>想象一圈小朋友站成一个圆，每人负责一段颜色。玩具来了，看看玩具是什么颜色，顺时针找到对应颜色的小朋友，就给他。少了一个小朋友，只有他那段颜色的玩具要重新分，其他小朋友不受影响！</p>
+
+<p><em>Imagine kids standing in a circle, each responsible for a color range. A toy arrives — find the next kid clockwise with that color. If one kid leaves, only their toys need reassigning. Everyone else stays put!</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 Day 11 / Algorithms Day 11</h2>
+<p><strong>#167 Two Sum II — Input Array Is Sorted · 🟡 Medium</strong></p>
+<p><em>预计阅读时间 / Estimated reading time: 4 minutes</em></p>
+
+<hr/>
+
+<h2>🧩 双指针模式 (2/5) — 继承 Day 10 的模版</h2>
+
+<p><em>Building on the Two Pointers template from Day 10</em></p>
+
+<p>今天是双指针模式的<strong>第 2 题</strong>（共 5 题）。上一题 Valid Palindrome 用双指针判断回文；今天我们用<strong>同样的框架</strong>解决&quot;有序数组找配对&quot;问题。</p>
+
+<p><em>This is the 2nd problem in our Two Pointers block (5 total). Yesterday we checked palindromes; today we use the same framework to find pairs in a sorted array.</em></p>
+
+<p><strong>本 block 全部 5 题 / All 5 problems:</strong></p>
+<p>1. ✅ #125 Valid Palindrome (Easy) — Day 10</p>
+<p>2. 👈 <strong>#167 Two Sum II (Medium) — TODAY</strong></p>
+<p>3. #15 3Sum (Medium)</p>
+<p>4. #11 Container With Most Water (Medium)</p>
+<p>5. #42 Trapping Rain Water (Hard)</p>
+
+<p><strong>通用模版回顾 / Template Recap:</strong></p>
+<pre><code>
+left, right = 0, len(arr) - 1
+while left &lt; right:
+    total = arr[left] + arr[right]
+    if total == target: return [left, right]
+    elif total &lt; target: left += 1   # need bigger sum
+    else: right -= 1                  # need smaller sum
+</code></pre>
+
+<p><strong>与 Valid Palindrome 的对比 / vs Yesterday:</strong></p>
+
+<p>| | Valid Palindrome | Two Sum II |</p>
+<p>|---|---|---|</p>
+<p>| 移动条件 / Move when | chars don&#x27;t match | sum ≠ target |</p>
+<p>| 收缩方向 / Shrink | both sides toward middle | whichever side adjusts sum |</p>
+<p>| 核心逻辑 / Core | compare chars | adjust sum magnitude |</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 [LeetCode #167](https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/) · 🟡 Medium</p>
+<p>📹 [NeetCode Video](https://neetcode.io/problems/two-sum-ii)</p>
+
+<p><strong>现实类比 / Real-World Analogy:</strong></p>
+
+<p>你有一张<strong>已排序</strong>的价目表，要找出恰好等于预算 <code>target</code> 的两件商品。</p>
+<p><em>You have a sorted price list and want to find exactly two items that sum to your budget.</em></p>
+
+<p><strong>题目 / Problem:</strong></p>
+<p>给一个 1-indexed、<strong>非递减排序</strong>的数组，找两个数相加等于 <code>target</code>，返回它们的下标（1-indexed）。每个输入保证有唯一解。</p>
+<p><em>Given a 1-indexed, non-decreasing sorted array, find two numbers that sum to target. Return 1-indexed positions. Exactly one solution exists.</em></p>
+
+<pre><code>
+Input:  numbers = [2, 7, 11, 15], target = 9
+Output: [1, 2]  (numbers[0] + numbers[1] = 2 + 7 = 9)
+</code></pre>
+
+<hr/>
+
+<h2>💡 套用模版 / Mapping to Template</h2>
+
+<p>模版中 <code>arr[left] + arr[right]</code> 对应今天的 <code>numbers[left] + numbers[right]</code>。</p>
+
+<p><strong>为什么有序数组可以用双指针？/ Why does sorting enable two pointers?</strong></p>
+
+<p>关键洞察：数组排序后，如果 <code>sum &lt; target</code>，我们<strong>确定</strong>需要更大的值 → 移动左指针。如果 <code>sum &gt; target</code>，需要更小的值 → 移动右指针。无序数组无法这样推断！</p>
+
+<p><em>Key insight: With a sorted array, if sum &lt; target, we KNOW we need a bigger value → move left. If sum &gt; target, we need smaller → move right. Unsorted arrays can&#x27;t support this reasoning!</em></p>
+
+<hr/>
+
+<h2>🐍 Python 解法 + 逐步追踪 / Solution + Trace</h2>
+
+<pre><code>
+def twoSum(numbers: list[int], target: int) -&gt; list[int]:
+    left, right = 0, len(numbers) - 1  # 1
+    
+    while left &lt; right:                 # 2
+        current_sum = numbers[left] + numbers[right]  # 3
+        
+        if current_sum == target:       # 4
+            return [left + 1, right + 1]  # convert to 1-indexed
+        elif current_sum &lt; target:      # 5
+            left += 1   # need bigger number
+        else:
+            right -= 1  # need smaller number
+    
+    return []  # guaranteed to find answer, never reaches here
+</code></pre>
+
+<p><strong>追踪 / Trace</strong> with <code>numbers = [2, 7, 11, 15], target = 9</code>:</p>
+
+<pre><code>
+Step 1: left=0, right=3 → 2+15=17 &gt; 9  → right=2
+Step 2: left=0, right=2 → 2+11=13 &gt; 9  → right=1
+Step 3: left=0, right=1 → 2+7=9  == 9  → return [1, 2] ✅
+</code></pre>
+
+<p><strong>时间/空间复杂度 / Complexity:</strong></p>
+<p>- ⏱ Time: <strong>O(n)</strong> — each pointer moves at most n steps total</p>
+<p>- 💾 Space: <strong>O(1)</strong> — no extra data structures</p>
+
+<p><strong>vs. Brute Force:</strong> O(n²) with nested loops. Two pointers give a 10-100x speedup on large inputs.</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p><strong>在本 block 中 / Within this pattern block:</strong></p>
+
+<p>- <strong>#15 3Sum (下一题):</strong> Same two-pointer idea + outer loop. Fix one element, two-pointer the rest.</p>
+<p>- <strong>#11 Container With Most Water:</strong> <code>left</code>, <code>right</code> move based on which height is smaller — same structure!</p>
+<p>- <strong>#42 Trapping Rain Water:</strong> Two pointers + track running max from each side. Most complex variation.</p>
+
+<p><strong>看到这些信号就想到双指针 / Recognize these signals:</strong></p>
+<p>- ✅ Sorted array</p>
+<p>- ✅ &quot;Find pair that sums to X&quot;</p>
+<p>- ✅ O(1) space required</p>
+<p>- ✅ Palindrome check</p>
+<p>- ✅ &quot;Remove duplicates in-place&quot;</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>1. [LeetCode #167 — Two Sum II](https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/)</p>
+<p>2. [NeetCode Two Sum II explanation](https://neetcode.io/problems/two-sum-ii)</p>
+<p>3. [Two Pointers pattern guide — LeetCode Patterns](https://leetcode.com/discuss/study-guide/1688903/Solved-all-two-pointers-problems-in-100-days)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>你和朋友站在一排数字两端。你喊出你们俩数字的和。太小就让左边的人向右走一步（换更大的数）；太大就让右边的人向左走一步（换更小的数）；正好就赢了！</p>
+
+<p><em>You and a friend stand at opposite ends of a number line. Call out your sum. Too small → left person steps right (bigger number). Too big → right person steps left (smaller). Exact match → win!</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 Day 10 / Soft Skills Day 10</h2>
+<p><strong>Topic: Proactiveness — 主动发现问题</strong></p>
+<p><em>&quot;Tell me about a time you identified and solved a problem before others noticed&quot;</em></p>
+<p><em>预计阅读时间 / Estimated reading time: 2 minutes</em></p>
+
+<hr/>
+
+<h2>为什么这道题很重要 / Why This Matters</h2>
+
+<p>这是区分<strong>普通工程师和高级工程师</strong>的核心问题之一。</p>
+
+<p><em>This is one of the core questions that distinguishes senior from junior engineers.</em></p>
+
+<p>初级工程师：等待任务分配，发现问题后上报。</p>
+<p><em>Junior: Waits for tasks, escalates problems when found.</em></p>
+
+<p>高级工程师：主动监控系统健康，提前发现隐患，悄悄修好。</p>
+<p><em>Senior: Proactively monitors system health, finds issues before they explode, quietly fixes them.</em></p>
+
+<p>面试官想听到的信号：<strong>主动性、系统思维、影响力量化</strong>。</p>
+<p><em>What interviewers want: proactivity, systems thinking, quantified impact.</em></p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<h3>✅ 强回答结构 / Strong Answer Structure</h3>
+
+<p><strong>Situation（情境）:</strong></p>
+<p>&gt; &quot;在我们的支付服务中，我在做例行代码审查时注意到一个看起来没问题但实际上很危险的模式——一个在高并发场景下会导致重复扣款的竞态条件。&quot;</p>
+<p>&gt;</p>
+<p>&gt; <em>&quot;While doing a routine code review of our payment service, I noticed a pattern that looked fine but was actually dangerous — a race condition that would cause duplicate charges under high concurrency.&quot;</em></p>
+
+<p><strong>Task（任务）:</strong></p>
+<p>&gt; &quot;没人发现这个问题，线上也没有报警。但我知道如果不处理，在双十一这样的高峰期必然会触发。&quot;</p>
+<p>&gt;</p>
+<p>&gt; <em>&quot;No one had flagged it, and there were no alerts. But I knew it would absolutely trigger during peak traffic like Black Friday.&quot;</em></p>
+
+<p><strong>Action（行动）:</strong></p>
+<p>&gt; &quot;我先写了一个复现脚本，用 k6 模拟并发请求证明了问题存在；然后提出了三种修复方案，评估了各自的性能影响；和 PM 沟通了延迟一个小功能发布来优先修复；最后用数据库级别的幂等锁解决了问题。&quot;</p>
+<p>&gt;</p>
+<p>&gt; <em>&quot;I wrote a reproduction script using k6 to prove the bug. Then I proposed 3 fix options with their performance tradeoffs, aligned with the PM to delay a minor feature, and fixed it with database-level idempotency locks.&quot;</em></p>
+
+<p><strong>Result（结果）:</strong></p>
+<p>&gt; &quot;两周后的峰值流量中，有记录显示有 847 次请求命中了我们的幂等保护。估算避免了 $15K 的退款损失和潜在的支付合规问题。&quot;</p>
+<p>&gt;</p>
+<p>&gt; <em>&quot;Two weeks later during peak traffic, we recorded 847 requests hitting our idempotency guard. Estimated $15K in prevented chargebacks and potential compliance issues.&quot;</em></p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<p><strong>❌ 弱回答 / Weak:</strong></p>
+<p>&gt; &quot;我发现了一个 bug，报告给了我的经理，他们修复了它。&quot;</p>
+<p>&gt;</p>
+<p>&gt; <em>&quot;I found a bug and reported it to my manager and they fixed it.&quot;</em></p>
+<p>→ 没有主动性，没有影响，这是被动行为。</p>
+<p><em>No ownership, no impact, this is reactive not proactive.</em></p>
+
+<p><strong>✅ 强回答 / Strong:</strong></p>
+<p>&gt; 展示：你如何<strong>主动发现</strong>（不是被告知）→ <strong>量化潜在风险</strong> → <strong>独立推进修复</strong> → <strong>数字化影响</strong></p>
+<p>&gt;</p>
+<p>&gt; <em>Show: how you proactively discovered (not told) → quantified potential risk → independently drove the fix → measured impact</em></p>
+
+<hr/>
+
+<h2>高级/Staff 的进阶 / Senior/Staff Level Tips</h2>
+
+<p>🔥 <strong>系统性主动 vs 偶发性主动:</strong></p>
+
+<p>普通的&quot;主动&quot;是偶然发现问题。Staff 级别会建立<strong>系统</strong>：</p>
+<p>- 定期审查监控告警覆盖率</p>
+<p>- 建立技术债 backlog 并推动季度 review</p>
+<p>- 主导 Game Day / Chaos Engineering 主动暴露隐患</p>
+
+<p><em>Average proactiveness is accidental. Staff-level proactiveness is systematic: quarterly tech debt reviews, monitoring coverage audits, deliberate chaos engineering.</em></p>
+
+<p>🔥 <strong>提前沟通风险:</strong></p>
+
+<p>找到问题后，不只是&quot;修了&quot;，而是<strong>向上同步风险评估</strong>和修复进度，让决策者知情。</p>
+
+<p><em>Don&#x27;t just fix silently — sync up risk assessment and fix progress with stakeholders. Make decisions visible.</em></p>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+
+<p>1. 🔍 <strong>主动发现</strong> — 描述你如何发现（代码审查、监控、读日志、直觉）</p>
+<p>2. 📊 <strong>量化风险</strong> — &quot;如果不修，会有 X 影响&quot;比&quot;我觉得有问题&quot;有力 10 倍</p>
+<p>3. ⚙️ <strong>独立推进</strong> — 展示你能端到端推动，不依赖他人催促</p>
+<p>4. 📈 <strong>结果数字化</strong> — 预防的损失 &gt; 修复的技术细节</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>1. [Staff Engineer: Leadership beyond the management track — Will Larson](https://staffeng.com/book)</p>
+<p>2. [Google SRE Book — Chapter on Monitoring and Alerting](https://sre.google/sre-book/monitoring-distributed-systems/)</p>
+<p>3. [The STAR Method for behavioral interviews — Indeed](https://www.indeed.com/career-advice/interviewing/how-to-use-the-star-interview-response-technique)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>就像你在玩游戏，别人都在打怪，但你提前发现了地图上有个陷阱，在队友掉坑之前就绕过去了，还告诉大家这里有坑。这就是主动性！</p>
+
+<p><em>It&#x27;s like being in a game where everyone&#x27;s fighting monsters, but you spotted a hidden trap on the map. You avoided it before your teammates fell in — and told everyone it was there. That&#x27;s proactiveness!</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 Day 10 / Frontend Day 10</h2>
+<p><strong>Topic: React useEffect — Side Effects &amp; Cleanup</strong></p>
+<p><em>预计阅读时间 / Estimated reading time: 2 minutes</em></p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个 <strong>实时股票 dashboard</strong>，需要：</p>
+<p>1. 组件加载时订阅 WebSocket 数据流</p>
+<p>2. 组件卸载时取消订阅（否则内存泄漏！）</p>
+<p>3. 当股票代码（ticker）改变时，切换订阅</p>
+
+<p><em>You&#x27;re building a real-time stock dashboard. You need to:</em></p>
+<p>1. <em>Subscribe to WebSocket stream when component mounts</em></p>
+<p>2. <em>Unsubscribe when component unmounts (or: memory leak!)</em></p>
+<p>3. <em>Switch subscriptions when the ticker changes</em></p>
+
+<p>这就是 <code>useEffect</code> 的经典使用场景。</p>
+
+<hr/>
+
+<h2>代码示例 / Code Example</h2>
+
+<pre><code>
+import { useEffect, useState } from &#x27;react&#x27;;
+
+interface StockData {
+  price: number;
+  change: number;
+}
+
+function StockTicker({ symbol }: { symbol: string }) {
+  const [data, setData] = useState&lt;StockData | null&gt;(null);
+
+  useEffect(() =&gt; {
+    // 1. Setup: runs after render
+    console.log(`Subscribing to ${symbol}`);
+    const ws = new WebSocket(`wss://stocks.example.com/${symbol}`);
+    
+    ws.onmessage = (event) =&gt; {
+      setData(JSON.parse(event.data));
+    };
+
+    // 2. Cleanup: runs before next effect OR on unmount
+    return () =&gt; {
+      console.log(`Unsubscribing from ${symbol}`);
+      ws.close(); // ← THIS IS CRITICAL
+    };
+  }, [symbol]); // 3. Dependency array: re-run when symbol changes
+
+  if (!data) return &lt;div&gt;Loading...&lt;/div&gt;;
+  return &lt;div&gt;{symbol}: ${data.price} ({data.change}%)&lt;/div&gt;;
+}
+</code></pre>
+
+<hr/>
+
+<h2>猜猜输出？ / What&#x27;s the output order?</h2>
+
+<p><strong>场景：</strong> symbol 从 <code>&quot;AAPL&quot;</code> 改为 <code>&quot;GOOG&quot;</code></p>
+
+<pre><code>
+A) &quot;Subscribing to GOOG&quot;
+B) &quot;Unsubscribing from AAPL&quot; → &quot;Subscribing to GOOG&quot;
+C) &quot;Subscribing to GOOG&quot; → &quot;Unsubscribing from AAPL&quot;
+D) 什么都不打印
+</code></pre>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>答案是 B</strong> — <code>&quot;Unsubscribing from AAPL&quot;</code> 先打印，然后 <code>&quot;Subscribing to GOOG&quot;</code></p>
+
+<p>React 的执行顺序：</p>
+<p>1. <code>symbol</code> prop 变化 → re-render</p>
+<p>2. React 运行<strong>上一个 effect 的 cleanup</strong>（关闭旧 WebSocket）</p>
+<p>3. React 运行<strong>新的 effect</strong>（打开新 WebSocket）</p>
+
+<p>这就是为什么 cleanup 在 return 里：React 会在正确时机调用它。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>❌ 常见错误 vs ✅ 正确做法</h2>
+
+<p><strong>❌ 忘记清理 / Forgetting cleanup:</strong></p>
+<pre><code>
+useEffect(() =&gt; {
+  const interval = setInterval(fetchData, 1000);
+  // ❌ No cleanup! Interval runs forever after unmount
+}, []);
+</code></pre>
+
+<p><strong>✅ 正确清理 / Always clean up:</strong></p>
+<pre><code>
+useEffect(() =&gt; {
+  const interval = setInterval(fetchData, 1000);
+  return () =&gt; clearInterval(interval); // ✅
+}, []);
+</code></pre>
+
+<p><strong>❌ 依赖项缺失 / Missing dependencies:</strong></p>
+<pre><code>
+useEffect(() =&gt; {
+  fetchUser(userId); // ❌ userId used but not in deps
+}, []); // stale closure! always fetches original userId
+</code></pre>
+
+<p><strong>✅ 正确依赖 / Correct dependencies:</strong></p>
+<pre><code>
+useEffect(() =&gt; {
+  fetchUser(userId); // ✅
+}, [userId]); // re-runs whenever userId changes
+</code></pre>
+
+<hr/>
+
+<h2>三种 useEffect 形态 / Three Patterns</h2>
+
+<pre><code>
+// 1. Run ONCE on mount (componentDidMount equivalent)
+useEffect(() =&gt; {
+  initAnalytics();
+  return () =&gt; cleanup(); // runs on unmount
+}, []); // empty deps = run once
+
+// 2. Run on every render (rarely needed)
+useEffect(() =&gt; {
+  document.title = `Count: ${count}`;
+}); // no deps array = every render
+
+// 3. Run when specific values change
+useEffect(() =&gt; {
+  fetchUserProfile(userId);
+}, [userId]); // run when userId changes
+</code></pre>
+
+<hr/>
+
+<h2>何时用 / 何时不用 / When to Use / When NOT to</h2>
+
+<p><strong>✅ 适合用 useEffect:</strong></p>
+<p>- API 数据获取（推荐用 React Query/SWR 封装）</p>
+<p>- WebSocket / 事件监听器</p>
+<p>- 第三方库集成（地图、图表）</p>
+<p>- 浏览器 API（localStorage, document.title）</p>
+
+<p><strong>❌ 不要用 useEffect:</strong></p>
+<p>- 派生状态（用 <code>useMemo</code> 代替）</p>
+<p>- 事件处理（直接用 event handler）</p>
+<p>- 在 render 期间的数据转换（直接在组件里算）</p>
+
+<p><strong>React 团队的建议 / React Team&#x27;s Take:</strong></p>
+<p>&gt; &quot;You might not need an Effect&quot; — 很多 useEffect 可以被消除。</p>
+<p>&gt; <em>Many Effects can be eliminated. Think twice before reaching for it.</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>1. [React Docs: Synchronizing with Effects](https://react.dev/learn/synchronizing-with-effects)</p>
+<p>2. [React Docs: You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect)</p>
+<p>3. [Dan Abramov: A Complete Guide to useEffect](https://overreacted.io/a-complete-guide-to-useeffect/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p><code>useEffect</code> 就像给房间装了一个&quot;进房间就开灯、出房间就关灯&quot;的传感器。你进去（组件挂载），灯亮了；你出来（组件卸载），灯自动灭。如果你换了房间（依赖变了），它先把旧房间的灯关掉，再把新房间的灯打开。</p>
+
+<p><em>useEffect is like a room sensor that turns the light on when you enter and off when you leave. When you switch rooms (deps change), it turns off the old light before turning on the new one.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI Day 11 — News Roundup</h2>
+<p><em>2026年3月26日 / March 26, 2026</em></p>
+<p><em>预计阅读时间 / Estimated reading time: 2 minutes</em></p>
+
+<hr/>
+
+<h2>📰 本周 AI 大事件 / This Week in AI</h2>
+
+<p><em>Sources: Web search results from March 2026</em></p>
+
+<hr/>
+
+<h3>1. 🚀 OpenAI 发布 GPT-5.4 — AI&quot;数字同事&quot;时代来临</h3>
+
+<p><strong>来源 / Source:</strong> [riskinfo.ai](https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-march-2026) | [juliangoldie.co.uk](https://juliangoldie.co.uk/ai-news-march-2026/)</p>
+
+<p>GPT-5.4 于 3 月 5 日正式发布，最大亮点是<strong>原生计算机使用能力（Computer Use）</strong>——AI 可以直接操作真实软件环境（Excel、文档、网页），而不只是生成文字。在法律文件 benchmark 上达到 91% 准确率。</p>
+
+<p><em>GPT-5.4 launched March 5 with native computer-use capabilities — AI can now directly interact with real software environments like spreadsheets and documents, moving toward a &quot;digital co-worker&quot; role. Achieved 91% on a legal-document benchmark.</em></p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>作为工程师，这意味着 AI agent 正在从&quot;问答工具&quot;变成&quot;能自主操作 GUI 的同事&quot;。未来的 AI 代码助手可能直接在你的 IDE 里操作文件、跑测试、提 PR——而不只是给出建议。</p>
+
+<hr/>
+
+<h3>2. 🛡️ Anthropic 拒绝军事合同，被列为&quot;供应链风险&quot;</h3>
+
+<p><strong>来源 / Source:</strong> [radicaldatascience.wordpress.com](https://radicaldatascience.wordpress.com/2026/03/20/ai-news-briefs-bulletin-board-for-march-2026/)</p>
+
+<p>美国国防部要求 Anthropic 移除 Claude 的安全护栏（禁止自主武器使用），Anthropic 拒绝后被 DoD 列为&quot;供应链风险&quot;。这是 AI 安全与国家安全之间最直接的冲突之一。</p>
+
+<p><em>The US DoD designated Anthropic as a &quot;supply chain risk&quot; after the company refused to remove safety guardrails prohibiting Claude&#x27;s use in autonomous weaponry.</em></p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>AI 公司的价值观选择正在产生真实商业后果。这场博弈将塑造未来 AI 系统的&quot;红线&quot;在哪里划定。</p>
+
+<hr/>
+
+<h3>3. 🎮 NVIDIA GTC 2026：AI 工厂 + 边缘计算引领下一波</h3>
+
+<p><strong>来源 / Source:</strong> [nvidianews.nvidia.com](https://nvidianews.nvidia.com/news/nvidia-and-emerald-ai-join-leading-energy-companies-to-pioneer-flexible-ai-factories-as-grid-assets) | [vtnetzwelt.com](https://www.vtnetzwelt.com/ai-development/latest-ai-technology-news-roundup-march-2026/)</p>
+
+<p>NVIDIA 在 3 月 16 日 GTC 大会上主推&quot;AI 工厂&quot;概念：AI 算力中心既能生产 AI tokens，又能作为<strong>灵活电网资产</strong>调节用电。同时发布 Nemotron 3 Super，专为复杂 agentic 系统设计。</p>
+
+<p><em>NVIDIA&#x27;s GTC 2026 highlighted &quot;AI factories&quot; — compute centers that generate AI tokens AND act as flexible grid assets. Nemotron 3 Super targets complex agentic AI workflows.</em></p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>AI 基础设施成本是行业最大变量之一。AI 工厂与能源网格整合，可能显著降低运算成本，从而让更多 AI 功能变得可行。</p>
+
+<hr/>
+
+<h3>4. 📊 76% 的企业：准备好迎接 AI Agent 了吗？还没有</h3>
+
+<p><strong>来源 / Source:</strong> [ey.com](https://www.ey.com/en_gl/newsroom/2026/03/ey-survey-autonomous-ai-is-no-longer-theoretical-as-adoption-grows-despite-ongoing-trust-concerns)</p>
+
+<p>EY 2026 AI Sentiment Report：76% 的企业承认<strong>运营流程还没准备好</strong>支持 agentic AI。最大障碍是：缺少结构化工作流、上下文传递不清晰、以及信任问题。</p>
+
+<p><em>EY&#x27;s 2026 AI Sentiment Report: 76% of enterprises admit their operations are not yet ready to support agentic AI. Main blockers: unstructured workflows, unclear context handoffs, and trust gaps.</em></p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>这直接影响你作为工程师的工作重点。未来 1-3 年最有价值的技能：<strong>设计能与 AI Agent 协作的系统架构</strong>——清晰的 API 接口、可审计的工作流、幂等操作。</p>
+
+<hr/>
+
+<h2>🔗 本周延伸阅读 / Further Reading</h2>
+
+<p>- [AI Insights: Key Global Developments March 2026](https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-march-2026)</p>
+<p>- [NVIDIA AI Factories press release](https://nvidianews.nvidia.com/news/nvidia-and-emerald-ai-join-leading-energy-companies-to-pioneer-flexible-ai-factories-as-grid-assets)</p>
+<p>- [EY 2026 AI Sentiment Report](https://www.ey.com/en_gl/newsroom/2026/03/ey-survey-autonomous-ai-is-no-longer-theoretical-as-adoption-grows-despite-ongoing-trust-concerns)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>AI 这周的新闻就像：有人造了一个超级厉害的机器人助手，会直接帮你操电脑；有家公司不愿意把机器人改成&quot;可以打仗&quot;的，结果被政府不喜欢了；还有调查说大多数公司虽然想用 AI 助手，但家里还没收拾好迎接它。</p>
+
+<p><em>This week in AI: a super robot that can actually USE your computer arrived; one company refused to let their AI be used as a weapon and got in trouble for it; and a survey found most companies want AI workers but haven&#x27;t cleaned their house yet.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-03-25</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

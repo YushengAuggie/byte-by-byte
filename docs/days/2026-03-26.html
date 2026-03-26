@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-03-26</title>
+  <meta name="description" content="byte-by-byte daily lessons for Thursday, March 26, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Thursday, March 26, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-03-26.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-03-25.html" style="color:var(--text2)">← 2026-03-25</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-03-26</span>
+    <h1>Thursday, March 26, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-03-25.html" class="day-nav-btn">← 2026-03-25</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 Day 10 / System Design Day 10</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 Day 10 / System Design Day 10</h1>
+<p><strong>Topic: Consistent Hashing (一致性哈希)</strong></p>
+<p><em>预计阅读时间 / Estimated reading time: 3 minutes</em></p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<p>想象你在设计一个分布式缓存系统（比如 Redis 集群），有 10 台缓存服务器存储着数百万用户的数据。</p>
+
+<p><em>Imagine you're designing a distributed cache (like a Redis cluster) with 10 servers storing millions of users' data.</em></p>
+
+<p>一天，服务器 #3 宕机了。用系统的普通哈希 <code>key % 10</code>，你要重新分配 <strong>90% 的数据</strong>！</p>
+
+<p><em>One day, server #3 goes down. With simple modulo hashing <code>key % 10</code>, you'd need to reassign <strong>90% of your data</strong>!</em></p>
+
+<p><strong>一致性哈希只需要重新分配 ~1/N 的数据。这就是它的魔力。</strong></p>
+
+<p><em>Consistent hashing only reassigns ~1/N of data. That's the magic.</em></p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<div class="diagram-block">                    哈希环 / Hash Ring (0 to 360°)
+                         0°
+                         │
+              Server A   │   Server B
+              (90°)      │   (180°)
+                    ┌────┴────┐
+              ──────┤  RING   ├──────
+                    └────┬────┘
+              Server D   │   Server C
+              (315°)     │   (270°)
+                         │
+                        360°
+
+  Key "user:123" hashes to 210° → goes to Server C (next clockwise)
+  Key "user:456" hashes to 95°  → goes to Server B (next clockwise)
+
+  Virtual Nodes (虚拟节点):
+  ┌─────────────────────────────────────────┐
+  │  Physical: A  B  C  D                   │
+  │  Virtual:  A1 B1 C1 D1 A2 B2 C2 D2 ... │
+  │  (150 virtual nodes per physical node)  │
+  └─────────────────────────────────────────┘</div>
+
+<p><strong>数据流 / Data Flow:</strong></p>
+<ol><li>计算 key 的哈希值，映射到环上某个角度 → <em>Hash key to a position on the ring</em></li><li>顺时针找到第一个服务器节点 → <em>Find next server clockwise</em></li><li>读写该服务器 → <em>Read/write from that server</em></li><li>服务器宕机：只有它的数据转移到下一个节点 → <em>On failure: only its data migrates to the next node</em></li></ol>
+
+<hr/>
+
+<h2>关键权衡 / Key Tradeoffs</h2>
+
+<p><strong>为什么这样设计？/ Why this design?</strong></p>
+
+<table><thead><tr><th>普通哈希 / Simple Hash</th><th>一致性哈希 / Consistent Hash</th></tr></thead><tbody><tr><td><code>key % N</code> 简单但脆弱</td><td>环形映射，容错强</td></tr><tr><td>增减节点 → 大规模重分配</td><td>增减节点 → 仅影响 ~1/N 数据</td></tr><tr><td>热点不均匀难处理</td><td>虚拟节点解决负载均衡</td></tr></tbody></table>
+
+<p><strong>虚拟节点的作用 / Virtual Nodes:</strong></p>
+<p>每个物理节点在环上有多个虚拟位置（通常 100-200 个），解决数据分布不均的问题。<em>Each physical node has many virtual positions on the ring, solving uneven data distribution.</em></p>
+
+<p><strong>CAP 定理视角 / CAP Perspective:</strong></p>
+<p>一致性哈希帮助在分区容错（P）下提升可用性（A），但一致性（C）需要额外机制（如 quorum reads）保证。</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>虚拟节点数量太少</strong> — 数据分布会很不均匀，导致热点</p>
+<div class="diagram-block">*Too few virtual nodes → uneven distribution → hot spots*</div>
+
+<p>❌ <strong>不考虑节点权重</strong> — 新服务器内存更大，应承担更多虚拟节点</p>
+<p><em>Ignoring node weights → underutilizing powerful servers</em></p>
+
+<p>❌ <strong>哈希函数选错</strong> — 用差的哈希函数（如 MD5）导致聚集</p>
+<div class="diagram-block">*Bad hash function → clustering → poor distribution*</div>
+
+<p>✅ 用 MurmurHash 或 FNV1a，配合 150-200 个虚拟节点，是生产环境的黄金配置。</p>
+<p><em>Use MurmurHash or FNV1a with 150-200 virtual nodes in production.</em></p>
+
+<hr/>
+
+<h2>实际使用 / Real-World Usage</h2>
+
+<ul><li><strong>Amazon DynamoDB</strong> — 内部分区路由</li><li><strong>Apache Cassandra</strong> — token-based consistent hashing</li><li><strong>Memcached / Twemproxy</strong> — 客户端一致性哈希</li><li><strong>Nginx upstream hash</strong> — <code>hash $request_uri consistent</code></li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ol><li><a href="https://www.toptal.com/big-data/consistent-hashing">Consistent Hashing — Tom White's original paper explanation</a></li><li><a href="https://aws.amazon.com/blogs/database/amazon-dynamodb-under-the-hood-how-we-built-a-hyper-scale-database/">Amazon DynamoDB's use of consistent hashing</a></li><li><a href="https://cassandra.apache.org/doc/latest/cassandra/architecture/dynamo.html">Cassandra's consistent hashing implementation</a></li></ol>
+
+<hr/>
+
+<h2>🧒 ELI5 (解释给5岁小孩听)</h2>
+
+<p>想象一圈小朋友站成一个圆，每人负责一段颜色。玩具来了，看看玩具是什么颜色，顺时针找到对应颜色的小朋友，就给他。少了一个小朋友，只有他那段颜色的玩具要重新分，其他小朋友不受影响！</p>
+
+<p><em>Imagine kids standing in a circle, each responsible for a color range. A toy arrives — find the next kid clockwise with that color. If one kid leaves, only their toys need reassigning. Everyone else stays put!</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 Day 11 / Algorithms Day 11</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 Day 11 / Algorithms Day 11</h1>
+<p><strong>#167 Two Sum II — Input Array Is Sorted · 🟡 Medium</strong></p>
+<p><em>预计阅读时间 / Estimated reading time: 4 minutes</em></p>
+
+<hr/>
+
+<h2>🧩 双指针模式 (2/5) — 继承 Day 10 的模版</h2>
+
+<p><em>Building on the Two Pointers template from Day 10</em></p>
+
+<p>今天是双指针模式的<strong>第 2 题</strong>（共 5 题）。上一题 Valid Palindrome 用双指针判断回文；今天我们用<strong>同样的框架</strong>解决"有序数组找配对"问题。</p>
+
+<p><em>This is the 2nd problem in our Two Pointers block (5 total). Yesterday we checked palindromes; today we use the same framework to find pairs in a sorted array.</em></p>
+
+<p><strong>本 block 全部 5 题 / All 5 problems:</strong></p>
+<ol><li>✅ #125 Valid Palindrome (Easy) — Day 10</li><li>👈 <strong>#167 Two Sum II (Medium) — TODAY</strong></li><li>#15 3Sum (Medium)</li><li>#11 Container With Most Water (Medium)</li><li>#42 Trapping Rain Water (Hard)</li></ol>
+
+<p><strong>通用模版回顾 / Template Recap:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="left, right = 0, len(arr) - 1&#10;while left &lt; right:&#10;    total = arr[left] + arr[right]&#10;    if total == target: return [left, right]&#10;    elif total &lt; target: left += 1   # need bigger sum&#10;    else: right -= 1                  # need smaller sum">Copy</button>
+  <pre><code class="language-python">left, right = <span style="color:#56b6c2;">0</span>, len(arr) - <span style="color:#56b6c2;">1</span>
+<span style="color:#c678dd;">while</span> left &lt; right:
+    total = arr[left] + arr[right]
+    <span style="color:#c678dd;">if</span> total == target: <span style="color:#c678dd;">return</span> [left, right]
+    <span style="color:#c678dd;">elif</span> total &lt; target: left += <span style="color:#56b6c2;">1</span>   <span style="color:#5c6370;"># need bigger sum</span>
+    <span style="color:#c678dd;">else</span>: right -= <span style="color:#56b6c2;">1</span>                  <span style="color:#5c6370;"># need smaller sum</span></code></pre>
+</div>
+
+<p><strong>与 Valid Palindrome 的对比 / vs Yesterday:</strong></p>
+
+<table><thead><tr><th></th><th>Valid Palindrome</th><th>Two Sum II</th></tr></thead><tbody><tr><td>移动条件 / Move when</td><td>chars don't match</td><td>sum ≠ target</td></tr><tr><td>收缩方向 / Shrink</td><td>both sides toward middle</td><td>whichever side adjusts sum</td></tr><tr><td>核心逻辑 / Core</td><td>compare chars</td><td>adjust sum magnitude</td></tr></tbody></table>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 <a href="https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/">LeetCode #167</a> · 🟡 Medium</p>
+<p>📹 <a href="https://neetcode.io/problems/two-sum-ii">NeetCode Video</a></p>
+
+<p><strong>现实类比 / Real-World Analogy:</strong></p>
+
+<p>你有一张<strong>已排序</strong>的价目表，要找出恰好等于预算 <code>target</code> 的两件商品。</p>
+<p><em>You have a sorted price list and want to find exactly two items that sum to your budget.</em></p>
+
+<p><strong>题目 / Problem:</strong></p>
+<p>给一个 1-indexed、<strong>非递减排序</strong>的数组，找两个数相加等于 <code>target</code>，返回它们的下标（1-indexed）。每个输入保证有唯一解。</p>
+<p><em>Given a 1-indexed, non-decreasing sorted array, find two numbers that sum to target. Return 1-indexed positions. Exactly one solution exists.</em></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Input:  numbers = [2, 7, 11, 15], target = 9&#10;Output: [1, 2]  (numbers[0] + numbers[1] = 2 + 7 = 9)">Copy</button>
+  <pre><code class="language-text">Input:  numbers = [2, 7, 11, 15], target = 9
+Output: [1, 2]  (numbers[0] + numbers[1] = 2 + 7 = 9)</code></pre>
+</div>
+
+<hr/>
+
+<h2>💡 套用模版 / Mapping to Template</h2>
+
+<p>模版中 <code>arr[left] + arr[right]</code> 对应今天的 <code>numbers[left] + numbers[right]</code>。</p>
+
+<p><strong>为什么有序数组可以用双指针？/ Why does sorting enable two pointers?</strong></p>
+
+<div class="diagram-block">关键洞察：数组排序后，如果 `sum &lt; target`，我们**确定**需要更大的值 → 移动左指针。如果 `sum &gt; target`，需要更小的值 → 移动右指针。无序数组无法这样推断！</div>
+
+<div class="diagram-block">*Key insight: With a sorted array, if sum &lt; target, we KNOW we need a bigger value → move left. If sum &gt; target, we need smaller → move right. Unsorted arrays can't support this reasoning!*</div>
+
+<hr/>
+
+<h2>🐍 Python 解法 + 逐步追踪 / Solution + Trace</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def twoSum(numbers: list[int], target: int) -&gt; list[int]:&#10;    left, right = 0, len(numbers) - 1  # 1&#10;    &#10;    while left &lt; right:                 # 2&#10;        current_sum = numbers[left] + numbers[right]  # 3&#10;        &#10;        if current_sum == target:       # 4&#10;            return [left + 1, right + 1]  # convert to 1-indexed&#10;        elif current_sum &lt; target:      # 5&#10;            left += 1   # need bigger number&#10;        else:&#10;            right -= 1  # need smaller number&#10;    &#10;    return []  # guaranteed to find answer, never reaches here">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> twoSum(numbers: list[int], target: int) -&gt; list[int]:
+    left, right = <span style="color:#56b6c2;">0</span>, len(numbers) - <span style="color:#56b6c2;">1</span>  <span style="color:#5c6370;"># 1</span>
+    
+    <span style="color:#c678dd;">while</span> left &lt; right:                 <span style="color:#5c6370;"># 2</span>
+        current_sum = numbers[left] + numbers[right]  <span style="color:#5c6370;"># 3</span>
+        
+        <span style="color:#c678dd;">if</span> current_sum == target:       <span style="color:#5c6370;"># 4</span>
+            <span style="color:#c678dd;">return</span> [left + <span style="color:#56b6c2;">1</span>, right + <span style="color:#56b6c2;">1</span>]  <span style="color:#5c6370;"># convert to 1-indexed</span>
+        <span style="color:#c678dd;">elif</span> current_sum &lt; target:      <span style="color:#5c6370;"># 5</span>
+            left += <span style="color:#56b6c2;">1</span>   <span style="color:#5c6370;"># need bigger number</span>
+        <span style="color:#c678dd;">else</span>:
+            right -= <span style="color:#56b6c2;">1</span>  <span style="color:#5c6370;"># need smaller number</span>
+    
+    <span style="color:#c678dd;">return</span> []  <span style="color:#5c6370;"># guaranteed to find answer, never reaches here</span></code></pre>
+</div>
+
+<p><strong>追踪 / Trace</strong> with <code>numbers = [2, 7, 11, 15], target = 9</code>:</p>
+
+<div class="diagram-block">Step 1: left=0, right=3 → 2+15=17 &gt; 9  → right=2
+Step 2: left=0, right=2 → 2+11=13 &gt; 9  → right=1
+Step 3: left=0, right=1 → 2+7=9  == 9  → return [1, 2] ✅</div>
+
+<p><strong>时间/空间复杂度 / Complexity:</strong></p>
+<ul><li>⏱ Time: <strong>O(n)</strong> — each pointer moves at most n steps total</li><li>💾 Space: <strong>O(1)</strong> — no extra data structures</li></ul>
+
+<p><strong>vs. Brute Force:</strong> O(n²) with nested loops. Two pointers give a 10-100x speedup on large inputs.</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p><strong>在本 block 中 / Within this pattern block:</strong></p>
+
+<ul><li><strong>#15 3Sum (下一题):</strong> Same two-pointer idea + outer loop. Fix one element, two-pointer the rest.</li><li><strong>#11 Container With Most Water:</strong> <code>left</code>, <code>right</code> move based on which height is smaller — same structure!</li><li><strong>#42 Trapping Rain Water:</strong> Two pointers + track running max from each side. Most complex variation.</li></ul>
+
+<p><strong>看到这些信号就想到双指针 / Recognize these signals:</strong></p>
+<ul><li>✅ Sorted array</li><li>✅ "Find pair that sums to X"</li><li>✅ O(1) space required</li><li>✅ Palindrome check</li><li>✅ "Remove duplicates in-place"</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ol><li><a href="https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/">LeetCode #167 — Two Sum II</a></li><li><a href="https://neetcode.io/problems/two-sum-ii">NeetCode Two Sum II explanation</a></li><li><a href="https://leetcode.com/discuss/study-guide/1688903/Solved-all-two-pointers-problems-in-100-days">Two Pointers pattern guide — LeetCode Patterns</a></li></ol>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>你和朋友站在一排数字两端。你喊出你们俩数字的和。太小就让左边的人向右走一步（换更大的数）；太大就让右边的人向左走一步（换更小的数）；正好就赢了！</p>
+
+<div class="diagram-block">*You and a friend stand at opposite ends of a number line. Call out your sum. Too small → left person steps right (bigger number). Too big → right person steps left (smaller). Exact match → win!*</div>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 Day 10 / Soft Skills Day 10</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 Day 10 / Soft Skills Day 10</h1>
+<p><strong>Topic: Proactiveness — 主动发现问题</strong></p>
+<p><em>"Tell me about a time you identified and solved a problem before others noticed"</em></p>
+<p><em>预计阅读时间 / Estimated reading time: 2 minutes</em></p>
+
+<hr/>
+
+<h2>为什么这道题很重要 / Why This Matters</h2>
+
+<p>这是区分<strong>普通工程师和高级工程师</strong>的核心问题之一。</p>
+
+<p><em>This is one of the core questions that distinguishes senior from junior engineers.</em></p>
+
+<p>初级工程师：等待任务分配，发现问题后上报。</p>
+<p><em>Junior: Waits for tasks, escalates problems when found.</em></p>
+
+<p>高级工程师：主动监控系统健康，提前发现隐患，悄悄修好。</p>
+<p><em>Senior: Proactively monitors system health, finds issues before they explode, quietly fixes them.</em></p>
+
+<p>面试官想听到的信号：<strong>主动性、系统思维、影响力量化</strong>。</p>
+<p><em>What interviewers want: proactivity, systems thinking, quantified impact.</em></p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<h3>✅ 强回答结构 / Strong Answer Structure</h3>
+
+<p><strong>Situation（情境）:</strong></p>
+<blockquote>"在我们的支付服务中，我在做例行代码审查时注意到一个看起来没问题但实际上很危险的模式——一个在高并发场景下会导致重复扣款的竞态条件。"</blockquote>
+<blockquote></blockquote>
+<blockquote><em>"While doing a routine code review of our payment service, I noticed a pattern that looked fine but was actually dangerous — a race condition that would cause duplicate charges under high concurrency."</em></blockquote>
+
+<p><strong>Task（任务）:</strong></p>
+<blockquote>"没人发现这个问题，线上也没有报警。但我知道如果不处理，在双十一这样的高峰期必然会触发。"</blockquote>
+<blockquote></blockquote>
+<blockquote><em>"No one had flagged it, and there were no alerts. But I knew it would absolutely trigger during peak traffic like Black Friday."</em></blockquote>
+
+<p><strong>Action（行动）:</strong></p>
+<blockquote>"我先写了一个复现脚本，用 k6 模拟并发请求证明了问题存在；然后提出了三种修复方案，评估了各自的性能影响；和 PM 沟通了延迟一个小功能发布来优先修复；最后用数据库级别的幂等锁解决了问题。"</blockquote>
+<blockquote></blockquote>
+<blockquote><em>"I wrote a reproduction script using k6 to prove the bug. Then I proposed 3 fix options with their performance tradeoffs, aligned with the PM to delay a minor feature, and fixed it with database-level idempotency locks."</em></blockquote>
+
+<p><strong>Result（结果）:</strong></p>
+<blockquote>"两周后的峰值流量中，有记录显示有 847 次请求命中了我们的幂等保护。估算避免了 $15K 的退款损失和潜在的支付合规问题。"</blockquote>
+<blockquote></blockquote>
+<blockquote><em>"Two weeks later during peak traffic, we recorded 847 requests hitting our idempotency guard. Estimated $15K in prevented chargebacks and potential compliance issues."</em></blockquote>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<p><strong>❌ 弱回答 / Weak:</strong></p>
+<blockquote>"我发现了一个 bug，报告给了我的经理，他们修复了它。"</blockquote>
+<blockquote></blockquote>
+<blockquote><em>"I found a bug and reported it to my manager and they fixed it."</em></blockquote>
+<p>→ 没有主动性，没有影响，这是被动行为。</p>
+<p><em>No ownership, no impact, this is reactive not proactive.</em></p>
+
+<p><strong>✅ 强回答 / Strong:</strong></p>
+<blockquote>展示：你如何<strong>主动发现</strong>（不是被告知）→ <strong>量化潜在风险</strong> → <strong>独立推进修复</strong> → <strong>数字化影响</strong></blockquote>
+<blockquote></blockquote>
+<blockquote><em>Show: how you proactively discovered (not told) → quantified potential risk → independently drove the fix → measured impact</em></blockquote>
+
+<hr/>
+
+<h2>高级/Staff 的进阶 / Senior/Staff Level Tips</h2>
+
+<p>🔥 <strong>系统性主动 vs 偶发性主动:</strong></p>
+
+<p>普通的"主动"是偶然发现问题。Staff 级别会建立<strong>系统</strong>：</p>
+<ul><li>定期审查监控告警覆盖率</li><li>建立技术债 backlog 并推动季度 review</li><li>主导 Game Day / Chaos Engineering 主动暴露隐患</li></ul>
+
+<p><em>Average proactiveness is accidental. Staff-level proactiveness is systematic: quarterly tech debt reviews, monitoring coverage audits, deliberate chaos engineering.</em></p>
+
+<p>🔥 <strong>提前沟通风险:</strong></p>
+
+<p>找到问题后，不只是"修了"，而是<strong>向上同步风险评估</strong>和修复进度，让决策者知情。</p>
+
+<p><em>Don't just fix silently — sync up risk assessment and fix progress with stakeholders. Make decisions visible.</em></p>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+
+<ol><li>🔍 <strong>主动发现</strong> — 描述你如何发现（代码审查、监控、读日志、直觉）</li><li>📊 <strong>量化风险</strong> — "如果不修，会有 X 影响"比"我觉得有问题"有力 10 倍</li><li>⚙️ <strong>独立推进</strong> — 展示你能端到端推动，不依赖他人催促</li><li>📈 <strong>结果数字化</strong> — 预防的损失 &gt; 修复的技术细节</li></ol>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ol><li><a href="https://staffeng.com/book">Staff Engineer: Leadership beyond the management track — Will Larson</a></li><li><a href="https://sre.google/sre-book/monitoring-distributed-systems/">Google SRE Book — Chapter on Monitoring and Alerting</a></li><li><a href="https://www.indeed.com/career-advice/interviewing/how-to-use-the-star-interview-response-technique">The STAR Method for behavioral interviews — Indeed</a></li></ol>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>就像你在玩游戏，别人都在打怪，但你提前发现了地图上有个陷阱，在队友掉坑之前就绕过去了，还告诉大家这里有坑。这就是主动性！</p>
+
+<p><em>It's like being in a game where everyone's fighting monsters, but you spotted a hidden trap on the map. You avoided it before your teammates fell in — and told everyone it was there. That's proactiveness!</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 Day 10 / Frontend Day 10</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 Day 10 / Frontend Day 10</h1>
+<p><strong>Topic: React useEffect — Side Effects &amp; Cleanup</strong></p>
+<p><em>预计阅读时间 / Estimated reading time: 2 minutes</em></p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个 <strong>实时股票 dashboard</strong>，需要：</p>
+<ol><li>组件加载时订阅 WebSocket 数据流</li><li>组件卸载时取消订阅（否则内存泄漏！）</li><li>当股票代码（ticker）改变时，切换订阅</li></ol>
+
+<p><em>You're building a real-time stock dashboard. You need to:</em></p>
+<ol><li><em>Subscribe to WebSocket stream when component mounts</em></li><li><em>Unsubscribe when component unmounts (or: memory leak!)</em></li><li><em>Switch subscriptions when the ticker changes</em></li></ol>
+
+<p>这就是 <code>useEffect</code> 的经典使用场景。</p>
+
+<hr/>
+
+<h2>代码示例 / Code Example</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import { useEffect, useState } from 'react';&#10;&#10;interface StockData {&#10;  price: number;&#10;  change: number;&#10;}&#10;&#10;function StockTicker({ symbol }: { symbol: string }) {&#10;  const [data, setData] = useState&lt;StockData | null&gt;(null);&#10;&#10;  useEffect(() =&gt; {&#10;    // 1. Setup: runs after render&#10;    console.log(`Subscribing to ${symbol}`);&#10;    const ws = new WebSocket(`wss://stocks.example.com/${symbol}`);&#10;    &#10;    ws.onmessage = (event) =&gt; {&#10;      setData(JSON.parse(event.data));&#10;    };&#10;&#10;    // 2. Cleanup: runs before next effect OR on unmount&#10;    return () =&gt; {&#10;      console.log(`Unsubscribing from ${symbol}`);&#10;      ws.close(); // ← THIS IS CRITICAL&#10;    };&#10;  }, [symbol]); // 3. Dependency array: re-run when symbol changes&#10;&#10;  if (!data) return &lt;div&gt;Loading...&lt;/div&gt;;&#10;  return &lt;div&gt;{symbol}: ${data.price} ({data.change}%)&lt;/div&gt;;&#10;}">Copy</button>
+  <pre><code class="language-tsx">import { useEffect, useState } from 'react';
+
+interface StockData {
+  price: number;
+  change: number;
+}
+
+function StockTicker({ symbol }: { symbol: string }) {
+  const [data, setData] = useState&lt;StockData | null&gt;(null);
+
+  useEffect(() =&gt; {
+    // 1. Setup: runs after render
+    console.log(`Subscribing to ${symbol}`);
+    const ws = new WebSocket(`wss://stocks.example.com/${symbol}`);
+    
+    ws.onmessage = (event) =&gt; {
+      setData(JSON.parse(event.data));
+    };
+
+    // 2. Cleanup: runs before next effect OR on unmount
+    return () =&gt; {
+      console.log(`Unsubscribing from ${symbol}`);
+      ws.close(); // ← THIS IS CRITICAL
+    };
+  }, [symbol]); // 3. Dependency array: re-run when symbol changes
+
+  if (!data) return &lt;div&gt;Loading...&lt;/div&gt;;
+  return &lt;div&gt;{symbol}: ${data.price} ({data.change}%)&lt;/div&gt;;
+}</code></pre>
+</div>
+
+<hr/>
+
+<h2>猜猜输出？ / What's the output order?</h2>
+
+<p><strong>场景：</strong> symbol 从 <code>"AAPL"</code> 改为 <code>"GOOG"</code></p>
+
+<div class="diagram-block">A) "Subscribing to GOOG"
+B) "Unsubscribing from AAPL" → "Subscribing to GOOG"
+C) "Subscribing to GOOG" → "Unsubscribing from AAPL"
+D) 什么都不打印</div>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>答案是 B</strong> — <code>"Unsubscribing from AAPL"</code> 先打印，然后 <code>"Subscribing to GOOG"</code></p>
+
+<p>React 的执行顺序：</p>
+<ol><li><code>symbol</code> prop 变化 → re-render</li><li>React 运行<strong>上一个 effect 的 cleanup</strong>（关闭旧 WebSocket）</li><li>React 运行<strong>新的 effect</strong>（打开新 WebSocket）</li></ol>
+
+<p>这就是为什么 cleanup 在 return 里：React 会在正确时机调用它。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>❌ 常见错误 vs ✅ 正确做法</h2>
+
+<p><strong>❌ 忘记清理 / Forgetting cleanup:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="useEffect(() =&gt; {&#10;  const interval = setInterval(fetchData, 1000);&#10;  // ❌ No cleanup! Interval runs forever after unmount&#10;}, []);">Copy</button>
+  <pre><code class="language-tsx">useEffect(() =&gt; {
+  const interval = setInterval(fetchData, 1000);
+  // ❌ No cleanup! Interval runs forever after unmount
+}, []);</code></pre>
+</div>
+
+<p><strong>✅ 正确清理 / Always clean up:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="useEffect(() =&gt; {&#10;  const interval = setInterval(fetchData, 1000);&#10;  return () =&gt; clearInterval(interval); // ✅&#10;}, []);">Copy</button>
+  <pre><code class="language-tsx">useEffect(() =&gt; {
+  const interval = setInterval(fetchData, 1000);
+  return () =&gt; clearInterval(interval); // ✅
+}, []);</code></pre>
+</div>
+
+<p><strong>❌ 依赖项缺失 / Missing dependencies:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="useEffect(() =&gt; {&#10;  fetchUser(userId); // ❌ userId used but not in deps&#10;}, []); // stale closure! always fetches original userId">Copy</button>
+  <pre><code class="language-tsx">useEffect(() =&gt; {
+  fetchUser(userId); // ❌ userId used but not in deps
+}, []); // stale closure! always fetches original userId</code></pre>
+</div>
+
+<p><strong>✅ 正确依赖 / Correct dependencies:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="useEffect(() =&gt; {&#10;  fetchUser(userId); // ✅&#10;}, [userId]); // re-runs whenever userId changes">Copy</button>
+  <pre><code class="language-tsx">useEffect(() =&gt; {
+  fetchUser(userId); // ✅
+}, [userId]); // re-runs whenever userId changes</code></pre>
+</div>
+
+<hr/>
+
+<h2>三种 useEffect 形态 / Three Patterns</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// 1. Run ONCE on mount (componentDidMount equivalent)&#10;useEffect(() =&gt; {&#10;  initAnalytics();&#10;  return () =&gt; cleanup(); // runs on unmount&#10;}, []); // empty deps = run once&#10;&#10;// 2. Run on every render (rarely needed)&#10;useEffect(() =&gt; {&#10;  document.title = `Count: ${count}`;&#10;}); // no deps array = every render&#10;&#10;// 3. Run when specific values change&#10;useEffect(() =&gt; {&#10;  fetchUserProfile(userId);&#10;}, [userId]); // run when userId changes">Copy</button>
+  <pre><code class="language-tsx">// 1. Run ONCE on mount (componentDidMount equivalent)
+useEffect(() =&gt; {
+  initAnalytics();
+  return () =&gt; cleanup(); // runs on unmount
+}, []); // empty deps = run once
+
+// 2. Run on every render (rarely needed)
+useEffect(() =&gt; {
+  document.title = `Count: ${count}`;
+}); // no deps array = every render
+
+// 3. Run when specific values change
+useEffect(() =&gt; {
+  fetchUserProfile(userId);
+}, [userId]); // run when userId changes</code></pre>
+</div>
+
+<hr/>
+
+<h2>何时用 / 何时不用 / When to Use / When NOT to</h2>
+
+<p><strong>✅ 适合用 useEffect:</strong></p>
+<ul><li>API 数据获取（推荐用 React Query/SWR 封装）</li><li>WebSocket / 事件监听器</li><li>第三方库集成（地图、图表）</li><li>浏览器 API（localStorage, document.title）</li></ul>
+
+<p><strong>❌ 不要用 useEffect:</strong></p>
+<ul><li>派生状态（用 <code>useMemo</code> 代替）</li><li>事件处理（直接用 event handler）</li><li>在 render 期间的数据转换（直接在组件里算）</li></ul>
+
+<p><strong>React 团队的建议 / React Team's Take:</strong></p>
+<blockquote>"You might not need an Effect" — 很多 useEffect 可以被消除。</blockquote>
+<blockquote><em>Many Effects can be eliminated. Think twice before reaching for it.</em></blockquote>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ol><li><a href="https://react.dev/learn/synchronizing-with-effects">React Docs: Synchronizing with Effects</a></li><li><a href="https://react.dev/learn/you-might-not-need-an-effect">React Docs: You Might Not Need an Effect</a></li><li><a href="https://overreacted.io/a-complete-guide-to-useeffect/">Dan Abramov: A Complete Guide to useEffect</a></li></ol>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p><code>useEffect</code> 就像给房间装了一个"进房间就开灯、出房间就关灯"的传感器。你进去（组件挂载），灯亮了；你出来（组件卸载），灯自动灭。如果你换了房间（依赖变了），它先把旧房间的灯关掉，再把新房间的灯打开。</p>
+
+<p><em>useEffect is like a room sensor that turns the light on when you enter and off when you leave. When you switch rooms (deps change), it turns off the old light before turning on the new one.</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI Day 11 — News Roundup</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI Day 11 — News Roundup</h1>
+<p><em>2026年3月26日 / March 26, 2026</em></p>
+<p><em>预计阅读时间 / Estimated reading time: 2 minutes</em></p>
+
+<hr/>
+
+<h2>📰 本周 AI 大事件 / This Week in AI</h2>
+
+<p><em>Sources: Web search results from March 2026</em></p>
+
+<hr/>
+
+<h3>1. 🚀 OpenAI 发布 GPT-5.4 — AI"数字同事"时代来临</h3>
+
+<p><strong>来源 / Source:</strong> <a href="https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-march-2026">riskinfo.ai</a> | <a href="https://juliangoldie.co.uk/ai-news-march-2026/">juliangoldie.co.uk</a></p>
+
+<p>GPT-5.4 于 3 月 5 日正式发布，最大亮点是<strong>原生计算机使用能力（Computer Use）</strong>——AI 可以直接操作真实软件环境（Excel、文档、网页），而不只是生成文字。在法律文件 benchmark 上达到 91% 准确率。</p>
+
+<p><em>GPT-5.4 launched March 5 with native computer-use capabilities — AI can now directly interact with real software environments like spreadsheets and documents, moving toward a "digital co-worker" role. Achieved 91% on a legal-document benchmark.</em></p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>作为工程师，这意味着 AI agent 正在从"问答工具"变成"能自主操作 GUI 的同事"。未来的 AI 代码助手可能直接在你的 IDE 里操作文件、跑测试、提 PR——而不只是给出建议。</p>
+
+<hr/>
+
+<h3>2. 🛡️ Anthropic 拒绝军事合同，被列为"供应链风险"</h3>
+
+<p><strong>来源 / Source:</strong> <a href="https://radicaldatascience.wordpress.com/2026/03/20/ai-news-briefs-bulletin-board-for-march-2026/">radicaldatascience.wordpress.com</a></p>
+
+<p>美国国防部要求 Anthropic 移除 Claude 的安全护栏（禁止自主武器使用），Anthropic 拒绝后被 DoD 列为"供应链风险"。这是 AI 安全与国家安全之间最直接的冲突之一。</p>
+
+<p><em>The US DoD designated Anthropic as a "supply chain risk" after the company refused to remove safety guardrails prohibiting Claude's use in autonomous weaponry.</em></p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>AI 公司的价值观选择正在产生真实商业后果。这场博弈将塑造未来 AI 系统的"红线"在哪里划定。</p>
+
+<hr/>
+
+<h3>3. 🎮 NVIDIA GTC 2026：AI 工厂 + 边缘计算引领下一波</h3>
+
+<p><strong>来源 / Source:</strong> <a href="https://nvidianews.nvidia.com/news/nvidia-and-emerald-ai-join-leading-energy-companies-to-pioneer-flexible-ai-factories-as-grid-assets">nvidianews.nvidia.com</a> | <a href="https://www.vtnetzwelt.com/ai-development/latest-ai-technology-news-roundup-march-2026/">vtnetzwelt.com</a></p>
+
+<p>NVIDIA 在 3 月 16 日 GTC 大会上主推"AI 工厂"概念：AI 算力中心既能生产 AI tokens，又能作为<strong>灵活电网资产</strong>调节用电。同时发布 Nemotron 3 Super，专为复杂 agentic 系统设计。</p>
+
+<p><em>NVIDIA's GTC 2026 highlighted "AI factories" — compute centers that generate AI tokens AND act as flexible grid assets. Nemotron 3 Super targets complex agentic AI workflows.</em></p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>AI 基础设施成本是行业最大变量之一。AI 工厂与能源网格整合，可能显著降低运算成本，从而让更多 AI 功能变得可行。</p>
+
+<hr/>
+
+<h3>4. 📊 76% 的企业：准备好迎接 AI Agent 了吗？还没有</h3>
+
+<p><strong>来源 / Source:</strong> <a href="https://www.ey.com/en_gl/newsroom/2026/03/ey-survey-autonomous-ai-is-no-longer-theoretical-as-adoption-grows-despite-ongoing-trust-concerns">ey.com</a></p>
+
+<p>EY 2026 AI Sentiment Report：76% 的企业承认<strong>运营流程还没准备好</strong>支持 agentic AI。最大障碍是：缺少结构化工作流、上下文传递不清晰、以及信任问题。</p>
+
+<p><em>EY's 2026 AI Sentiment Report: 76% of enterprises admit their operations are not yet ready to support agentic AI. Main blockers: unstructured workflows, unclear context handoffs, and trust gaps.</em></p>
+
+<p><strong>为什么你应该关心 / Why you should care:</strong></p>
+<p>这直接影响你作为工程师的工作重点。未来 1-3 年最有价值的技能：<strong>设计能与 AI Agent 协作的系统架构</strong>——清晰的 API 接口、可审计的工作流、幂等操作。</p>
+
+<hr/>
+
+<h2>🔗 本周延伸阅读 / Further Reading</h2>
+
+<ul><li><a href="https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-march-2026">AI Insights: Key Global Developments March 2026</a></li><li><a href="https://nvidianews.nvidia.com/news/nvidia-and-emerald-ai-join-leading-energy-companies-to-pioneer-flexible-ai-factories-as-grid-assets">NVIDIA AI Factories press release</a></li><li><a href="https://www.ey.com/en_gl/newsroom/2026/03/ey-survey-autonomous-ai-is-no-longer-theoretical-as-adoption-grows-despite-ongoing-trust-concerns">EY 2026 AI Sentiment Report</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>AI 这周的新闻就像：有人造了一个超级厉害的机器人助手，会直接帮你操电脑；有家公司不愿意把机器人改成"可以打仗"的，结果被政府不喜欢了；还有调查说大多数公司虽然想用 AI 助手，但家里还没收拾好迎接它。</p>
+
+<p><em>This week in AI: a super robot that can actually USE your computer arrived; one company refused to let their AI be used as a weapon and got in trouble for it; and a survey found most companies want AI workers but haven't cleaned their house yet.</em></p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
