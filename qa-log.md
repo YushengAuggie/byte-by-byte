@@ -41,6 +41,13 @@ This file tracks issues found during QA reviews to improve content quality over 
 - **Root cause:** This is the 5th+ recurrence of the same pattern. Specific benchmark numbers and notable institutional claims are presented as facts without inline primary source attribution. Self-review does not check whether specific figures are verifiable.
 - **Fix (escalated):** This pattern has now recurred on Days 1, 3, 7, 20, and 26. Escalate to structural fix: add a visible disclaimer at the top of every AI News section ("Figures and claims based on cited sources; verify before sharing"), AND instruct the generator to mark any claim from a non-primary source with "reportedly" or "per [source]".
 
+## 2026-03-27 — Day 12
+
+- **Section:** Frontend
+- **Issue:** "Guess the output" quiz answer (C: 3) is correct in production/non-Strict-Mode React, but misleading for readers in a typical dev environment. React 18 Strict Mode double-invokes render functions, so the displayed count would be 6, not 3, in a standard `create-react-app` or Next.js dev build.
+- **Root cause:** The code example even includes a comment in the "BadComponent" section about React 18 Strict Mode double-invokes, but that knowledge wasn't applied to validate the quiz answer in the *other* code block.
+- **Fix:** For any "guess the output" quiz involving render counts or side-effect counts, explicitly state the environment assumption (production mode vs dev/Strict Mode). Add a parenthetical like "(in production / without Strict Mode)" to the answer, or note the Strict Mode difference.
+
 ## 2026-03-20 — Day 7
 - **Section:** AI (News)
 - **Issue:** Meta story framing overstates source. Content claims Meta will "significantly reduce reliance on third-party content moderation contractors" but the actual Meta blog post (verified via URL fetch) focuses on an AI support assistant and advanced AI enforcement systems — with no mention of contractor workforce reduction. Additionally, Samsung's $73B/22% figures and Alexa Plus UK £19.99/mo price are specific claims that could not be independently verified.
