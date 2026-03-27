@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-03-27</title>
+  <meta name="description" content="byte-by-byte daily lessons for Friday, March 27, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Friday, March 27, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-03-27.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-03-26.html" style="color:var(--text2)">← 2026-03-26</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-03-27</span>
+    <h1>Friday, March 27, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-03-26.html" class="day-nav-btn">← 2026-03-26</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 Day 11 / System Design Day 11</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 Day 11 / System Design Day 11</h1>
+<h2>CAP 定理与最终一致性 / CAP Theorem &amp; Eventual Consistency</h2>
+
+<blockquote><strong>难度 / Difficulty:</strong> Intermediate | <strong>阶段 / Phase:</strong> Growth | <strong>预计阅读时间 / Read time:</strong> 3 min</blockquote>
+
+<hr/>
+
+<h2>🌍 真实场景 / Real-World Scenario</h2>
+
+<p>想象你在设计 Twitter（现 X）的点赞系统。用户遍布全球，分布在北美、欧洲、亚洲的数据中心。当网络故障发生时，你必须做一个选择：</p>
+
+<p><strong>要么</strong>继续接受点赞写入（可能导致各地数据不一致）；</p>
+<p><strong>要么</strong>拒绝所有写入（保证数据一致，但系统不可用）。</p>
+
+<p>这就是 CAP 定理的核心困境。</p>
+
+<p>Imagine you're designing Twitter's like system, with users spread across data centers in North America, Europe, and Asia. When a network partition occurs, you face a hard choice:</p>
+
+<p><strong>Either</strong> keep accepting like writes (risking inconsistent counts across regions),</p>
+<p><strong>or</strong> reject all writes (keeping data consistent, but making the system unavailable).</p>
+
+<p>This is the core dilemma of the CAP theorem.</p>
+
+<hr/>
+
+<h2>📐 CAP 定理解释 / CAP Theorem Explained</h2>
+
+<p>CAP 定理由 Eric Brewer 在 2000 年提出，它说：<strong>分布式系统最多只能同时满足以下三项中的两项：</strong></p>
+
+<p>CAP theorem (Brewer, 2000) states: <strong>a distributed system can guarantee at most 2 of these 3 properties simultaneously:</strong></p>
+
+<table><thead><tr><th>属性</th><th>英文</th><th>解释</th></tr></thead><tbody><tr><td><strong>C</strong></td><td>Consistency</td><td>所有节点在同一时刻看到相同数据 / All nodes see same data at same time</td></tr><tr><td><strong>A</strong></td><td>Availability</td><td>每个请求都收到响应（非错误）/ Every request gets a response (non-error)</td></tr><tr><td><strong>P</strong></td><td>Partition Tolerance</td><td>网络分区时系统仍继续运行 / System works despite network partitions</td></tr></tbody></table>
+
+<blockquote>⚠️ <strong>关键洞察：</strong> 在真实分布式系统中，网络分区（P）是不可避免的。所以你实际上是在 <strong>CA（一致性 vs 可用性）</strong> 之间做取舍。</blockquote>
+
+<hr/>
+
+<h2>🏛️ ASCII 架构图 / Architecture Diagram</h2>
+
+<div class="diagram-block">正常状态 / Normal State:
+┌──────────┐         ┌──────────┐         ┌──────────┐
+│  Node A  │◄───────►│  Node B  │◄───────►│  Node C  │
+│ likes=42 │         │ likes=42 │         │ likes=42 │
+└──────────┘         └──────────┘         └──────────┘
+      ▲
+  user writes
+
+网络分区 / Network Partition:
+┌──────────┐    ✗    ┌──────────┐         ┌──────────┐
+│  Node A  │ BROKEN  │  Node B  │◄───────►│  Node C  │
+│ likes=45 │         │ likes=42 │         │ likes=42 │
+└──────────┘         └──────────┘         └──────────┘
+(user wrote 3 more)   (partition: can't sync)
+
+CP 选择 (e.g. HBase, Zookeeper):   AP 选择 (e.g. Cassandra, DynamoDB):
+→ 拒绝 Node B/C 的写入               → 允许各自独立写入
+→ 数据一致，但不可用                  → 可用，但数据暂时不一致</div>
+
+<hr/>
+
+<h2>⚖️ 关键权衡 / Key Tradeoffs</h2>
+
+<h3>CP 系统（一致性 + 分区容错）</h3>
+
+<p><strong>为什么这样设计？</strong> 需要强一致性的场景，例如金融交易、库存系统。</p>
+
+<ul><li>✅ 数据永远一致，不会有脏读</li><li>❌ 网络分区时部分节点不可用</li><li>📦 代表：HBase, MongoDB (default), ZooKeeper, etcd</li></ul>
+
+<h3>AP 系统（可用性 + 分区容错）</h3>
+
+<p><strong>为什么这样设计？</strong> 高可用性更重要，短暂不一致可接受，例如社交 feed、购物车。</p>
+
+<ul><li>✅ 系统始终响应，用户体验好</li><li>❌ 不同节点可能返回不同结果（<strong>最终一致性</strong>）</li><li>📦 代表：Cassandra, DynamoDB, CouchDB, DNS</li></ul>
+
+<h3>最终一致性 / Eventual Consistency</h3>
+
+<div class="diagram-block">时间线 Timeline:
+
+t=0  User writes likes=45 to Node A
+t=1  Node A is isolated (partition)
+t=2  User reads from Node B → gets 42 (stale!)
+t=5  Partition heals, nodes sync
+t=6  User reads from Node B → gets 45 ✅ (eventually consistent)</div>
+
+<p><strong>最终一致性</strong> 并非"随机错误"，而是"在网络恢复后，所有副本最终达到相同状态"。</p>
+
+<hr/>
+
+<h2>🚫 常见错误 / Common Mistakes</h2>
+
+<p><strong>别踩这个坑：</strong></p>
+
+<ol><li><strong>误解 CAP 是固定选择</strong> — 现代系统（如 DynamoDB）允许你按操作级别调整一致性（<code>ConsistencyLevel: QUORUM</code> vs <code>ONE</code>），而不是全局二选一。</li></ol>
+
+<ol><li><strong>把 CA 作为选项</strong> — 不存在真正的"CA 系统"，因为没有网络分区容错的系统根本不是分布式系统。</li></ol>
+
+<ol><li><strong>忽视 PACELC 扩展</strong> — CAP 只描述分区时的行为，<a href="https://en.wikipedia.org/wiki/PACELC_theorem">PACELC 模型</a>还考虑了<strong>正常运行时</strong>的延迟 vs 一致性权衡，更全面。</li></ol>
+
+<ol><li><strong>混淆最终一致性和弱一致性</strong> — 最终一致性保证"最终会对齐"；弱一致性不做任何保证。</li></ol>
+
+<hr/>
+
+<h2>🔍 面试重点 / Interview Focus</h2>
+
+<p>当面试官问"你会如何设计 X 系统"时，主动提出 CAP：</p>
+
+<blockquote>"这取决于一致性需求。如果是金融交易，我会选 CP；如果是社交 feed，AP + 最终一致性更合适，因为用户短暂看到旧数据不是大问题。"</blockquote>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<ul><li>🔗 <a href="https://www.ibm.com/topics/cap-theorem">CAP Theorem Explained — IBM</a></li><li>🔗 <a href="https://users.ece.cmu.edu/~adrian/731-sp04/readings/GL-cap.pdf">Brewer's Conjecture and the Feasibility of Consistent, Available, Partition-Tolerant Web Services</a></li><li>🔗 <a href="https://en.wikipedia.org/wiki/PACELC_theorem">PACELC theorem — Wikipedia</a></li><li>🔗 <a href="https://cassandra.apache.org/doc/latest/cassandra/architecture/dynamo.html">Cassandra vs MongoDB — Consistency Model Comparison</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5（像我5岁一样解释）</h2>
+
+<p>想象你和好朋友各有一本记事本，记录班里同学的生日。你们约定互相抄写更新。</p>
+
+<ul><li><strong>CP</strong>：如果你们之间的电话断了，就不写新内容，直到联系上为止（一致，但暂停工作）</li><li><strong>AP</strong>：各自继续记录，电话修好后再对比合并（继续工作，但暂时可能不一样）</li></ul>
+
+<p>大多数社交网站选择 AP：你的点赞数可能偶尔显示"旧数据"，但网站从不宕机。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 Day 12 / Algorithms Day 12</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 Day 12 / Algorithms Day 12</h1>
+<h2>#15 3Sum — Medium — Two Pointers (3/5)</h2>
+
+<blockquote><strong>难度 / Difficulty:</strong> 🟡 Medium | <strong>阶段 / Phase:</strong> Growth | <strong>预计时间 / Read time:</strong> 4 min</blockquote>
+
+<hr/>
+
+<h2>🧩 双指针模式 (3/5) — 继续 Day 9 引入的模版</h2>
+
+<p>Building on the <strong>双指针模式 / Two Pointers</strong> template from Day 9 (Valid Palindrome).</p>
+
+<p><strong>模式回顾 / Pattern Recap:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="left, right = 0, len(arr) - 1&#10;while left &lt; right:&#10;    total = arr[left] + arr[right]&#10;    if total == target: return [left, right]&#10;    elif total &lt; target: left += 1&#10;    else: right -= 1">Copy</button>
+  <pre><code class="language-python">left, right = <span style="color:#56b6c2;">0</span>, len(arr) - <span style="color:#56b6c2;">1</span>
+<span style="color:#c678dd;">while</span> left &lt; right:
+    total = arr[left] + arr[right]
+    <span style="color:#c678dd;">if</span> total == target: <span style="color:#c678dd;">return</span> [left, right]
+    <span style="color:#c678dd;">elif</span> total &lt; target: left += <span style="color:#56b6c2;">1</span>
+    <span style="color:#c678dd;">else</span>: right -= <span style="color:#56b6c2;">1</span></code></pre>
+</div>
+<p><strong>本模块问题 / Block Problems:</strong></p>
+<ol><li>✅ #125 Valid Palindrome (Easy) — Day 9</li><li>✅ #167 Two Sum II (Medium) — Day 11</li><li>👉 <strong>#15 3Sum (Medium) — TODAY</strong></li><li>🔜 #11 Container With Most Water (Medium)</li><li>🔜 #42 Trapping Rain Water (Hard)</li></ol>
+
+<p><strong>今天的变化 / Today's Twist:</strong> 从找"2个数之和"升级到找"3个数之和为0"，需要先固定一个数，再用双指针扫余下部分。</p>
+
+<hr/>
+
+<h2>🔗 题目链接 / Links</h2>
+
+<ul><li>📝 <a href="https://leetcode.com/problems/3sum/">LeetCode #15 — 3Sum</a></li><li>📹 <a href="https://neetcode.io/problems/three-integer-sum">NeetCode — 3Sum Solution</a></li></ul>
+
+<hr/>
+
+<h2>🌍 真实场景类比 / Real-World Analogy</h2>
+
+<p>想象你在整理一箱重量不等的砝码，你想找到<strong>三个</strong>砝码，使它们的重量加起来恰好为零（一正一负加中间值）。</p>
+
+<p>逐一穷举三个砝码的所有组合是 O(n³)，太慢了。如果先把砝码<strong>按重量排序</strong>，固定最左边的砝码，然后用左右两个指针扫剩余部分，就能降到 O(n²)。</p>
+
+<p>Imagine sorting weights in a box and finding <strong>three</strong> that sum to zero. Brute force is O(n³). Sort them, fix the leftmost, and use two pointers for the rest → O(n²).</p>
+
+<hr/>
+
+<h2>📋 问题描述 / Problem</h2>
+
+<p>Given an integer array <code>nums</code>, return all the triplets <code>[nums[i], nums[j], nums[k]]</code> such that:</p>
+<ul><li><code>i != j</code>, <code>i != k</code>, <code>j != k</code></li><li><code>nums[i] + nums[j] + nums[k] == 0</code></li></ul>
+
+<p>The solution set <strong>must not contain duplicate triplets.</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Input:  nums = [-1, 0, 1, 2, -1, -4]&#10;Output: [[-1, -1, 2], [-1, 0, 1]]">Copy</button>
+  <pre><code class="language-text">Input:  nums = [-1, 0, 1, 2, -1, -4]
+Output: [[-1, -1, 2], [-1, 0, 1]]</code></pre>
+</div>
+
+<hr/>
+
+<h2>🗺️ 映射到模版 / Mapping to Template</h2>
+
+<p><strong>核心思路：</strong> 排序后，外层遍历固定 <code>nums[i]</code>，内层用双指针找 <code>nums[left] + nums[right] == -nums[i]</code>。</p>
+
+<div class="diagram-block">Fixed:   nums[i] = -1   target for inner = 0 - (-1) = 1
+Array:   [-4, -1, -1, 0, 1, 2]  (sorted)
+              i  L        R
+              
+Step 1: left=-1, right=2 → sum=1 ✅ found! → skip duplicates
+Step 2: left=0,  right=1 → sum=1 ✅ found!
+Step 3: left &gt;= right → stop inner loop</div>
+
+<hr/>
+
+<h2>🐍 Python 解法 + 逐行追踪 / Solution + Trace</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def threeSum(nums: list[int]) -&gt; list[list[int]]:&#10;    nums.sort()                           # [-4, -1, -1, 0, 1, 2]&#10;    result = []&#10;    &#10;    for i in range(len(nums) - 2):        # fix the first element&#10;        if nums[i] &gt; 0:                   # sorted: if first &gt; 0, no solution&#10;            break&#10;        if i &gt; 0 and nums[i] == nums[i-1]:  # skip duplicates for i&#10;            continue&#10;        &#10;        left, right = i + 1, len(nums) - 1  # two pointers for the rest&#10;        &#10;        while left &lt; right:&#10;            total = nums[i] + nums[left] + nums[right]&#10;            &#10;            if total == 0:&#10;                result.append([nums[i], nums[left], nums[right]])&#10;                # skip duplicates for left and right&#10;                while left &lt; right and nums[left] == nums[left + 1]:&#10;                    left += 1&#10;                while left &lt; right and nums[right] == nums[right - 1]:&#10;                    right -= 1&#10;                left += 1&#10;                right -= 1&#10;            elif total &lt; 0:&#10;                left += 1   # need larger sum&#10;            else:&#10;                right -= 1  # need smaller sum&#10;    &#10;    return result&#10;&#10;# Trace with nums = [-1, 0, 1, 2, -1, -4]:&#10;# After sort: [-4, -1, -1, 0, 1, 2]&#10;# i=0: nums[i]=-4, left=1(-1), right=5(2) → sum=-3 → left++&#10;#       left=2(-1), right=5(2) → sum=-3 → left++&#10;#       left=3(0),  right=5(2) → sum=-2 → left++&#10;#       left=4(1),  right=5(2) → sum=-1 → left++&#10;#       left&gt;=right → stop&#10;# i=1: nums[i]=-1, left=2(-1), right=5(2) → sum=0 ✅ append [-1,-1,2]&#10;#       skip dups → left=3(0), right=4(1) → sum=0 ✅ append [-1,0,1]&#10;#       left&gt;=right → stop&#10;# i=2: nums[i]=-1 == nums[i-1]=-1 → skip (duplicate!)&#10;# i=3: nums[i]=0, left=4(1), right=5(2) → sum=3 → right--&#10;#       left&gt;=right → stop&#10;# Result: [[-1,-1,2], [-1,0,1]] ✅">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> threeSum(nums: list[int]) -&gt; list[list[int]]:
+    nums.sort()                           <span style="color:#5c6370;"># [-4, -1, -1, 0, 1, 2]</span>
+    result = []
+    
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(len(nums) - <span style="color:#56b6c2;">2</span>):        <span style="color:#5c6370;"># fix the first element</span>
+        <span style="color:#c678dd;">if</span> nums[i] &gt; <span style="color:#56b6c2;">0</span>:                   <span style="color:#5c6370;"># sorted: if first &gt; 0, no solution</span>
+            <span style="color:#c678dd;">break</span>
+        <span style="color:#c678dd;">if</span> i &gt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">and</span> nums[i] == nums[i-<span style="color:#56b6c2;">1</span>]:  <span style="color:#5c6370;"># skip duplicates for i</span>
+            <span style="color:#c678dd;">continue</span>
+        
+        left, right = i + <span style="color:#56b6c2;">1</span>, len(nums) - <span style="color:#56b6c2;">1</span>  <span style="color:#5c6370;"># two pointers for the rest</span>
+        
+        <span style="color:#c678dd;">while</span> left &lt; right:
+            total = nums[i] + nums[left] + nums[right]
+            
+            <span style="color:#c678dd;">if</span> total == <span style="color:#56b6c2;">0</span>:
+                result.append([nums[i], nums[left], nums[right]])
+                <span style="color:#5c6370;"># skip duplicates for left and right</span>
+                <span style="color:#c678dd;">while</span> left &lt; right <span style="color:#c678dd;">and</span> nums[left] == nums[left + <span style="color:#56b6c2;">1</span>]:
+                    left += <span style="color:#56b6c2;">1</span>
+                <span style="color:#c678dd;">while</span> left &lt; right <span style="color:#c678dd;">and</span> nums[right] == nums[right - <span style="color:#56b6c2;">1</span>]:
+                    right -= <span style="color:#56b6c2;">1</span>
+                left += <span style="color:#56b6c2;">1</span>
+                right -= <span style="color:#56b6c2;">1</span>
+            <span style="color:#c678dd;">elif</span> total &lt; <span style="color:#56b6c2;">0</span>:
+                left += <span style="color:#56b6c2;">1</span>   <span style="color:#5c6370;"># need larger sum</span>
+            <span style="color:#c678dd;">else</span>:
+                right -= <span style="color:#56b6c2;">1</span>  <span style="color:#5c6370;"># need smaller sum</span>
+    
+    <span style="color:#c678dd;">return</span> result
+
+<span style="color:#5c6370;"># Trace with nums = [-1, 0, 1, 2, -1, -4]:</span>
+<span style="color:#5c6370;"># After sort: [-4, -1, -1, 0, 1, 2]</span>
+<span style="color:#5c6370;"># i=0: nums[i]=-4, left=1(-1), right=5(2) → sum=-3 → left++</span>
+<span style="color:#5c6370;">#       left=2(-1), right=5(2) → sum=-3 → left++</span>
+<span style="color:#5c6370;">#       left=3(0),  right=5(2) → sum=-2 → left++</span>
+<span style="color:#5c6370;">#       left=4(1),  right=5(2) → sum=-1 → left++</span>
+<span style="color:#5c6370;">#       left&gt;=right → stop</span>
+<span style="color:#5c6370;"># i=1: nums[i]=-1, left=2(-1), right=5(2) → sum=0 ✅ append [-1,-1,2]</span>
+<span style="color:#5c6370;">#       skip dups → left=3(0), right=4(1) → sum=0 ✅ append [-1,0,1]</span>
+<span style="color:#5c6370;">#       left&gt;=right → stop</span>
+<span style="color:#5c6370;"># i=2: nums[i]=-1 == nums[i-1]=-1 → skip (duplicate!)</span>
+<span style="color:#5c6370;"># i=3: nums[i]=0, left=4(1), right=5(2) → sum=3 → right--</span>
+<span style="color:#5c6370;">#       left&gt;=right → stop</span>
+<span style="color:#5c6370;"># Result: [[-1,-1,2], [-1,0,1]] ✅</span></code></pre>
+</div>
+
+<p><strong>时间复杂度 / Time Complexity:</strong> O(n log n) sort + O(n²) = <strong>O(n²)</strong></p>
+<p><strong>空间复杂度 / Space Complexity:</strong> O(1) extra (excluding output)</p>
+
+<hr/>
+
+<h2>⚡ 与模版的关键差异 / Key Differences from Template</h2>
+
+<table><thead><tr><th></th><th>Two Sum II (Day 11)</th><th>3Sum (Today)</th></tr></thead><tbody><tr><td>目标</td><td>找2个数之和 = target</td><td>找3个数之和 = 0</td></tr><tr><td>结构</td><td>单层双指针</td><td>外层 for + 内层双指针</td></tr><tr><td>去重</td><td>不需要</td><td>必须跳过重复元素</td></tr><tr><td>复杂度</td><td>O(n)</td><td>O(n²)</td></tr></tbody></table>
+
+<hr/>
+
+<h2>🔁 举一反三 / Pattern Connections</h2>
+
+<ul><li><strong>#11 Container With Most Water (下一题):</strong> 同样外层遍历 + 内层双指针，但优化目标不同（最大面积 vs 零和）</li><li><strong>#42 Trapping Rain Water (最难题):</strong> 双指针 + 边界最大值，是本模式的终极形态</li><li><strong>变体：</strong> 4Sum (#18) = 再加一层 for 循环 → O(n³)，同样思路</li></ul>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<ul><li>🔗 <a href="https://leetcode.com/problems/3sum/">LeetCode #15 — 3Sum</a></li><li>🔗 <a href="https://neetcode.io/problems/three-integer-sum">NeetCode Video Solution</a></li><li>🔗 <a href="https://leetcode.com/explore/learn/card/array-and-string/205/array-two-pointer-technique/">Two Pointers Pattern — LeetCode Explore</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你有一堆正数和负数的磁铁，你要找三块加起来刚好等于零。</p>
+
+<p>先把它们从小到大排好，然后：拿起最左边的那块，再用两只手各从左右两边向中间夹。夹到了就记录下来，没夹到就根据总和太大还是太小来移动手。</p>
+
+<p>这样就不用每三块都试一遍，快很多！</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 Day 11 / Soft Skills Day 11</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 Day 11 / Soft Skills Day 11</h1>
+<h2>优先级排序 / Prioritization</h2>
+<h3>当所有事情都"同样重要"时，你怎么决定做什么？</h3>
+<h3>How do you decide what to work on when everything seems equally important?</h3>
+
+<blockquote><strong>级别 / Level:</strong> Senior/Staff | <strong>类别 / Category:</strong> Prioritization | <strong>阶段 / Phase:</strong> Growth | <strong>预计时间 / Read time:</strong> 2 min</blockquote>
+
+<hr/>
+
+<h2>💡 为什么这个问题很重要 / Why This Matters</h2>
+
+<p>这是 Senior/Staff 工程师的核心能力之一。初级工程师执行任务；高级工程师<strong>决定做哪些任务</strong>。</p>
+
+<p>面试官想知道：你是否会在信息不完整时做出理性决策，还是会陷入"什么都想做"或"等别人告诉你"的困境。</p>
+
+<p>This is a core Senior/Staff engineer competency. Junior engineers execute tasks; senior engineers <strong>decide which tasks to execute</strong>.</p>
+
+<p>The interviewer wants to know: can you make rational decisions with incomplete information, or do you get paralyzed?</p>
+
+<hr/>
+
+<h2>⭐ STAR 框架拆解 / STAR Breakdown</h2>
+
+<p><strong>Situation（背景）:</strong></p>
+<blockquote>"我加入新团队后第一个季度，我们同时有5个项目被标记为高优先级：两个客户承诺的功能、一个重要的性能优化、一个安全漏洞修复，还有一个技术债务重构。"</blockquote>
+
+<p><strong>Task（任务）:</strong></p>
+<blockquote>"我需要帮助团队决定顺序，但没有人能直接告诉我哪个'真正'最重要。"</blockquote>
+
+<p><strong>Action（行动）:</strong></p>
+<blockquote>"我用了一个简单框架：先问每项工作的<strong>影响范围</strong>（多少用户/多少收入受影响）和<strong>紧迫性</strong>（截止日期是硬性的吗），再评估<strong>依赖关系</strong>（哪项工作阻塞了其他事情）。安全漏洞虽然用户感知低，但是合规风险极高，我把它放第一位。客户承诺功能放第二，因为违约有商务影响。性能优化排第三，因为有量化的流失数据支撑。技术债务排最后，但我明确说明了不做的风险累积。"</blockquote>
+
+<p><strong>Result（结果）:</strong></p>
+<blockquote>"这个排序被 PM 和工程 Lead 接受了，我们按序交付，没有出现返工或紧急插队。"</blockquote>
+
+<hr/>
+
+<h2>❌ 糟糕 vs ✅ 优秀回答 / Bad vs Good Answer</h2>
+
+<p><strong>❌ 不好的回答：</strong></p>
+<blockquote>"我会先做最难的事情，这样其他事情就容易了。"</blockquote>
+
+<p><strong>为什么不好？</strong> 没有考虑外部影响，把个人技术偏好凌驾于业务价值之上。</p>
+
+<hr/>
+
+<p><strong>✅ 好的回答结构：</strong></p>
+<ol><li><strong>承认复杂性</strong> — "当所有事情看起来都重要时，我的第一步是找出哪些是真正的约束条件（deadline、依赖、风险），而不是表面的紧迫感。"</li><li><strong>使用框架</strong> — 提到 Impact × Urgency 矩阵、ICE (Impact/Confidence/Ease)，或 RICE 框架</li><li><strong>对齐业务目标</strong> — 把技术工作连接到公司/团队目标</li><li><strong>明确沟通取舍</strong> — 说出"如果我选择做 A，B 会推迟到 X 日期，风险是 Y"</li></ol>
+
+<hr/>
+
+<h2>🏆 Senior/Staff 级别加分项 / Senior/Staff Tips</h2>
+
+<ul><li><strong>Don't just prioritize silently.</strong> 写下你的优先级排序并发给相关人员，这既是对齐，也是自我保护。</li><li><strong>"No" is a complete sentence, but explain the tradeoff.</strong> 当你说不做某事时，要量化"不做"的成本。</li><li><strong>Revisit priorities regularly.</strong> 每周或每冲刺开始时重新评估，因为情况会变。</li><li><strong>Separate urgency from importance.</strong> 紧急 ≠ 重要（艾森豪威尔矩阵）。很多"紧急"任务其实不重要。</li></ul>
+
+<hr/>
+
+<h2>📋 关键要点 / Key Takeaways</h2>
+
+<table><thead><tr><th>原则</th><th>说明</th></tr></thead><tbody><tr><td>🎯 <strong>Impact First</strong></td><td>先问"谁会受益，影响多大？"</td></tr><tr><td>⚡ <strong>Hard Deadlines</strong></td><td>区分"有人希望早完成"和"晚一天就违约"</td></tr><tr><td>🔗 <strong>Unblock Others</strong></td><td>阻塞其他工程师的事情优先级隐性更高</td></tr><tr><td>🗣️ <strong>Communicate Tradeoffs</strong></td><td>说出你选择和放弃的理由</td></tr></tbody></table>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<ul><li>🔗 <a href="https://fs.blog/eisenhower-matrix/">The Eisenhower Matrix — FarnamStreet</a></li><li>🔗 <a href="https://www.intercom.com/blog/rice-simple-prioritization-for-product-managers/">RICE Scoring: A Better Way to Prioritize Your Product Roadmap — Intercom</a></li><li>🔗 <a href="https://staffeng.com/book">Staff Engineer: Leadership beyond the management track — Will Larson</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你有一张写满作业的清单，数学、语文、体育都要交。</p>
+
+<p>聪明的做法不是"随便挑"，而是先问：</p>
+<ol><li>哪个明天就到期（硬截止日期）？</li><li>哪个影响最多分数（重要性）？</li><li>哪个不做会影响其他同学（依赖）？</li></ol>
+
+<p>然后按顺序做，同时告诉老师"我今天做 A 和 B，C 推迟到周五，原因是..."</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 Day 11 / Frontend Day 11</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 Day 11 / Frontend Day 11</h1>
+<h2>React useRef — React 的"逃生舱口" / Escape Hatch from React</h2>
+
+<blockquote><strong>类别 / Category:</strong> React Hooks | <strong>周 / Week:</strong> 3 | <strong>阶段 / Phase:</strong> Growth | <strong>预计时间 / Read time:</strong> 2 min</blockquote>
+
+<hr/>
+
+<h2>🌍 真实场景 / Real Scenario</h2>
+
+<p>你在做一个视频播放器 dashboard，需要：</p>
+<ol><li>当用户点击"开始录制"按钮时，<strong>聚焦</strong>到视频元素</li><li>追踪一个<strong>内部计时器 ID</strong>（不需要触发重渲染）</li><li><strong>直接调用</strong> DOM 元素的 <code>.play()</code> 方法</li></ol>
+
+<p><code>useState</code> 不适合：每次更新都会触发重渲染，而且不能持有 DOM 引用。这时就需要 <code>useRef</code>。</p>
+
+<p>You're building a video player dashboard and need to: focus the video element on button click, track a timer ID without triggering re-renders, and call <code>.play()</code> directly. <code>useState</code> would cause unnecessary re-renders. Enter <code>useRef</code>.</p>
+
+<hr/>
+
+<h2>🧠 useRef 的两大用途 / Two Use Cases</h2>
+
+<h3>用途 1：持有 DOM 引用 / Holding a DOM Reference</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import { useRef } from 'react'&#10;&#10;function VideoPlayer() {&#10;  // Creates { current: null } — persists across renders&#10;  const videoRef = useRef&lt;HTMLVideoElement&gt;(null)&#10;  &#10;  const handlePlay = () =&gt; {&#10;    // Direct DOM access — no React state involved&#10;    videoRef.current?.play()&#10;  }&#10;  &#10;  const handleFocus = () =&gt; {&#10;    videoRef.current?.focus()&#10;  }&#10;  &#10;  return (&#10;    &lt;div&gt;&#10;      {/* Attach ref to DOM element via ref prop */}&#10;      &lt;video ref={videoRef} src=&quot;/demo.mp4&quot; /&gt;&#10;      &lt;button onClick={handlePlay}&gt;▶ Play&lt;/button&gt;&#10;      &lt;button onClick={handleFocus}&gt;Focus Video&lt;/button&gt;&#10;    &lt;/div&gt;&#10;  )&#10;}">Copy</button>
+  <pre><code class="language-tsx">import { useRef } from 'react'
+
+function VideoPlayer() {
+  // Creates { current: null } — persists across renders
+  const videoRef = useRef&lt;HTMLVideoElement&gt;(null)
+  
+  const handlePlay = () =&gt; {
+    // Direct DOM access — no React state involved
+    videoRef.current?.play()
+  }
+  
+  const handleFocus = () =&gt; {
+    videoRef.current?.focus()
+  }
+  
+  return (
+    &lt;div&gt;
+      {/* Attach ref to DOM element via ref prop */}
+      &lt;video ref={videoRef} src="/demo.mp4" /&gt;
+      &lt;button onClick={handlePlay}&gt;▶ Play&lt;/button&gt;
+      &lt;button onClick={handleFocus}&gt;Focus Video&lt;/button&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+</div>
+
+<h3>用途 2：持有可变值（不触发重渲染）/ Mutable Value (No Re-render)</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="function RecordingTimer() {&#10;  const [isRecording, setIsRecording] = useState(false)&#10;  &#10;  // Stores timer ID — changing it does NOT cause a re-render&#10;  const timerIdRef = useRef&lt;ReturnType&lt;typeof setInterval&gt; | null&gt;(null)&#10;  &#10;  const startRecording = () =&gt; {&#10;    setIsRecording(true)&#10;    timerIdRef.current = setInterval(() =&gt; {&#10;      console.log('Recording...')&#10;    }, 1000)&#10;  }&#10;  &#10;  const stopRecording = () =&gt; {&#10;    setIsRecording(false)&#10;    if (timerIdRef.current) {&#10;      clearInterval(timerIdRef.current)&#10;      timerIdRef.current = null&#10;    }&#10;  }&#10;  &#10;  return (&#10;    &lt;button onClick={isRecording ? stopRecording : startRecording}&gt;&#10;      {isRecording ? '⏹ Stop' : '⏺ Record'}&#10;    &lt;/button&gt;&#10;  )&#10;}">Copy</button>
+  <pre><code class="language-tsx">function RecordingTimer() {
+  const [isRecording, setIsRecording] = useState(false)
+  
+  // Stores timer ID — changing it does NOT cause a re-render
+  const timerIdRef = useRef&lt;ReturnType&lt;typeof setInterval&gt; | null&gt;(null)
+  
+  const startRecording = () =&gt; {
+    setIsRecording(true)
+    timerIdRef.current = setInterval(() =&gt; {
+      console.log('Recording...')
+    }, 1000)
+  }
+  
+  const stopRecording = () =&gt; {
+    setIsRecording(false)
+    if (timerIdRef.current) {
+      clearInterval(timerIdRef.current)
+      timerIdRef.current = null
+    }
+  }
+  
+  return (
+    &lt;button onClick={isRecording ? stopRecording : startRecording}&gt;
+      {isRecording ? '⏹ Stop' : '⏺ Record'}
+    &lt;/button&gt;
+  )
+}</code></pre>
+</div>
+
+<hr/>
+
+<h2>🤔 猜猜输出什么？/ What Does This Output?</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="function Counter() {&#10;  const [count, setCount] = useState(0)&#10;  const renderCount = useRef(0)&#10;  &#10;  renderCount.current += 1  // increment on every render&#10;  &#10;  return (&#10;    &lt;div&gt;&#10;      &lt;p&gt;Count: {count}&lt;/p&gt;&#10;      &lt;p&gt;Renders: {renderCount.current}&lt;/p&gt;&#10;      &lt;button onClick={() =&gt; setCount(c =&gt; c + 1)}&gt;+1&lt;/button&gt;&#10;    &lt;/div&gt;&#10;  )&#10;}&#10;// After clicking +1 twice, what does &quot;Renders&quot; show?">Copy</button>
+  <pre><code class="language-tsx">function Counter() {
+  const [count, setCount] = useState(0)
+  const renderCount = useRef(0)
+  
+  renderCount.current += 1  // increment on every render
+  
+  return (
+    &lt;div&gt;
+      &lt;p&gt;Count: {count}&lt;/p&gt;
+      &lt;p&gt;Renders: {renderCount.current}&lt;/p&gt;
+      &lt;button onClick={() =&gt; setCount(c =&gt; c + 1)}&gt;+1&lt;/button&gt;
+    &lt;/div&gt;
+  )
+}
+// After clicking +1 twice, what does "Renders" show?</code></pre>
+</div>
+
+<p><strong>A)</strong> 1（从不更新）</p>
+<p><strong>B)</strong> 2（只算点击）</p>
+<p><strong>C)</strong> 3（初始渲染 + 2次点击）</p>
+<p><strong>D)</strong> 0（ref 不触发重渲染）</p>
+
+<p>&lt;details&gt;&lt;summary&gt;答案 / Answer&lt;/summary&gt;</p>
+
+<p><strong>C) 3</strong> — <code>renderCount.current</code> 在每次渲染时递增。每次 <code>setCount</code> 触发重渲染，都会加 1。初始渲染时为 1，点击两次后为 3。注意：<code>renderCount.current</code> 的变化<strong>不会触发</strong>额外渲染，只是被动记录。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>❌ 常见错误 vs ✅ 正确做法 / Common Mistakes vs Correct Approach</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// ❌ WRONG: Reading ref value during render to display in UI&#10;function BadComponent() {&#10;  const countRef = useRef(0)&#10;  countRef.current += 1&#10;  &#10;  // BUG: React may batch renders or run effects multiple times&#10;  // This count will be unreliable in React 18 Strict Mode (double-invokes)&#10;  return &lt;p&gt;Rendered {countRef.current} times&lt;/p&gt;&#10;}&#10;&#10;// ✅ RIGHT: Use useState for values that should be displayed in UI&#10;function GoodComponent() {&#10;  const [renderCount, setRenderCount] = useState(0)&#10;  &#10;  useEffect(() =&gt; {&#10;    setRenderCount(c =&gt; c + 1)&#10;  })&#10;  &#10;  return &lt;p&gt;Rendered {renderCount} times&lt;/p&gt;&#10;}&#10;&#10;// ❌ WRONG: Accessing ref.current during render before it's assigned&#10;function BadRef() {&#10;  const inputRef = useRef&lt;HTMLInputElement&gt;(null)&#10;  console.log(inputRef.current?.value)  // null on first render!&#10;  return &lt;input ref={inputRef} /&gt;&#10;}&#10;&#10;// ✅ RIGHT: Access ref.current inside effects or event handlers&#10;function GoodRef() {&#10;  const inputRef = useRef&lt;HTMLInputElement&gt;(null)&#10;  &#10;  useEffect(() =&gt; {&#10;    // ref is assigned after DOM mounts&#10;    console.log(inputRef.current?.value)&#10;  }, [])&#10;  &#10;  return &lt;input ref={inputRef} /&gt;&#10;}">Copy</button>
+  <pre><code class="language-tsx">// ❌ WRONG: Reading ref value during render to display in UI
+function BadComponent() {
+  const countRef = useRef(0)
+  countRef.current += 1
+  
+  // BUG: React may batch renders or run effects multiple times
+  // This count will be unreliable in React 18 Strict Mode (double-invokes)
+  return &lt;p&gt;Rendered {countRef.current} times&lt;/p&gt;
+}
+
+// ✅ RIGHT: Use useState for values that should be displayed in UI
+function GoodComponent() {
+  const [renderCount, setRenderCount] = useState(0)
+  
+  useEffect(() =&gt; {
+    setRenderCount(c =&gt; c + 1)
+  })
+  
+  return &lt;p&gt;Rendered {renderCount} times&lt;/p&gt;
+}
+
+// ❌ WRONG: Accessing ref.current during render before it's assigned
+function BadRef() {
+  const inputRef = useRef&lt;HTMLInputElement&gt;(null)
+  console.log(inputRef.current?.value)  // null on first render!
+  return &lt;input ref={inputRef} /&gt;
+}
+
+// ✅ RIGHT: Access ref.current inside effects or event handlers
+function GoodRef() {
+  const inputRef = useRef&lt;HTMLInputElement&gt;(null)
+  
+  useEffect(() =&gt; {
+    // ref is assigned after DOM mounts
+    console.log(inputRef.current?.value)
+  }, [])
+  
+  return &lt;input ref={inputRef} /&gt;
+}</code></pre>
+</div>
+
+<hr/>
+
+<h2>🔀 何时用 useRef vs useState / When to Use useRef vs useState</h2>
+
+<table><thead><tr><th>场景</th><th>用哪个？</th><th>原因</th></tr></thead><tbody><tr><td>展示在 UI 里的值</td><td><code>useState</code></td><td>需要触发重渲染</td></tr><tr><td>计时器 ID / 请求 ID</td><td><code>useRef</code></td><td>不需要显示，不需要重渲染</td></tr><tr><td>DOM 元素访问</td><td><code>useRef</code></td><td>直接引用，React 管理</td></tr><tr><td>上一次渲染的值</td><td><code>useRef</code></td><td>跨渲染持久化，不触发渲染</td></tr><tr><td>追踪 isMounted</td><td><code>useRef</code></td><td>副作用清理，不需要展示</td></tr></tbody></table>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<ul><li>🔗 <a href="https://react.dev/reference/react/useRef">useRef — React Official Docs</a></li><li>🔗 <a href="https://react.dev/learn/referencing-values-with-refs">Referencing Values with Refs — React Learn</a></li><li>🔗 <a href="https://react.dev/learn/manipulating-the-dom-with-refs">Manipulating the DOM with Refs — React Learn</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p><code>useState</code> 就像写在白板上的数字——每次改变，班里所有人都重新看一遍（重渲染）。</p>
+
+<p><code>useRef</code> 就像你口袋里的小纸条——你可以随时改上面的内容，但不会打扰到任何人（不触发重渲染）。</p>
+
+<p>DOM ref 就更特别了：它就像一张"通行证"，让你可以直接敲响某个 DOM 元素的门，而不用通过 React 的"前台"。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI Day 12</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI Day 12</h1>
+<h2>RLHF — ChatGPT 是怎么学会"有用"的 / How ChatGPT Learned to Be Helpful</h2>
+
+<blockquote><strong>类别 / Category:</strong> Training | <strong>模式 / Mode:</strong> Concept | <strong>阶段 / Phase:</strong> Growth | <strong>预计时间 / Read time:</strong> 2 min</blockquote>
+
+<hr/>
+
+<h2>💡 直觉解释 / Intuitive Explanation</h2>
+
+<p>预训练后的语言模型像一个"博学但任性的学生"——它什么都会说，但不一定有帮助、安全或符合人类期望。</p>
+
+<p><strong>RLHF（Reinforcement Learning from Human Feedback，基于人类反馈的强化学习）</strong> 就是让这个学生接受"社会化教育"的过程：通过收集人类对模型输出的偏好评分，训练模型生成更符合人类价值观的回答。</p>
+
+<p>Pre-trained LLMs know a lot but aren't inherently helpful or safe. RLHF is the "socialization" step: collect human preferences on model outputs, then train the model to generate responses humans prefer.</p>
+
+<hr/>
+
+<h2>⚙️ 工作原理 / How It Works</h2>
+
+<p>RLHF 分三个阶段：</p>
+
+<h3>阶段 1: 监督微调 (SFT) / Supervised Fine-Tuning</h3>
+
+<div class="diagram-block">人类写示范回答
+Input:  "解释黑洞"
+Output: [人类写的高质量示范答案]
+
+→ 直接在这些数据上微调基础模型
+→ 模型学会"期望的格式和风格"</div>
+
+<h3>阶段 2: 训练奖励模型 (RM) / Train Reward Model</h3>
+
+<div class="diagram-block">给模型同一个问题的多个回答，让人类排序：
+
+Q: "如何减肥？"
+回答A: "节食+运动"          ← 人类排 #1
+回答B: "服用减肥药"          ← 人类排 #2  
+回答C: "节食即可，不用运动"   ← 人类排 #3
+
+奖励模型学习：给任意回答打分</div>
+
+<h3>阶段 3: PPO 强化学习 / RL with PPO</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Simplified PPO loop concept:&#10;for prompt in training_prompts:&#10;    response = policy_model.generate(prompt)    # current LLM&#10;    reward = reward_model.score(response)        # RM gives score&#10;    &#10;    # Update policy to maximize reward,&#10;    # but stay close to original (KL divergence penalty)&#10;    loss = -reward + kl_penalty * kl(policy, reference)&#10;    policy_model.update(loss)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Simplified PPO loop concept:</span>
+<span style="color:#c678dd;">for</span> prompt <span style="color:#c678dd;">in</span> training_prompts:
+    response = policy_model.generate(prompt)    <span style="color:#5c6370;"># current LLM</span>
+    reward = reward_model.score(response)        <span style="color:#5c6370;"># RM gives score</span>
+    
+    <span style="color:#5c6370;"># Update policy to maximize reward,</span>
+    <span style="color:#5c6370;"># but stay close to original (KL divergence penalty)</span>
+    loss = -reward + kl_penalty * kl(policy, reference)
+    policy_model.update(loss)</code></pre>
+</div>
+
+<div class="diagram-block">完整流程 Full Pipeline:
+基础模型     SFT        RM训练       PPO强化学习
+Pre-trained → 学格式 → 学人类偏好 → 最大化人类评分
+Base LLM     (SFT)     (Reward Model)  (RLHF)</div>
+
+<hr/>
+
+<h2>🌍 应用 / Applications</h2>
+
+<table><thead><tr><th>系统</th><th>RLHF 的作用</th></tr></thead><tbody><tr><td><strong>ChatGPT</strong></td><td>从"预测下一个词"变成"有帮助、无害、诚实"</td></tr><tr><td><strong>Claude</strong></td><td>Anthropic 使用 Constitutional AI (CAI)，RLHF 的变体</td></tr><tr><td><strong>Llama 2 Chat</strong></td><td>Meta 开源 RLHF 模型，可本地运行</td></tr><tr><td><strong>Gemini</strong></td><td>Google 的对话模型，同样有 RLHF 阶段</td></tr></tbody></table>
+
+<hr/>
+
+<h2>🐍 可运行代码片段 / Runnable Python Snippet</h2>
+
+<p>这里用 <code>trl</code> 库演示 RLHF 的核心思路（无需 GPU 的简化版）：</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# pip install trl transformers torch&#10;from transformers import AutoTokenizer, AutoModelForSequenceClassification&#10;import torch&#10;&#10;# Simulate a reward model scoring responses&#10;# (In real RLHF, this is trained on human preference data)&#10;def simple_reward_model(response: str) -&gt; float:&#10;    &quot;&quot;&quot;Score a response based on simple heuristics.&quot;&quot;&quot;&#10;    score = 0.0&#10;    &#10;    # Reward helpfulness signals&#10;    if len(response) &gt; 50: score += 0.3         # detailed enough&#10;    if &quot;because&quot; in response.lower(): score += 0.2  # gives reasoning&#10;    if &quot;?&quot; not in response: score += 0.1         # not evasive&#10;    &#10;    # Penalize harmful patterns  &#10;    if &quot;i can't help&quot; in response.lower(): score -= 0.5&#10;    if &quot;kill&quot; in response.lower(): score -= 1.0&#10;    &#10;    return score&#10;&#10;# Test with example responses&#10;responses = [&#10;    &quot;I can't help with that.&quot;,&#10;    &quot;Exercise regularly and maintain a balanced diet because consistent habits lead to sustainable weight loss.&quot;,&#10;    &quot;Just eat less.&quot;&#10;]&#10;&#10;for r in responses:&#10;    print(f&quot;Score: {simple_reward_model(r):.1f} | {r[:50]}...&quot;)&#10;# Score: -0.5 | I can't help with that...&#10;# Score:  0.6 | Exercise regularly and maintain a balanced...&#10;# Score:  0.3 | Just eat less...">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># pip install trl transformers torch</span>
+<span style="color:#c678dd;">from</span> transformers <span style="color:#c678dd;">import</span> AutoTokenizer, AutoModelForSequenceClassification
+<span style="color:#c678dd;">import</span> torch
+
+<span style="color:#5c6370;"># Simulate a reward model scoring responses</span>
+<span style="color:#5c6370;"># (In real RLHF, this is trained on human preference data)</span>
+<span style="color:#c678dd;">def</span> simple_reward_model(response: str) -&gt; float:
+    <span style="color:#e5c07b;">"""Score a response based on simple heuristics."""</span>
+    score = <span style="color:#56b6c2;">0.0</span>
+    
+    <span style="color:#5c6370;"># Reward helpfulness signals</span>
+    <span style="color:#c678dd;">if</span> len(response) &gt; <span style="color:#56b6c2;">50</span>: score += <span style="color:#56b6c2;">0.3</span>         <span style="color:#5c6370;"># detailed enough</span>
+    <span style="color:#c678dd;">if</span> <span style="color:#e5c07b;">"because"</span> <span style="color:#c678dd;">in</span> response.lower(): score += <span style="color:#56b6c2;">0.2</span>  <span style="color:#5c6370;"># gives reasoning</span>
+    <span style="color:#c678dd;">if</span> <span style="color:#e5c07b;">"?"</span> <span style="color:#c678dd;">not</span> <span style="color:#c678dd;">in</span> response: score += <span style="color:#56b6c2;">0.1</span>         <span style="color:#5c6370;"># not evasive</span>
+    
+    <span style="color:#5c6370;"># Penalize harmful patterns  </span>
+    <span style="color:#c678dd;">if</span> <span style="color:#e5c07b;">"i can't help"</span> <span style="color:#c678dd;">in</span> response.lower(): score -= <span style="color:#56b6c2;">0.5</span>
+    <span style="color:#c678dd;">if</span> <span style="color:#e5c07b;">"kill"</span> <span style="color:#c678dd;">in</span> response.lower(): score -= <span style="color:#56b6c2;">1.0</span>
+    
+    <span style="color:#c678dd;">return</span> score
+
+<span style="color:#5c6370;"># Test with example responses</span>
+responses = [
+    <span style="color:#e5c07b;">"I can't help with that."</span>,
+    <span style="color:#e5c07b;">"Exercise regularly and maintain a balanced diet because consistent habits lead to sustainable weight loss."</span>,
+    <span style="color:#e5c07b;">"Just eat less."</span>
+]
+
+<span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> responses:
+    print(f<span style="color:#e5c07b;">"Score: {simple_reward_model(r):.1f} | {r[:50]}..."</span>)
+<span style="color:#5c6370;"># Score: -0.5 | I can't help with that...</span>
+<span style="color:#5c6370;"># Score:  0.6 | Exercise regularly and maintain a balanced...</span>
+<span style="color:#5c6370;"># Score:  0.3 | Just eat less...</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>⚠️ RLHF 的局限性 / Limitations</h2>
+
+<ol><li><strong>奖励黑客 / Reward Hacking:</strong> 模型学会"取悦"奖励模型，而非真正有帮助（如生成冗长但空洞的回答）</li><li><strong>人类偏好的偏差 / Human Bias:</strong> 训练数据中的人类标注员有自己的偏见</li><li><strong>成本高 / Expensive:</strong> 需要大量人工标注，质量难以扩展</li><li><strong>DPO 正在替代 PPO:</strong> Direct Preference Optimization 更简单，目前很多新模型已迁移</li></ol>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<ul><li>🔗 <a href="https://arxiv.org/abs/2203.02155">InstructGPT Paper (OpenAI) — Training language models to follow instructions with human feedback</a></li><li>🔗 <a href="https://huggingface.co/blog/rlhf">Hugging Face RLHF Blog — Illustrating RLHF</a></li><li>🔗 <a href="https://github.com/huggingface/trl">TRL Library — Transformer Reinforcement Learning</a></li><li>🔗 <a href="https://arxiv.org/abs/2305.18290">Direct Preference Optimization (DPO) Paper</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你在教一只小狗（语言模型）坐下。</p>
+
+<p>第一步：你示范给它看（SFT — 监督学习）。</p>
+<p>第二步：你训练另一个"评判员"来区分好的坐姿和差的坐姿（奖励模型）。</p>
+<p>第三步：小狗每次坐好了，评判员给它零食；坐歪了，没有零食（强化学习）。</p>
+
+<p>经过很多次训练后，小狗学会了"人类喜欢什么样的坐姿"。ChatGPT 就是这样学会"人类喜欢什么样的回答"的。</p>
+
+<div class="attention-card">
+  <h3>Attention Heatmap</h3>
+  <p>When the model processes <code>it</code>, it attends most strongly to <code>animal</code>.</p>
+  <div class="heatmap-wrap">
+    <table class="heatmap">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="heatmap-axis">The</th><th class="heatmap-axis">animal</th><th class="heatmap-axis">didnt</th><th class="heatmap-axis">cross</th><th class="heatmap-axis">the</th><th class="heatmap-axis">street</th><th class="heatmap-axis">because</th><th class="heatmap-axis">it</th><th class="heatmap-axis">was</th><th class="heatmap-axis">too</th><th class="heatmap-axis">tired</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="heatmap-axis row-label">it →</th>
+          <td><div class="heatmap-cell" title="The: 0.02" aria-label="The attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="animal: 0.86" aria-label="animal attention weight 0.86" style="background:rgba(167, 139, 250, 0.86);"></div></td><td><div class="heatmap-cell" title="didnt: 0.03" aria-label="didnt attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="cross: 0.04" aria-label="cross attention weight 0.04" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="the: 0.02" aria-label="the attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="street: 0.08" aria-label="street attention weight 0.08" style="background:rgba(167, 139, 250, 0.08);"></div></td><td><div class="heatmap-cell" title="because: 0.05" aria-label="because attention weight 0.05" style="background:rgba(167, 139, 250, 0.05);"></div></td><td><div class="heatmap-cell" title="it: 0.03" aria-label="it attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="was: 0.07" aria-label="was attention weight 0.07" style="background:rgba(167, 139, 250, 0.07);"></div></td><td><div class="heatmap-cell" title="too: 0.10" aria-label="too attention weight 0.10" style="background:rgba(167, 139, 250, 0.10);"></div></td><td><div class="heatmap-cell" title="tired: 0.30" aria-label="tired attention weight 0.30" style="background:rgba(167, 139, 250, 0.30);"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
