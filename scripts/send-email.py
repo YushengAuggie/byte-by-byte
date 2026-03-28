@@ -233,19 +233,12 @@ def render_code_block(code, lang):
     return block + ('\n' + demo if demo else '')
 
 def convert_details_blocks(md_text):
-    """Convert <details>/<summary> blocks to email-friendly spoiler format.
-    Gmail strips <details> tags, so we render them as styled divs."""
-    # Match <details>...<summary>TITLE</summary>CONTENT...</details>
+    """Strip <details>/<summary> tags — just show content directly.
+    Gmail strips <details> tags anyway, so we remove the wrapper entirely."""
     def replace_details(match):
         summary = match.group(1).strip()
         content = match.group(2).strip()
-        return (
-            '<div style="margin:16px 0; border:2px solid #667eea; border-radius:10px; overflow:hidden;">'
-            '<div style="background:#667eea; color:white; padding:10px 16px; font-weight:700; font-size:14px;">'
-            '👇 {}</div>'
-            '<div style="padding:16px; background:#f8f7ff; font-size:14px; line-height:1.7;">'
-            '{}</div></div>'
-        ).format(summary, content)
+        return '\n**{}**\n\n{}\n'.format(summary, content)
 
     result = re.sub(
         r'<details>\s*<summary>(.*?)</summary>(.*?)</details>',
