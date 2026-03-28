@@ -5,8 +5,532 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 27 Mar 2026 16:01:09 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 28 Mar 2026 15:04:32 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-03-28</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-28</guid>
+      <pubDate>Sat, 28 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>Saturday Deep Dive</h2>
+
+<p>Today is Saturday — content delivered in the deep dive issue.</p>
+
+<p>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>Saturday Deep Dive</h2>
+
+<p>Today is Saturday — content delivered in the deep dive issue.</p>
+
+<p>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>Saturday Deep Dive</h2>
+
+<p>Today is Saturday — content delivered in the deep dive issue.</p>
+
+<p>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>Saturday Deep Dive</h2>
+
+<p>Today is Saturday — content delivered in the deep dive issue.</p>
+
+<p>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>Saturday Deep Dive</h2>
+
+<p>Today is Saturday — content delivered in the deep dive issue.</p>
+
+<p>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
+
+<hr/>
+<h1>Deepdive</h1>
+<h2>🔬 Saturday Deep Dive: Message Queues &amp; Event-Driven Architecture (15 min read)</h2>
+
+<p>📊 Day 13/150 · NeetCode: 12/150 · SysDesign: 12/40 · Behavioral: 12/40 · Frontend: 12/50 · AI: 5/30</p>
+<p>🔥 Keep the streak alive!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>消息队列是现代分布式系统的血管。当两个服务需要通信，但你不希望它们紧密耦合在一起时，消息队列就登场了。从 WhatsApp 的消息投递，到 Uber 的行程分配，再到你下单后收到的确认邮件——几乎每个大型系统背后都有消息队列在默默支撑。</p>
+
+<p><strong>English:</strong></p>
+<p>Message queues are the circulatory system of modern distributed architecture. They allow services to communicate <strong>asynchronously</strong> — decoupling producers from consumers so each can scale, fail, and recover independently. If you&#x27;ve ever placed an Amazon order and received a confirmation email seconds later without the checkout page hanging, you&#x27;ve experienced event-driven architecture in action.</p>
+
+<p><strong>Why it matters in interviews:</strong> This topic appears in ~80% of senior-level system design interviews. &quot;Design Twitter&quot;, &quot;Design Uber&quot;, &quot;Design a notification system&quot; — all roads lead to message queues.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>核心问题：为什么需要消息队列？/ The Core Problem</h3>
+
+<p><strong>中文：</strong></p>
+<p>想象一个在线零售系统。用户下单时，系统需要：</p>
+<p>1. 扣减库存</p>
+<p>2. 向支付服务收款</p>
+<p>3. 通知仓库备货</p>
+<p>4. 发送确认邮件</p>
+<p>5. 更新用户积分</p>
+
+<p>如果全部同步完成，任何一步失败都会导致整个请求失败。支付服务宕机了？用户收到 500 错误。邮件服务慢了？用户等 10 秒。这就是<strong>同步耦合</strong>的代价。</p>
+
+<p><strong>English:</strong></p>
+<p>In a synchronous world, the order service would call inventory → payment → warehouse → email → loyalty service, all in sequence. This creates:</p>
+<p>- <strong>Temporal coupling:</strong> All services must be up at the same time</p>
+<p>- <strong>Performance coupling:</strong> The slowest service determines the total latency</p>
+<p>- <strong>Failure coupling:</strong> One failure cascades through the whole chain</p>
+
+<p>Message queues break all three couplings.</p>
+
+<hr/>
+
+<h3>核心概念 / Core Concepts</h3>
+
+<p><strong>中文 → English glossary:</strong></p>
+
+<p>| 概念 | 英文 | 说明 |</p>
+<p>|------|------|------|</p>
+<p>| 生产者 | Producer | 发消息的服务 |</p>
+<p>| 消费者 | Consumer | 收消息的服务 |</p>
+<p>| 消息 | Message / Event | 传递的数据单元 |</p>
+<p>| 队列 | Queue | 点对点：一条消息只被一个消费者消费 |</p>
+<p>| 主题 | Topic | 发布/订阅：一条消息被多个消费者消费 |</p>
+<p>| 消费者组 | Consumer Group | 多个消费者实例共享消费同一个 topic |</p>
+<p>| 偏移量 | Offset (Kafka) | 消息在分区中的位置，消费者自己维护 |</p>
+<p>| 确认 | Acknowledgment (ACK) | 消费者告诉队列&quot;我已成功处理&quot; |</p>
+<p>| 死信队列 | Dead Letter Queue (DLQ) | 处理失败的消息的&quot;最终归宿&quot; |</p>
+
+<hr/>
+
+<h3>两种核心模型 / Two Models</h3>
+
+<p><strong>Model 1: Point-to-Point (Queue)</strong></p>
+
+<pre><code>
+Producer → [Queue] → Consumer A  (Consumer B never sees this message)
+</code></pre>
+
+<p>- 每条消息只被消费一次</p>
+<p>- 适合：任务分发、工作队列</p>
+<p>- 代表：AWS SQS, RabbitMQ (default)</p>
+
+<p><strong>Model 2: Publish-Subscribe (Topic)</strong></p>
+
+<pre><code>
+Producer → [Topic] → Consumer A
+                   → Consumer B  
+                   → Consumer C  (all three get the same message)
+</code></pre>
+
+<p>- 每条消息被所有订阅者消费</p>
+<p>- 适合：事件通知、数据管道</p>
+<p>- 代表：Apache Kafka, AWS SNS, Google Pub/Sub</p>
+
+<hr/>
+
+<h3>主流技术对比 / Technology Comparison</h3>
+
+<p><strong>中文：</strong> 面试中最常被问到的是 Kafka vs RabbitMQ。记住核心区别：</p>
+
+<p>| 特性 | Apache Kafka | RabbitMQ / AWS SQS |</p>
+<p>|------|-------------|-------------------|</p>
+<p>| 模型 | Log-based (追加写日志) | Queue-based (消费后删除) |</p>
+<p>| 消息保留 | 时间/大小限制（可重放） | 消费后删除（默认） |</p>
+<p>| 吞吐量 | 极高 (百万级/秒) | 高 (万-十万级/秒) |</p>
+<p>| 顺序保证 | 分区内有序 | 队列内有序 |</p>
+<p>| 适合场景 | 流处理、日志、事件溯源 | 任务队列、RPC、复杂路由 |</p>
+<p>| 消费模型 | Pull (消费者拉取) | Push (队列推送) |</p>
+
+<p><strong>English:</strong></p>
+<p>The key insight: <strong>Kafka is a distributed log, not a traditional queue.</strong> Messages stay on disk until a retention policy removes them. Consumers maintain their own offsets, enabling:</p>
+<p>- <strong>Replay:</strong> Reprocess all events from the beginning</p>
+<p>- <strong>Multiple independent consumers:</strong> Each consumer group gets full history</p>
+<p>- <strong>Event sourcing:</strong> The log IS the source of truth</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>场景：设计一个通知系统 / Scenario: Notification System Design</h3>
+
+<p><strong>中文：</strong> 我们设计一个类似于电商平台的通知系统，支持邮件、短信、推送通知。</p>
+
+<p><strong>English:</strong> Design a notification system that can send email, SMS, and push notifications after key events (order placed, payment failed, shipment update).</p>
+
+<hr/>
+
+<h3>Architecture Diagram</h3>
+
+<pre><code>
+┌─────────────┐     ┌──────────────────────────────────┐
+│  Order Svc  │────▶│         Kafka Topic              │
+│  Payment Svc│────▶│    &quot;notification-events&quot;          │
+│  Shipping   │────▶│                                  │
+└─────────────┘     │  Partition 0: user_id % 3 == 0   │
+                    │  Partition 1: user_id % 3 == 1   │
+                    │  Partition 2: user_id % 3 == 2   │
+                    └──────────┬───────────────────────┘
+                               │
+                    ┌──────────▼───────────────────────┐
+                    │     Notification Consumer Group   │
+                    │                                  │
+                    │  Consumer 0 ──▶ Email Worker      │
+                    │  Consumer 1 ──▶ SMS Worker        │
+                    │  Consumer 2 ──▶ Push Worker       │
+                    └──────────────────────────────────┘
+                                        │
+                               Failed messages
+                                        │
+                               ┌────────▼────────┐
+                               │  Dead Letter     │
+                               │  Queue (DLQ)     │
+                               └─────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>Step 1: Define the Event Schema</h3>
+
+<pre><code>
+# events.py — Define event contracts clearly
+from dataclasses import dataclass
+from typing import Optional
+import json
+import time
+
+@dataclass
+class NotificationEvent:
+    event_id: str          # Unique ID for deduplication
+    event_type: str        # &quot;order.placed&quot;, &quot;payment.failed&quot;, &quot;shipment.updated&quot;
+    user_id: str           # Kafka partition key — ensures order for same user
+    timestamp: float       # Unix timestamp
+    payload: dict          # Event-specific data
+    metadata: Optional[dict] = None  # Tracing info, retry count, etc.
+    
+    def to_json(self) -&gt; bytes:
+        return json.dumps({
+            &quot;event_id&quot;: self.event_id,
+            &quot;event_type&quot;: self.event_type,
+            &quot;user_id&quot;: self.user_id,
+            &quot;timestamp&quot;: self.timestamp,
+            &quot;payload&quot;: self.payload,
+            &quot;metadata&quot;: self.metadata or {}
+        }).encode(&quot;utf-8&quot;)
+    
+    @classmethod
+    def from_json(cls, data: bytes) -&gt; &quot;NotificationEvent&quot;:
+        d = json.loads(data)
+        return cls(**d)
+</code></pre>
+
+<hr/>
+
+<h3>Step 2: Producer — Publishing Events</h3>
+
+<pre><code>
+# producer.py
+from kafka import KafkaProducer
+from kafka.errors import KafkaError
+import logging
+
+logger = logging.getLogger(__name__)
+
+class NotificationProducer:
+    def __init__(self, bootstrap_servers: list[str]):
+        self.producer = KafkaProducer(
+            bootstrap_servers=bootstrap_servers,
+            # Durability: wait for all in-sync replicas to acknowledge
+            acks=&quot;all&quot;,
+            # Enable idempotent producer — prevents duplicate messages on retry
+            enable_idempotence=True,
+            # Retry up to 5 times on transient failures
+            retries=5,
+            # Batch messages for throughput (linger up to 10ms)
+            linger_ms=10,
+            batch_size=16384,  # 16KB batches
+        )
+        self.topic = &quot;notification-events&quot;
+    
+    def publish(self, event: NotificationEvent) -&gt; bool:
+        &quot;&quot;&quot;Publish event; use user_id as partition key for ordering.&quot;&quot;&quot;
+        try:
+            future = self.producer.send(
+                self.topic,
+                key=event.user_id.encode(&quot;utf-8&quot;),  # Same user → same partition
+                value=event.to_json(),
+            )
+            # Block until broker confirms receipt (with timeout)
+            record_metadata = future.get(timeout=10)
+            logger.info(
+                f&quot;Published {event.event_type} to partition &quot;
+                f&quot;{record_metadata.partition} offset {record_metadata.offset}&quot;
+            )
+            return True
+        except KafkaError as e:
+            logger.error(f&quot;Failed to publish event {event.event_id}: {e}&quot;)
+            # In production: send to a fallback DB for retry
+            return False
+    
+    def close(self):
+        # Flush remaining buffered messages before shutdown
+        self.producer.flush()
+        self.producer.close()
+</code></pre>
+
+<hr/>
+
+<h3>Step 3: Consumer — Processing with At-Least-Once Semantics</h3>
+
+<pre><code>
+# consumer.py
+from kafka import KafkaConsumer
+from kafka.structs import OffsetAndMetadata, TopicPartition
+import json, logging, time
+
+logger = logging.getLogger(__name__)
+
+class NotificationConsumer:
+    def __init__(self, bootstrap_servers: list[str], group_id: str):
+        self.consumer = KafkaConsumer(
+            &quot;notification-events&quot;,
+            bootstrap_servers=bootstrap_servers,
+            group_id=group_id,
+            # Disable auto-commit — we commit AFTER successful processing
+            # This guarantees at-least-once delivery
+            enable_auto_commit=False,
+            # If no committed offset, start from the earliest message
+            auto_offset_reset=&quot;earliest&quot;,
+            # Deserialize from JSON bytes
+            value_deserializer=lambda b: json.loads(b.decode(&quot;utf-8&quot;)),
+            key_deserializer=lambda b: b.decode(&quot;utf-8&quot;) if b else None,
+        )
+        self.dlq_producer = DLQProducer()  # Dead letter queue
+    
+    def process(self):
+        &quot;&quot;&quot;Main consume loop with manual offset commit.&quot;&quot;&quot;
+        for message in self.consumer:
+            event_data = message.value
+            event = NotificationEvent(**event_data)
+            
+            success = self._handle_with_retry(event, max_retries=3)
+            
+            if success:
+                # Only commit offset after successful processing
+                # This is the key to at-least-once semantics
+                tp = TopicPartition(message.topic, message.partition)
+                self.consumer.commit({tp: OffsetAndMetadata(message.offset + 1, None)})
+            else:
+                # Send to Dead Letter Queue for manual inspection/replay
+                self.dlq_producer.send(event)
+                # Still commit — we don&#x27;t want to block the partition forever
+                tp = TopicPartition(message.topic, message.partition)
+                self.consumer.commit({tp: OffsetAndMetadata(message.offset + 1, None)})
+    
+    def _handle_with_retry(self, event: NotificationEvent, max_retries: int) -&gt; bool:
+        &quot;&quot;&quot;Route event to appropriate handler with exponential backoff retry.&quot;&quot;&quot;
+        handler_map = {
+            &quot;order.placed&quot;: self._send_order_confirmation,
+            &quot;payment.failed&quot;: self._send_payment_alert,
+            &quot;shipment.updated&quot;: self._send_shipment_update,
+        }
+        
+        handler = handler_map.get(event.event_type)
+        if not handler:
+            logger.warning(f&quot;No handler for event type: {event.event_type}&quot;)
+            return True  # Don&#x27;t retry unknown events
+        
+        for attempt in range(max_retries):
+            try:
+                handler(event)
+                return True
+            except Exception as e:
+                wait = (2 ** attempt)  # Exponential backoff: 1s, 2s, 4s
+                logger.warning(f&quot;Attempt {attempt+1} failed for {event.event_id}: {e}. Retrying in {wait}s&quot;)
+                time.sleep(wait)
+        
+        return False  # All retries exhausted
+    
+    def _send_order_confirmation(self, event: NotificationEvent):
+        # Call email service, SMS gateway, push notification service
+        user_id = event.user_id
+        order_id = event.payload[&quot;order_id&quot;]
+        # ... actual notification logic
+        logger.info(f&quot;Sent order confirmation to user {user_id} for order {order_id}&quot;)
+</code></pre>
+
+<hr/>
+
+<h3>Step 4: Idempotency — The Unsung Hero</h3>
+
+<p><strong>中文：</strong> 消息队列保证 <strong>at-least-once</strong> 投递，这意味着同一条消息可能被处理两次。如果你的系统没有幂等性保证，用户可能收到两封确认邮件，或被扣款两次。</p>
+
+<p><strong>English:</strong> At-least-once delivery means the same message can arrive twice (e.g., consumer crashed after processing but before committing offset). Always design consumers to be <strong>idempotent</strong>.</p>
+
+<pre><code>
+# idempotency.py — Using Redis to track processed events
+import redis
+
+class IdempotentNotificationHandler:
+    def __init__(self):
+        self.redis = redis.Redis(host=&quot;localhost&quot;, port=6379, db=0)
+        self.TTL = 86400  # 24 hours — enough to catch duplicates
+    
+    def process_event(self, event: NotificationEvent) -&gt; bool:
+        idempotency_key = f&quot;processed:{event.event_id}&quot;
+        
+        # SET NX = &quot;set if not exists&quot; — atomic check-and-set
+        was_new = self.redis.set(
+            idempotency_key,
+            &quot;1&quot;,
+            ex=self.TTL,
+            nx=True  # Only set if key doesn&#x27;t exist
+        )
+        
+        if not was_new:
+            # This event was already processed — skip it
+            logger.info(f&quot;Duplicate event {event.event_id} — skipping&quot;)
+            return True
+        
+        # First time seeing this event — process it
+        return self._do_send_notification(event)
+</code></pre>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文 + English:</strong></p>
+
+<p><strong>1. 消费者重平衡 / Consumer Rebalancing</strong></p>
+<p>当消费者加入或离开消费者组时，Kafka 会触发重平衡，暂停所有消费。设计时要确保处理过程的原子性。</p>
+<p><em>When consumers join/leave a group, Kafka triggers rebalancing — all consumption pauses. Use cooperative rebalancing (<code>partition.assignment.strategy=CooperativeStickyAssignor</code>) to minimize disruption.</em></p>
+
+<p><strong>2. 消息顺序保证 / Ordering Guarantees</strong></p>
+<p>Kafka 只在<strong>分区内</strong>保证顺序。跨分区无顺序。设计时用有意义的 key（如 user_id）分区，确保同一用户的事件落在同一分区。</p>
+<p><em>Kafka only guarantees order <strong>within a partition</strong>. Use a meaningful partition key (user_id, order_id) so related events land on the same partition.</em></p>
+
+<p><strong>3. 消费者落后 / Consumer Lag</strong></p>
+<p>如果消费者处理速度跟不上生产速度，lag 会越来越大。监控 consumer lag 是运维必备。</p>
+<p><em>Monitor <code>consumer_lag</code> metric. If lag grows unbounded, add more consumer instances (up to the number of partitions) or optimize the handler.</em></p>
+
+<p><strong>4. 大消息问题 / Large Message Problem</strong></p>
+<p>Kafka 默认最大消息 1MB。发大文件？把内容存 S3，消息里只传引用。</p>
+<p><em>Default max message size is 1MB. For large payloads: store in S3/GCS, put the reference URL in the message. Never put binary blobs in queues.</em></p>
+
+<p><strong>5. 时钟偏移 / Clock Skew</strong></p>
+<p>不要用消息里的 timestamp 做业务逻辑。生产者时钟可能偏移。</p>
+<p><em>Don&#x27;t use event timestamps for business logic ordering — clocks drift. Use Kafka&#x27;s broker-assigned offset for true ordering.</em></p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong> 真实系统里的消息队列：</p>
+
+<p><strong>English:</strong> How this looks in production systems:</p>
+
+<p><strong>LinkedIn (Kafka 的诞生地 / Kafka&#x27;s birthplace)</strong></p>
+<p>- LinkedIn 开源了 Kafka，最初用于处理 activity stream（用户点击、浏览等）</p>
+<p>- 现在每天处理超过 <strong>7 万亿</strong>条消息</p>
+<p>- 参考: https://engineering.linkedin.com/kafka/kafka-linkedin-current-and-future</p>
+
+<p><strong>Uber — 行程派单 / Ride Dispatch</strong></p>
+<p>- 司机位置每秒上报 → Kafka topic → 派单引擎消费</p>
+<p>- 消息量：峰值每秒百万级</p>
+<p>- 参考: https://www.uber.com/blog/reliable-reprocessing/</p>
+
+<p><strong>Stripe — 支付事件 / Payment Events</strong></p>
+<p>- 每笔支付产生 N 个事件（授权、捕获、退款等）</p>
+<p>- 各个下游服务（风控、财务、通知）独立消费</p>
+<p>- 保证每个事件至少被每个服务消费一次</p>
+<p>- 参考: https://stripe.com/blog/message-queues</p>
+
+<p><strong>Netflix — 实时数据管道 / Real-Time Pipeline</strong></p>
+<p>- 视频观看数据 → Kafka → 推荐系统、A/B 测试分析、计费</p>
+<p>- 参考: https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a</p>
+
+<p><strong>面试提示 / Interview Pattern:</strong></p>
+<p>&gt; 每当你的设计里有一个服务需要触发多个下游服务，或者需要异步处理、削峰填谷、解耦，就应该加消息队列。</p>
+<p>&gt;</p>
+<p>&gt; <em>Whenever your design has one service that needs to trigger multiple downstream services, or you need async processing, buffering, or decoupling — reach for a message queue.</em></p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>中文：</strong> 以下是面试中最常见的追问，以及简洁回答思路。</p>
+
+<p><strong>English:</strong> The 5 most common follow-up questions:</p>
+
+<hr/>
+
+<p><strong>Q1: 如何保证消息不丢失？/ How do you guarantee no message loss?</strong></p>
+
+<p>&gt; <strong>Producer side:</strong> Set <code>acks=all</code> (wait for all in-sync replicas) + <code>enable_idempotence=True</code>.</p>
+<p>&gt; <strong>Broker side:</strong> Set <code>min.insync.replicas=2</code> to require at least 2 replicas to acknowledge.</p>
+<p>&gt; <strong>Consumer side:</strong> Disable auto-commit; manually commit only after successful processing.</p>
+<p>&gt; <strong>Result:</strong> At-least-once delivery. Accept that duplicates can happen, design consumers to be idempotent.</p>
+
+<hr/>
+
+<p><strong>Q2: Kafka vs SQS，你会怎么选？/ Kafka vs SQS, how do you choose?</strong></p>
+
+<p>&gt; - <strong>Choose Kafka</strong> when: you need message replay, multiple independent consumers, very high throughput (&gt;100K/s), stream processing, or event sourcing.</p>
+<p>&gt; - <strong>Choose SQS</strong> when: you want fully managed simplicity, visibility timeout semantics, built-in DLQ, and don&#x27;t need replay or complex routing. Great for task queues.</p>
+<p>&gt; - <strong>Rule of thumb:</strong> SQS for task queues, Kafka for data pipelines and event streams.</p>
+
+<hr/>
+
+<p><strong>Q3: 如何处理消费者崩溃？/ What happens when a consumer crashes?</strong></p>
+
+<p>&gt; With manual offset commit disabled (<code>enable_auto_commit=False</code>):</p>
+<p>&gt; 1. Consumer crashes after processing but before committing → same message redelivered to next consumer in group</p>
+<p>&gt; 2. Consumer crashes mid-batch → entire batch redelivered</p>
+<p>&gt; This is why idempotency is non-negotiable. Use Redis or DB to track <code>processed_event_ids</code>.</p>
+
+<hr/>
+
+<p><strong>Q4: 消息队列如何帮助削峰填谷？/ How does a queue help with traffic spikes?</strong></p>
+
+<p>&gt; Queue acts as a <strong>buffer</strong>. During Black Friday, order service produces 100K orders/minute. Payment service can only process 10K/minute. Without a queue, payment service crashes under load. With a queue, orders buffer up; payment service consumes at its own pace. Users see &quot;order received&quot; immediately, payment confirms asynchronously. The queue absorbs the spike.</p>
+
+<hr/>
+
+<p><strong>Q5: 如果消费者处理一直失败怎么办？/ What if a message keeps failing?</strong></p>
+
+<p>&gt; Dead Letter Queue (DLQ) pattern:</p>
+<p>&gt; 1. Set <code>max_delivery_attempts = 3</code> (or retry in consumer code)</p>
+<p>&gt; 2. After N failures, move message to DLQ topic</p>
+<p>&gt; 3. DLQ messages trigger alerts to on-call engineer</p>
+<p>&gt; 4. Engineer investigates, fixes the bug, then <strong>replays</strong> DLQ messages back to the original topic</p>
+<p>&gt; Never silently drop messages. Always have a DLQ.</p>
+
+<hr/>
+
+<p><em>下周六继续深挖！Next Saturday: we&#x27;ll go deeper on Kafka internals — partitions, replication, and the ISR mechanism. 🚀</em></p>
+
+<hr/>
+
+<p><strong>References / 参考资料:</strong></p>
+<p>- 📖 Confluent Kafka documentation: https://docs.confluent.io/platform/current/kafka/introduction.html</p>
+<p>- 📖 Designing Data-Intensive Applications (Chapter 11 — Stream Processing) by Martin Kleppmann</p>
+<p>- 🎥 Hussein Nasser — Kafka Deep Dive: https://www.youtube.com/watch?v=R873BlNVUqQ</p>
+<p>- 📖 AWS SQS vs Kafka comparison: https://aws.amazon.com/compare/the-difference-between-sqs-and-kafka/</p>
+<p>- 📖 Uber reliable reprocessing: https://www.uber.com/blog/reliable-reprocessing/</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-03-27</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
