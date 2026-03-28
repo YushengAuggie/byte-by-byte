@@ -53,3 +53,15 @@ This file tracks issues found during QA reviews to improve content quality over 
 - **Issue:** Meta story framing overstates source. Content claims Meta will "significantly reduce reliance on third-party content moderation contractors" but the actual Meta blog post (verified via URL fetch) focuses on an AI support assistant and advanced AI enforcement systems — with no mention of contractor workforce reduction. Additionally, Samsung's $73B/22% figures and Alexa Plus UK £19.99/mo price are specific claims that could not be independently verified.
 - **Root cause:** Recurring pattern (Days 1, 3, 7). The AI news generator makes plausible editorial inferences that go beyond what sources actually say, and includes specific figures (prices, percentages) without in-line sourcing. Self-review does not systematically check whether editorial framing matches the linked source content.
 - **Fix:** This is the third time this pattern has appeared. Escalate fix priority: add a post-generation step where the generator re-reads its own source URLs and checks whether each claim is directly supported. For any claim about workforce changes, business strategy, or financial figures, require an inline quote from the source or add explicit "reportedly" / "per [source]" attribution.
+
+## 2026-03-28 — Day 13 (Saturday Deep Dive)
+
+- **Section:** System Design / Deep Dive Architecture
+- **Issue:** Architecture diagram shows single Kafka consumer group with Consumer 0→Email, Consumer 1→SMS, Consumer 2→Push, but partition key is `user_id`. In reality, each consumer in a single group gets ALL event types for its assigned users, not just one notification channel. The diagram implies channel-based routing which contradicts how Kafka consumer groups work with a user_id partition key.
+- **Root cause:** The code's `_handler_map` routing pattern is actually correct for a single consumer group (each consumer routes internally), but the diagram was drawn as if it were a separate-consumer-group pub/sub pattern. Self-review validated the code and the diagram independently without checking their consistency with each other.
+- **Fix:** For future deep dives with architecture diagrams: after writing both the diagram and the code, do a cross-check — trace one message through the diagram and verify the code implements the same data flow. Consider clarifying in the diagram: either (A) show internal routing arrows within consumers, or (B) use three separate consumer groups.
+
+- **Section:** References
+- **Issue:** `https://stripe.com/blog/message-queues` returns HTTP 404. The correct Stripe reference for idempotency/exactly-once patterns is `https://stripe.com/blog/idempotency` (confirmed 200 OK).
+- **Root cause:** Reference URL was not verified before publication. A real Stripe blog post exists on the topic but at a different slug.
+- **Fix:** For deep dive reference URLs, do a HEAD request check (or note them as "unverified") before including. At minimum, note that URLs should be verified by the reader.
