@@ -65,3 +65,9 @@ This file tracks issues found during QA reviews to improve content quality over 
 - **Issue:** `https://stripe.com/blog/message-queues` returns HTTP 404. The correct Stripe reference for idempotency/exactly-once patterns is `https://stripe.com/blog/idempotency` (confirmed 200 OK).
 - **Root cause:** Reference URL was not verified before publication. A real Stripe blog post exists on the topic but at a different slug.
 - **Fix:** For deep dive reference URLs, do a HEAD request check (or note them as "unverified") before including. At minimum, note that URLs should be verified by the reader.
+
+## 2026-03-29 — Week Review (Day 13 recap)
+- **Section:** AI
+- **Issue:** Week review repeats "GPT-5.4 已实现原生电脑操作（GUI）" as a weekly highlight fact — re-asserting a claim flagged as potentially hallucinated in the Day 11 QA report (GPT-5.4 is not a known real model name; "91% legal benchmark" is unverified). No disclaimer added.
+- **Root cause:** Week review generator pulls AI highlights from the weekly content and summarizes them without applying the "unverified claim" filter. The claim passed self-review because it was consistent with the source material (the Day 11 issue), but the source material itself was flagged by QA and wasn't corrected. Once a hallucinated claim enters the archive, downstream recaps inherit it without re-validation.
+- **Fix:** (1) When generating week reviews, cross-check AI highlight claims against the QA log for the same week — if a claim was flagged as unverified, apply "reportedly / 据报道" in the recap. (2) Longer term: when Day QA flags an AI claim, add a correction note to that day's archive so week review generation can detect it.
