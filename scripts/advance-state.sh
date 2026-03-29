@@ -68,8 +68,8 @@ else
       MISSING=1
     else
       SIZE=$(wc -c < "$FILE")
-      if [ "$SIZE" -lt 100 ]; then
-        echo "❌ TOO SMALL: $FILE ($SIZE bytes)"
+      if [ "$SIZE" -lt 500 ]; then
+        echo "❌ TOO SMALL: $FILE ($SIZE bytes) — likely a placeholder stub"
         MISSING=1
       else
         echo "✅ ${section}: $SIZE bytes"

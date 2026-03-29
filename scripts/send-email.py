@@ -498,17 +498,20 @@ def main():
     sections_html = []
     plain_parts = []
     found = 0
+    MIN_CONTENT_SIZE = 500  # Skip placeholder files (< 500 bytes)
     for filename, icon, name_en, name_cn in SECTION_META:
         path = os.path.join(archive_dir, '{}-{}.md'.format(today, filename))
         if os.path.exists(path):
             with open(path) as f:
                 content = f.read()
+            if len(content.strip()) < MIN_CONTENT_SIZE:
+                continue  # Skip placeholder/stub files
             html = md_to_html(content)
             sections_html.append((icon, name_en, name_cn, filename, html))
             plain_parts.append(content)
             found += 1
 
-    # If no normal sections, check for review day or weekend files
+    # If no real sections, check for review day or weekend files
     if found == 0:
         # Try review file first
         review_path = os.path.join(archive_dir, '{}-{}.md'.format(today, REVIEW_META[0]))

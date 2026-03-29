@@ -294,7 +294,7 @@ if bash scripts/generate.sh > /tmp/bbb-test-output.txt 2>&1; then
   # State should NOT be advanced yet (generate.sh no longer advances)
   PRE_DAY=$(python3 -c "import json; print(json.load(open('state.json'))['currentDay'])")
 
-  # Create dummy archive files so advance-state.sh can verify them (must be >100 bytes)
+  # Create dummy archive files so advance-state.sh can verify them (must be >500 bytes)
   # Use a temp dir to avoid overwriting real archive files
   TODAY_TEST=$(date +%Y-%m-%d)
   ARCHIVE_BACKED_UP=false
@@ -304,7 +304,7 @@ if bash scripts/generate.sh > /tmp/bbb-test-output.txt 2>&1; then
       cp "$TARGET" "$TARGET.test-backup"
       ARCHIVE_BACKED_UP=true
     fi
-    python3 -c "print('# Test content for $section\n' + 'Lorem ipsum dolor sit amet consectetur. ' * 5)" > "$TARGET"
+    python3 -c "print('# Test content for $section\n' + 'Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. ' * 10)" > "$TARGET"
   done
 
   # Now advance state
