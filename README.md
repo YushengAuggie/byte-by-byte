@@ -53,8 +53,8 @@ Every lesson is written in both Chinese and English — not translated, but **na
 - **Direct links** — Problem links + difficulty badges 🟢🟡🔴 + video solutions
 
 ### ✍️ Content Quality
-- **Self-review gate** — Content is generated, verified, fixed, THEN sent (never sends unchecked content)
-- **QA reviewer** — Second automated pass 15 minutes later catches anything that slipped through
+- **Two-phase pipeline** — Phase 1 (8:00): generate content + advance state, but **don't send**. Phase 2 (8:05): separate LLM session reviews every section, traces code, verifies URLs, recalculates quiz answers, fixes errors in archive files, loops until clean, THEN sends
+- **Independent reviewer** — The reviewer is a different LLM session from the writer — no self-review bias
 - **📚 Learn More** — Every section ends with 3 curated links (docs, blogs, videos, papers)
 - **ELI5** — Every section ends with a one-sentence "explain like I'm 5"
 - **Runnable AI code** — Concept days include ≤15 line copy-paste Python snippets
@@ -68,7 +68,7 @@ Every lesson is written in both Chinese and English — not translated, but **na
 - **Open Graph cards** — Rich previews when sharing links
 
 ### 🧪 Testing
-- **72+ automated checks** — JSON, schema, syntax, personal info leaks, integration tests, URL validation
+- **74+ automated checks** — JSON, schema, syntax, personal info leaks, integration tests, URL validation
 - **Pre-commit hook** — Every commit runs the full test suite; commit fails if tests fail
 - **GitHub Actions CI** — Same tests run on every push
 
@@ -281,11 +281,12 @@ byte-by-byte/
 │   ├── generate-index.py  ← archive HTML page generator
 │   └── generate-rss.py    ← RSS feed generator
 ├── cron/
-│   ├── weekday-prompt.md  ← Mon-Fri generation prompt (5 sections)
-│   ├── saturday-prompt.md ← Saturday deep dive prompt
-│   ├── sunday-prompt.md   ← Sunday week-in-review prompt
-│   ├── qa-prompt.md       ← QA reviewer prompt
-│   └── daily-prompt.md    ← legacy reference (full combined prompt)
+│   ├── weekday-prompt.md  ← Mon-Fri: generate 5 sections (no send)
+│   ├── saturday-prompt.md ← Saturday: generate deep dive (no send)
+│   ├── sunday-prompt.md   ← Sunday: generate week review (no send)
+│   ├── review-and-send-prompt.md ← Review → fix → send (runs 5 min after)
+│   ├── qa-prompt.md       ← Legacy QA prompt (replaced by review-and-send)
+│   └── daily-prompt.md    ← Legacy combined prompt (reference only)
 ├── hooks/
 │   └── pre-commit         ← auto-installed by setup.sh
 ├── .github/workflows/
