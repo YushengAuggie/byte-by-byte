@@ -56,15 +56,14 @@ Save to `{{BBB_REPO_DIR}}/archive/$(date +%Y-%m-%d)-week-review.md`:
 [Upcoming topics based on indices]
 ```
 
-## Step 3: Send & Commit
+## Step 3: Do NOT send
 
-Send as single Telegram message (split if too long):
-- channel: telegram, target: {{TELEGRAM_TARGET}}
-
-Email is optional on Sunday. Commit:
 ```bash
-bash {{BBB_REPO_DIR}}/scripts/commit.sh
+echo "ready" > /tmp/bbb-content-ready
 ```
+
+**STOP here.** Do not send Telegram, email, or commit.
+The review-and-send cron (runs 5 min later) handles QA, fixes, and delivery.
 
 ## Rules
 - Bilingual: Chinese first, English second

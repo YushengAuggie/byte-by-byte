@@ -152,31 +152,14 @@ bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
 ```
 **If any file missing, re-generate it before continuing.**
 
-## Review Gate
+## STOP — Do NOT send Telegram, email, or commit
 
-Re-read each archive. Verify:
-- Algorithms: trace the code with example input. Fix if wrong.
-- Frontend: calculate the quiz answer yourself. Fix if wrong.
-- AI NEWS: every story must come from web_search. If not, search now.
-- System Design: diagram data flow is logical.
+Content generation is complete. **Do not send anything.**
+The review-and-send cron (runs at 8:05) will handle QA, fixes, and delivery.
 
-## Send via Telegram
-
-Order: Progress+SysDesign → Algorithms → AlgoQuizPoll → SoftSkills → Frontend → FrontendQuizPoll → AI
-
-- Message 1: progress header + system design content (channel: telegram, target: {{TELEGRAM_TARGET}})
-- Message 2: algorithms content
-- Poll 2b: quiz from /tmp/bbb-quiz-2.json (pollAnonymous: false)
-- Message 3: soft skills
-- Message 4: frontend
-- Poll 4b: quiz from /tmp/bbb-quiz-4.json (pollAnonymous: false), then "🧩 Did you get it right?"
-- Message 5: AI
-
-## Send Email & Commit (MANDATORY)
-
+Save a marker so the review cron knows content is ready:
 ```bash
-python3 {{BBB_REPO_DIR}}/scripts/send-email.py
-bash {{BBB_REPO_DIR}}/scripts/commit.sh
+echo "ready" > /tmp/bbb-content-ready
 ```
 
 ## Rules

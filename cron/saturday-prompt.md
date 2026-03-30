@@ -54,24 +54,15 @@ Save to `{{BBB_REPO_DIR}}/archive/$(date +%Y-%m-%d)-deepdive.md`:
 
 For algorithms: include 🔗 LeetCode + 📹 NeetCode links.
 
-## Step 3: Review
-
-Verify all code traces, complexity claims, and diagram logic. Fix any errors.
-
-## Step 4: Advance State & Send
+## Step 3: Advance State — Do NOT send
 
 ```bash
 bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
+echo "ready" > /tmp/bbb-content-ready
 ```
 
-Send as single Telegram message (or split into 2-3 if too long):
-- channel: telegram, target: {{TELEGRAM_TARGET}}
-- Start with progress header
-
-```bash
-python3 {{BBB_REPO_DIR}}/scripts/send-email.py
-bash {{BBB_REPO_DIR}}/scripts/commit.sh
-```
+**STOP here.** Do not send Telegram, email, or commit.
+The review-and-send cron (runs 5 min later) handles QA, fixes, and delivery.
 
 ## Rules
 - Bilingual: Chinese first, English second
