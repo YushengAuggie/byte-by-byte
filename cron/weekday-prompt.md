@@ -152,15 +152,24 @@ bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
 ```
 **If any file missing, re-generate it before continuing.**
 
+## Verify & Advance State
+
+After writing ALL 5 files:
+```bash
+TODAY=$(date +%Y-%m-%d)
+for s in system-design algorithms soft-skills frontend ai; do
+  FILE="{{BBB_REPO_DIR}}/archive/${TODAY}-${s}.md"
+  [ ! -f "$FILE" ] && echo "MISSING: $FILE" && exit 1
+  echo "✅ ${s}: $(wc -c < "$FILE") bytes"
+done
+bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
+```
+**If any file missing, re-generate it before advancing.**
+
 ## STOP — Do NOT send Telegram, email, or commit
 
-Content generation is complete. **Do not send anything.**
+Content generation and state advancement are complete. **Do not send anything.**
 The review-and-send cron (runs at 8:05) will handle QA, fixes, and delivery.
-
-Save a marker so the review cron knows content is ready:
-```bash
-echo "ready" > /tmp/bbb-content-ready
-```
 
 ## Rules
 - Bilingual: Chinese first, English second
