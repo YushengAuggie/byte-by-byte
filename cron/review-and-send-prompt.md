@@ -42,7 +42,7 @@ Read ALL archive files for today. For each section:
 - Does bad/good comparison show a real contrast?
 
 ### AI
-- NEWS mode: Are URLs real? Use `web_fetch` to verify at least 2 URLs
+- NEWS mode: Are URLs real? Verify at least 2 URLs using `web_fetch` or your built-in web browsing
 - Flag any specific claims (dates, prices, model names) that smell hallucinated
 - Add "据报道 / reportedly" qualifier to unverified claims
 
