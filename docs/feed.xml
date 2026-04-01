@@ -5,8 +5,756 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 29 Mar 2026 16:03:33 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 01 Apr 2026 15:08:21 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-01</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-01</guid>
+      <pubDate>Wed, 01 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 Day 15 / Review Day 15</h2>
+
+<p><strong>📊 进度 / Progress:</strong> Day 15/150 · NeetCode: 14/150 · SysDesign: 13/40 · Behavioral: 13/40 · Frontend: 13/50 · AI: 6/30</p>
+<p><strong>🔥 4-day streak!</strong></p>
+
+<hr/>
+
+<p>今天是复习日！回顾过去4天的内容。</p>
+<p>Today is a review day! Let&#x27;s revisit the past 4 days of content.</p>
+
+<p><strong>回顾范围 / Review scope:</strong> Days 11–14</p>
+<p>- 🏗️ Consistent Hashing, CAP Theorem, Message Queues, Microservices vs Monolith</p>
+<p>- 💻 Two Sum II, 3Sum, Container With Most Water, Trapping Rain Water</p>
+<p>- 🗣️ Proactive problem-solving, Prioritization, Delivering bad news, Cross-team initiatives</p>
+<p>- 🎨 React useEffect, useRef, useMemo/useCallback, Custom Hooks</p>
+<p>- 🤖 AI News, RLHF, AI News, LoRA &amp; QLoRA</p>
+
+<hr/>
+
+<h2>📝 Quick Quiz — 3 Mini-Reviews</h2>
+
+<hr/>
+
+<p><strong>Q1: [🏗️ System Design — Consistent Hashing &amp; CAP Theorem]</strong></p>
+
+<p>你在设计一个分布式缓存系统（比如 Redis Cluster）。当一个节点崩溃时，使用普通哈希（<code>hash(key) % N</code>）和一致性哈希（Consistent Hashing）各会发生什么？为什么分布式数据库（如 Cassandra）选择 Eventual Consistency 而不是强一致性？</p>
+
+<p>You&#x27;re designing a distributed cache (like Redis Cluster). When one node goes down, what happens with regular hashing (<code>hash(key) % N</code>) vs consistent hashing? And why do databases like Cassandra prefer eventual consistency over strong consistency?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>普通哈希的问题 / Regular hashing problem:</strong></p>
+<p>当节点数 N 变化（比如从 5 变成 4），几乎所有的 key 都需要重新映射到不同节点 — 导致大规模缓存失效（cache stampede）。</p>
+<p>When N changes (5→4), nearly all keys get remapped to different nodes — causing a massive cache miss storm.</p>
+
+<p><strong>一致性哈希的优势 / Consistent hashing advantage:</strong></p>
+<p>将节点和 key 都映射到一个&quot;哈希环&quot;上。某节点下线时，只有该节点顺时针方向的 key 需要迁移到下一个节点，其他 key 完全不受影响。通常只影响 1/N 的数据。</p>
+<p>Both nodes and keys are mapped onto a ring. When a node goes down, only the keys <em>between</em> the failed node and its predecessor need to migrate to the next node clockwise — roughly 1/N of all keys.</p>
+
+<p><strong>Virtual nodes (VNodes)</strong> 虚拟节点进一步让每个物理节点在哈希环上占据多个位置，使数据分布更均匀。</p>
+
+<p><strong>CAP &amp; Eventual Consistency:</strong></p>
+<p>CAP 定理说在网络分区（P）发生时，你必须在一致性（C）和可用性（A）之间选一个。Cassandra 选择 AP（可用性 + 分区容忍），允许暂时不一致，通过后台的 gossip protocol 和 hinted handoff 最终达到一致。这对&quot;写多读多&quot;场景更实用 — 写入不会因为网络抖动而失败。</p>
+
+<p>CAP says during a network partition, choose C or A. Cassandra picks AP (availability + partition tolerance), accepting that different replicas may briefly disagree. Background reconciliation (gossip, read repair, hinted handoff) eventually converges. For high-traffic apps, &quot;eventually consistent&quot; is a feature — writes don&#x27;t fail just because one replica is slow.</p>
+
+<p><strong>核心记忆点 / Key insight:</strong> Consistent hashing = <strong>minimal redistribution</strong>. CAP = <strong>pick your tradeoff explicitly</strong>.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [💻 Algorithms — Two Pointers: Container With Most Water vs Trapping Rain Water]</strong></p>
+
+<p>两道题都用双指针，都涉及&quot;水&quot;，但思路有微妙差别。<code>Container With Most Water</code>（#11）和 <code>Trapping Rain Water</code>（#42）的关键区别是什么？为什么前者一次遍历就够，后者需要追踪历史最大值？</p>
+
+<p>Both problems use two pointers and involve &quot;water&quot;, but the logic is subtly different. What&#x27;s the key difference between Container With Most Water (#11) and Trapping Rain Water (#42)? Why does the first need only one pass while the second requires tracking historical maximums?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>Container With Most Water (#11) — 选最大容器:</strong></p>
+<p>你在两个柱子之间装水，水量 = <code>min(left, right) * distance</code>。双指针从两端向中间移动，每次移动<strong>较短的那端</strong> — 因为较长端已经尽力了，继续缩小宽度只有移动短板才有可能增加面积。</p>
+
+<p>You&#x27;re choosing two walls. Water volume = <code>min(left, right) * width</code>. Move the shorter pointer inward — the taller wall can&#x27;t improve the result unless the other wall gets taller. This greedy choice is provably correct.</p>
+
+<p><strong>Trapping Rain Water (#42) — 计算每个格子的积水:</strong></p>
+<p>每个位置能接的水 = <code>min(leftMax, rightMax) - height[i]</code>。关键是<strong>每个位置都受其左右两侧最高柱子的限制</strong>，需要知道历史最大值。</p>
+<p>双指针做法：维护 <code>leftMax</code> 和 <code>rightMax</code>，哪侧较小就处理哪侧（因为较小侧的瓶颈已经确定）。</p>
+
+<p>Every cell can hold water = <code>min(leftMax, rightMax) - height[i]</code>. Each cell is bounded by the <em>tallest</em> wall on BOTH sides — you must track running maximums. Two-pointer trick: whichever side has the smaller max, process it (its bottleneck is determined regardless of the other side&#x27;s future values).</p>
+
+<p><strong>核心区别 / Core difference:</strong></p>
+<p>- Container: <strong>两点之间</strong> 的最大矩形，贪心移动短板 ✓</p>
+<p>- Trapping: <strong>每个点</strong> 上方的积水，需要双侧历史最大值 ✓</p>
+
+<p><strong>记忆口诀:</strong> Container = &quot;短板决定上限，移短板求最大&quot;；Trapping = &quot;每格水位 = 两侧最高墙的最小值 − 自身高度&quot;</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [🎨 Frontend — React Hooks: useEffect, useRef, useMemo/useCallback, Custom Hooks]</strong></p>
+
+<p>你在做一个数据密集型 dashboard，需要：</p>
+<p>1. 在组件挂载时 fetch 数据并在卸载时取消请求</p>
+<p>2. 直接操作一个 DOM 元素（聚焦输入框）而不触发重渲染</p>
+<p>3. 避免昂贵的排序函数在每次渲染时重复执行</p>
+<p>4. 把上面的 fetch 逻辑复用到多个组件</p>
+
+<p>请说明应该用哪个 Hook，以及最常见的错误写法。</p>
+
+<p>You&#x27;re building a data-heavy dashboard and need to: (1) fetch data on mount and cancel on unmount, (2) focus a DOM element without triggering re-renders, (3) avoid re-running an expensive sort on every render, (4) reuse the fetch logic across components. Which hook for each, and what&#x27;s the most common mistake?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>1. Fetch + 取消请求 → <code>useEffect</code></strong></p>
+<pre><code>
+useEffect(() =&gt; {
+  const controller = new AbortController();
+  fetch(url, { signal: controller.signal }).then(setData);
+  return () =&gt; controller.abort(); // cleanup!
+}, [url]); // dependency array matters!
+</code></pre>
+<p>❌ 最常见错误：省略 cleanup，导致组件卸载后仍然 setState，产生内存泄漏和 &quot;Can&#x27;t perform a React state update on an unmounted component&quot; 警告。</p>
+<p>❌ Most common mistake: forgetting the cleanup function, causing state updates on unmounted components.</p>
+
+<p><strong>2. 操作 DOM → <code>useRef</code></strong></p>
+<pre><code>
+const inputRef = useRef(null);
+// inputRef.current.focus() — doesn&#x27;t trigger re-render
+</code></pre>
+<p><code>useRef</code> 的值改变<strong>不会触发重渲染</strong>，适合存储 DOM 引用、定时器 ID、或任何&quot;不影响 UI&quot;的可变值。</p>
+<p>Changing <code>.current</code> never triggers a re-render — perfect for DOM refs, timer IDs, or previous values.</p>
+
+<p><strong>3. 避免重复计算 → <code>useMemo</code></strong></p>
+<pre><code>
+const sorted = useMemo(() =&gt; expensiveSort(data), [data]);
+</code></pre>
+<p>❌ 过度使用 useMemo 反而增加开销。只在<strong>真正昂贵</strong>的计算或<strong>引用稳定性</strong>（传给子组件）时使用。</p>
+<p>❌ Over-memoizing adds overhead. Only use for genuinely expensive computations or referential stability.</p>
+
+<p><strong>4. 复用逻辑 → Custom Hook</strong></p>
+<pre><code>
+function useDashboardData(url) {
+  const [data, setData] = useState(null);
+  useEffect(() =&gt; { /* fetch logic */ }, [url]);
+  return data;
+}
+</code></pre>
+<p>Custom hooks = 把 hook 逻辑从组件里提取出来，不是 HOC，不是 render props，就是普通函数（必须以 <code>use</code> 开头）。</p>
+<p>Custom hooks extract stateful logic — not a new React feature, just a naming convention (<code>use</code> prefix) that signals to React&#x27;s linter.</p>
+
+<p><strong>记忆矩阵 / Memory matrix:</strong></p>
+<p>| Goal | Hook |</p>
+<p>|------|------|</p>
+<p>| Side effects, fetch, subscriptions | <code>useEffect</code> |</p>
+<p>| DOM access, mutable value (no re-render) | <code>useRef</code> |</p>
+<p>| Expensive computation cache | <code>useMemo</code> |</p>
+<p>| Stable function reference | <code>useCallback</code> |</p>
+<p>| Reusable stateful logic | Custom Hook |</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。每次回顾不只是&quot;记住了吗&quot;，而是&quot;能用自己的话解释吗&quot;。</em></p>
+<p><em>Review doesn&#x27;t just ask &quot;do you remember?&quot; — it asks &quot;can you explain it in your own words?&quot;</em></p>
+
+<p>📅 明天继续新内容！Day 16 coming tomorrow!</p>
+
+<hr/>
+
+<p><em>Generated by byte-by-byte · Day 15 of 150 · 2026-04-01</em></p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-03-31</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-03-31</guid>
+      <pubDate>Tue, 31 Mar 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 Day 14 / System Design Day 14</h2>
+<h2>微服务 vs 单体架构 / Microservices vs Monolith</h2>
+
+<p>&gt; <strong>难度 / Difficulty:</strong> Intermediate · <strong>阶段 / Phase:</strong> Growth · <strong>预计阅读 / Read time:</strong> 3 min</p>
+
+<hr/>
+
+<h2>🌍 真实场景 / Real-World Scenario</h2>
+
+<p>想象你在一家初创公司工作，产品刚上线，代码都在一个仓库里。随着用户量增长到百万级别，你开始思考：要不要把代码拆成独立的服务？什么时候该拆？怎么拆？</p>
+
+<p>Imagine you&#x27;re at a startup. Your entire product lives in one codebase. As you scale to millions of users, you face the classic question: should you break it apart into microservices? When? How?</p>
+
+<hr/>
+
+<h2>🏛️ 架构图 / Architecture Diagrams</h2>
+
+<h3>单体架构 / Monolith</h3>
+<pre><code>
+┌─────────────────────────────────────────┐
+│              Monolith App               │
+│  ┌──────────┐ ┌──────────┐ ┌─────────┐ │
+│  │  Users   │ │ Orders   │ │Payments │ │
+│  │ Module   │ │ Module   │ │ Module  │ │
+│  └────┬─────┘ └────┬─────┘ └────┬────┘ │
+│       └─────────────┴─────────────┘     │
+│                    │                    │
+│          ┌─────────▼─────────┐         │
+│          │   Single Database │         │
+│          └───────────────────┘         │
+└─────────────────────────────────────────┘
+         │ Deploy everything together │
+</code></pre>
+
+<h3>微服务架构 / Microservices</h3>
+<pre><code>
+Client ──► API Gateway
+               │
+      ┌────────┼────────┐
+      ▼        ▼        ▼
+ ┌────────┐ ┌──────┐ ┌──────────┐
+ │ Users  │ │Orders│ │ Payments │
+ │Service │ │Svc   │ │ Service  │
+ └───┬────┘ └──┬───┘ └───┬──────┘
+     │         │          │
+  ┌──▼──┐  ┌──▼──┐   ┌───▼───┐
+  │ DB  │  │ DB  │   │  DB   │
+  └─────┘  └─────┘   └───────┘
+   (独立部署, message queue 通信)
+</code></pre>
+
+<hr/>
+
+<h2>⚖️ 核心权衡 / Key Tradeoffs</h2>
+
+<h3>为什么选单体？/ Why Monolith?</h3>
+<p>- <strong>简单</strong> — 一个代码库，一次部署，本地开发直接跑</p>
+<p>- <strong>低延迟</strong> — 模块间函数调用，无网络开销</p>
+<p>- <strong>事务一致性</strong> — 一个数据库，ACID 事务天然支持</p>
+<p>- <strong>适合阶段</strong> — 团队 &lt; 20 人，产品 PMF 还没验证时</p>
+
+<h3>为什么选微服务？/ Why Microservices?</h3>
+<p>- <strong>独立扩展</strong> — Payment 服务流量暴增，只扩它，不动 Users 服务</p>
+<p>- <strong>技术异构</strong> — 推荐系统用 Python/ML，API 层用 Go，各自最优</p>
+<p>- <strong>故障隔离</strong> — 一个服务崩了，不影响整体</p>
+<p>- <strong>团队自治</strong> — 不同团队独立发布，互不阻塞</p>
+<p>- <strong>适合阶段</strong> — 团队 &gt; 50 人，有专门 DevOps/Platform 团队时</p>
+
+<h3>对比表 / Comparison</h3>
+<p>| 维度 | 单体 | 微服务 |</p>
+<p>|------|------|--------|</p>
+<p>| 部署复杂度 | 低 ✅ | 高 ❌ |</p>
+<p>| 开发速度(早期) | 快 ✅ | 慢 ❌ |</p>
+<p>| 独立扩展 | ❌ | ✅ |</p>
+<p>| 故障隔离 | ❌ | ✅ |</p>
+<p>| 数据一致性 | 容易 ✅ | 需要设计 ❌ |</p>
+<p>| 运维成本 | 低 ✅ | 高 ❌ |</p>
+
+<hr/>
+
+<h2>🪤 别踩这个坑 / Common Mistakes</h2>
+
+<p><strong>❌ 坑1: 过早微服务化 (Premature Microservices)</strong></p>
+<p>刚起步就拆服务，结果团队只有3个人要维护10个服务+Kubernetes。</p>
+<p>&gt; &quot;We went microservices on day one, and it almost killed us.&quot; — every startup that tried it too early</p>
+
+<p><strong>✅ 正确做法:</strong> 先做&quot;模块化单体&quot;(Modular Monolith)，内部模块化，边界清晰，后期再物理拆分。</p>
+
+<p><strong>❌ 坑2: 分布式单体 (Distributed Monolith)</strong></p>
+<p>拆成多个服务，但服务之间强耦合，必须同步部署。既有微服务的复杂性，又没有微服务的好处。</p>
+
+<p><strong>✅ 正确做法:</strong> 服务间通过 API 或消息队列解耦，不共享数据库。</p>
+
+<p><strong>❌ 坑3: 忽视跨服务事务</strong></p>
+<p>订单服务扣库存成功，支付服务失败了，数据不一致。</p>
+
+<p><strong>✅ 正确做法:</strong> 使用 Saga 模式或最终一致性设计。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Martin Fowler — Microservices](https://martinfowler.com/articles/microservices.html)</p>
+<p>- [Martin Fowler — Monolith First](https://martinfowler.com/bliki/MonolithFirst.html)</p>
+<p>- [AWS — Microservices vs Monolithic Architecture](https://aws.amazon.com/microservices/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>单体就像一家小餐厅，一个厨房做所有菜，简单高效。微服务像大型餐厅连锁，每家分店专做一类菜，可以独立扩张，但管理更复杂。刚开始开一家店，别一上来就开连锁。</p>
+
+<p>Monolith = one kitchen that cooks everything. Simple, fast to start. Microservices = a food court where each stall specializes. Great at scale, but way more management. Start with one kitchen; split when it gets too crowded.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 Day 14 / Algorithms Day 14</h2>
+<h2>#42 Trapping Rain Water (Hard) — Two Pointers</h2>
+
+<p>🧩 <strong>Two Pointers (5/5)</strong> — building on the template from earlier days in this block</p>
+
+<p>- 🔗 LeetCode: https://leetcode.com/problems/trapping-rain-water/  🔴</p>
+<p>- 📹 NeetCode: https://www.youtube.com/watch?v=ZI2z5pq0TqA</p>
+<p>- <strong>Pattern / 模式:</strong> Two Pointers（双指针）</p>
+
+<hr/>
+
+<h2>🌧️ 现实类比 / Real-world analogy</h2>
+
+<p>把城市的屋顶想成一排高度不同的墙。下雨后，低洼处会积水，但能积多少取决于它左边最高的墙和右边最高的墙：</p>
+
+<p>&gt; <strong>water[i] = min(maxLeft, maxRight) - height[i]</strong>（如果为正）</p>
+
+<p>Think of bars as walls. The water above a bar is limited by the shorter of the tallest wall on its left and the tallest wall on its right.</p>
+
+<hr/>
+
+<h2>🧠 问题重述 / Problem</h2>
+
+<p>给定数组 <code>height</code> 表示柱子高度，每根柱子宽度为 1，计算下雨后能接多少雨水。</p>
+
+<p>Given <code>height</code>, compute total trapped water.</p>
+
+<hr/>
+
+<h2>🧩 如何映射到双指针模板 / Map to the Two Pointers template</h2>
+
+<p>之前的双指针块（</p>
+<p>#125 回文、#167 两数之和II、#15 三数之和、#11 盛最多水的容器</p>
+<p>）里，左右指针“夹逼”的核心是：</p>
+
+<p>- <strong>每一步都能确定一侧的最优/可行性</strong>，因此可以移动那一侧，整体 O(n)</p>
+
+<p>这题的“变化点”是：</p>
+<p>- 我们不再追求 pair/sum，而是维护 <strong>leftMax / rightMax</strong>，并在每一步“结算”一侧的水量。</p>
+
+<p>Key twist vs earlier problems: instead of comparing sums/areas, we compare <code>leftMax</code> and <code>rightMax</code>. The side with the smaller max can be finalized because its limiting wall is known.</p>
+
+<hr/>
+
+<h2>✅ 双指针解法 / Two pointers solution</h2>
+
+<h3>核心思路 / Key idea</h3>
+
+<p>- <code>l, r</code> 从两端向中间走</p>
+<p>- 维护 <code>leftMax = max(height[0..l])</code>，<code>rightMax = max(height[r..end])</code></p>
+<p>- <strong>如果 <code>leftMax &lt; rightMax</code></strong>：左边的水位上限已确定（被 leftMax 限制），可以计算 <code>l</code> 位置的水并 <code>l += 1</code></p>
+<p>- 否则：对称处理右边</p>
+
+<hr/>
+
+<h3>Python 代码 / Python code</h3>
+
+<pre><code>
+from typing import List
+
+class Solution:
+    def trap(self, height: List[int]) -&gt; int:
+        l, r = 0, len(height) - 1
+        left_max, right_max = 0, 0
+        water = 0
+
+        while l &lt; r:
+            if height[l] &lt; height[r]:
+                # left side is bounded by left_max
+                if height[l] &gt;= left_max:
+                    left_max = height[l]
+                else:
+                    water += left_max - height[l]
+                l += 1
+            else:
+                # right side is bounded by right_max
+                if height[r] &gt;= right_max:
+                    right_max = height[r]
+                else:
+                    water += right_max - height[r]
+                r -= 1
+
+        return water
+</code></pre>
+
+<hr/>
+
+<h2>🔍 手动走一遍 / Quick trace</h2>
+
+<p>例子：<code>[0,1,0,2,1,0,1,3,2,1,2,1]</code></p>
+
+<p>- 开始 <code>l=0, r=11, left_max=0, right_max=0, water=0</code></p>
+<p>- 右边较高（1 vs 1 走 else），更新 <code>right_max=1</code>，<code>r=10</code></p>
+<p>- 当左边较小（0 &lt; 2）：左侧可结算，<code>left_max=0</code>，<code>l=1</code></p>
+<p>- <code>height[2]=0</code> 时，<code>left_max=1</code>，水 += 1-0 = 1</p>
+<p>- ... 最终累计 <code>water=6</code></p>
+
+<p>Why it works: the side with the smaller boundary max is the limiting factor, so we can safely finalize water there without knowing the exact interior structure.</p>
+
+<hr/>
+
+<h2>⏱️ 复杂度 / Complexity</h2>
+
+<p>- Time: <strong>O(n)</strong> (each pointer moves at most n steps)</p>
+<p>- Space: <strong>O(1)</strong></p>
+
+<hr/>
+
+<h2>举一反三 / Transfer within this pattern block</h2>
+
+<p>- #11 Container With Most Water：移动“短板”来寻找更可能变大的面积</p>
+<p>- #15 3Sum：固定一个数 + 双指针夹逼</p>
+<p>- #125 Valid Palindrome：两端检查并向内收缩</p>
+
+<p>共同点：</p>
+<p>- <strong>每一步移动都基于一个可证明的单调性/界限</strong>，避免 O(n^2)</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- LeetCode editorial: https://leetcode.com/problems/trapping-rain-water/editorial/</p>
+<p>- NeetCode explanation (video): https://www.youtube.com/watch?v=ZI2z5pq0TqA</p>
+<p>- GeeksforGeeks (two-pointer approach): https://www.geeksforgeeks.org/trapping-rain-water/</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你在一排积木之间倒水。某一格能装多少水，只取决于它左边最高的积木和右边最高的积木里较矮的那个。双指针就是从两边往中间走，随时记住“目前看到的最高积木”，然后一格一格把水算出来。</p>
+
+<p>Imagine filling water between blocks. A spot’s water level is capped by the shorter of the tallest block on its left and right. Two pointers walk inward, tracking those tallest blocks and adding water as you go.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 Day 14 / Soft Skills Day 14</h2>
+<h2>Tell me about a time you drove a large cross-team initiative</h2>
+
+<p>&gt; <strong>级别 / Level:</strong> Staff · <strong>主题 / Category:</strong> Leadership · <strong>Read time:</strong> 2 min</p>
+
+<hr/>
+
+<h2>为什么重要 / Why this matters</h2>
+
+<p><strong>中文：</strong></p>
+<p>跨团队项目（例如：统一身份认证、支付迁移、数据平台升级、全站性能治理）最大的风险往往不是技术，而是<strong>对齐、节奏、依赖、沟通成本</strong>。Staff 级别面试官想听到的是：你如何在没有“直接汇报关系”的情况下，把很多人带到同一条船上。</p>
+
+<p><strong>English:</strong></p>
+<p>For cross-team initiatives, the hardest part is rarely the technical design—it’s alignment, dependencies, cadence, and communication overhead. Interviewers want evidence you can lead without formal authority.</p>
+
+<hr/>
+
+<h2>⭐ STAR 结构（建议 90 秒回答）/ STAR structure (aim for 90 seconds)</h2>
+
+<h3>S — Situation（背景）</h3>
+<p>- 中文：项目是什么？影响范围多大？涉及哪些团队？</p>
+<p>- English: What was the initiative? Scope? Which teams?</p>
+
+<h3>T — Task（你的职责）</h3>
+<p>- 中文：你具体负责什么？目标/成功标准是什么（SLO、迁移比例、成本、上线日期）？</p>
+<p>- English: What did you own? What were the success metrics?</p>
+
+<h3>A — Action（你做了什么）</h3>
+<p>用“可复制的方法论”讲：</p>
+<p>1) <strong>定义北极星指标 / Define a north-star metric</strong>：例如 p95 latency、error budget、migration completion。</p>
+<p>2) <strong>把问题拆成工作流 / Break into a plan</strong>：里程碑、风险清单、依赖图、RACI（谁负责/批准/咨询/知会）。</p>
+<p>3) <strong>建立节奏 / Create operating cadence</strong>：每周 cross-team sync、异步周报、决策记录（ADR）、升级通道。</p>
+<p>4) <strong>提前拆雷 / De-risk early</strong>：先做 POC / pilot、灰度、回滚预案、观测（dashboards + alerts）。</p>
+<p>5) <strong>对齐激励 / Align incentives</strong>：明确“对他们有什么好处”（减少 oncall、降低成本、提高转化）。</p>
+
+<p>English (same content):</p>
+<p>1) Define a measurable north-star metric.</p>
+<p>2) Turn ambiguity into a concrete plan (milestones, dependency map, RACI).</p>
+<p>3) Establish cadence (syncs, async updates, decision logs).</p>
+<p>4) De-risk early (pilot, gradual rollout, rollback plan, observability).</p>
+<p>5) Align incentives so partner teams want to participate.</p>
+
+<h3>R — Result（结果）</h3>
+<p>- 中文：用数字结尾：提前/按期上线、迁移比例、故障率下降、成本节省、开发效率提升。</p>
+<p>- English: Close with numbers: completion %, latency improvement, incidents reduced, cost savings.</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good（面试官一听就懂）/ Bad vs Good</h2>
+
+<p><strong>❌ Bad（空泛）</strong></p>
+<p>- “我组织了很多会议，大家最后达成一致，然后上线了。”</p>
+
+<p><strong>✅ Good（可验证）</strong></p>
+<p>- “我先把目标写成 p95 从 800ms 降到 400ms，并把依赖拆成 3 条迁移路径；每周一次跨团队同步 + 每两天异步进度；关键风险是 X 团队的 schema 变更，于是先做了两周 pilot 和双写；最终 6 周内迁移 92%，相关 oncall 事故从每周 5 起降到 1 起。”</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分点 / Senior/Staff-level tips</h2>
+
+<p>- <strong>把决策写下来</strong>：用 ADR 记录 tradeoffs，不靠“口口相传”。</p>
+<p>- <strong>沟通要“分层”</strong>：IC 关注任务与风险，Manager 关注里程碑与资源，Exec 关注指标与 ROI。</p>
+<p>- <strong>处理冲突的方式</strong>：先找共同目标，再用数据/实验说话；必要时明确升级路径。</p>
+<p>- <strong>让系统自动运行</strong>：好的机制（dashboard、SLO、自动化迁移工具）比个人英雄更可靠。</p>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+<p>- 中文：跨团队项目 = 目标清晰 + 依赖可视化 + 节奏稳定 + 风险前置 + 激励对齐。</p>
+<p>- English: Cross-team success = clear metrics + dependency visibility + steady cadence + early de-risking + aligned incentives.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- Google SRE Book — Service Level Objectives: https://sre.google/sre-book/service-level-objectives/</p>
+<p>- RACI matrix overview (Atlassian): https://www.atlassian.com/team-playbook/plays/roles-and-responsibilities</p>
+<p>- Amazon Working Backwards (concept): https://www.aboutamazon.com/news/company-news/working-backwards-how-amazon-starts-with-the-customer</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>中文：你要做一件很多同学一起完成的大作业。你得先说清楚“最终要拿多少分”（指标），再把任务分好、规定每周检查一次进度、提前发现最难的部分先做小实验，最后大家才会真的按同一个计划走。</p>
+
+<p>English: It’s like a big group project. First define what “success” means, split work and owners, check progress regularly, test the risky parts early, and keep everyone moving together.</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 Day 14 / Frontend Day 14</h2>
+<h2>React Custom Hooks — Extract &amp; Reuse Logic</h2>
+
+<p>&gt; <strong>阶段 / Phase:</strong> Growth · <strong>Read time:</strong> 2 min</p>
+
+<hr/>
+
+<h2>🧩 真实场景 / Real scenario</h2>
+
+<p>中文：你在做一个 dashboard，需要在多个页面复用“拉取数据 + loading/error + 取消请求 + 刷新”的逻辑。你不想每个组件都写一遍 <code>useEffect</code> + <code>AbortController</code> + 一堆状态。</p>
+
+<p>English: You’re building a dashboard and need reusable “fetch + loading/error + cancellation + refresh” logic across multiple pages.</p>
+
+<hr/>
+
+<h2>✅ 生产可用的 Custom Hook 例子 / Production-ready custom hook</h2>
+
+<pre><code>
+import { useCallback, useEffect, useRef, useState } from &quot;react&quot;;
+
+type AsyncState&lt;T&gt; = {
+  data: T | null;
+  error: string | null;
+  loading: boolean;
+};
+
+// Code comments in English
+export function useJsonFetch&lt;T&gt;(url: string, deps: unknown[] = []) {
+  const [state, setState] = useState&lt;AsyncState&lt;T&gt;&gt;({
+    data: null,
+    error: null,
+    loading: true,
+  });
+
+  // Keep AbortController in a ref so we can cancel in-flight requests.
+  const abortRef = useRef&lt;AbortController | null&gt;(null);
+
+  const run = useCallback(async () =&gt; {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setState((s) =&gt; ({ ...s, loading: true, error: null }));
+
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as T;
+      setState({ data: json, error: null, loading: false });
+    } catch (e) {
+      // Abort is not a real “error” the user should see
+      if ((e as any)?.name === &quot;AbortError&quot;) return;
+      setState({ data: null, error: (e as Error).message, loading: false });
+    }
+  }, [url, ...deps]);
+
+  useEffect(() =&gt; {
+    void run();
+    return () =&gt; abortRef.current?.abort();
+  }, [run]);
+
+  return { ...state, refresh: run };
+}
+</code></pre>
+
+<p><strong>怎么用 / How to use:</strong></p>
+<pre><code>
+type User = { id: string; name: string };
+
+function UsersPanel() {
+  const { data, loading, error, refresh } = useJsonFetch&lt;User[]&gt;(&quot;/api/users&quot;);
+
+  if (loading) return &lt;div&gt;Loading…&lt;/div&gt;;
+  if (error) return &lt;button onClick={refresh}&gt;Retry: {error}&lt;/button&gt;;
+  return (
+    &lt;div&gt;
+      &lt;button onClick={refresh}&gt;Refresh&lt;/button&gt;
+      &lt;ul&gt;{data?.map((u) =&gt; &lt;li key={u.id}&gt;{u.name}&lt;/li&gt;)}&lt;/ul&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+
+<hr/>
+
+<h2>🧠 “猜猜这段代码输出什么？”/ Output quiz</h2>
+
+<pre><code>
+function Demo() {
+  const [n, setN] = useState(0);
+
+  const inc = useCallback(() =&gt; setN(n + 1), []);
+
+  return &lt;button onClick={inc}&gt;{n}&lt;/button&gt;;
+}
+</code></pre>
+
+<p>A) 每次点击都会正常 +1 / Increments correctly each click</p>
+<p>B) 永远显示 0 / Always shows 0</p>
+<p>C) 只会变成 1，然后卡住 / Becomes 1 then stuck</p>
+<p>D) 组件会崩溃 / Component crashes</p>
+
+<p><strong>正确答案 / Correct:</strong> C</p>
+
+<p>中文解释：<code>useCallback(..., [])</code> 把 <code>inc</code> 固定住了，但它闭包里捕获的 <code>n</code> 永远是初始值 0，所以每次都是 <code>setN(0 + 1)</code>。</p>
+
+<p>English: The callback is memoized with an empty deps array, so it captures <code>n=0</code> forever. Each click sets <code>n</code> to <code>1</code> again.</p>
+
+<p>✅ 修复方式：用 functional update</p>
+<pre><code>
+const inc = useCallback(() =&gt; setN((x) =&gt; x + 1), []);
+</code></pre>
+
+<hr/>
+
+<h2>❌ 常见错误 vs ✅ 正确方式 / Common mistake vs correct approach</h2>
+
+<p><strong>❌ 错误：custom hook 里依赖不稳定，导致无限刷新 / unstable deps causing loops</strong></p>
+<pre><code>
+useEffect(() =&gt; {
+  fetch(url).then(...)
+}, [options]) // options is a new object every render
+</code></pre>
+
+<p><strong>✅ 正确：让依赖稳定（useMemo / useCallback / 把对象提升到外层）</strong></p>
+<pre><code>
+const options = useMemo(() =&gt; ({ headers: { &quot;x&quot;: &quot;1&quot; } }), []);
+useEffect(() =&gt; {
+  fetch(url, options).then(...)
+}, [url, options])
+</code></pre>
+
+<hr/>
+
+<h2>什么时候用 / When to use</h2>
+<p>- ✅ 当你要复用“状态 + 副作用 + 取消/清理 + 触发刷新”的组合逻辑</p>
+<p>- ✅ 当你希望组件变得更像“UI 视图层”，逻辑下沉到 hook</p>
+
+<h2>什么时候不要用 / When NOT to use</h2>
+<p>- ❌ 只是复用一个纯函数：直接写 utility function 就好</p>
+<p>- ❌ hook 内部逻辑强耦合某个页面的 UI 结构：可能该用组件/组合而不是 hook</p>
+<p>- ❌ 你还没搞清楚边界：先写在组件里，稳定后再抽取（避免过早抽象）</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- React Docs — Reusing Logic with Custom Hooks: https://react.dev/learn/reusing-logic-with-custom-hooks</p>
+<p>- React Docs — useCallback: https://react.dev/reference/react/useCallback</p>
+<p>- MDN — AbortController (cancel fetch): https://developer.mozilla.org/en-US/docs/Web/API/AbortController</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>中文：Custom Hook 就像把“做菜步骤”写成一个固定食谱。以后每次要做同样的菜（同样的逻辑），你就直接用这份食谱，而不是每次都从头想一遍。</p>
+
+<p>English: A custom hook is a reusable recipe for state + side effects. You call the recipe in different components instead of rewriting the steps each time.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI Day 14</h2>
+<h2>LoRA &amp; QLoRA — Efficient Fine-Tuning</h2>
+
+<p>&gt; <strong>Mode:</strong> CONCEPT · <strong>Category:</strong> Training · <strong>Read time:</strong> 2 min</p>
+
+<hr/>
+
+<h2>🧠 直觉解释 / Intuition</h2>
+
+<p><strong>中文：</strong></p>
+<p>全量微调（full fine-tuning）像是把整本教科书都重写一遍：效果可能好，但成本极高（显存/时间/存储），而且不小心会“改坏”模型的通用能力。</p>
+
+<p><strong>LoRA</strong>（Low-Rank Adaptation）更像是：</p>
+<p>- <strong>原模型权重冻结不动</strong>（不重写教科书）</p>
+<p>- 只加一层“薄薄的可训练适配器”来改变模型行为（像贴便签/补丁）</p>
+
+<p><strong>QLoRA</strong> 则是在 LoRA 基础上再做一步：</p>
+<p>- <strong>把基座模型量化</strong>（比如 4-bit）来极大降低显存占用</p>
+<p>- 仍然用 LoRA 训练小适配器，从而让你在更小的 GPU 上也能做高质量微调</p>
+
+<p><strong>English:</strong></p>
+<p>Full fine-tuning is rewriting the whole book: powerful but expensive and risky. LoRA freezes the base model and learns small low-rank “adapter” matrices (patches). QLoRA further quantizes the base model (e.g., 4-bit) to cut VRAM dramatically while still training LoRA adapters.</p>
+
+<hr/>
+
+<h2>⚙️ 它是怎么工作的 / How it works</h2>
+
+<p><strong>中文：</strong></p>
+<p>在 Transformer 里，大量参数集中在注意力/FFN 的线性层（比如 <code>W</code>）。LoRA 把权重更新 ΔW 表示为两个小矩阵的乘积：</p>
+
+<p>- <strong>ΔW = A · B</strong>，其中 A、B 的秩（rank）很小（r ≪ d）</p>
+<p>- 训练时只更新 A、B（参数量从 O(d²) 变成 O(2·d·r)）</p>
+<p>- 推理时可以把 ΔW 合并回 W（不增加太多推理开销）</p>
+
+<p><strong>QLoRA：</strong></p>
+<p>- 基座权重用 4-bit NF4 等量化方式存储</p>
+<p>- 训练时用更高精度（比如 bfloat16）在计算路径中做补偿（常见做法是 double quantization 等技巧）</p>
+
+<p><strong>English:</strong></p>
+<p>LoRA factorizes the weight update as ΔW = A·B with small rank r. You train only A and B (far fewer parameters). QLoRA quantizes the base weights (often 4-bit) and trains LoRA adapters on top, using careful compute dtypes/quantization tricks to keep quality.</p>
+
+<hr/>
+
+<h2>✅ 什么时候用 / When to use</h2>
+
+<p>- <strong>中文：</strong></p>
+<p>- 你想针对“特定任务/风格/领域语料”提升效果，但预算有限</p>
+<p>- 你希望可控地“加能力”，并且随时能切换不同 adapter（一个基座多个 LoRA）</p>
+<p>- 你需要在单卡/小显存环境训练</p>
+
+<p>- <strong>English:</strong></p>
+<p>- You need task/domain/style adaptation on a budget</p>
+<p>- You want modular adapters you can swap (one base, many LoRAs)</p>
+<p>- You’re constrained by VRAM (single GPU / smaller GPUs)</p>
+
+<hr/>
+
+<h2>🧪 可运行示例（≤15 行）/ Runnable snippet (≤15 lines)</h2>
+
+<p>&gt; 下面示例展示“加载 LoRA adapter”的最小思路（训练通常更长、代码更多）。</p>
+
+<pre><code>
+# pip install -U transformers peft torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+
+base = &quot;gpt2&quot;  # demo base model
+lora_path = &quot;./my_lora_adapter&quot;  # your saved LoRA adapter folder
+
+tok = AutoTokenizer.from_pretrained(base)
+model = AutoModelForCausalLM.from_pretrained(base)
+model = PeftModel.from_pretrained(model, lora_path)
+
+prompt = &quot;Write a short product update:&quot;
+print(tok.decode(model.generate(**tok(prompt, return_tensors=&quot;pt&quot;), max_new_tokens=40)[0]))
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- LoRA paper (arXiv): https://arxiv.org/abs/2106.09685</p>
+<p>- QLoRA paper (arXiv): https://arxiv.org/abs/2305.14314</p>
+<p>- Hugging Face PEFT docs: https://huggingface.co/docs/peft/index</p>
+
+<h2>🧒 ELI5</h2>
+
+<p><strong>中文：</strong></p>
+<p>LoRA 就像给机器人加一副“可拆卸的小眼镜”，不改它原来的大脑，只训练这副眼镜让它更擅长某件事。QLoRA 则是把机器人的大脑“压缩存起来”，省空间省钱，但仍能换不同眼镜来学习新技能。</p>
+
+<p><strong>English:</strong></p>
+<p>LoRA is a small attachable add-on that changes behavior without rewriting the whole brain. QLoRA compresses the brain to save memory, then still learns those small add-ons.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-03-29</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

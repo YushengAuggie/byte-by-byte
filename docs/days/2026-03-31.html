@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-03-31</title>
+  <meta name="description" content="byte-by-byte daily lessons for Tuesday, March 31, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Tuesday, March 31, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-03-31.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-03-29.html" style="color:var(--text2)">← 2026-03-29</a>
+    <a href="2026-04-01.html" style="color:var(--text2)">2026-04-01 →</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-03-31</span>
+    <h1>Tuesday, March 31, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-03-29.html" class="day-nav-btn">← 2026-03-29</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <a href="2026-04-01.html" class="day-nav-btn">2026-04-01 →</a>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 Day 14 / System Design Day 14</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 Day 14 / System Design Day 14</h1>
+<h2>微服务 vs 单体架构 / Microservices vs Monolith</h2>
+
+<blockquote><strong>难度 / Difficulty:</strong> Intermediate · <strong>阶段 / Phase:</strong> Growth · <strong>预计阅读 / Read time:</strong> 3 min</blockquote>
+
+<hr/>
+
+<h2>🌍 真实场景 / Real-World Scenario</h2>
+
+<p>想象你在一家初创公司工作，产品刚上线，代码都在一个仓库里。随着用户量增长到百万级别，你开始思考：要不要把代码拆成独立的服务？什么时候该拆？怎么拆？</p>
+
+<p>Imagine you're at a startup. Your entire product lives in one codebase. As you scale to millions of users, you face the classic question: should you break it apart into microservices? When? How?</p>
+
+<hr/>
+
+<h2>🏛️ 架构图 / Architecture Diagrams</h2>
+
+<h3>单体架构 / Monolith</h3>
+<div class="diagram-block">┌─────────────────────────────────────────┐
+│              Monolith App               │
+│  ┌──────────┐ ┌──────────┐ ┌─────────┐ │
+│  │  Users   │ │ Orders   │ │Payments │ │
+│  │ Module   │ │ Module   │ │ Module  │ │
+│  └────┬─────┘ └────┬─────┘ └────┬────┘ │
+│       └─────────────┴─────────────┘     │
+│                    │                    │
+│          ┌─────────▼─────────┐         │
+│          │   Single Database │         │
+│          └───────────────────┘         │
+└─────────────────────────────────────────┘
+         │ Deploy everything together │</div>
+
+<h3>微服务架构 / Microservices</h3>
+<div class="diagram-block">Client ──► API Gateway
+               │
+      ┌────────┼────────┐
+      ▼        ▼        ▼
+ ┌────────┐ ┌──────┐ ┌──────────┐
+ │ Users  │ │Orders│ │ Payments │
+ │Service │ │Svc   │ │ Service  │
+ └───┬────┘ └──┬───┘ └───┬──────┘
+     │         │          │
+  ┌──▼──┐  ┌──▼──┐   ┌───▼───┐
+  │ DB  │  │ DB  │   │  DB   │
+  └─────┘  └─────┘   └───────┘
+   (独立部署, message queue 通信)</div>
+
+<hr/>
+
+<h2>⚖️ 核心权衡 / Key Tradeoffs</h2>
+
+<h3>为什么选单体？/ Why Monolith?</h3>
+<ul><li><strong>简单</strong> — 一个代码库，一次部署，本地开发直接跑</li><li><strong>低延迟</strong> — 模块间函数调用，无网络开销</li><li><strong>事务一致性</strong> — 一个数据库，ACID 事务天然支持</li><li><strong>适合阶段</strong> — 团队 &lt; 20 人，产品 PMF 还没验证时</li></ul>
+
+<h3>为什么选微服务？/ Why Microservices?</h3>
+<ul><li><strong>独立扩展</strong> — Payment 服务流量暴增，只扩它，不动 Users 服务</li><li><strong>技术异构</strong> — 推荐系统用 Python/ML，API 层用 Go，各自最优</li><li><strong>故障隔离</strong> — 一个服务崩了，不影响整体</li><li><strong>团队自治</strong> — 不同团队独立发布，互不阻塞</li><li><strong>适合阶段</strong> — 团队 &gt; 50 人，有专门 DevOps/Platform 团队时</li></ul>
+
+<h3>对比表 / Comparison</h3>
+<table><thead><tr><th>维度</th><th>单体</th><th>微服务</th></tr></thead><tbody><tr><td>部署复杂度</td><td>低 ✅</td><td>高 ❌</td></tr><tr><td>开发速度(早期)</td><td>快 ✅</td><td>慢 ❌</td></tr><tr><td>独立扩展</td><td>❌</td><td>✅</td></tr><tr><td>故障隔离</td><td>❌</td><td>✅</td></tr><tr><td>数据一致性</td><td>容易 ✅</td><td>需要设计 ❌</td></tr><tr><td>运维成本</td><td>低 ✅</td><td>高 ❌</td></tr></tbody></table>
+
+<hr/>
+
+<h2>🪤 别踩这个坑 / Common Mistakes</h2>
+
+<p><strong>❌ 坑1: 过早微服务化 (Premature Microservices)</strong></p>
+<p>刚起步就拆服务，结果团队只有3个人要维护10个服务+Kubernetes。</p>
+<blockquote>"We went microservices on day one, and it almost killed us." — every startup that tried it too early</blockquote>
+
+<p><strong>✅ 正确做法:</strong> 先做"模块化单体"(Modular Monolith)，内部模块化，边界清晰，后期再物理拆分。</p>
+
+<p><strong>❌ 坑2: 分布式单体 (Distributed Monolith)</strong></p>
+<p>拆成多个服务，但服务之间强耦合，必须同步部署。既有微服务的复杂性，又没有微服务的好处。</p>
+
+<p><strong>✅ 正确做法:</strong> 服务间通过 API 或消息队列解耦，不共享数据库。</p>
+
+<p><strong>❌ 坑3: 忽视跨服务事务</strong></p>
+<p>订单服务扣库存成功，支付服务失败了，数据不一致。</p>
+
+<p><strong>✅ 正确做法:</strong> 使用 Saga 模式或最终一致性设计。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://martinfowler.com/articles/microservices.html">Martin Fowler — Microservices</a></li><li><a href="https://martinfowler.com/bliki/MonolithFirst.html">Martin Fowler — Monolith First</a></li><li><a href="https://aws.amazon.com/microservices/">AWS — Microservices vs Monolithic Architecture</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>单体就像一家小餐厅，一个厨房做所有菜，简单高效。微服务像大型餐厅连锁，每家分店专做一类菜，可以独立扩张，但管理更复杂。刚开始开一家店，别一上来就开连锁。</p>
+
+<p>Monolith = one kitchen that cooks everything. Simple, fast to start. Microservices = a food court where each stall specializes. Great at scale, but way more management. Start with one kitchen; split when it gets too crowded.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 Day 14 / Algorithms Day 14</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 Day 14 / Algorithms Day 14</h1>
+<h2>#42 Trapping Rain Water (Hard) — Two Pointers</h2>
+
+<p>🧩 <strong>Two Pointers (5/5)</strong> — building on the template from earlier days in this block</p>
+
+<ul><li>🔗 LeetCode: https://leetcode.com/problems/trapping-rain-water/  🔴</li><li>📹 NeetCode: https://www.youtube.com/watch?v=ZI2z5pq0TqA</li><li><strong>Pattern / 模式:</strong> Two Pointers（双指针）</li></ul>
+
+<hr/>
+
+<h2>🌧️ 现实类比 / Real-world analogy</h2>
+
+<p>把城市的屋顶想成一排高度不同的墙。下雨后，低洼处会积水，但能积多少取决于它左边最高的墙和右边最高的墙：</p>
+
+<blockquote><strong>water[i] = min(maxLeft, maxRight) - height[i]</strong>（如果为正）</blockquote>
+
+<p>Think of bars as walls. The water above a bar is limited by the shorter of the tallest wall on its left and the tallest wall on its right.</p>
+
+<hr/>
+
+<h2>🧠 问题重述 / Problem</h2>
+
+<p>给定数组 <code>height</code> 表示柱子高度，每根柱子宽度为 1，计算下雨后能接多少雨水。</p>
+
+<p>Given <code>height</code>, compute total trapped water.</p>
+
+<hr/>
+
+<h2>🧩 如何映射到双指针模板 / Map to the Two Pointers template</h2>
+
+<p>之前的双指针块（</p>
+<p>#125 回文、#167 两数之和II、#15 三数之和、#11 盛最多水的容器</p>
+<p>）里，左右指针“夹逼”的核心是：</p>
+
+<ul><li><strong>每一步都能确定一侧的最优/可行性</strong>，因此可以移动那一侧，整体 O(n)</li></ul>
+
+<p>这题的“变化点”是：</p>
+<ul><li>我们不再追求 pair/sum，而是维护 <strong>leftMax / rightMax</strong>，并在每一步“结算”一侧的水量。</li></ul>
+
+<p>Key twist vs earlier problems: instead of comparing sums/areas, we compare <code>leftMax</code> and <code>rightMax</code>. The side with the smaller max can be finalized because its limiting wall is known.</p>
+
+<hr/>
+
+<h2>✅ 双指针解法 / Two pointers solution</h2>
+
+<h3>核心思路 / Key idea</h3>
+
+<ul><li><code>l, r</code> 从两端向中间走</li><li>维护 <code>leftMax = max(height[0..l])</code>，<code>rightMax = max(height[r..end])</code></li><li><strong>如果 <code>leftMax &lt; rightMax</code></strong>：左边的水位上限已确定（被 leftMax 限制），可以计算 <code>l</code> 位置的水并 <code>l += 1</code></li><li>否则：对称处理右边</li></ul>
+
+<hr/>
+
+<h3>Python 代码 / Python code</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from typing import List&#10;&#10;class Solution:&#10;    def trap(self, height: List[int]) -&gt; int:&#10;        l, r = 0, len(height) - 1&#10;        left_max, right_max = 0, 0&#10;        water = 0&#10;&#10;        while l &lt; r:&#10;            if height[l] &lt; height[r]:&#10;                # left side is bounded by left_max&#10;                if height[l] &gt;= left_max:&#10;                    left_max = height[l]&#10;                else:&#10;                    water += left_max - height[l]&#10;                l += 1&#10;            else:&#10;                # right side is bounded by right_max&#10;                if height[r] &gt;= right_max:&#10;                    right_max = height[r]&#10;                else:&#10;                    water += right_max - height[r]&#10;                r -= 1&#10;&#10;        return water">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> typing <span style="color:#c678dd;">import</span> List
+
+<span style="color:#c678dd;">class</span> Solution:
+    <span style="color:#c678dd;">def</span> trap(self, height: List[int]) -&gt; int:
+        l, r = <span style="color:#56b6c2;">0</span>, len(height) - <span style="color:#56b6c2;">1</span>
+        left_max, right_max = <span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">0</span>
+        water = <span style="color:#56b6c2;">0</span>
+
+        <span style="color:#c678dd;">while</span> l &lt; r:
+            <span style="color:#c678dd;">if</span> height[l] &lt; height[r]:
+                <span style="color:#5c6370;"># left side is bounded by left_max</span>
+                <span style="color:#c678dd;">if</span> height[l] &gt;= left_max:
+                    left_max = height[l]
+                <span style="color:#c678dd;">else</span>:
+                    water += left_max - height[l]
+                l += <span style="color:#56b6c2;">1</span>
+            <span style="color:#c678dd;">else</span>:
+                <span style="color:#5c6370;"># right side is bounded by right_max</span>
+                <span style="color:#c678dd;">if</span> height[r] &gt;= right_max:
+                    right_max = height[r]
+                <span style="color:#c678dd;">else</span>:
+                    water += right_max - height[r]
+                r -= <span style="color:#56b6c2;">1</span>
+
+        <span style="color:#c678dd;">return</span> water</code></pre>
+</div>
+
+<hr/>
+
+<h2>🔍 手动走一遍 / Quick trace</h2>
+
+<p>例子：<code>[0,1,0,2,1,0,1,3,2,1,2,1]</code></p>
+
+<ul><li>开始 <code>l=0, r=11, left_max=0, right_max=0, water=0</code></li><li>右边较高（1 vs 1 走 else），更新 <code>right_max=1</code>，<code>r=10</code></li><li>当左边较小（0 &lt; 2）：左侧可结算，<code>left_max=0</code>，<code>l=1</code></li><li><code>height[2]=0</code> 时，<code>left_max=1</code>，水 += 1-0 = 1</li><li>... 最终累计 <code>water=6</code></li></ul>
+
+<p>Why it works: the side with the smaller boundary max is the limiting factor, so we can safely finalize water there without knowing the exact interior structure.</p>
+
+<hr/>
+
+<h2>⏱️ 复杂度 / Complexity</h2>
+
+<ul><li>Time: <strong>O(n)</strong> (each pointer moves at most n steps)</li><li>Space: <strong>O(1)</strong></li></ul>
+
+<hr/>
+
+<h2>举一反三 / Transfer within this pattern block</h2>
+
+<ul><li>#11 Container With Most Water：移动“短板”来寻找更可能变大的面积</li><li>#15 3Sum：固定一个数 + 双指针夹逼</li><li>#125 Valid Palindrome：两端检查并向内收缩</li></ul>
+
+<p>共同点：</p>
+<ul><li><strong>每一步移动都基于一个可证明的单调性/界限</strong>，避免 O(n^2)</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>LeetCode editorial: https://leetcode.com/problems/trapping-rain-water/editorial/</li><li>NeetCode explanation (video): https://www.youtube.com/watch?v=ZI2z5pq0TqA</li><li>GeeksforGeeks (two-pointer approach): https://www.geeksforgeeks.org/trapping-rain-water/</li></ul>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你在一排积木之间倒水。某一格能装多少水，只取决于它左边最高的积木和右边最高的积木里较矮的那个。双指针就是从两边往中间走，随时记住“目前看到的最高积木”，然后一格一格把水算出来。</p>
+
+<p>Imagine filling water between blocks. A spot’s water level is capped by the shorter of the tallest block on its left and right. Two pointers walk inward, tracking those tallest blocks and adding water as you go.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 Day 14 / Soft Skills Day 14</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 Day 14 / Soft Skills Day 14</h1>
+<h2>Tell me about a time you drove a large cross-team initiative</h2>
+
+<blockquote><strong>级别 / Level:</strong> Staff · <strong>主题 / Category:</strong> Leadership · <strong>Read time:</strong> 2 min</blockquote>
+
+<hr/>
+
+<h2>为什么重要 / Why this matters</h2>
+
+<p><strong>中文：</strong></p>
+<p>跨团队项目（例如：统一身份认证、支付迁移、数据平台升级、全站性能治理）最大的风险往往不是技术，而是<strong>对齐、节奏、依赖、沟通成本</strong>。Staff 级别面试官想听到的是：你如何在没有“直接汇报关系”的情况下，把很多人带到同一条船上。</p>
+
+<p><strong>English:</strong></p>
+<p>For cross-team initiatives, the hardest part is rarely the technical design—it’s alignment, dependencies, cadence, and communication overhead. Interviewers want evidence you can lead without formal authority.</p>
+
+<hr/>
+
+<h2>⭐ STAR 结构（建议 90 秒回答）/ STAR structure (aim for 90 seconds)</h2>
+
+<h3>S — Situation（背景）</h3>
+<ul><li>中文：项目是什么？影响范围多大？涉及哪些团队？</li><li>English: What was the initiative? Scope? Which teams?</li></ul>
+
+<h3>T — Task（你的职责）</h3>
+<ul><li>中文：你具体负责什么？目标/成功标准是什么（SLO、迁移比例、成本、上线日期）？</li><li>English: What did you own? What were the success metrics?</li></ul>
+
+<h3>A — Action（你做了什么）</h3>
+<p>用“可复制的方法论”讲：</p>
+<p>1) <strong>定义北极星指标 / Define a north-star metric</strong>：例如 p95 latency、error budget、migration completion。</p>
+<p>2) <strong>把问题拆成工作流 / Break into a plan</strong>：里程碑、风险清单、依赖图、RACI（谁负责/批准/咨询/知会）。</p>
+<p>3) <strong>建立节奏 / Create operating cadence</strong>：每周 cross-team sync、异步周报、决策记录（ADR）、升级通道。</p>
+<p>4) <strong>提前拆雷 / De-risk early</strong>：先做 POC / pilot、灰度、回滚预案、观测（dashboards + alerts）。</p>
+<p>5) <strong>对齐激励 / Align incentives</strong>：明确“对他们有什么好处”（减少 oncall、降低成本、提高转化）。</p>
+
+<p>English (same content):</p>
+<p>1) Define a measurable north-star metric.</p>
+<p>2) Turn ambiguity into a concrete plan (milestones, dependency map, RACI).</p>
+<p>3) Establish cadence (syncs, async updates, decision logs).</p>
+<p>4) De-risk early (pilot, gradual rollout, rollback plan, observability).</p>
+<p>5) Align incentives so partner teams want to participate.</p>
+
+<h3>R — Result（结果）</h3>
+<ul><li>中文：用数字结尾：提前/按期上线、迁移比例、故障率下降、成本节省、开发效率提升。</li><li>English: Close with numbers: completion %, latency improvement, incidents reduced, cost savings.</li></ul>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good（面试官一听就懂）/ Bad vs Good</h2>
+
+<p><strong>❌ Bad（空泛）</strong></p>
+<ul><li>“我组织了很多会议，大家最后达成一致，然后上线了。”</li></ul>
+
+<p><strong>✅ Good（可验证）</strong></p>
+<ul><li>“我先把目标写成 p95 从 800ms 降到 400ms，并把依赖拆成 3 条迁移路径；每周一次跨团队同步 + 每两天异步进度；关键风险是 X 团队的 schema 变更，于是先做了两周 pilot 和双写；最终 6 周内迁移 92%，相关 oncall 事故从每周 5 起降到 1 起。”</li></ul>
+
+<hr/>
+
+<h2>Senior/Staff 加分点 / Senior/Staff-level tips</h2>
+
+<ul><li><strong>把决策写下来</strong>：用 ADR 记录 tradeoffs，不靠“口口相传”。</li><li><strong>沟通要“分层”</strong>：IC 关注任务与风险，Manager 关注里程碑与资源，Exec 关注指标与 ROI。</li><li><strong>处理冲突的方式</strong>：先找共同目标，再用数据/实验说话；必要时明确升级路径。</li><li><strong>让系统自动运行</strong>：好的机制（dashboard、SLO、自动化迁移工具）比个人英雄更可靠。</li></ul>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+<ul><li>中文：跨团队项目 = 目标清晰 + 依赖可视化 + 节奏稳定 + 风险前置 + 激励对齐。</li><li>English: Cross-team success = clear metrics + dependency visibility + steady cadence + early de-risking + aligned incentives.</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>Google SRE Book — Service Level Objectives: https://sre.google/sre-book/service-level-objectives/</li><li>RACI matrix overview (Atlassian): https://www.atlassian.com/team-playbook/plays/roles-and-responsibilities</li><li>Amazon Working Backwards (concept): https://www.aboutamazon.com/news/company-news/working-backwards-how-amazon-starts-with-the-customer</li></ul>
+
+<h2>🧒 ELI5</h2>
+
+<p>中文：你要做一件很多同学一起完成的大作业。你得先说清楚“最终要拿多少分”（指标），再把任务分好、规定每周检查一次进度、提前发现最难的部分先做小实验，最后大家才会真的按同一个计划走。</p>
+
+<p>English: It’s like a big group project. First define what “success” means, split work and owners, check progress regularly, test the risky parts early, and keep everyone moving together.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 Day 14 / Frontend Day 14</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 Day 14 / Frontend Day 14</h1>
+<h2>React Custom Hooks — Extract &amp; Reuse Logic</h2>
+
+<blockquote><strong>阶段 / Phase:</strong> Growth · <strong>Read time:</strong> 2 min</blockquote>
+
+<hr/>
+
+<h2>🧩 真实场景 / Real scenario</h2>
+
+<p>中文：你在做一个 dashboard，需要在多个页面复用“拉取数据 + loading/error + 取消请求 + 刷新”的逻辑。你不想每个组件都写一遍 <code>useEffect</code> + <code>AbortController</code> + 一堆状态。</p>
+
+<p>English: You’re building a dashboard and need reusable “fetch + loading/error + cancellation + refresh” logic across multiple pages.</p>
+
+<hr/>
+
+<h2>✅ 生产可用的 Custom Hook 例子 / Production-ready custom hook</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import { useCallback, useEffect, useRef, useState } from &quot;react&quot;;&#10;&#10;type AsyncState&lt;T&gt; = {&#10;  data: T | null;&#10;  error: string | null;&#10;  loading: boolean;&#10;};&#10;&#10;// Code comments in English&#10;export function useJsonFetch&lt;T&gt;(url: string, deps: unknown[] = []) {&#10;  const [state, setState] = useState&lt;AsyncState&lt;T&gt;&gt;({&#10;    data: null,&#10;    error: null,&#10;    loading: true,&#10;  });&#10;&#10;  // Keep AbortController in a ref so we can cancel in-flight requests.&#10;  const abortRef = useRef&lt;AbortController | null&gt;(null);&#10;&#10;  const run = useCallback(async () =&gt; {&#10;    abortRef.current?.abort();&#10;    const controller = new AbortController();&#10;    abortRef.current = controller;&#10;&#10;    setState((s) =&gt; ({ ...s, loading: true, error: null }));&#10;&#10;    try {&#10;      const res = await fetch(url, { signal: controller.signal });&#10;      if (!res.ok) throw new Error(`HTTP ${res.status}`);&#10;      const json = (await res.json()) as T;&#10;      setState({ data: json, error: null, loading: false });&#10;    } catch (e) {&#10;      // Abort is not a real “error” the user should see&#10;      if ((e as any)?.name === &quot;AbortError&quot;) return;&#10;      setState({ data: null, error: (e as Error).message, loading: false });&#10;    }&#10;  }, [url, ...deps]);&#10;&#10;  useEffect(() =&gt; {&#10;    void run();&#10;    return () =&gt; abortRef.current?.abort();&#10;  }, [run]);&#10;&#10;  return { ...state, refresh: run };&#10;}">Copy</button>
+  <pre><code class="language-tsx">import { useCallback, useEffect, useRef, useState } from "react";
+
+type AsyncState&lt;T&gt; = {
+  data: T | null;
+  error: string | null;
+  loading: boolean;
+};
+
+// Code comments in English
+export function useJsonFetch&lt;T&gt;(url: string, deps: unknown[] = []) {
+  const [state, setState] = useState&lt;AsyncState&lt;T&gt;&gt;({
+    data: null,
+    error: null,
+    loading: true,
+  });
+
+  // Keep AbortController in a ref so we can cancel in-flight requests.
+  const abortRef = useRef&lt;AbortController | null&gt;(null);
+
+  const run = useCallback(async () =&gt; {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setState((s) =&gt; ({ ...s, loading: true, error: null }));
+
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as T;
+      setState({ data: json, error: null, loading: false });
+    } catch (e) {
+      // Abort is not a real “error” the user should see
+      if ((e as any)?.name === "AbortError") return;
+      setState({ data: null, error: (e as Error).message, loading: false });
+    }
+  }, [url, ...deps]);
+
+  useEffect(() =&gt; {
+    void run();
+    return () =&gt; abortRef.current?.abort();
+  }, [run]);
+
+  return { ...state, refresh: run };
+}</code></pre>
+</div>
+
+<p><strong>怎么用 / How to use:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="type User = { id: string; name: string };&#10;&#10;function UsersPanel() {&#10;  const { data, loading, error, refresh } = useJsonFetch&lt;User[]&gt;(&quot;/api/users&quot;);&#10;&#10;  if (loading) return &lt;div&gt;Loading…&lt;/div&gt;;&#10;  if (error) return &lt;button onClick={refresh}&gt;Retry: {error}&lt;/button&gt;;&#10;  return (&#10;    &lt;div&gt;&#10;      &lt;button onClick={refresh}&gt;Refresh&lt;/button&gt;&#10;      &lt;ul&gt;{data?.map((u) =&gt; &lt;li key={u.id}&gt;{u.name}&lt;/li&gt;)}&lt;/ul&gt;&#10;    &lt;/div&gt;&#10;  );&#10;}">Copy</button>
+  <pre><code class="language-tsx">type User = { id: string; name: string };
+
+function UsersPanel() {
+  const { data, loading, error, refresh } = useJsonFetch&lt;User[]&gt;("/api/users");
+
+  if (loading) return &lt;div&gt;Loading…&lt;/div&gt;;
+  if (error) return &lt;button onClick={refresh}&gt;Retry: {error}&lt;/button&gt;;
+  return (
+    &lt;div&gt;
+      &lt;button onClick={refresh}&gt;Refresh&lt;/button&gt;
+      &lt;ul&gt;{data?.map((u) =&gt; &lt;li key={u.id}&gt;{u.name}&lt;/li&gt;)}&lt;/ul&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+</div>
+
+<hr/>
+
+<h2>🧠 “猜猜这段代码输出什么？”/ Output quiz</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="function Demo() {&#10;  const [n, setN] = useState(0);&#10;&#10;  const inc = useCallback(() =&gt; setN(n + 1), []);&#10;&#10;  return &lt;button onClick={inc}&gt;{n}&lt;/button&gt;;&#10;}">Copy</button>
+  <pre><code class="language-tsx">function Demo() {
+  const [n, setN] = useState(0);
+
+  const inc = useCallback(() =&gt; setN(n + 1), []);
+
+  return &lt;button onClick={inc}&gt;{n}&lt;/button&gt;;
+}</code></pre>
+</div>
+
+<p>A) 每次点击都会正常 +1 / Increments correctly each click  </p>
+<p>B) 永远显示 0 / Always shows 0  </p>
+<p>C) 只会变成 1，然后卡住 / Becomes 1 then stuck  </p>
+<p>D) 组件会崩溃 / Component crashes</p>
+
+<p><strong>正确答案 / Correct:</strong> C</p>
+
+<p>中文解释：<code>useCallback(..., [])</code> 把 <code>inc</code> 固定住了，但它闭包里捕获的 <code>n</code> 永远是初始值 0，所以每次都是 <code>setN(0 + 1)</code>。</p>
+
+<p>English: The callback is memoized with an empty deps array, so it captures <code>n=0</code> forever. Each click sets <code>n</code> to <code>1</code> again.</p>
+
+<p>✅ 修复方式：用 functional update</p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="const inc = useCallback(() =&gt; setN((x) =&gt; x + 1), []);">Copy</button>
+  <pre><code class="language-tsx">const inc = useCallback(() =&gt; setN((x) =&gt; x + 1), []);</code></pre>
+</div>
+
+<hr/>
+
+<h2>❌ 常见错误 vs ✅ 正确方式 / Common mistake vs correct approach</h2>
+
+<p><strong>❌ 错误：custom hook 里依赖不稳定，导致无限刷新 / unstable deps causing loops</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="useEffect(() =&gt; {&#10;  fetch(url).then(...)&#10;}, [options]) // options is a new object every render">Copy</button>
+  <pre><code class="language-tsx">useEffect(() =&gt; {
+  fetch(url).then(...)
+}, [options]) // options is a new object every render</code></pre>
+</div>
+
+<p><strong>✅ 正确：让依赖稳定（useMemo / useCallback / 把对象提升到外层）</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="const options = useMemo(() =&gt; ({ headers: { &quot;x&quot;: &quot;1&quot; } }), []);&#10;useEffect(() =&gt; {&#10;  fetch(url, options).then(...)&#10;}, [url, options])">Copy</button>
+  <pre><code class="language-tsx">const options = useMemo(() =&gt; ({ headers: { "x": "1" } }), []);
+useEffect(() =&gt; {
+  fetch(url, options).then(...)
+}, [url, options])</code></pre>
+</div>
+
+<hr/>
+
+<h2>什么时候用 / When to use</h2>
+<ul><li>✅ 当你要复用“状态 + 副作用 + 取消/清理 + 触发刷新”的组合逻辑</li><li>✅ 当你希望组件变得更像“UI 视图层”，逻辑下沉到 hook</li></ul>
+
+<h2>什么时候不要用 / When NOT to use</h2>
+<ul><li>❌ 只是复用一个纯函数：直接写 utility function 就好</li><li>❌ hook 内部逻辑强耦合某个页面的 UI 结构：可能该用组件/组合而不是 hook</li><li>❌ 你还没搞清楚边界：先写在组件里，稳定后再抽取（避免过早抽象）</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>React Docs — Reusing Logic with Custom Hooks: https://react.dev/learn/reusing-logic-with-custom-hooks</li><li>React Docs — useCallback: https://react.dev/reference/react/useCallback</li><li>MDN — AbortController (cancel fetch): https://developer.mozilla.org/en-US/docs/Web/API/AbortController</li></ul>
+
+<h2>🧒 ELI5</h2>
+
+<p>中文：Custom Hook 就像把“做菜步骤”写成一个固定食谱。以后每次要做同样的菜（同样的逻辑），你就直接用这份食谱，而不是每次都从头想一遍。</p>
+
+<p>English: A custom hook is a reusable recipe for state + side effects. You call the recipe in different components instead of rewriting the steps each time.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI Day 14</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI Day 14</h1>
+<h2>LoRA &amp; QLoRA — Efficient Fine-Tuning</h2>
+
+<blockquote><strong>Mode:</strong> CONCEPT · <strong>Category:</strong> Training · <strong>Read time:</strong> 2 min</blockquote>
+
+<hr/>
+
+<h2>🧠 直觉解释 / Intuition</h2>
+
+<p><strong>中文：</strong></p>
+<p>全量微调（full fine-tuning）像是把整本教科书都重写一遍：效果可能好，但成本极高（显存/时间/存储），而且不小心会“改坏”模型的通用能力。</p>
+
+<p><strong>LoRA</strong>（Low-Rank Adaptation）更像是：</p>
+<ul><li><strong>原模型权重冻结不动</strong>（不重写教科书）</li><li>只加一层“薄薄的可训练适配器”来改变模型行为（像贴便签/补丁）</li></ul>
+
+<p><strong>QLoRA</strong> 则是在 LoRA 基础上再做一步：</p>
+<ul><li><strong>把基座模型量化</strong>（比如 4-bit）来极大降低显存占用</li><li>仍然用 LoRA 训练小适配器，从而让你在更小的 GPU 上也能做高质量微调</li></ul>
+
+<p><strong>English:</strong></p>
+<p>Full fine-tuning is rewriting the whole book: powerful but expensive and risky. LoRA freezes the base model and learns small low-rank “adapter” matrices (patches). QLoRA further quantizes the base model (e.g., 4-bit) to cut VRAM dramatically while still training LoRA adapters.</p>
+
+<hr/>
+
+<h2>⚙️ 它是怎么工作的 / How it works</h2>
+
+<p><strong>中文：</strong></p>
+<p>在 Transformer 里，大量参数集中在注意力/FFN 的线性层（比如 <code>W</code>）。LoRA 把权重更新 ΔW 表示为两个小矩阵的乘积：</p>
+
+<ul><li><strong>ΔW = A · B</strong>，其中 A、B 的秩（rank）很小（r ≪ d）</li><li>训练时只更新 A、B（参数量从 O(d²) 变成 O(2·d·r)）</li><li>推理时可以把 ΔW 合并回 W（不增加太多推理开销）</li></ul>
+
+<p><strong>QLoRA：</strong></p>
+<ul><li>基座权重用 4-bit NF4 等量化方式存储</li><li>训练时用更高精度（比如 bfloat16）在计算路径中做补偿（常见做法是 double quantization 等技巧）</li></ul>
+
+<p><strong>English:</strong></p>
+<p>LoRA factorizes the weight update as ΔW = A·B with small rank r. You train only A and B (far fewer parameters). QLoRA quantizes the base weights (often 4-bit) and trains LoRA adapters on top, using careful compute dtypes/quantization tricks to keep quality.</p>
+
+<hr/>
+
+<h2>✅ 什么时候用 / When to use</h2>
+
+<ul><li><strong>中文：</strong></li></ul>
+<p>  - 你想针对“特定任务/风格/领域语料”提升效果，但预算有限</p>
+<p>  - 你希望可控地“加能力”，并且随时能切换不同 adapter（一个基座多个 LoRA）</p>
+<p>  - 你需要在单卡/小显存环境训练</p>
+
+<ul><li><strong>English:</strong></li></ul>
+<p>  - You need task/domain/style adaptation on a budget</p>
+<p>  - You want modular adapters you can swap (one base, many LoRAs)</p>
+<p>  - You’re constrained by VRAM (single GPU / smaller GPUs)</p>
+
+<hr/>
+
+<h2>🧪 可运行示例（≤15 行）/ Runnable snippet (≤15 lines)</h2>
+
+<blockquote>下面示例展示“加载 LoRA adapter”的最小思路（训练通常更长、代码更多）。</blockquote>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# pip install -U transformers peft torch&#10;from transformers import AutoModelForCausalLM, AutoTokenizer&#10;from peft import PeftModel&#10;&#10;base = &quot;gpt2&quot;  # demo base model&#10;lora_path = &quot;./my_lora_adapter&quot;  # your saved LoRA adapter folder&#10;&#10;tok = AutoTokenizer.from_pretrained(base)&#10;model = AutoModelForCausalLM.from_pretrained(base)&#10;model = PeftModel.from_pretrained(model, lora_path)&#10;&#10;prompt = &quot;Write a short product update:&quot;&#10;print(tok.decode(model.generate(**tok(prompt, return_tensors=&quot;pt&quot;), max_new_tokens=40)[0]))">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># pip install -U transformers peft torch</span>
+<span style="color:#c678dd;">from</span> transformers <span style="color:#c678dd;">import</span> AutoModelForCausalLM, AutoTokenizer
+<span style="color:#c678dd;">from</span> peft <span style="color:#c678dd;">import</span> PeftModel
+
+base = <span style="color:#e5c07b;">"gpt2"</span>  <span style="color:#5c6370;"># demo base model</span>
+lora_path = <span style="color:#e5c07b;">"./my_lora_adapter"</span>  <span style="color:#5c6370;"># your saved LoRA adapter folder</span>
+
+tok = AutoTokenizer.from_pretrained(base)
+model = AutoModelForCausalLM.from_pretrained(base)
+model = PeftModel.from_pretrained(model, lora_path)
+
+prompt = <span style="color:#e5c07b;">"Write a short product update:"</span>
+print(tok.decode(model.generate(**tok(prompt, return_tensors=<span style="color:#e5c07b;">"pt"</span>), max_new_tokens=<span style="color:#56b6c2;">40</span>)[<span style="color:#56b6c2;">0</span>]))</code></pre>
+</div>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>LoRA paper (arXiv): https://arxiv.org/abs/2106.09685</li><li>QLoRA paper (arXiv): https://arxiv.org/abs/2305.14314</li><li>Hugging Face PEFT docs: https://huggingface.co/docs/peft/index</li></ul>
+
+<h2>🧒 ELI5</h2>
+
+<p><strong>中文：</strong></p>
+<p>LoRA 就像给机器人加一副“可拆卸的小眼镜”，不改它原来的大脑，只训练这副眼镜让它更擅长某件事。QLoRA 则是把机器人的大脑“压缩存起来”，省空间省钱，但仍能换不同眼镜来学习新技能。</p>
+
+<p><strong>English:</strong></p>
+<p>LoRA is a small attachable add-on that changes behavior without rewriting the whole brain. QLoRA compresses the brain to save memory, then still learns those small add-ons.</p>
+
+<div class="attention-card">
+  <h3>Attention Heatmap</h3>
+  <p>When the model processes <code>it</code>, it attends most strongly to <code>animal</code>.</p>
+  <div class="heatmap-wrap">
+    <table class="heatmap">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="heatmap-axis">The</th><th class="heatmap-axis">animal</th><th class="heatmap-axis">didnt</th><th class="heatmap-axis">cross</th><th class="heatmap-axis">the</th><th class="heatmap-axis">street</th><th class="heatmap-axis">because</th><th class="heatmap-axis">it</th><th class="heatmap-axis">was</th><th class="heatmap-axis">too</th><th class="heatmap-axis">tired</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="heatmap-axis row-label">it →</th>
+          <td><div class="heatmap-cell" title="The: 0.02" aria-label="The attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="animal: 0.86" aria-label="animal attention weight 0.86" style="background:rgba(167, 139, 250, 0.86);"></div></td><td><div class="heatmap-cell" title="didnt: 0.03" aria-label="didnt attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="cross: 0.04" aria-label="cross attention weight 0.04" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="the: 0.02" aria-label="the attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="street: 0.08" aria-label="street attention weight 0.08" style="background:rgba(167, 139, 250, 0.08);"></div></td><td><div class="heatmap-cell" title="because: 0.05" aria-label="because attention weight 0.05" style="background:rgba(167, 139, 250, 0.05);"></div></td><td><div class="heatmap-cell" title="it: 0.03" aria-label="it attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="was: 0.07" aria-label="was attention weight 0.07" style="background:rgba(167, 139, 250, 0.07);"></div></td><td><div class="heatmap-cell" title="too: 0.10" aria-label="too attention weight 0.10" style="background:rgba(167, 139, 250, 0.10);"></div></td><td><div class="heatmap-cell" title="tired: 0.30" aria-label="tired attention weight 0.30" style="background:rgba(167, 139, 250, 0.30);"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
