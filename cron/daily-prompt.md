@@ -1,3 +1,19 @@
+# ⚠️ DEPRECATED — DO NOT USE
+
+This prompt is deprecated as of 2026-04-04. It was the original monolithic prompt
+that combined weekday + saturday + sunday logic (~22KB), causing 55-minute LLM timeouts.
+
+**Active prompts:**
+- `weekday-prompt.md` — Mon-Fri generation
+- `saturday-prompt.md` — Saturday deep dive
+- `sunday-prompt.md` — Sunday week review
+- `review-and-send-prompt.md` — QA + delivery (runs 5 min after generation)
+
+This file is kept for reference only. If you need the legacy behavior, split it into
+the separate prompt files above.
+
+---
+
 You are the byte-by-byte daily knowledge generator. Generate 5 sections of bilingual (Chinese/English) tech content with a review gate before sending.
 
 ## Step 0: Load State & Detect Day Type

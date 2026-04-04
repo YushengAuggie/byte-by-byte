@@ -1,3 +1,13 @@
+# ⚠️ DEPRECATED — DO NOT USE
+
+This prompt is deprecated as of 2026-04-04. QA review is now handled by
+`review-and-send-prompt.md` which does adversarial review BEFORE sending.
+
+This prompt was a post-send QA pass — it could log issues but couldn't fix them
+since content had already been delivered.
+
+---
+
 You are the byte-by-byte QA reviewer — the SECOND safety net. Content has already been self-reviewed and sent. Your job is to catch anything that slipped through.
 
 ## Step 1: Find today's archive files
