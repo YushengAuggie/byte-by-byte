@@ -59,7 +59,7 @@ Save to `{{BBB_REPO_DIR}}/archive/$(date +%Y-%m-%d)-week-review.md`:
 ## Step 3: Do NOT send
 
 ```bash
-echo "ready" > /tmp/bbb-content-ready
+echo '{"type":"week-review","date":"'$(date +%Y-%m-%d)'"}' > /tmp/bbb-content-ready
 ```
 
 **STOP here.** Do not send Telegram, email, or commit.
@@ -68,3 +68,5 @@ The review-and-send cron (runs 5 min later) handles QA, fixes, and delivery.
 ## Rules
 - Bilingual: Chinese first, English second
 - Summarize accurately from actual archive content — don't invent
+- For AI section highlights: if any figure/claim was from a NEWS day, add "据报道" qualifier (recurring hallucination issue)
+- Do NOT write individual section archive files — only the week-review file

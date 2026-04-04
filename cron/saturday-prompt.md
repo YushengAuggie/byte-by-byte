@@ -60,13 +60,22 @@ For algorithms: include 🔗 LeetCode + 📹 NeetCode links.
 
 ```bash
 bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
-echo "ready" > /tmp/bbb-content-ready
+echo '{"day":'$(python3 -c "import json;print(json.load(open('{{BBB_REPO_DIR}}/state.json'))['currentDay'])")',"type":"deepdive","date":"'$(date +%Y-%m-%d)'"}' > /tmp/bbb-content-ready
 ```
 
 **STOP here.** Do not send Telegram, email, or commit.
 The review-and-send cron (runs 5 min later) handles QA, fixes, and delivery.
 
+## Step 4: Cross-Check (REQUIRED for deep dives with diagrams + code)
+
+If you wrote both an ASCII architecture diagram AND implementation code:
+1. Pick ONE specific request/input from your content
+2. Trace it through the diagram: box1 → box2 → box3
+3. Find the corresponding code path and verify it matches the diagram flow
+4. If they differ → fix the diagram OR code to make them consistent
+
 ## Rules
 - Bilingual: Chinese first, English second
 - All references must be real URLs
 - Code comments in English
+- Do NOT write individual section archives — only the deepdive file
