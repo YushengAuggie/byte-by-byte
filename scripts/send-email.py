@@ -403,16 +403,7 @@ def inline_format(text):
             result.append(part)
     return ''.join(result)
 
-def get_day_number(config):
-    try:
-        repo_dir = config['BBB_REPO_DIR']
-        with open(os.path.join(repo_dir, 'state.json')) as f:
-            state = json.load(f)
-        indices = [state.get('systemDesignIndex', 0), state.get('algorithmIndex', 0),
-                   state.get('behavioralIndex', 0), state.get('frontendIndex', 0)]
-        return max(indices) if any(indices) else 1
-    except:
-        return None
+
 
 def load_subscribers(repo_dir, config):
     """Load subscribers from Google Sheet CSV (auto) + local subscribers.txt (manual fallback)."""
@@ -461,6 +452,42 @@ def load_subscribers(repo_dir, config):
                         subscribers.append(line)
 
     return subscribers
+
+def validate_email_content(sections_html, plain_parts):
+    """Doorkeeper: validate email content before sending. Returns list of errors (empty = OK)."""
+    errors = []
+
+    if not sections_html:
+        errors.append('No sections to send')
+        return errors
+
+    # Check each section for red flags
+    PLACEHOLDER_WORDS = ['placeholder', 'not generated', 'deep dive day',
+                         'see:', 'deepdive.md', 'week-review.md',
+                         'content will be', 'stub', 'todo', 'fixme']
+    MIN_REAL_CONTENT = 800  # A real section should be at least 800 chars of plain text
+
+    for i, plain in enumerate(plain_parts):
+        section_name = sections_html[i][1] if i < len(sections_html) else 'unknown'
+        plain_lower = plain.lower()
+
+        # Check for placeholder markers in final content
+        for marker in PLACEHOLDER_WORDS:
+            if marker in plain_lower:
+                errors.append('{}: contains placeholder marker "{}"'.format(section_name, marker))
+
+        # Check minimum content length
+        if len(plain.strip()) < MIN_REAL_CONTENT:
+            errors.append('{}: too short ({} chars, min {})'.format(
+                section_name, len(plain.strip()), MIN_REAL_CONTENT))
+
+        # Check for broken markdown (unclosed code blocks)
+        fence_count = plain.count('```')
+        if fence_count % 2 != 0:
+            errors.append('{}: unclosed code block ({} ``` markers)'.format(section_name, fence_count))
+
+    return errors
+
 
 def main():
     config = load_config()
@@ -544,8 +571,13 @@ def main():
         print('No archive files found for {}. Skipping email.'.format(today))
         sys.exit(0)
 
-    day_num = get_day_number(config)
-    day_label = ' Day {}'.format(day_num) if day_num else ''
+    # ── Doorkeeper: validate email content before sending ─────────────
+    doorkeeper_errors = validate_email_content(sections_html, plain_parts)
+    if doorkeeper_errors:
+        print('🚫 DOORKEEPER BLOCKED — email NOT sent:')
+        for err in doorkeeper_errors:
+            print('   ❌ {}'.format(err))
+        sys.exit(1)
 
     # TOC
     toc_links = ' &nbsp;|&nbsp; '.join(
@@ -568,7 +600,7 @@ def main():
 <body>
 <div class="container">
     <div class="header">
-        <h1>🧠 byte-by-byte{day_label}</h1>
+        <h1>🧠 byte-by-byte</h1>
         <div class="day">{today}</div>
         <div class="tagline">A little bit every day. A lot over time. / 每天一点，积少成多</div>
     </div>
@@ -579,10 +611,10 @@ def main():
     </div>
 </div>
 </body>
-</html>'''.format(css=CSS, day_label=day_label, today=today, toc=toc_links, sections=section_blocks)
+</html>'''.format(css=CSS, today=today, toc=toc_links, sections=section_blocks)
 
     # Build plain text fallback
-    plain_text = 'byte-by-byte{} - {}\n\n'.format(day_label, today)
+    plain_text = 'byte-by-byte - {}\n\n'.format(today)
     plain_text += '\n\n---\n\n'.join(plain_parts)
     plain_text += '\n\n---\nA little bit every day. A lot over time.'
     plain_text += "\n\nReply to this email with 'UNSUBSCRIBE' to stop receiving byte-by-byte"
@@ -612,7 +644,7 @@ def main():
             for recipient in recipients:
                 try:
                     msg = MIMEMultipart('alternative')
-                    msg['Subject'] = '🧠 byte-by-byte{} ({})'.format(day_label, today)
+                    msg['Subject'] = '🧠 byte-by-byte ({})'.format(today)
                     msg['From'] = smtp_user
                     msg['To'] = recipient
                     msg.attach(MIMEText(plain_text, 'plain', 'utf-8'))
