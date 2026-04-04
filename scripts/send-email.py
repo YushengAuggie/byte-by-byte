@@ -498,13 +498,15 @@ def main():
     sections_html = []
     plain_parts = []
     found = 0
-    MIN_CONTENT_SIZE = 500  # Skip placeholder files (< 500 bytes)
+    PLACEHOLDER_MARKERS = ['placeholder', 'deep dive day', 'content is not generated',
+                           'see:', 'deepdive.md', 'week-review.md']
     for filename, icon, name_en, name_cn in SECTION_META:
         path = os.path.join(archive_dir, '{}-{}.md'.format(today, filename))
         if os.path.exists(path):
             with open(path) as f:
                 content = f.read()
-            if len(content.strip()) < MIN_CONTENT_SIZE:
+            content_lower = content.lower()
+            if any(marker in content_lower for marker in PLACEHOLDER_MARKERS):
                 continue  # Skip placeholder/stub files
             html = md_to_html(content)
             sections_html.append((icon, name_en, name_cn, filename, html))

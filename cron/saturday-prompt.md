@@ -23,6 +23,8 @@ Read `/tmp/bbb-section-{1..5}.txt`. Pick the **most complex topic**:
 2. Advanced system design → deep dive that
 3. Otherwise → Frontend or AI concept
 
+**IMPORTANT: Only write the deepdive archive file. Do NOT write individual section archives (system-design, algorithms, etc.) — those are for weekdays only.**
+
 ## Step 2: Generate Deep Dive
 
 Save to `{{BBB_REPO_DIR}}/archive/$(date +%Y-%m-%d)-deepdive.md`:

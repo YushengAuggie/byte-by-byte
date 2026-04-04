@@ -68,7 +68,11 @@ else
       MISSING=1
     else
       SIZE=$(wc -c < "$FILE")
-      if [ "$SIZE" -lt 500 ]; then
+      # Check for placeholder markers (deep dive day stubs, etc.)
+      if grep -qi "placeholder\|deep dive day\|content is not generated\|deepdive\.md\|week-review\.md" "$FILE" 2>/dev/null; then
+        echo "⚠️ PLACEHOLDER: $FILE ($SIZE bytes) — stub file, skipping"
+        MISSING=1
+      elif [ "$SIZE" -lt 500 ]; then
         echo "❌ TOO SMALL: $FILE ($SIZE bytes) — likely a placeholder stub"
         MISSING=1
       else
