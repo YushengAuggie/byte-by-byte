@@ -150,20 +150,6 @@ for s in system-design algorithms soft-skills frontend ai; do
 done
 bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
 ```
-**If any file missing, re-generate it before continuing.**
-
-## Verify & Advance State
-
-After writing ALL 5 files:
-```bash
-TODAY=$(date +%Y-%m-%d)
-for s in system-design algorithms soft-skills frontend ai; do
-  FILE="{{BBB_REPO_DIR}}/archive/${TODAY}-${s}.md"
-  [ ! -f "$FILE" ] && echo "MISSING: $FILE" && exit 1
-  echo "✅ ${s}: $(wc -c < "$FILE") bytes"
-done
-bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
-```
 **If any file missing, re-generate it before advancing.**
 
 ## STOP — Do NOT send Telegram, email, or commit
