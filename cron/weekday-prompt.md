@@ -57,13 +57,15 @@ Pick 3 topics from 3 different sections.
 📅 明天继续新内容！
 ```
 
-Save to ARCHIVE_PATH → verify file exists → advance state → send Telegram → send email → commit:
+Save to ARCHIVE_PATH → verify file exists → advance state:
 ```bash
 ls -la {{BBB_REPO_DIR}}/archive/$(date +%Y-%m-%d)-review.md
 bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
-python3 {{BBB_REPO_DIR}}/scripts/send-email.py
-bash {{BBB_REPO_DIR}}/scripts/commit.sh
+echo '{"day":'$(python3 -c "import json;print(json.load(open('{{BBB_REPO_DIR}}/state.json'))['currentDay'])")',"type":"review","date":"'$(date +%Y-%m-%d)'"}' > /tmp/bbb-content-ready
 ```
+
+**STOP here. Do NOT send Telegram, email, or commit.**
+The review-and-send cron handles all delivery (including review days).
 **STOP after review day. Do not generate 5 sections.**
 
 ---
@@ -149,6 +151,7 @@ for s in system-design algorithms soft-skills frontend ai; do
   echo "✅ ${s}: $(wc -c < "$FILE") bytes"
 done
 bash {{BBB_REPO_DIR}}/scripts/advance-state.sh
+echo '{"day":'$(python3 -c "import json;print(json.load(open('{{BBB_REPO_DIR}}/state.json'))['currentDay'])")',"type":"normal","sections":5,"date":"'$(date +%Y-%m-%d)'"}' > /tmp/bbb-content-ready
 ```
 **If any file missing, re-generate it before advancing.**
 
