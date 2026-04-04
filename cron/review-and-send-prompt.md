@@ -67,18 +67,25 @@ Read ALL archive files for today. For each section:
 - Do the referenced systems (DynamoDB, Kafka, etc.) actually work this way?
 
 ### Frontend
-- **Recalculate any "guess the output" answer from scratch** — show your work
+- **Forced trace (REQUIRED for "guess the output" quizzes):**
+  1. Copy the code snippet
+  2. Execute line by line, writing variable state at each step
+  3. If your trace produces a different answer than written → UPDATE the answer AND /tmp/bbb-quiz-4.json
+  4. For render counts: state "assuming production mode (not React Strict Mode)"
+  5. For CSS calculations: show arithmetic explicitly (e.g., 100 + 40 + 10 = 150)
 - Would the code actually run? Check for syntax errors
-- React 18 Strict Mode: does it affect the quiz answer? If yes, note it
 
 ### Soft Skills
 - Is STAR properly applied (all 4 parts present)?
 - Does bad/good comparison show a real contrast?
 
 ### AI
-- NEWS mode: Are URLs real? Verify at least 2 URLs using `web_fetch` or your built-in web browsing
-- Flag any specific claims (dates, prices, model names) that smell hallucinated
-- Add "据报道 / reportedly" qualifier to unverified claims
+- NEWS mode: Are URLs real? Spot-check 1-2 URLs (don't verify all — saves time)
+- **Hallucination gate (CRITICAL):** For each specific figure (price, percentage, benchmark score, model name):
+  - Was it sourced from a search result? → OK
+  - Is it a plausible but unverified claim? → Must have "据报道 / reportedly" qualifier
+  - Is it clearly fabricated (non-existent model, impossible date)? → Remove it
+- This is the #1 recurring quality issue (6+ occurrences in qa-log). Be aggressive.
 
 ### Cross-cutting
 - Chinese natural? No machine-translation artifacts?

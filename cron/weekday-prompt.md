@@ -136,8 +136,12 @@ Focus on **practical, production-ready** React/TypeScript/Next.js knowledge:
 
 ### Section 5: AI (2 min)
 🤖 **AI Day N**
-- **NEWS mode**: Search the web for 3-5 real current AI stories. Use whatever search tool is available (`web_search`, `web_fetch`, or your built-in web browsing). DO NOT write from memory. Each story: source URL + "为什么你应该关心". If no search tool works, fall back to CONCEPT mode instead: read the CONCEPT topic from `/tmp/bbb-section-5.txt` and generate a concept explanation.
-- **CONCEPT mode**: Intuitive explanation → how it works → applications → runnable Python snippet (≤15 lines, include pip install)
+- **NEWS mode** — MANDATORY SOURCING RULES:
+  1. Search the web first: use any available search tool or built-in web browsing
+  2. For EACH story: you MUST have found it via search. Paste source URL inline.
+  3. NEVER include specific figures (prices, percentages, benchmark scores) unless they appear in a source you actually read. If uncertain, write "reportedly" / "据报道"
+  4. If search is unavailable or returns <3 stories: use CONCEPT mode instead. Do NOT write news from memory.
+- **CONCEPT mode**: Read topic from `/tmp/bbb-section-5.txt`. Intuitive explanation → how it works → applications → runnable Python snippet (≤15 lines, include pip install)
 - 📚 References + 🧒 ELI5
 
 ## Verify & Advance State
