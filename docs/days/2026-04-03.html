@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-04-03</title>
+  <meta name="description" content="byte-by-byte daily lessons for Friday, April 3, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Friday, April 3, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-04-03.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-04-02.html" style="color:var(--text2)">← 2026-04-02</a>
+    <a href="2026-04-04.html" style="color:var(--text2)">2026-04-04 →</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-04-03</span>
+    <h1>Friday, April 3, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-04-02.html" class="day-nav-btn">← 2026-04-02</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <a href="2026-04-04.html" class="day-nav-btn">2026-04-04 →</a>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 Day 15 / System Design Day 15</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 Day 15 / System Design Day 15</h1>
+
+<h2>Rate Limiting &amp; Throttling — 保护你的 API / Protecting Your API</h2>
+
+<hr/>
+
+<h3>🌏 真实场景 / Real-World Scenario</h3>
+
+<p>想象你在 Twitter（X）做工程师。某个下午，一个爬虫脚本突然对你的搜索 API 发起每秒 10,000 次请求，导致数据库崩溃，所有用户无法刷推。</p>
+
+<p>你需要一个<strong>限流系统</strong>——在不影响正常用户的前提下，拒绝滥用流量。</p>
+
+<p>Imagine you're an engineer at Twitter (X). One afternoon, a scraper script hammers your search API at 10,000 requests/second, crashing the database for all users. You need a <strong>rate limiting system</strong> — one that blocks abuse without affecting normal users.</p>
+
+<hr/>
+
+<h3>📐 架构图 / Architecture Diagram</h3>
+
+<div class="diagram-block">                          ┌─────────────────────┐
+   Client Request ───────►│   API Gateway /      │
+                          │   Rate Limiter       │
+                          │                      │
+                          │  1. Identify client  │
+                          │     (IP / User ID /  │
+                          │      API Key)        │
+                          │  2. Check counter    │
+                          │     in Redis         │
+                          │  3. Allow or Block   │
+                          └──────────┬───────────┘
+                                     │ Allowed
+                          ┌──────────▼───────────┐
+                          │   Backend Service     │
+                          └──────────────────────┘
+
+Redis Counter Example (Sliding Window):
+  key: "ratelimit:user123:2026-04-03T08"
+  value: 47  (requests this hour)
+  TTL: 3600s</div>
+
+<hr/>
+
+<h3>⚙️ 主要算法 / Key Algorithms</h3>
+
+<table><thead><tr><th>算法</th><th>原理</th><th>优点</th><th>缺点</th></tr></thead><tbody><tr><td><strong>Token Bucket</strong></td><td>令牌以固定速率补充，请求消耗令牌</td><td>允许突发流量</td><td>实现稍复杂</td></tr><tr><td><strong>Leaky Bucket</strong></td><td>请求以固定速率流出（队列）</td><td>输出极平滑</td><td>不允许突发</td></tr><tr><td><strong>Fixed Window</strong></td><td>每个时间窗重置计数器</td><td>最简单</td><td>边界突破问题</td></tr><tr><td><strong>Sliding Window</strong></td><td>精确追踪过去 N 秒</td><td>最精确</td><td>内存占用高</td></tr></tbody></table>
+
+<p><strong>推荐：Token Bucket（令牌桶）</strong> — 生产中最常用，兼顾突发和平均速率。</p>
+
+<hr/>
+
+<h3>🔑 关键权衡 / Key Tradeoffs</h3>
+
+<p><strong>为什么用 Redis 而不是本地内存？/ Why Redis, not local memory?</strong></p>
+
+<ul><li>多台服务器共享同一计数器 → 分布式限流</li><li>原子操作（INCR + EXPIRE）避免竞态条件</li><li>Redis 单线程模型保证计数器一致性</li></ul>
+
+<p><strong>限流粒度选择 / Granularity choices:</strong></p>
+<ul><li><strong>Per IP</strong> — 防爬虫，但误伤 NAT 用户（办公室）</li><li><strong>Per User ID</strong> — 最精确，需要认证</li><li><strong>Per API Key</strong> — B2B 场景首选</li><li><strong>Per Endpoint</strong> — 写接口比读接口更严格</li></ul>
+
+<hr/>
+
+<h3>❌ 常见错误 / Common Mistakes</h3>
+
+<p><strong>坑 1：Fixed Window 边界问题</strong></p>
+<div class="diagram-block">Window 1 (0:00-1:00): 99 requests ← allowed
+Window 2 (1:00-2:00): 99 requests ← allowed
+But at 0:59 + 1:01 = 198 requests in 2 seconds! ← spike!</div>
+<p>→ 用 Sliding Window Log 或 Sliding Window Counter 解决</p>
+
+<p><strong>坑 2：忘记 HTTP 响应头</strong></p>
+<div class="diagram-block">X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 47
+X-RateLimit-Reset: 1743685200
+Retry-After: 3600  ← 429 时必须包含</div>
+<p>客户端需要知道何时重试！</p>
+
+<p><strong>坑 3：硬拒绝 vs 降级</strong></p>
+<p>不要直接返回 <code>503</code>，试试 queue、degrade（返回缓存数据）或 soft-limit（超出后降速）。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li><a href="https://blog.bytebytego.com/p/rate-limiting-fundamentals">System Design Interview — Rate Limiting (ByteByteGo)</a></li><li><a href="https://developers.cloudflare.com/waf/rate-limiting-rules/">Cloudflare Rate Limiting Docs</a></li><li><a href="https://redis.io/docs/manual/patterns/rate-limiting/">Redis INCR for Rate Limiting</a></li></ul>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像游乐场的入口检票员：每个小时只放 100 个人进去。人满了就让你在外面等，而不是把游乐场挤爆。</p>
+
+<p>It's like a bouncer at a club: "100 people per hour max." When it's full, you wait outside — the club doesn't collapse.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 Day 16 / Algorithms Day 16</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 Day 16 / Algorithms Day 16</h1>
+
+<h2>🧩 滑动窗口模式 (2/6) — Building on the template from Day 15</h2>
+
+<blockquote>#3 Longest Substring Without Repeating Characters 🟡 Medium</blockquote>
+
+<p>🔗 <a href="https://leetcode.com/problems/longest-substring-without-repeating-characters/">LeetCode #3</a>  </p>
+<p>📹 <a href="https://neetcode.io/problems/longest-substring-without-repeating-characters">NeetCode Video</a></p>
+
+<hr/>
+
+<p><strong>今天的问题是模式的第 2 题（共 6 题）</strong>，我们继续用滑动窗口模板。相比昨天的 #121（股票买卖，只追踪一个 min 值），今天窗口需要追踪「一个集合」——这是滑动窗口真正的威力所在。</p>
+
+<p>Today is problem <strong>2/6</strong> in the Sliding Window block. Unlike #121 (tracking a single min value), today's window tracks a <strong>set of characters</strong> — this is where the pattern gets powerful.</p>
+
+<hr/>
+
+<h3>🗺️ 模板回顾 / Template Recap</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="left = 0&#10;for right in range(len(arr)):&#10;    window.add(arr[right])      # expand right&#10;    while CONDITION_VIOLATED:&#10;        window.remove(arr[left])  # shrink left&#10;        left += 1&#10;    result = max(result, right - left + 1)">Copy</button>
+  <pre><code class="language-python">left = <span style="color:#56b6c2;">0</span>
+<span style="color:#c678dd;">for</span> right <span style="color:#c678dd;">in</span> range(len(arr)):
+    window.add(arr[right])      <span style="color:#5c6370;"># expand right</span>
+    <span style="color:#c678dd;">while</span> CONDITION_VIOLATED:
+        window.remove(arr[left])  <span style="color:#5c6370;"># shrink left</span>
+        left += <span style="color:#56b6c2;">1</span>
+    result = max(result, right - left + <span style="color:#56b6c2;">1</span>)</code></pre>
+</div>
+
+<p><strong>核心洞察 / Key Insight:</strong> 右指针扩张探索，左指针收缩维护约束。每个元素最多进出窗口各一次 → O(n)。</p>
+
+<hr/>
+
+<h3>🌍 真实类比 / Real-World Analogy</h3>
+
+<p>想象你在刷 Spotify 播放历史，想找「连续播放、没有重复歌曲」的最长片段。当出现重复时，你从头开始，直到重复歌曲被移出窗口之外。</p>
+
+<p>Imagine scanning your Spotify history for the longest streak where no song repeats. The moment a duplicate appears, you slide your start forward until the duplicate is gone.</p>
+
+<hr/>
+
+<h3>📝 问题 / Problem</h3>
+
+<p>给定字符串 <code>s</code>，找出不含重复字符的最长子串的长度。</p>
+
+<p>Given string <code>s</code>, find the length of the longest substring without repeating characters.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Input:  s = &quot;abcabcbb&quot;&#10;Output: 3  (&quot;abc&quot;)&#10;&#10;Input:  s = &quot;pwwkew&quot;&#10;Output: 3  (&quot;wke&quot;)">Copy</button>
+  <pre><code class="language-text">Input:  s = "abcabcbb"
+Output: 3  ("abc")
+
+Input:  s = "pwwkew"
+Output: 3  ("wke")</code></pre>
+</div>
+
+<hr/>
+
+<h3>🗂️ 映射到模板 / Mapping to Template</h3>
+
+<table><thead><tr><th>模板元素</th><th>本题对应</th></tr></thead><tbody><tr><td><code>window</code></td><td><code>set()</code> — 当前窗口中的字符</td></tr><tr><td><code>CONDITION_VIOLATED</code></td><td><code>arr[right] in window</code>（出现重复）</td></tr><tr><td>扩张</td><td>把 <code>s[right]</code> 加入 set</td></tr><tr><td>收缩</td><td>把 <code>s[left]</code> 从 set 移除，<code>left += 1</code></td></tr><tr><td><code>result</code></td><td><code>max(result, right - left + 1)</code></td></tr></tbody></table>
+
+<hr/>
+
+<h3>🐍 Python 解法 + 追踪 / Python Solution + Trace</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def lengthOfLongestSubstring(s: str) -&gt; int:&#10;    window = set()       # characters currently in window&#10;    left = 0&#10;    result = 0&#10;&#10;    for right in range(len(s)):&#10;        # Shrink window until no duplicate&#10;        while s[right] in window:&#10;            window.remove(s[left])&#10;            left += 1&#10;&#10;        # Expand: add new character&#10;        window.add(s[right])&#10;        result = max(result, right - left + 1)&#10;&#10;    return result">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> lengthOfLongestSubstring(s: str) -&gt; int:
+    window = set()       <span style="color:#5c6370;"># characters currently in window</span>
+    left = <span style="color:#56b6c2;">0</span>
+    result = <span style="color:#56b6c2;">0</span>
+
+    <span style="color:#c678dd;">for</span> right <span style="color:#c678dd;">in</span> range(len(s)):
+        <span style="color:#5c6370;"># Shrink window until no duplicate</span>
+        <span style="color:#c678dd;">while</span> s[right] <span style="color:#c678dd;">in</span> window:
+            window.remove(s[left])
+            left += <span style="color:#56b6c2;">1</span>
+
+        <span style="color:#5c6370;"># Expand: add new character</span>
+        window.add(s[right])
+        result = max(result, right - left + <span style="color:#56b6c2;">1</span>)
+
+    <span style="color:#c678dd;">return</span> result</code></pre>
+</div>
+
+<p><strong>追踪 "abcabcbb" / Trace:</strong></p>
+<div class="diagram-block">right=0: window={'a'}, len=1
+right=1: window={'a','b'}, len=2
+right=2: window={'a','b','c'}, len=3  ← result=3
+right=3: 'a' dup! → remove 'a', left=1 → window={'b','c','a'}, len=3
+right=4: 'b' dup! → remove 'b', left=2 → window={'c','a','b'}, len=3
+right=5: 'c' dup! → remove 'c', left=3 → window={'a','b','c'}, len=3
+right=6: 'b' dup! → remove 'a','b', left=5 → window={'c','b'}, len=2
+right=7: 'b' dup! → remove 'c','b', left=7 → window={'b'}, len=1
+Final: 3 ✅</div>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<ul><li>Time: O(n) — each char enters/exits window at most once</li><li>Space: O(min(m, n)) where m = charset size (26 for lowercase)</li></ul>
+
+<p><strong>优化版 / Optimized (HashMap for O(1) jump):</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def lengthOfLongestSubstring(s: str) -&gt; int:&#10;    char_index = {}  # char → last seen index&#10;    left = 0&#10;    result = 0&#10;&#10;    for right, ch in enumerate(s):&#10;        # Jump left past the duplicate directly&#10;        if ch in char_index and char_index[ch] &gt;= left:&#10;            left = char_index[ch] + 1&#10;        char_index[ch] = right&#10;        result = max(result, right - left + 1)&#10;&#10;    return result">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> lengthOfLongestSubstring(s: str) -&gt; int:
+    char_index = {}  <span style="color:#5c6370;"># char → last seen index</span>
+    left = <span style="color:#56b6c2;">0</span>
+    result = <span style="color:#56b6c2;">0</span>
+
+    <span style="color:#c678dd;">for</span> right, ch <span style="color:#c678dd;">in</span> enumerate(s):
+        <span style="color:#5c6370;"># Jump left past the duplicate directly</span>
+        <span style="color:#c678dd;">if</span> ch <span style="color:#c678dd;">in</span> char_index <span style="color:#c678dd;">and</span> char_index[ch] &gt;= left:
+            left = char_index[ch] + <span style="color:#56b6c2;">1</span>
+        char_index[ch] = right
+        result = max(result, right - left + <span style="color:#56b6c2;">1</span>)
+
+    <span style="color:#c678dd;">return</span> result</code></pre>
+</div>
+<p>→ 避免 while 循环，直接跳跃 left，同样 O(n) 但常数更小。</p>
+
+<hr/>
+
+<h3>🔄 举一反三 / This Pattern Block</h3>
+
+<table><thead><tr><th>题目</th><th>窗口内容</th><th>约束条件</th></tr></thead><tbody><tr><td>#121 (Day 15)</td><td>单个 min 值</td><td>无，只追踪最小值</td></tr><tr><td><strong>#3 (今天)</strong></td><td><strong>字符集合</strong></td><td><strong>无重复</strong></td></tr><tr><td>#424 (下期)</td><td>字符频率 map</td><td>替换次数 ≤ k</td></tr><tr><td>#567</td><td>字符频率 map</td><td>频率完全匹配</td></tr><tr><td>#76 (Hard)</td><td>字符频率 map</td><td>包含所有目标字符</td></tr></tbody></table>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>用两根手指夹住一段字符串，右手不断向右扩张。一旦右手摸到一个和窗口内重复的字母，左手就往右收缩，直到没有重复为止。全程记录最宽的窗口宽度。</p>
+
+<p>Use two fingers on a string. Right finger keeps expanding right. The moment it hits a duplicate, the left finger moves right to shrink the window until no duplicates remain. Track the max width you ever saw.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li><a href="https://leetcode.com/problems/longest-substring-without-repeating-characters/">LeetCode #3 — Longest Substring Without Repeating Characters</a></li><li><a href="https://neetcode.io/problems/longest-substring-without-repeating-characters">NeetCode Explanation</a></li><li><a href="https://www.geeksforgeeks.org/window-sliding-technique/">Sliding Window Pattern — GeeksForGeeks</a></li></ul>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 Day 15 / Soft Skills Day 15</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 Day 15 / Soft Skills Day 15</h1>
+
+<h2>适应性：快速学习新技术 / Adaptability: Learning New Tech Fast</h2>
+
+<p><strong>面试题 / Question:</strong>  </p>
+<p>"Describe a time you had to learn a new technology quickly to solve a problem."</p>
+
+<hr/>
+
+<h3>🎯 为什么面试官问这个 / Why Interviewers Ask This</h3>
+
+<p>技术栈变化极快。面试官想知道：</p>
+<ol><li>你面对陌生技术时会恐慌还是系统地应对？</li><li>你的学习方法是否高效？</li><li>你能否在压力下交付？</li></ol>
+
+<p>Tech stacks evolve fast. Interviewers want to know: Do you panic or adapt? Do you have a <strong>system</strong> for learning under pressure? Can you still deliver?</p>
+
+<hr/>
+
+<h3>⭐ STAR 框架 / STAR Breakdown</h3>
+
+<p><strong>Situation（情境）:</strong>  </p>
+<p>描述具体的业务压力 — 不要说"我需要学习新技术"，要说"我们有 2 周的 deadline，而现有的技术栈无法满足需求"。</p>
+
+<p><strong>Task（任务）:</strong>  </p>
+<p>你的具体职责是什么？是主导学习还是支援？</p>
+
+<p><strong>Action（行动）— 这是重点！</strong>  </p>
+<p>面试官最想听的是你的<strong>学习策略</strong>：</p>
+<ul><li>你怎么快速搭建 mental model？（官方文档 → 官方示例 → 一个真实小项目）</li><li>你怎么判断"够用了"？（能解决当前问题即可，不追求精通）</li><li>你遇到障碍时怎么求助？（Stack Overflow → 同事 → 官方 issue）</li></ul>
+
+<p><strong>Result（结果）:</strong>  </p>
+<p>量化交付：时间、质量、影响。</p>
+
+<hr/>
+
+<h3>❌ Bad Answer vs ✅ Good Answer</h3>
+
+<p><strong>❌ 差劲的回答:</strong>  </p>
+<p>"我们需要用 Kubernetes，我就去学了 K8s，然后把服务迁移过去了，很顺利。"</p>
+
+<p>问题：没有细节，没有困难，没有学习过程——听起来是在背稿。</p>
+
+<hr/>
+
+<p><strong>✅ 优秀的回答 (示例):</strong>  </p>
+<blockquote>"We were 3 weeks from launching a real-time feature, and our backend team decided mid-project to use WebSockets via Socket.io — something I'd never touched. I had 4 days before my frontend piece needed to integrate.</blockquote>
+<blockquote></blockquote>
+<blockquote>I started with the official docs to get a mental model (30 min), then built a tiny chat demo locally to feel the API (2 hours). I identified the 3 patterns I'd actually need: <code>emit</code>, <code>on</code>, and room-based broadcasting. I skipped everything else.</blockquote>
+<blockquote></blockquote>
+<blockquote>Day 2, I hit a race condition where events fired before the socket connected. I found the root cause via the Socket.io FAQ, added a connection guard, and documented it for the team.</blockquote>
+<blockquote></blockquote>
+<blockquote>We shipped on time. The feature had zero WebSocket-related bugs in production. I also wrote an internal doc that helped 2 other engineers onboard faster."</blockquote>
+
+<hr/>
+
+<h3>💡 Senior/Staff 级加分点 / Senior/Staff Tips</h3>
+
+<ol><li><strong>展示元认知 / Show metacognition</strong> — 不只是"我学了 X"，而是"我用了 Y 策略学 X，因为 Z"</li><li><strong>说明你如何判断边界 / Scope your learning</strong> — "我在 40% 的时间里掌握了 80% 的需求场景——这是故意的选择"</li><li><strong>团队放大效应 / Multiply impact</strong> — "我写了文档/做了分享，减少了团队学习成本"</li><li><strong>展示迁移能力 / Show transfer</strong> — "这次学 Redis Streams 的经验，让我 3 个月后学 Kafka 快了 3 倍"</li></ol>
+
+<hr/>
+
+<h3>🔑 关键要点 / Key Takeaways</h3>
+
+<ul><li>学习要有<strong>系统</strong>：mental model → 最小可用知识 → 实战 → 总结</li><li>面试时强调<strong>trade-off</strong>：你选择了快速上手而不是全面掌握</li><li><strong>量化</strong>：时间节省、错误减少、团队效率提升</li></ul>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li><a href="https://www.themuse.com/advice/star-interview-method">STAR Method Explained — The Muse</a></li><li><a href="https://joshkaufman.net/the-first-20-hours/">How to Learn Anything Fast (Josh Kaufman)</a></li><li><a href="https://engineering.fb.com/culture/">Meta Engineering: Learning Culture</a></li></ul>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>面试官在问："当你碰到从没见过的东西，你会怎么办？" 正确答案不是"我啥都会"，而是"我有一套靠谱的方法，让我快速从零变成够用。"</p>
+
+<p>The interviewer asks: "What happens when you hit something you've never seen?" The right answer isn't "I know everything." It's "I have a reliable method to go from zero to useful, fast."</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 Day 15 / Frontend Day 15</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 Day 15 / Frontend Day 15</h1>
+
+<h2>React Composition — Children, Render Props, HOCs</h2>
+<h2>React 组合模式 — 子组件、渲染属性、高阶组件</h2>
+
+<hr/>
+
+<h3>🌏 真实场景 / Real Scenario</h3>
+
+<p>你在做一个 Dashboard，需要一个 <code>Card</code> 组件——有时里面是图表，有时是表格，有时是表单。你不想为每种情况写 <code>ChartCard</code>、<code>TableCard</code>、<code>FormCard</code>……</p>
+
+<p>You're building a Dashboard. You need a <code>Card</code> component — sometimes it holds a chart, sometimes a table, sometimes a form. You don't want to write <code>ChartCard</code>, <code>TableCard</code>, <code>FormCard</code> separately.</p>
+
+<p><strong>React Composition（组合）</strong> 是解决方案。</p>
+
+<hr/>
+
+<h3>📦 Pattern 1: Children Props（最常用）</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// Generic Card shell — accepts anything as children&#10;interface CardProps {&#10;  title: string;&#10;  children: React.ReactNode; // &lt;-- the magic&#10;}&#10;&#10;function Card({ title, children }: CardProps) {&#10;  return (&#10;    &lt;div className=&quot;card&quot;&gt;&#10;      &lt;h2&gt;{title}&lt;/h2&gt;&#10;      &lt;div className=&quot;card-body&quot;&gt;{children}&lt;/div&gt;&#10;    &lt;/div&gt;&#10;  );&#10;}&#10;&#10;// Usage: inject any content&#10;function Dashboard() {&#10;  return (&#10;    &lt;Card title=&quot;用户增长 / User Growth&quot;&gt;&#10;      &lt;LineChart data={chartData} /&gt;&#10;    &lt;/Card&gt;&#10;  );&#10;}">Copy</button>
+  <pre><code class="language-tsx">// Generic Card shell — accepts anything as children
+interface CardProps {
+  title: string;
+  children: React.ReactNode; // &lt;-- the magic
+}
+
+function Card({ title, children }: CardProps) {
+  return (
+    &lt;div className="card"&gt;
+      &lt;h2&gt;{title}&lt;/h2&gt;
+      &lt;div className="card-body"&gt;{children}&lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
+
+// Usage: inject any content
+function Dashboard() {
+  return (
+    &lt;Card title="用户增长 / User Growth"&gt;
+      &lt;LineChart data={chartData} /&gt;
+    &lt;/Card&gt;
+  );
+}</code></pre>
+</div>
+
+<p><strong>何时用 / When to use:</strong> 容器/布局组件，内容不确定。</p>
+
+<hr/>
+
+<h3>🎯 Pattern 2: Render Props（渲染属性）</h3>
+
+<p>当父组件需要<strong>向子内容传递数据</strong>时：</p>
+
+<p>When the parent needs to <strong>pass data into the child content</strong>:</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="interface DataFetcherProps&lt;T&gt; {&#10;  url: string;&#10;  render: (data: T | null, loading: boolean) =&gt; React.ReactNode;&#10;}&#10;&#10;function DataFetcher&lt;T&gt;({ url, render }: DataFetcherProps&lt;T&gt;) {&#10;  const [data, setData] = useState&lt;T | null&gt;(null);&#10;  const [loading, setLoading] = useState(true);&#10;&#10;  useEffect(() =&gt; {&#10;    fetch(url).then(r =&gt; r.json()).then(d =&gt; {&#10;      setData(d);&#10;      setLoading(false);&#10;    });&#10;  }, [url]);&#10;&#10;  return &lt;&gt;{render(data, loading)}&lt;/&gt;;&#10;}&#10;&#10;// Usage&#10;&lt;DataFetcher&lt;User[]&gt;&#10;  url=&quot;/api/users&quot;&#10;  render={(users, loading) =&gt;&#10;    loading ? &lt;Spinner /&gt; : &lt;UserTable data={users!} /&gt;&#10;  }&#10;/&gt;">Copy</button>
+  <pre><code class="language-tsx">interface DataFetcherProps&lt;T&gt; {
+  url: string;
+  render: (data: T | null, loading: boolean) =&gt; React.ReactNode;
+}
+
+function DataFetcher&lt;T&gt;({ url, render }: DataFetcherProps&lt;T&gt;) {
+  const [data, setData] = useState&lt;T | null&gt;(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() =&gt; {
+    fetch(url).then(r =&gt; r.json()).then(d =&gt; {
+      setData(d);
+      setLoading(false);
+    });
+  }, [url]);
+
+  return &lt;&gt;{render(data, loading)}&lt;/&gt;;
+}
+
+// Usage
+&lt;DataFetcher&lt;User[]&gt;
+  url="/api/users"
+  render={(users, loading) =&gt;
+    loading ? &lt;Spinner /&gt; : &lt;UserTable data={users!} /&gt;
+  }
+/&gt;</code></pre>
+</div>
+
+<blockquote>💡 现代 React 里，<strong>Custom Hooks 通常比 Render Props 更清晰</strong>。Render Props 更多见于老代码或需要 JSX 层控制的场景。</blockquote>
+
+<hr/>
+
+<h3>🔧 Pattern 3: Higher-Order Components (HOC)</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// withAuth: wraps any component to require authentication&#10;function withAuth&lt;P extends object&gt;(&#10;  WrappedComponent: React.ComponentType&lt;P&gt;&#10;) {&#10;  return function AuthenticatedComponent(props: P) {&#10;    const { isLoggedIn } = useAuth();&#10;&#10;    if (!isLoggedIn) {&#10;      return &lt;Navigate to=&quot;/login&quot; /&gt;;&#10;    }&#10;&#10;    return &lt;WrappedComponent {...props} /&gt;;&#10;  };&#10;}&#10;&#10;// Usage&#10;const ProtectedDashboard = withAuth(Dashboard);">Copy</button>
+  <pre><code class="language-tsx">// withAuth: wraps any component to require authentication
+function withAuth&lt;P extends object&gt;(
+  WrappedComponent: React.ComponentType&lt;P&gt;
+) {
+  return function AuthenticatedComponent(props: P) {
+    const { isLoggedIn } = useAuth();
+
+    if (!isLoggedIn) {
+      return &lt;Navigate to="/login" /&gt;;
+    }
+
+    return &lt;WrappedComponent {...props} /&gt;;
+  };
+}
+
+// Usage
+const ProtectedDashboard = withAuth(Dashboard);</code></pre>
+</div>
+
+<hr/>
+
+<h3>🎮 猜猜输出 / Quiz</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="function Wrapper({ children }: { children: React.ReactNode }) {&#10;  console.log(&quot;Wrapper rendered&quot;);&#10;  return &lt;div&gt;{children}&lt;/div&gt;;&#10;}&#10;&#10;function App() {&#10;  const [count, setCount] = useState(0);&#10;  return (&#10;    &lt;Wrapper&gt;&#10;      &lt;button onClick={() =&gt; setCount(c =&gt; c + 1)}&gt;&#10;        Count: {count}&#10;      &lt;/button&gt;&#10;    &lt;/Wrapper&gt;&#10;  );&#10;}">Copy</button>
+  <pre><code class="language-tsx">function Wrapper({ children }: { children: React.ReactNode }) {
+  console.log("Wrapper rendered");
+  return &lt;div&gt;{children}&lt;/div&gt;;
+}
+
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    &lt;Wrapper&gt;
+      &lt;button onClick={() =&gt; setCount(c =&gt; c + 1)}&gt;
+        Count: {count}
+      &lt;/button&gt;
+    &lt;/Wrapper&gt;
+  );
+}</code></pre>
+</div>
+
+<p>点击按钮时，"Wrapper rendered" 会打印吗？/ Does "Wrapper rendered" print on button click?</p>
+
+<p><strong>A)</strong> 每次点击都打印  </p>
+<p><strong>B)</strong> 只在初始渲染打印  </p>
+<p><strong>C)</strong> 每次点击都打印（因为 <code>children</code> 是新 JSX 对象）  </p>
+<p><strong>D)</strong> 取决于 React 版本</p>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>答案：C</strong> — <code>Wrapper</code> 每次都会重新渲染。</p>
+
+<p>虽然 <code>Wrapper</code> 本身没有 state，但每次 <code>App</code> 渲染时，<code>&lt;button&gt;Count: {count}&lt;/button&gt;</code> 是一个<strong>新的 JSX 元素</strong>（新的对象引用），所以 <code>Wrapper</code> 也会重新渲染。</p>
+
+<p>要阻止这种行为，需要把 <code>Wrapper</code> 包裹在 <code>React.memo</code> 中 <strong>并且</strong> 确保 <code>children</code> 引用不变（实际上很难）。</p>
+
+<p>In React, <code>children</code> is a new JSX object on every parent render — so <code>Wrapper</code> re-renders too. To prevent this, you'd need <code>React.memo</code> AND stable <code>children</code> refs.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>❌ vs ✅ 常见错误 / Common Mistakes</h3>
+
+<p><strong>❌ Prop Drilling Hell:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// Passing title 5 levels deep just to show it in a card&#10;&lt;Page title=&quot;Dashboard&quot;&gt;&#10;  &lt;Layout title=&quot;Dashboard&quot;&gt;&#10;    &lt;Section title=&quot;Dashboard&quot;&gt;&#10;      &lt;Card title=&quot;Dashboard&quot;&gt; ... &lt;/Card&gt;">Copy</button>
+  <pre><code class="language-tsx">// Passing title 5 levels deep just to show it in a card
+&lt;Page title="Dashboard"&gt;
+  &lt;Layout title="Dashboard"&gt;
+    &lt;Section title="Dashboard"&gt;
+      &lt;Card title="Dashboard"&gt; ... &lt;/Card&gt;</code></pre>
+</div>
+
+<p><strong>✅ Composition with Children:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="&lt;Card&gt;&#10;  &lt;CardHeader&gt;Dashboard&lt;/CardHeader&gt;&#10;  &lt;CardBody&gt;...&lt;/CardBody&gt;&#10;&lt;/Card&gt;">Copy</button>
+  <pre><code class="language-tsx">&lt;Card&gt;
+  &lt;CardHeader&gt;Dashboard&lt;/CardHeader&gt;
+  &lt;CardBody&gt;...&lt;/CardBody&gt;
+&lt;/Card&gt;</code></pre>
+</div>
+
+<hr/>
+
+<h3>⚖️ 何时用哪个 / When to Use Which</h3>
+
+<table><thead><tr><th>场景</th><th>推荐模式</th></tr></thead><tbody><tr><td>容器/布局，内容不定</td><td><code>children</code> props</td></tr><tr><td>共享逻辑，不共享 UI</td><td><strong>Custom Hook</strong> (首选)</td></tr><tr><td>需要向内容注入数据</td><td>Render Props 或 Custom Hook</td></tr><tr><td>跨组件横切关注点（认证、日志）</td><td>HOC</td></tr><tr><td>老 class component 代码</td><td>HOC（因为 hooks 不能用于 class）</td></tr></tbody></table>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li><a href="https://react.dev/learn/passing-props-to-a-component#passing-jsx-as-children">React Composition vs Inheritance — Official Docs</a></li><li><a href="https://kentcdodds.com/blog/react-hooks-whats-going-to-happen-to-render-props">Render Props Pattern — Kent C. Dodds</a></li><li><a href="https://legacy.reactjs.org/docs/higher-order-components.html">HOC Docs — React</a></li></ul>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像乐高积木：<code>children</code> props 让你把任意积木放进一个盒子；Render Props 让盒子告诉你"我准备好了，你可以放这种积木"；HOC 像是给积木套一个外壳（防水壳、认证壳）。</p>
+
+<p>Like Lego: <code>children</code> props = drop any brick into a box. Render Props = box tells you what brick fits. HOC = wrap a brick in a protective shell.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI Day 17 — 本周 AI 大事件 / AI News Roundup</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI Day 17 — 本周 AI 大事件 / AI News Roundup</h1>
+<p><em>来源 / Sources: web search, April 2026</em></p>
+
+<hr/>
+
+<p><strong>📰 Story 1: OpenAI 收购科技脱口秀 TBPN，首次进军媒体 / OpenAI acquires tech talk show TBPN, its first move into media</strong></p>
+
+<p>来源: https://openai.com/index/openai-acquires-tbpn/</p>
+
+<p>OpenAI 宣布收购每日科技谈话节目 TBPN，并表示将保持其编辑独立性；此举被视为公司在“塑造 AI 叙事”和公共沟通上的战略加码。</p>
+<p>OpenAI announced it acquired the daily tech talk show TBPN and said it will preserve editorial independence—signaling a strategic push to shape the public AI narrative.</p>
+
+<p><strong>为什么你应该关心:</strong> 未来 AI 竞争不只在模型能力，也在“谁掌握公众理解与信任”；媒体渠道会影响监管、人才、客户与舆论风向。/ AI competition isn’t only about model quality—control over narrative and trust can influence regulation, hiring, customer adoption, and public sentiment.</p>
+
+<hr/>
+
+<p><strong>📰 Story 2: Google 推出 Gemini API 的 Flex / Priority Inference，帮助企业控成本与稳定性 / Google adds Flex &amp; Priority Inference tiers to the Gemini API</strong></p>
+
+<p>来源: https://www.infoworld.com/article/4154145/google-gives-enterprises-new-controls-to-manage-ai-inference-costs-and-reliability.html</p>
+
+<p>Google 为 Gemini API 增加新的推理服务分层，让企业在成本、延迟与可靠性之间做更细粒度的取舍，面向更复杂的多步骤“Agent 工作流”。</p>
+<p>Google introduced new inference service tiers for the Gemini API, letting enterprises trade off cost, latency, and reliability—especially for complex, multi-step agent workflows.</p>
+
+<p><strong>为什么你应该关心:</strong> “AI 变贵”是落地最大障碍之一；更灵活的推理定价与 QoS 会决定哪些产品能规模化、哪些只能停留在 demo。/ Inference economics often decide whether AI products scale or stay demos; pricing/QoS controls directly shape what’s viable in production.</p>
+
+<hr/>
+
+<p><strong>📰 Story 3: Google Research 发布 TurboQuant：大模型推理内存压缩 6 倍 / Google Research unveils TurboQuant memory compression for LLM inference</strong></p>
+
+<p>来源: https://www.networkworld.com/article/4154034/google-research-talks-compression-technology-it-says-will-greatly-reduce-memory-needed-for-ai-processing.html</p>
+
+<p>TurboQuant 据称可将大模型推理所需内存降低 6 倍，并在相同 GPU 数量下提升速度，同时尽量不牺牲精度；这类压缩技术有望推动更多“端侧 AI”能力。</p>
+<p>TurboQuant reportedly cuts LLM inference memory by 6× and boosts speed with the same GPU count while preserving accuracy—potentially accelerating more capable on-device AI.</p>
+
+<p><strong>为什么你应该关心:</strong> 算法层面的“省内存/省算力”会直接改变硬件需求与成本结构，决定 AI 是集中在云端，还是能更广泛地下沉到手机、PC 与边缘设备。/ Efficiency breakthroughs reshape hardware demand and unit economics, determining whether AI stays cloud-only or becomes truly ubiquitous on phones, PCs, and edge devices.</p>
+
+<hr/>
+
+<p><strong>📰 Story 4: 医疗 AI 新进展：Noah Labs 的 Vox 获 FDA 认定，可用 5 秒语音筛查心衰 / Healthcare AI: Noah Labs’ Vox gets FDA designation for detecting heart failure from a 5-second voice sample</strong></p>
+
+<p>来源: https://www.buildez.ai/blog/ai-trending-april-2026-developments</p>
+
+<p>报道指出 Noah Labs 的 Vox 获得 FDA 相关认定，可通过短短 5 秒语音信号进行心衰风险检测；这展示了 AI 在临床前筛查与远程健康管理的潜力。</p>
+<p>Reports say Noah Labs’ Vox received an FDA-related designation and can detect heart failure risk from a 5-second voice sample, highlighting AI’s potential in pre-clinical screening and remote care.</p>
+
+<p><strong>为什么你应该关心:</strong> 当 AI 开始进入受监管医疗体系，它的价值不再只是“更聪明”，而是能否真正改善结果、降低成本并通过合规审查。/ As AI enters regulated healthcare, the bar shifts from “smart” to clinically useful, cost-effective, and compliant—opening massive markets (and responsibilities).</p>
+
+<hr/>
+
+<p>📚 <strong>References</strong></p>
+<ol><li>https://openai.com/index/openai-acquires-tbpn/</li><li>https://www.infoworld.com/article/4154145/google-gives-enterprises-new-controls-to-manage-ai-inference-costs-and-reliability.html</li><li>https://www.networkworld.com/article/4154034/google-research-talks-compression-technology-it-says-will-greatly-reduce-memory-needed-for-ai-processing.html</li><li>https://www.buildez.ai/blog/ai-trending-april-2026-developments</li></ol>
+
+<p>🧒 <strong>ELI5:</strong> 这周 AI 的重点是：大公司在“更省钱更稳定地跑 AI”、以及把 AI 推进现实世界（媒体与医疗）上同时加速。/ This week’s theme: big players are making AI cheaper and more reliable to run—and pushing it deeper into the real world (media and healthcare). </p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
