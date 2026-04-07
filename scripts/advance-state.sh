@@ -107,7 +107,7 @@ with open(state_file) as f:
     state = json.load(f)
 
 if is_review:
-    # Review day: just advance currentDay + mark review
+    # Review day: advance currentDay + mark review + add history entry
     state['currentDay'] = next_day
     state['lastSentDate'] = today
     state['lastReviewDay'] = str(next_day)
@@ -115,6 +115,15 @@ if is_review:
         state['reviewDaysCompleted'] = []
     if next_day not in state['reviewDaysCompleted']:
         state['reviewDaysCompleted'].append(next_day)
+    # Also add a history entry for review days (was previously missing)
+    if 'history' not in state:
+        state['history'] = []
+    state['history'].append({
+        'day': next_day,
+        'date': today,
+        'difficultyPhase': difficulty_phase,
+        'sections': {'review': {'title': f'Review Day {next_day}'}}
+    })
     print(f"✅ State advanced to Day {next_day} (review day)")
 else:
     # Normal day: advance all indices + add history entry
