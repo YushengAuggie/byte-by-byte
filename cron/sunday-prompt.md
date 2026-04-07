@@ -8,7 +8,7 @@ cat {{BBB_REPO_DIR}}/state.json
 
 Build progress header:
 ```
-📊 Day {currentDay}/150 · NeetCode: {leetcodeIndex}/150 · SysDesign: {systemDesignIndex}/40 · Behavioral: {behavioralIndex}/40 · Frontend: {frontendIndex}/50 · AI: {aiTopicIndex}/30
+📊 NeetCode: {leetcodeIndex}/150 · SysDesign: {systemDesignIndex}/40 · Behavioral: {behavioralIndex}/40 · Frontend: {frontendIndex}/50 · AI: {aiTopicIndex}/30
 🔥 {streak}-day streak!
 ```
 

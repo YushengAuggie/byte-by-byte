@@ -8,7 +8,7 @@ cat {{BBB_REPO_DIR}}/state.json
 
 From state.json, build a progress header:
 ```
-📊 Day {currentDay}/150 · NeetCode: {leetcodeIndex}/150 · SysDesign: {systemDesignIndex}/40 · Behavioral: {behavioralIndex}/40 · Frontend: {frontendIndex}/50 · AI: {aiTopicIndex}/30
+📊 NeetCode: {leetcodeIndex}/150 · SysDesign: {systemDesignIndex}/40 · Behavioral: {behavioralIndex}/40 · Frontend: {frontendIndex}/50 · AI: {aiTopicIndex}/30
 🔥 {streak}-day streak!
 ```
 Streak = count consecutive days with history entries going backward. Omit if 0.
