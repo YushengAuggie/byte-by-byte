@@ -32,17 +32,11 @@ for i in range(7):
     print(f"{d}: {status}")
 PYEOF
 
-echo "=== Recent QA issues ==="
-cat qa-log.md 2>/dev/null | tail -40
-
 echo "=== State ==="
 python3 -c "import json; s=json.load(open('state.json')); print(json.dumps({k:v for k,v in s.items() if k!='history'}, indent=2))"
 
-echo "=== Git log (last 10) ==="
-git log --oneline -10
-
-echo "=== Test results ==="
-bash scripts/test.sh 2>&1 | tail -5
+echo "=== Git log (last 5) ==="
+git log --oneline -5
 ```
 
 ## Step 1: Identify Issues
@@ -52,48 +46,25 @@ From the data above, categorize:
 - **P1 Quality**: Content sent but with issues (wrong answers, hallucinated facts, broken formatting)
 - **P2 Maintenance**: Code smell, technical debt, prompt bloat
 
-## Step 2: Fix P0 Issues
+## Step 2: Report
 
-For each P0 issue, make the fix directly:
-- If a script has a bug → fix the script
-- If a cron config is wrong → fix it with `openclaw cron edit`
-- If state.json is inconsistent → fix it
-- Run `bash scripts/test.sh` after any code change
-
-## Step 3: Propose P1/P2 Improvements
-
-For P1/P2 issues, write proposed changes to `{{BBB_REPO_DIR}}/OPTIMIZATION-LOG.md` (append, don't overwrite):
+Append findings to `{{BBB_REPO_DIR}}/OPTIMIZATION-LOG.md`:
 
 ```
 ## [DATE] Optimization Run
 
-### P0 Fixed
-- [what was fixed and how]
-
-### P1 Proposed
-- [issue] → [proposed fix]
-
-### P2 Noted
-- [technical debt item]
+### Issues Found
+- P0: [critical issues affecting delivery]
+- P1: [quality issues]
 
 ### Metrics
 - Delivery rate (7d): X/7
-- Cron error rate: X/4 jobs errored
-- Test pass rate: X/X
+- Cron errors: [list any]
 ```
 
-## Step 4: Commit
-
-```bash
-cd {{BBB_REPO_DIR}}
-git add -A
-git commit -m "optimize: [DATE] pipeline review — [summary]"
-git push
-```
+Do NOT run tests or make code changes. Just report.
 
 ## Rules
-- Fix P0 issues directly. Do not just report them.
-- Never modify content archives (only scripts, prompts, configs)
-- Run tests before committing
-- Keep this prompt under 2KB to avoid timeouts
-- Only send to Telegram if you fixed a P0 issue
+- Report only. Do NOT make code changes or run tests.
+- Keep output concise — just the data + categorized findings.
+- If a P0 issue is found, describe it clearly so it can be fixed manually.
