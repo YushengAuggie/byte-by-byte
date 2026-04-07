@@ -32,7 +32,7 @@ This writes section info to `/tmp/bbb-section-{1..5}.txt` (normal) or `/tmp/bbb-
 Read `/tmp/bbb-review.txt` for REVIEW_DAY, PAST_TOPICS, ARCHIVE_PATH. Generate a review quiz:
 
 ```
-🔄 **复习日 Day N / Review Day N**
+🔄 **复习日 / Review Day**
 今天是复习日！回顾过去4天的内容。
 
 ### 📝 Quick Quiz — 3 Mini-Reviews
@@ -75,7 +75,7 @@ The review-and-send cron handles all delivery (including review days).
 For each section (1-5), read `/tmp/bbb-section-N.txt` and write content to its ARCHIVE_PATH.
 
 ### Section 1: System Design (3 min)
-🏗️ **系统设计 Day N / System Design Day N**
+🏗️ **系统设计 / System Design**
 - Real-world scenario ("想象你在设计...")
 - ASCII architecture diagram
 - Key tradeoffs (为什么这样设计？)
@@ -83,7 +83,7 @@ For each section (1-5), read `/tmp/bbb-section-N.txt` and write content to its A
 - 📚 References (3 real URLs) + 🧒 ELI5
 
 ### Section 2: Algorithms (4 min) — PATTERN-BASED TEACHING
-💻 **算法 Day N / Algorithms Day N** — #NUM TITLE (DIFFICULTY) — PATTERN
+💻 **算法 / Algorithms** — #NUM TITLE (DIFFICULTY) — PATTERN
 
 Read `/tmp/bbb-section-2.txt` carefully. It contains pattern context:
 - `IS_FIRST_IN_PATTERN`: if "yes", this is the FIRST problem in a new pattern block. **Start with the pattern template** before the problem.
@@ -119,12 +119,12 @@ Content for every problem:
 - **Also write** `/tmp/bbb-quiz-2.json`: `{"question":"...","options":[4 items],"correct_index":N}`
 
 ### Section 3: Soft Skills (2 min)
-🗣️ **软技能 Day N / Soft Skills Day N**
+🗣️ **软技能 / Soft Skills**
 - Why this matters → STAR breakdown → ❌ Bad vs ✅ Good → Senior/Staff tips → Key Takeaways
 - 📚 References + 🧒 ELI5
 
 ### Section 4: Frontend — React/TypeScript 实战 (2 min)
-🎨 **前端 Day N / Frontend Day N**
+🎨 **前端 / Frontend**
 Focus on **practical, production-ready** React/TypeScript/Next.js knowledge:
 - Start with a **real scenario**: "你在做一个 dashboard，需要..." / "You're building a dashboard and need to..."
 - Show a **code snippet** that demonstrates the concept (React component, hook, or TypeScript type)
@@ -135,7 +135,7 @@ Focus on **practical, production-ready** React/TypeScript/Next.js knowledge:
 - **Also write** `/tmp/bbb-quiz-4.json`: `{"question":"...","options":[4 items],"correct_index":N}`
 
 ### Section 5: AI (2 min)
-🤖 **AI Day N**
+🤖 **AI**
 - **NEWS mode** — MANDATORY SOURCING RULES:
   1. Search the web first: use any available search tool or built-in web browsing
   2. For EACH story: you MUST have found it via search. Paste source URL inline.
