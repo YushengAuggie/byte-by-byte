@@ -5,8 +5,538 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 06 Apr 2026 15:49:41 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 07 Apr 2026 15:14:18 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-07</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-07</guid>
+      <pubDate>Tue, 07 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 19</h2>
+<p><strong>Topic:</strong> Design a URL Shortener (TinyURL)</p>
+<p><strong>Date:</strong> 2026-04-07</p>
+
+<hr/>
+
+<p>🏗️ <strong>系统设计 / System Design</strong></p>
+
+<p><strong>设计一个短链接服务（TinyURL）</strong></p>
+<p><strong>Design a URL Shortener (TinyURL)</strong></p>
+
+<hr/>
+
+<h3>🌍 真实场景 / Real-World Scenario</h3>
+
+<p>想象你在 Twitter（现 X）工作。每条推文最多 280 字，但一个普通的 YouTube 链接就能占掉 60 个字符。你的任务：把 <code>https://www.youtube.com/watch?v=dQw4w9WgXcQ</code> 变成 <code>https://tinyurl.com/abc123</code>。</p>
+
+<p><em>Imagine you&#x27;re at Twitter (now X). Tweets are 280 chars, but a YouTube URL alone takes 60. Your job: turn <code>https://www.youtube.com/watch?v=dQw4w9WgXcQ</code> into <code>https://tinyurl.com/abc123</code>.</em></p>
+
+<p><strong>功能需求 / Functional Requirements:</strong></p>
+<p>- 给一个长 URL，生成唯一短链接</p>
+<p>- 访问短链接，重定向到原始 URL</p>
+<p>- 短链接可配置过期时间（可选）</p>
+
+<p><strong>非功能需求 / Non-Functional:</strong></p>
+<p>- 100M 短链/天（写操作）</p>
+<p>- 读写比约 10:1（10亿次重定向/天）</p>
+<p>- 链接可用 5 年（可用 → 高可用）</p>
+<p>- P99 重定向延迟 &lt; 50ms</p>
+
+<hr/>
+
+<h3>🏛️ 架构图 / Architecture Diagram</h3>
+
+<pre><code>
+Client
+  │
+  ▼
+[Load Balancer]
+  │              │
+  ▼              ▼
+[App Server]  [App Server]   ← stateless, horizontally scalable
+  │
+  ├──► [Cache (Redis)]  ← 短链 → 长链，命中率 ~95%
+  │          │ miss
+  ▼          ▼
+[Primary DB (PostgreSQL)] ──► [Read Replicas × 3]
+  │
+  ▼
+[ID Generator Service]   ← 独立发号器（雪花算法 or 自增）
+</code></pre>
+
+<p><strong>核心表结构 / Core Schema:</strong></p>
+<pre><code>
+CREATE TABLE url_mappings (
+  short_code  VARCHAR(7) PRIMARY KEY,   -- e.g. &quot;abc123f&quot;
+  long_url    TEXT NOT NULL,
+  created_at  TIMESTAMP DEFAULT NOW(),
+  expires_at  TIMESTAMP,
+  user_id     BIGINT
+);
+CREATE INDEX idx_short_code ON url_mappings(short_code);
+</code></pre>
+
+<hr/>
+
+<h3>⚙️ 关键设计决策 / Key Design Decisions</h3>
+
+<p><strong>1. 如何生成短码？ / How to generate short codes?</strong></p>
+
+<p>方案A — <strong>Base62 编码</strong>（推荐）：</p>
+<pre><code>
+62^7 = 3.5 万亿种组合 ≈ 足够用 100 年
+</code></pre>
+<p>- 用自增 ID（如 <code>1234567</code>) → Base62 编码 → <code>&quot;b8Xk2mP&quot;</code></p>
+<p>- 优点：无碰撞，ID 顺序保证短码唯一</p>
+<p>- 缺点：短码可预测（可加随机盐）</p>
+
+<p>方案B — <strong>MD5 哈希截取</strong>：</p>
+<p>- 取 URL 的 MD5 前 7 位</p>
+<p>- 问题：<strong>哈希碰撞</strong>，不同 URL 可能得到相同短码</p>
+
+<pre><code>
+import base62  # pip install pybase62
+
+def shorten(long_url: str, auto_increment_id: int) -&gt; str:
+    # Convert unique auto-increment ID to base62
+    return base62.encodebytes(auto_increment_id.to_bytes(8, &#x27;big&#x27;)).decode()[-7:]
+
+# Example: ID 1000000 → &quot;4c92&quot;... → take last 7 chars
+</code></pre>
+
+<p><strong>2. 重定向类型 / Redirect Type:</strong></p>
+<p>- <code>301 Permanent</code>：浏览器缓存，减服务器压力，但无法统计点击数</p>
+<p>- <code>302 Temporary</code>：每次必过服务器，可精确统计 → <strong>大多数短链服务用 302</strong></p>
+
+<p><strong>3. 缓存策略 / Caching:</strong></p>
+<p>- Redis 存储 <code>shortCode → longURL</code>，TTL = 24h</p>
+<p>- 读写比 10:1，缓存命中率可达 95%+</p>
+<p>- LRU 策略驱逐不热门的链接</p>
+
+<hr/>
+
+<h3>⚠️ 别踩这个坑 / Common Mistakes</h3>
+
+<p>| ❌ 错误 | ✅ 正确 |</p>
+<p>|---------|---------|</p>
+<p>| 用 MD5 哈希直接截取，不处理碰撞 | 用自增 ID + Base62，或哈希时加碰撞检测 |</p>
+<p>| 短码暴露自增 ID（可遍历所有链接） | Base62 编码后加随机偏移或加盐 |</p>
+<p>| 重定向用 301（无法统计点击） | 根据需求选 301/302；统计场景用 302 |</p>
+<p>| 单点 ID 生成器（性能瓶颈） | 用 Snowflake 分布式 ID 或数据库自增分段 |</p>
+<p>| 忘记过期清理（磁盘无限增长） | 定时任务 + TTL 字段清理过期链接 |</p>
+
+<hr/>
+
+<h3>📊 容量估算 / Capacity Estimation</h3>
+
+<pre><code>
+写：100M 短链/天 ÷ 86400s ≈ 1160 QPS
+读：1B 重定向/天 ÷ 86400s ≈ 11600 QPS
+存储：每条记录约 500 bytes × 100M/天 × 365天 × 5年 ≈ 91 TB
+</code></pre>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+
+<p>1. [System Design Interview: URL Shortener — Alex Xu](https://bytebytego.com/courses/system-design-interview/design-a-url-shortener)</p>
+<p>2. [How TinyURL Works — High Scalability](http://highscalability.com/blog/2021/4/27/how-should-i-store-the-short-links-in-the-database.html)</p>
+<p>3. [Base62 Encoding Explained — GeeksForGeeks](https://www.geeksforgeeks.org/url-shortening-service-using-base62-encoding/)</p>
+
+<hr/>
+
+<h3>🧒 ELI5（用小学生能懂的方式解释）</h3>
+
+<p>想象你有一本很厚的字典，每本字典有一个编号。你把网址存进字典，给它一个编号（比如第 12345 条）。然后你把 12345 翻译成一串奇怪的字母（比如 &quot;abcXY&quot;）。别人访问 &quot;abcXY&quot; 时，你查字典找到 12345，再找到原来的网址，带他过去。这就是短链接！</p>
+
+<p><em>Imagine a big dictionary. Every URL gets a unique page number (12345). You translate that number into a short code (&quot;abcXY&quot;). When someone visits &quot;abcXY&quot;, you look up 12345 in your dictionary, find the original URL, and send them there. That&#x27;s it!</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 19</h2>
+<p><strong>Topic:</strong> Permutation in String (#567)</p>
+<p><strong>Date:</strong> 2026-04-07</p>
+
+<hr/>
+
+<p>💻 <strong>算法 / Algorithms</strong> — #567 Permutation in String (Medium)</p>
+
+<p>🧩 <strong>滑动窗口模式 (4/6)</strong> — building on the template from Day 15</p>
+
+<p>今天的问题是滑动窗口的经典变体：<strong>固定大小窗口</strong>。与寻找“最长/最短”子串不同，这里的窗口大小是固定的（等于目标字符串的长度）。</p>
+
+<p><em>Today&#x27;s problem is a classic variation: <strong>Fixed-Size Window</strong>. Unlike finding the &quot;longest/shortest&quot; substring, the window size here is strictly fixed to the length of the target string.</em></p>
+
+<p>🔗 [LeetCode #567](https://leetcode.com/problems/permutation-in-string/) | 🟡 Medium | 📹 [NeetCode Video](https://www.youtube.com/watch?v=UbyhOgBN834)</p>
+
+<hr/>
+
+<h3>🌍 现实场景 / Real-World Analogy</h3>
+
+<p>想象你在玩拼字游戏（Scrabble）。你手里有字母 <code>a, b</code>，你想在黑板上的长字符串 <code>eidbaooo</code> 中寻找是否有一段连续的字母正好能用你手里的字母拼出来（顺序无所谓，只要字母和数量对得上）。这就是寻找“排列”（Permutation）。</p>
+
+<p><em>Imagine playing Scrabble. You have letters <code>a, b</code>. You want to see if there&#x27;s a contiguous sequence in the string <code>eidbaooo</code> that can be formed using exactly your letters (order doesn&#x27;t matter, just the counts). That&#x27;s finding a permutation.</em></p>
+
+<hr/>
+
+<h3>🧠 映射到模版 / Map to Pattern Template</h3>
+
+<p>排列（Permutation）的本质是：<strong>字符出现的频率完全相同</strong>。</p>
+<p>我们维护一个大小恒定为 <code>len(s1)</code> 的滑动窗口，在 <code>s2</code> 上滑动。每次向右滑动一步：</p>
+<p>1. <strong>Expand</strong>: 右边新进来的字符，频率 +1</p>
+<p>2. <strong>Shrink</strong>: 左边出去的字符，频率 -1（因为窗口大小固定，所以进一个必须出一个）</p>
+<p>3. <strong>Check</strong>: 如果窗口内的字符频率和 <code>s1</code> 完全一致，就找到了！</p>
+
+<p><em>A permutation means <strong>exact same character frequencies</strong>. We maintain a sliding window of strictly size <code>len(s1)</code> over <code>s2</code>. For each step right: add the new char, remove the old char from the left, and check if frequencies match.</em></p>
+
+<hr/>
+
+<h3>💻 Python 实现 / Python Solution</h3>
+
+<pre><code>
+class Solution:
+    def checkInclusion(self, s1: str, s2: str) -&gt; bool:
+        if len(s1) &gt; len(s2):
+            return False
+            
+        # 1. Initialize frequency maps
+        s1_count = [0] * 26
+        window_count = [0] * 26
+        
+        for i in range(len(s1)):
+            s1_count[ord(s1[i]) - ord(&#x27;a&#x27;)] += 1
+            window_count[ord(s2[i]) - ord(&#x27;a&#x27;)] += 1
+            
+        # 2. Check the first window
+        if s1_count == window_count:
+            return True
+            
+        # 3. Slide the fixed-size window
+        left = 0
+        for right in range(len(s1), len(s2)):
+            # Expand window: add right char
+            window_count[ord(s2[right]) - ord(&#x27;a&#x27;)] += 1
+            
+            # Shrink window: remove left char
+            window_count[ord(s2[left]) - ord(&#x27;a&#x27;)] -= 1
+            left += 1
+            
+            # Check if current window matches
+            if s1_count == window_count:
+                return True
+                
+        return False
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- <strong>Time:</strong> $O(N)$ where $N$ is the length of <code>s2</code>. Comparing two arrays of size 26 takes $O(1)$ time.</p>
+<p>- <strong>Space:</strong> $O(1)$ because the frequency arrays are always size 26, regardless of string length.</p>
+
+<hr/>
+
+<h3>🔄 举一反三 / Connect to Pattern</h3>
+
+<p>这道题和 #438 Find All Anagrams in a String 完全一样！Anagram（字母异位词）和 Permutation（排列）在这个语境下是同一个意思。掌握了这个固定窗口频率匹配的技巧，那道题可以直接秒杀。</p>
+
+<p><em>This is identical to #438 Find All Anagrams in a String! Anagram and Permutation mean the exact same thing here. Master this fixed-window frequency matching, and you get two problems for the price of one.</em></p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+<p>1. [NeetCode: Permutation in String](https://neetcode.io/problems/permutation-in-string)</p>
+<p>2. [Sliding Window Pattern — LeetCode Discuss](https://leetcode.com/discuss/study-guide/177204/half-blood-prince-sliding-window)</p>
+<p>3. [Python ord() function — W3Schools](https://www.w3schools.com/python/ref_func_ord.asp)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>你要在一条长长的火车上找两节特定的车厢（比如一节红的，一节蓝的，挨在一起）。你拿一个刚好能罩住两节车厢的框，从车头开始往后套。每次往后挪一节，看看框里的颜色对不对。因为框的大小不变，所以每次挪动，前面进来一节，后面就出去一节。</p>
+
+<p><em>You&#x27;re looking for two specific train cars (one red, one blue, next to each other) on a long train. You take a frame that fits exactly two cars and slide it from the front. Each time you move it, one new car enters the frame, and one old car leaves. You just check if the colors inside the frame match what you want!</em></p>
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 19</h2>
+<p><strong>Topic:</strong> How do you ensure quality in your team&#x27;s code and systems?</p>
+<p><strong>Date:</strong> 2026-04-07</p>
+
+<hr/>
+
+<p>🗣️ <strong>软技能 / Soft Skills</strong></p>
+
+<p><strong>如何保证团队的代码和系统质量？</strong></p>
+<p><strong>How do you ensure quality in your team&#x27;s code and systems?</strong></p>
+
+<hr/>
+
+<h3>💡 为什么这个问题很重要？ / Why this matters</h3>
+
+<p>面试官（特别是面 Senior/Staff 级别时）问这个问题，不是想听你背诵“写单元测试”。他们想知道你是否具备<strong>系统性思维</strong>和<strong>工程文化建设</strong>的能力。质量不是靠一个人盯着，而是靠流程、工具和文化。</p>
+
+<p><em>Interviewers (especially for Senior/Staff roles) aren&#x27;t looking for &quot;write unit tests.&quot; They want to know if you have <strong>systems thinking</strong> and can build an <strong>engineering culture</strong>. Quality isn&#x27;t about one person watching every PR; it&#x27;s about processes, tooling, and culture.</em></p>
+
+<hr/>
+
+<h3>🌟 STAR 拆解 / STAR Breakdown</h3>
+
+<p><strong>Situation:</strong></p>
+<p>团队扩张快，代码库变得混乱，线上 bug 频发。</p>
+<p><em>The team was growing fast, the codebase was getting messy, and production bugs were frequent.</em></p>
+
+<p><strong>Task:</strong></p>
+<p>作为 Tech Lead，我需要建立一套机制，在不严重拖慢开发速度的前提下提升质量。</p>
+<p><em>As a Tech Lead, I needed to establish mechanisms to improve quality without severely slowing down feature delivery.</em></p>
+
+<p><strong>Action:</strong></p>
+<p>1. <strong>自动化 (Automation):</strong> 引入 CI/CD pipeline，强制执行 linting (ESLint/Prettier) 和基础测试。</p>
+<p>2. <strong>规范化 (Standardization):</strong> 制定并推行 Code Review 规范（例如 PR 模板，要求附带测试截图）。</p>
+<p>3. <strong>可观测性 (Observability):</strong> 完善监控和告警（Datadog/Sentry），确保问题在用户报怨前被发现。</p>
+<p>4. <strong>文化建设 (Culture):</strong> 每周举办 &quot;Bug Bash&quot; 或 &quot;Post-mortem&quot;（无指责复盘），把踩过的坑变成团队经验。</p>
+
+<p><strong>Result:</strong></p>
+<p>线上 P0 故障率下降 60%，新成员 onboarding 时间缩短，代码库一致性显著提升。</p>
+<p><em>Production P0 incidents dropped by 60%, new hire onboarding was faster, and codebase consistency improved significantly.</em></p>
+
+<hr/>
+
+<h3>❌ 错误示范 vs ✅ 正确示范 / Bad vs Good</h3>
+
+<p>❌ <strong>Bad:</strong> &quot;I review every single PR very carefully and tell people when they make mistakes.&quot;</p>
+<p><em>(微观管理，无法规模化 / Micromanagement, doesn&#x27;t scale)</em></p>
+
+<p>✅ <strong>Good:</strong> &quot;I believe in &#x27;shift-left&#x27; quality. We automated linting and testing in CI so reviewers can focus on architecture and logic, not formatting. We also implemented blameless post-mortems so every outage makes the system stronger.&quot;</p>
+<p><em>(系统性思维，自动化，文化建设 / Systems thinking, automation, culture building)</em></p>
+
+<hr/>
+
+<h3>🚀 Senior/Staff 进阶技巧 / Senior/Staff Tips</h3>
+
+<p>高级工程师不仅关注代码质量，更关注<strong>系统质量</strong>和<strong>交付质量</strong>。</p>
+<p>- <strong>Shift-Left (左移):</strong> 把质量检查推到开发周期的最早期（本地 pre-commit hooks，IDE 插件）。</p>
+<p>- <strong>Blast Radius (爆炸半径):</strong> 即使有 bug，如何限制它的影响？（Feature Flags，灰度发布/Canary Releases）。</p>
+<p>- <strong>Tech Debt Management:</strong> 定期安排时间清理技术债，而不是让它无限堆积。</p>
+
+<p><em>Senior engineers focus on <strong>system quality</strong> and <strong>delivery quality</strong>, not just code.</em></p>
+<p>- <strong><em>Shift-Left:</strong> Push quality checks to the earliest stage (pre-commit hooks).</em></p>
+<p>- <strong><em>Blast Radius:</strong> How do we limit the impact of a bug? (Feature Flags, Canary Releases).</em></p>
+<p>- <strong><em>Tech Debt:</strong> Schedule regular time to pay down technical debt.</em></p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+<p>1. [Google Engineering Practices — Code Review](https://google.github.io/eng-practices/review/)</p>
+<p>2. [Shift-Left Testing — Atlassian](https://www.atlassian.com/continuous-delivery/software-testing/shift-left-testing)</p>
+<p>3. [Blameless Post-Mortems — SRE Book (Google)](https://sre.google/sre-book/postmortem-culture/)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象你在管理一个厨房。保证菜品质量不能靠你每道菜都尝一口（你会累死）。你要做的是：买好刀具（工具），写好菜谱（规范），装好烟雾报警器（监控），并且在菜做砸了的时候，大家一起讨论怎么改进，而不是骂厨师（文化）。</p>
+
+<p><em>Imagine managing a kitchen. You can&#x27;t taste every dish to ensure quality (you&#x27;d be exhausted). Instead, you buy good knives (tooling), write clear recipes (standards), install smoke alarms (monitoring), and when a dish fails, you discuss how to improve the recipe instead of yelling at the chef (culture).</em></p>
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 19</h2>
+<p><strong>Topic:</strong> React Server Components (RSC) — What Actually Changes</p>
+<p><strong>Date:</strong> 2026-04-07</p>
+
+<hr/>
+
+<p>🎨 <strong>前端 / Frontend</strong></p>
+
+<p><strong>React Server Components (RSC) — 到底改变了什么？</strong></p>
+<p><strong>React Server Components (RSC) — What Actually Changes?</strong></p>
+
+<hr/>
+
+<h3>🌍 真实场景 / Real-World Scenario</h3>
+
+<p>你在做一个博客文章页面。文章内容很长，包含大量 Markdown 解析库（比如 <code>marked</code>，体积很大）。如果用传统的 React（客户端渲染），用户需要把整个 <code>marked</code> 库下载到浏览器，然后才能看到文章。这太慢了！</p>
+
+<p><em>You&#x27;re building a blog post page. The content is long and uses a massive Markdown parsing library (e.g., <code>marked</code>). With traditional React (Client-Side Rendering), the user has to download the entire <code>marked</code> library to their browser just to see the post. That&#x27;s way too slow!</em></p>
+
+<hr/>
+
+<h3>💻 代码对比 / Code Snippet</h3>
+
+<p><strong>❌ 传统 React (Client Component):</strong></p>
+<pre><code>
+import { marked } from &#x27;marked&#x27;; // 🚨 整个库被打包发给浏览器！(Bundle size ++!)
+
+export default function BlogPost({ content }) {
+  // 浏览器在运行时解析 Markdown
+  const html = marked.parse(content);
+  return &lt;div dangerouslySetInnerHTML={{ __html: html }} /&gt;;
+}
+</code></pre>
+
+<p><strong>✅ React Server Component (RSC - Next.js App Router 默认):</strong></p>
+<pre><code>
+import { marked } from &#x27;marked&#x27;; // 🟢 只在服务器端运行，不发给浏览器！(Zero bundle size!)
+
+// 注意：这是一个 async 组件！(RSC 独有超能力)
+export default async function BlogPost({ id }) {
+  // 直接在组件里查数据库！(Mind blown 🤯)
+  const post = await db.posts.findUnique({ where: { id } });
+  
+  // 服务器解析完 Markdown，直接把生成的 HTML 发给浏览器
+  const html = marked.parse(post.content);
+  return &lt;div dangerouslySetInnerHTML={{ __html: html }} /&gt;;
+}
+</code></pre>
+
+<hr/>
+
+<h3>🧠 核心概念 / Core Concept</h3>
+
+<p>RSC 的本质是：<strong>把组件分成两类，各司其职。</strong></p>
+
+<p>1. <strong>Server Components (默认):</strong></p>
+<p>- 跑在服务器上。</p>
+<p>- 负责：获取数据（直接读 DB）、繁重的计算（解析 Markdown）。</p>
+<p>- 结果：它们的代码<strong>永远不会</strong>发送到浏览器。浏览器只收到它们渲染出的最终 HTML/UI 树。</p>
+
+<p>2. <strong>Client Components (<code>&quot;use client&quot;</code>):</strong></p>
+<p>- 跑在浏览器上（但也支持 SSR 预渲染）。</p>
+<p>- 负责：交互（<code>onClick</code>）、状态（<code>useState</code>）、生命周期（<code>useEffect</code>）、浏览器 API（<code>window</code>）。</p>
+<p>- 结果：它们的代码会被打包发送给浏览器。</p>
+
+<p><em>RSC splits components into two types:</em></p>
+<p>1. <strong><em>Server Components (Default):</strong> Run on the server. Fetch data directly, do heavy lifting. Their code is <strong>never</strong> sent to the client. The client only gets the resulting UI.</em></p>
+<p>2. <strong><em>Client Components (<code>&quot;use client&quot;</code>):</strong> Run on the client. Handle interactivity, state, and browser APIs. Their code is bundled and sent to the client.</em></p>
+
+<hr/>
+
+<h3>⚠️ 常见误区 / Common Mistake</h3>
+
+<p>❌ <strong>误区：</strong> &quot;Server Components 就是 SSR (Server-Side Rendering)。&quot;</p>
+<p>✅ <strong>真相：</strong> 不是！SSR 是把整个页面在服务器上渲染成 HTML，然后发给浏览器，浏览器还要下载所有的 JS 代码去 &quot;hydrate&quot;（注水，绑定事件）。RSC 是<strong>连 JS 代码都不发了</strong>，直接发渲染好的 UI 树。</p>
+
+<p>❌ <strong>误区：</strong> &quot;所有的组件都应该变成 Server Components。&quot;</p>
+<p>✅ <strong>真相：</strong> 需要交互的地方（按钮、输入框、动画）必须用 Client Components。RSC 和 Client Components 是互补的。</p>
+
+<hr/>
+
+<h3>🎯 什么时候用什么？ / When to use what?</h3>
+
+<p>| 场景 | Server Component | Client Component (<code>&quot;use client&quot;</code>) |</p>
+<p>|------|------------------|-----------------------------------|</p>
+<p>| 获取数据 (Fetch data) | ✅ | ❌ (尽量避免) |</p>
+<p>| 直接访问后端资源 (DB, API keys) | ✅ | ❌ (安全风险) |</p>
+<p>| 保持大依赖包在服务器 (Large dependencies) | ✅ | ❌ |</p>
+<p>| 添加交互 (onClick, onChange) | ❌ | ✅ |</p>
+<p>| 使用状态和生命周期 (useState, useEffect) | ❌ | ✅ |</p>
+<p>| 使用浏览器 API (window, localStorage) | ❌ | ✅ |</p>
+
+<hr/>
+
+<h3>🧩 猜猜这段代码输出什么？ / Quiz</h3>
+
+<pre><code>
+// app/page.tsx (Next.js App Router)
+import Button from &#x27;./Button&#x27;;
+
+export default function Page() {
+  console.log(&quot;Where am I running?&quot;);
+  return &lt;Button /&gt;;
+}
+</code></pre>
+
+<p><strong>选项：</strong></p>
+<p>A. 浏览器的控制台</p>
+<p>B. 服务器的终端 (Terminal)</p>
+<p>C. 都会打印</p>
+<p>D. 报错</p>
+
+<p><em>(答案见下方 JSON)</em></p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+<p>1. [React Server Components — React Docs](https://react.dev/reference/rsc/server-components)</p>
+<p>2. [Next.js App Router — Server Components](https://nextjs.org/docs/app/building-your-application/rendering/server-components)</p>
+<p>3. [Making Sense of React Server Components — Josh W. Comeau](https://www.joshwcomeau.com/react/server-components/)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>以前去餐厅（传统 React），厨师（服务器）把生的菜和菜谱（JS 代码）打包寄到你家，让你自己炒（浏览器渲染）。现在有了 RSC，厨师在后厨把菜炒好（服务器渲染），直接端上桌（HTML），你只管吃就行了！只有需要你自己加盐加醋的菜（交互），才会给你调料瓶（Client Components）。</p>
+
+<p><em>Before (Traditional React), the chef (server) mailed you raw ingredients and a recipe (JS bundle) to cook at home (browser rendering). Now with RSC, the chef cooks the heavy meals in the kitchen and serves them ready-to-eat (HTML). You only get the salt shaker (Client Components) for dishes you need to interact with!</em></p>
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 19</h2>
+<p><strong>Topic:</strong> NEWS</p>
+<p><strong>Date:</strong> 2026-04-07</p>
+
+<hr/>
+
+<p>🤖 <strong>AI</strong></p>
+
+<p><strong>AI 资讯速递 / AI News Roundup</strong></p>
+
+<hr/>
+
+<h3>📰 1. Bezos 挖角 xAI 联合创始人 / Bezos&#x27; Project Prometheus Poaches xAI Co-founder from OpenAI</h3>
+
+<p><strong>发生了什么 (What happened):</strong></p>
+<p>Jeff Bezos 的 AI 实验室（Project Prometheus）成功挖走了 xAI 联合创始人 Kyle Kozic（他此前在 OpenAI 任职）。Kozic 将在 Bezos 领导的初创公司专注于 AI 基础设施建设，该公司正致力于利用 AI 改进制造业，已获超 60 亿美元融资。这是近期 AI 领域人才争夺战的最新动向。</p>
+
+<p><em>Jeff Bezos&#x27; AI lab (Project Prometheus) has poached xAI co-founder Kyle Kozic, who had been working at OpenAI. Kozic will focus on AI infrastructure at the well-funded startup, which Bezos co-founded alongside former Google exec Vik Bajaj. Project Prometheus focuses on using AI to improve manufacturing — and has already raised $6.2B. The latest move in the ongoing AI talent war.</em></p>
+
+<p><strong>为什么重要 (Why it matters):</strong></p>
+<p>- 顶尖 AI 人才的流动正在加速，科技巨头和资金雄厚的初创公司都在争夺核心基础设施专家。</p>
+<p>- AI 在制造业（实体经济）的应用正成为下一个重要战场。</p>
+
+<p>🔗 <strong>来源 (Source):</strong> [The Verge - Jeff Bezos&#x27; AI lab poaches xAI cofounder Kyle Kozic from OpenAI](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<hr/>
+
+<h3>📰 2. Anthropic 与谷歌和博通达成重大基础设施协议 / Anthropic Signs Major Infrastructure Deal with Google and Broadcom</h3>
+
+<p><strong>发生了什么 (What happened):</strong></p>
+<p>Anthropic 宣布与谷歌和博通（Broadcom）签署了一项大型 AI 基础设施协议。预计从 2027 年开始，将有“数千兆瓦（multiple gigawatts）的下一代 TPU 算力”上线，用于“驱动我们的前沿 Claude 模型”。此外，该公司表示其年化收入已超过 300 亿美元。</p>
+
+<p><em>Anthropic has signed a massive AI infrastructure deal with Google and Broadcom. &quot;Multiple gigawatts of next-generation TPU capacity&quot; are expected to come online starting in 2027 to &quot;power our frontier Claude models.&quot; The company also reported its run-rate revenue has surpassed $30 billion.</em></p>
+
+<p><strong>为什么重要 (Why it matters):</strong></p>
+<p>- <strong>算力即权力：</strong> 确保未来的计算资源是训练下一代大模型的关键。</p>
+<p>- <strong>TPU 生态：</strong> Anthropic 选择谷歌的 TPU 而非完全依赖 Nvidia GPU，显示了 AI 硬件市场的多元化趋势。</p>
+<p>- <strong>惊人的商业化速度：</strong> 300 亿美元的年化收入表明企业级 AI 市场的需求极其强劲。</p>
+
+<p>🔗 <strong>来源 (Source):</strong> [The Verge - Anthropic has signed a big AI infrastructure deal with Google and Broadcom](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<hr/>
+
+<h3>📰 3. 谷歌推出免费离线 AI 听写应用 / Google Launches Free Offline AI Dictation App</h3>
+
+<p><strong>发生了什么 (What happened):</strong></p>
+<p>谷歌推出了一款名为 &quot;Google AI Edge Eloquent&quot; 的全新实时 AI 转录应用。该应用免费、无需订阅、没有使用限制，并且可以在离线状态下自动润色你的语音（例如过滤掉“嗯”、“啊”等语气词）。目前仅支持 iOS，但计划未来登陆 Android 和 macOS。</p>
+
+<p><em>Google has launched &quot;Google AI Edge Eloquent,&quot; a new live AI transcription app that is free, offline, requires no subscription, and has no usage limits. It automatically polishes your speech by filtering out filler words like &quot;um.&quot; Currently on iOS, with plans for Android and macOS.</em></p>
+
+<p><strong>为什么重要 (Why it matters):</strong></p>
+<p>- <strong>端侧 AI (Edge AI) 的胜利：</strong> 强大的语音处理能力现在可以直接在手机本地运行，无需将音频发送到云端，极大地保护了隐私并降低了延迟。</p>
+<p>- <strong>实用工具的普及：</strong> AI 正在从“聊天机器人”变成无缝融入日常工作流的隐形助手。</p>
+
+<p>🔗 <strong>来源 (Source):</strong> [The Verge - Google has launched a free, offline AI dictation app](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+<p>1. [The Verge - Artificial Intelligence](https://www.theverge.com/ai-artificial-intelligence)</p>
+<p>2. [TechCrunch - Artificial Intelligence](https://techcrunch.com/category/artificial-intelligence/)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+<p>今天的新闻就像是一场大富翁游戏：贝索斯花重金请来了 OpenAI 老将帮忙建工厂；Anthropic 提前预订了谷歌未来几年的“超级电脑”来训练更聪明的 Claude；而谷歌则送给大家一个免费的“随身秘书”，能在你不联网的时候帮你把说的话变成漂亮的文章。</p>
+
+<p><em>Today&#x27;s news is like a game of Monopoly: Amazon hired an OpenAI veteran to help build their factories; Anthropic pre-ordered Google&#x27;s future supercomputers to train smarter versions of Claude; and Google gave everyone a free, offline &quot;pocket secretary&quot; that turns your spoken words into polished text without needing the internet.</em></p>]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-06</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

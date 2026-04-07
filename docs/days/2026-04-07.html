@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-04-07</title>
+  <meta name="description" content="byte-by-byte daily lessons for Tuesday, April 7, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Tuesday, April 7, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-04-07.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-04-06.html" style="color:var(--text2)">← 2026-04-06</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-04-07</span>
+    <h1>Tuesday, April 7, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-04-06.html" class="day-nav-btn">← 2026-04-06</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 19</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 / System Design — Day 19</h1>
+<p><strong>Topic:</strong> Design a URL Shortener (TinyURL)</p>
+<p><strong>Date:</strong> 2026-04-07</p>
+
+<hr/>
+
+<p>🏗️ <strong>系统设计 / System Design</strong></p>
+
+<p><strong>设计一个短链接服务（TinyURL）</strong></p>
+<p><strong>Design a URL Shortener (TinyURL)</strong></p>
+
+<hr/>
+
+<h3>🌍 真实场景 / Real-World Scenario</h3>
+
+<p>想象你在 Twitter（现 X）工作。每条推文最多 280 字，但一个普通的 YouTube 链接就能占掉 60 个字符。你的任务：把 <code>https://www.youtube.com/watch?v=dQw4w9WgXcQ</code> 变成 <code>https://tinyurl.com/abc123</code>。</p>
+
+<p><em>Imagine you're at Twitter (now X). Tweets are 280 chars, but a YouTube URL alone takes 60. Your job: turn <code>https://www.youtube.com/watch?v=dQw4w9WgXcQ</code> into <code>https://tinyurl.com/abc123</code>.</em></p>
+
+<p><strong>功能需求 / Functional Requirements:</strong></p>
+<ul><li>给一个长 URL，生成唯一短链接</li><li>访问短链接，重定向到原始 URL</li><li>短链接可配置过期时间（可选）</li></ul>
+
+<p><strong>非功能需求 / Non-Functional:</strong></p>
+<ul><li>100M 短链/天（写操作）</li><li>读写比约 10:1（10亿次重定向/天）</li><li>链接可用 5 年（可用 → 高可用）</li><li>P99 重定向延迟 &lt; 50ms</li></ul>
+
+<hr/>
+
+<h3>🏛️ 架构图 / Architecture Diagram</h3>
+
+<div class="diagram-block">Client
+  │
+  ▼
+[Load Balancer]
+  │              │
+  ▼              ▼
+[App Server]  [App Server]   ← stateless, horizontally scalable
+  │
+  ├──► [Cache (Redis)]  ← 短链 → 长链，命中率 ~95%
+  │          │ miss
+  ▼          ▼
+[Primary DB (PostgreSQL)] ──► [Read Replicas × 3]
+  │
+  ▼
+[ID Generator Service]   ← 独立发号器（雪花算法 or 自增）</div>
+
+<p><strong>核心表结构 / Core Schema:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="CREATE TABLE url_mappings (&#10;  short_code  VARCHAR(7) PRIMARY KEY,   -- e.g. &quot;abc123f&quot;&#10;  long_url    TEXT NOT NULL,&#10;  created_at  TIMESTAMP DEFAULT NOW(),&#10;  expires_at  TIMESTAMP,&#10;  user_id     BIGINT&#10;);&#10;CREATE INDEX idx_short_code ON url_mappings(short_code);">Copy</button>
+  <pre><code class="language-sql">CREATE TABLE url_mappings (
+  short_code  VARCHAR(7) PRIMARY KEY,   -- e.g. "abc123f"
+  long_url    TEXT NOT NULL,
+  created_at  TIMESTAMP DEFAULT NOW(),
+  expires_at  TIMESTAMP,
+  user_id     BIGINT
+);
+CREATE INDEX idx_short_code ON url_mappings(short_code);</code></pre>
+</div>
+
+<hr/>
+
+<h3>⚙️ 关键设计决策 / Key Design Decisions</h3>
+
+<p><strong>1. 如何生成短码？ / How to generate short codes?</strong></p>
+
+<p>方案A — <strong>Base62 编码</strong>（推荐）：</p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="62^7 = 3.5 万亿种组合 ≈ 足够用 100 年">Copy</button>
+  <pre><code class="language-text">62^7 = 3.5 万亿种组合 ≈ 足够用 100 年</code></pre>
+</div>
+<ul><li>用自增 ID（如 <code>1234567</code>) → Base62 编码 → <code>"b8Xk2mP"</code></li><li>优点：无碰撞，ID 顺序保证短码唯一</li><li>缺点：短码可预测（可加随机盐）</li></ul>
+
+<p>方案B — <strong>MD5 哈希截取</strong>：</p>
+<ul><li>取 URL 的 MD5 前 7 位</li><li>问题：<strong>哈希碰撞</strong>，不同 URL 可能得到相同短码</li></ul>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import base62  # pip install pybase62&#10;&#10;def shorten(long_url: str, auto_increment_id: int) -&gt; str:&#10;    # Convert unique auto-increment ID to base62&#10;    return base62.encodebytes(auto_increment_id.to_bytes(8, 'big')).decode()[-7:]&#10;&#10;# Example: ID 1000000 → &quot;4c92&quot;... → take last 7 chars">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> base62  <span style="color:#5c6370;"># pip install pybase62</span>
+
+<span style="color:#c678dd;">def</span> shorten(long_url: str, auto_increment_id: int) -&gt; str:
+    <span style="color:#5c6370;"># Convert unique auto-increment ID to base62</span>
+    <span style="color:#c678dd;">return</span> base62.encodebytes(auto_increment_id.to_bytes(<span style="color:#56b6c2;">8</span>, <span style="color:#e5c07b;">'big'</span>)).decode()[-<span style="color:#56b6c2;">7</span>:]
+
+<span style="color:#5c6370;"># Example: ID 1000000 → "4c92"... → take last 7 chars</span></code></pre>
+</div>
+
+<p><strong>2. 重定向类型 / Redirect Type:</strong></p>
+<ul><li><code>301 Permanent</code>：浏览器缓存，减服务器压力，但无法统计点击数</li><li><code>302 Temporary</code>：每次必过服务器，可精确统计 → <strong>大多数短链服务用 302</strong></li></ul>
+
+<p><strong>3. 缓存策略 / Caching:</strong></p>
+<ul><li>Redis 存储 <code>shortCode → longURL</code>，TTL = 24h</li><li>读写比 10:1，缓存命中率可达 95%+</li><li>LRU 策略驱逐不热门的链接</li></ul>
+
+<hr/>
+
+<h3>⚠️ 别踩这个坑 / Common Mistakes</h3>
+
+<table><thead><tr><th>❌ 错误</th><th>✅ 正确</th></tr></thead><tbody><tr><td>用 MD5 哈希直接截取，不处理碰撞</td><td>用自增 ID + Base62，或哈希时加碰撞检测</td></tr><tr><td>短码暴露自增 ID（可遍历所有链接）</td><td>Base62 编码后加随机偏移或加盐</td></tr><tr><td>重定向用 301（无法统计点击）</td><td>根据需求选 301/302；统计场景用 302</td></tr><tr><td>单点 ID 生成器（性能瓶颈）</td><td>用 Snowflake 分布式 ID 或数据库自增分段</td></tr><tr><td>忘记过期清理（磁盘无限增长）</td><td>定时任务 + TTL 字段清理过期链接</td></tr></tbody></table>
+
+<hr/>
+
+<h3>📊 容量估算 / Capacity Estimation</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="写：100M 短链/天 ÷ 86400s ≈ 1160 QPS&#10;读：1B 重定向/天 ÷ 86400s ≈ 11600 QPS&#10;存储：每条记录约 500 bytes × 100M/天 × 365天 × 5年 ≈ 91 TB">Copy</button>
+  <pre><code class="language-text">写：100M 短链/天 ÷ 86400s ≈ 1160 QPS
+读：1B 重定向/天 ÷ 86400s ≈ 11600 QPS
+存储：每条记录约 500 bytes × 100M/天 × 365天 × 5年 ≈ 91 TB</code></pre>
+</div>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+
+<ol><li><a href="https://bytebytego.com/courses/system-design-interview/design-a-url-shortener">System Design Interview: URL Shortener — Alex Xu</a></li><li><a href="http://highscalability.com/blog/2021/4/27/how-should-i-store-the-short-links-in-the-database.html">How TinyURL Works — High Scalability</a></li><li><a href="https://www.geeksforgeeks.org/url-shortening-service-using-base62-encoding/">Base62 Encoding Explained — GeeksForGeeks</a></li></ol>
+
+<hr/>
+
+<h3>🧒 ELI5（用小学生能懂的方式解释）</h3>
+
+<p>想象你有一本很厚的字典，每本字典有一个编号。你把网址存进字典，给它一个编号（比如第 12345 条）。然后你把 12345 翻译成一串奇怪的字母（比如 "abcXY"）。别人访问 "abcXY" 时，你查字典找到 12345，再找到原来的网址，带他过去。这就是短链接！</p>
+
+<p><em>Imagine a big dictionary. Every URL gets a unique page number (12345). You translate that number into a short code ("abcXY"). When someone visits "abcXY", you look up 12345 in your dictionary, find the original URL, and send them there. That's it!</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 19</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 / Algorithms — Day 19</h1>
+<p><strong>Topic:</strong> Permutation in String (#567)</p>
+<p><strong>Date:</strong> 2026-04-07</p>
+
+<hr/>
+
+<p>💻 <strong>算法 / Algorithms</strong> — #567 Permutation in String (Medium)</p>
+
+<p>🧩 <strong>滑动窗口模式 (4/6)</strong> — building on the template from Day 15</p>
+
+<p>今天的问题是滑动窗口的经典变体：<strong>固定大小窗口</strong>。与寻找“最长/最短”子串不同，这里的窗口大小是固定的（等于目标字符串的长度）。</p>
+
+<p><em>Today's problem is a classic variation: <strong>Fixed-Size Window</strong>. Unlike finding the "longest/shortest" substring, the window size here is strictly fixed to the length of the target string.</em></p>
+
+<div class="diagram-block">🔗 [LeetCode #567](https://leetcode.com/problems/permutation-in-string/) | 🟡 Medium | 📹 [NeetCode Video](https://www.youtube.com/watch?v=UbyhOgBN834)</div>
+
+<hr/>
+
+<h3>🌍 现实场景 / Real-World Analogy</h3>
+
+<p>想象你在玩拼字游戏（Scrabble）。你手里有字母 <code>a, b</code>，你想在黑板上的长字符串 <code>eidbaooo</code> 中寻找是否有一段连续的字母正好能用你手里的字母拼出来（顺序无所谓，只要字母和数量对得上）。这就是寻找“排列”（Permutation）。</p>
+
+<p><em>Imagine playing Scrabble. You have letters <code>a, b</code>. You want to see if there's a contiguous sequence in the string <code>eidbaooo</code> that can be formed using exactly your letters (order doesn't matter, just the counts). That's finding a permutation.</em></p>
+
+<hr/>
+
+<h3>🧠 映射到模版 / Map to Pattern Template</h3>
+
+<p>排列（Permutation）的本质是：<strong>字符出现的频率完全相同</strong>。</p>
+<p>我们维护一个大小恒定为 <code>len(s1)</code> 的滑动窗口，在 <code>s2</code> 上滑动。每次向右滑动一步：</p>
+<ol><li><strong>Expand</strong>: 右边新进来的字符，频率 +1</li><li><strong>Shrink</strong>: 左边出去的字符，频率 -1（因为窗口大小固定，所以进一个必须出一个）</li><li><strong>Check</strong>: 如果窗口内的字符频率和 <code>s1</code> 完全一致，就找到了！</li></ol>
+
+<p><em>A permutation means <strong>exact same character frequencies</strong>. We maintain a sliding window of strictly size <code>len(s1)</code> over <code>s2</code>. For each step right: add the new char, remove the old char from the left, and check if frequencies match.</em></p>
+
+<hr/>
+
+<h3>💻 Python 实现 / Python Solution</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="class Solution:&#10;    def checkInclusion(self, s1: str, s2: str) -&gt; bool:&#10;        if len(s1) &gt; len(s2):&#10;            return False&#10;            &#10;        # 1. Initialize frequency maps&#10;        s1_count = [0] * 26&#10;        window_count = [0] * 26&#10;        &#10;        for i in range(len(s1)):&#10;            s1_count[ord(s1[i]) - ord('a')] += 1&#10;            window_count[ord(s2[i]) - ord('a')] += 1&#10;            &#10;        # 2. Check the first window&#10;        if s1_count == window_count:&#10;            return True&#10;            &#10;        # 3. Slide the fixed-size window&#10;        left = 0&#10;        for right in range(len(s1), len(s2)):&#10;            # Expand window: add right char&#10;            window_count[ord(s2[right]) - ord('a')] += 1&#10;            &#10;            # Shrink window: remove left char&#10;            window_count[ord(s2[left]) - ord('a')] -= 1&#10;            left += 1&#10;            &#10;            # Check if current window matches&#10;            if s1_count == window_count:&#10;                return True&#10;                &#10;        return False">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">class</span> Solution:
+    <span style="color:#c678dd;">def</span> checkInclusion(self, s1: str, s2: str) -&gt; bool:
+        <span style="color:#c678dd;">if</span> len(s1) &gt; len(s2):
+            <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+            
+        <span style="color:#5c6370;"># 1. Initialize frequency maps</span>
+        s1_count = [<span style="color:#56b6c2;">0</span>] * <span style="color:#56b6c2;">26</span>
+        window_count = [<span style="color:#56b6c2;">0</span>] * <span style="color:#56b6c2;">26</span>
+        
+        <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(len(s1)):
+            s1_count[ord(s1[i]) - ord(<span style="color:#e5c07b;">'a'</span>)] += <span style="color:#56b6c2;">1</span>
+            window_count[ord(s2[i]) - ord(<span style="color:#e5c07b;">'a'</span>)] += <span style="color:#56b6c2;">1</span>
+            
+        <span style="color:#5c6370;"># 2. Check the first window</span>
+        <span style="color:#c678dd;">if</span> s1_count == window_count:
+            <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+            
+        <span style="color:#5c6370;"># 3. Slide the fixed-size window</span>
+        left = <span style="color:#56b6c2;">0</span>
+        <span style="color:#c678dd;">for</span> right <span style="color:#c678dd;">in</span> range(len(s1), len(s2)):
+            <span style="color:#5c6370;"># Expand window: add right char</span>
+            window_count[ord(s2[right]) - ord(<span style="color:#e5c07b;">'a'</span>)] += <span style="color:#56b6c2;">1</span>
+            
+            <span style="color:#5c6370;"># Shrink window: remove left char</span>
+            window_count[ord(s2[left]) - ord(<span style="color:#e5c07b;">'a'</span>)] -= <span style="color:#56b6c2;">1</span>
+            left += <span style="color:#56b6c2;">1</span>
+            
+            <span style="color:#5c6370;"># Check if current window matches</span>
+            <span style="color:#c678dd;">if</span> s1_count == window_count:
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+                
+        <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span></code></pre>
+</div>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<ul><li><strong>Time:</strong> $O(N)$ where $N$ is the length of <code>s2</code>. Comparing two arrays of size 26 takes $O(1)$ time.</li><li><strong>Space:</strong> $O(1)$ because the frequency arrays are always size 26, regardless of string length.</li></ul>
+
+<hr/>
+
+<h3>🔄 举一反三 / Connect to Pattern</h3>
+
+<p>这道题和 #438 Find All Anagrams in a String 完全一样！Anagram（字母异位词）和 Permutation（排列）在这个语境下是同一个意思。掌握了这个固定窗口频率匹配的技巧，那道题可以直接秒杀。</p>
+
+<p><em>This is identical to #438 Find All Anagrams in a String! Anagram and Permutation mean the exact same thing here. Master this fixed-window frequency matching, and you get two problems for the price of one.</em></p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+<ol><li><a href="https://neetcode.io/problems/permutation-in-string">NeetCode: Permutation in String</a></li><li><a href="https://leetcode.com/discuss/study-guide/177204/half-blood-prince-sliding-window">Sliding Window Pattern — LeetCode Discuss</a></li><li><a href="https://www.w3schools.com/python/ref_func_ord.asp">Python ord() function — W3Schools</a></li></ol>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>你要在一条长长的火车上找两节特定的车厢（比如一节红的，一节蓝的，挨在一起）。你拿一个刚好能罩住两节车厢的框，从车头开始往后套。每次往后挪一节，看看框里的颜色对不对。因为框的大小不变，所以每次挪动，前面进来一节，后面就出去一节。</p>
+
+<p><em>You're looking for two specific train cars (one red, one blue, next to each other) on a long train. You take a frame that fits exactly two cars and slide it from the front. Each time you move it, one new car enters the frame, and one old car leaves. You just check if the colors inside the frame match what you want!</em></p>
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 19</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 / Soft Skills — Day 19</h1>
+<p><strong>Topic:</strong> How do you ensure quality in your team's code and systems?</p>
+<p><strong>Date:</strong> 2026-04-07</p>
+
+<hr/>
+
+<p>🗣️ <strong>软技能 / Soft Skills</strong></p>
+
+<p><strong>如何保证团队的代码和系统质量？</strong></p>
+<p><strong>How do you ensure quality in your team's code and systems?</strong></p>
+
+<hr/>
+
+<h3>💡 为什么这个问题很重要？ / Why this matters</h3>
+
+<p>面试官（特别是面 Senior/Staff 级别时）问这个问题，不是想听你背诵“写单元测试”。他们想知道你是否具备<strong>系统性思维</strong>和<strong>工程文化建设</strong>的能力。质量不是靠一个人盯着，而是靠流程、工具和文化。</p>
+
+<p><em>Interviewers (especially for Senior/Staff roles) aren't looking for "write unit tests." They want to know if you have <strong>systems thinking</strong> and can build an <strong>engineering culture</strong>. Quality isn't about one person watching every PR; it's about processes, tooling, and culture.</em></p>
+
+<hr/>
+
+<h3>🌟 STAR 拆解 / STAR Breakdown</h3>
+
+<p><strong>Situation:</strong></p>
+<p>团队扩张快，代码库变得混乱，线上 bug 频发。</p>
+<p><em>The team was growing fast, the codebase was getting messy, and production bugs were frequent.</em></p>
+
+<p><strong>Task:</strong></p>
+<p>作为 Tech Lead，我需要建立一套机制，在不严重拖慢开发速度的前提下提升质量。</p>
+<p><em>As a Tech Lead, I needed to establish mechanisms to improve quality without severely slowing down feature delivery.</em></p>
+
+<p><strong>Action:</strong></p>
+<ol><li><strong>自动化 (Automation):</strong> 引入 CI/CD pipeline，强制执行 linting (ESLint/Prettier) 和基础测试。</li><li><strong>规范化 (Standardization):</strong> 制定并推行 Code Review 规范（例如 PR 模板，要求附带测试截图）。</li><li><strong>可观测性 (Observability):</strong> 完善监控和告警（Datadog/Sentry），确保问题在用户报怨前被发现。</li><li><strong>文化建设 (Culture):</strong> 每周举办 "Bug Bash" 或 "Post-mortem"（无指责复盘），把踩过的坑变成团队经验。</li></ol>
+
+<p><strong>Result:</strong></p>
+<p>线上 P0 故障率下降 60%，新成员 onboarding 时间缩短，代码库一致性显著提升。</p>
+<p><em>Production P0 incidents dropped by 60%, new hire onboarding was faster, and codebase consistency improved significantly.</em></p>
+
+<hr/>
+
+<h3>❌ 错误示范 vs ✅ 正确示范 / Bad vs Good</h3>
+
+<p>❌ <strong>Bad:</strong> "I review every single PR very carefully and tell people when they make mistakes."</p>
+<p><em>(微观管理，无法规模化 / Micromanagement, doesn't scale)</em></p>
+
+<p>✅ <strong>Good:</strong> "I believe in 'shift-left' quality. We automated linting and testing in CI so reviewers can focus on architecture and logic, not formatting. We also implemented blameless post-mortems so every outage makes the system stronger."</p>
+<p><em>(系统性思维，自动化，文化建设 / Systems thinking, automation, culture building)</em></p>
+
+<hr/>
+
+<h3>🚀 Senior/Staff 进阶技巧 / Senior/Staff Tips</h3>
+
+<p>高级工程师不仅关注代码质量，更关注<strong>系统质量</strong>和<strong>交付质量</strong>。</p>
+<ul><li><strong>Shift-Left (左移):</strong> 把质量检查推到开发周期的最早期（本地 pre-commit hooks，IDE 插件）。</li><li><strong>Blast Radius (爆炸半径):</strong> 即使有 bug，如何限制它的影响？（Feature Flags，灰度发布/Canary Releases）。</li><li><strong>Tech Debt Management:</strong> 定期安排时间清理技术债，而不是让它无限堆积。</li></ul>
+
+<p><em>Senior engineers focus on <strong>system quality</strong> and <strong>delivery quality</strong>, not just code.</em></p>
+<ul><li><strong><em>Shift-Left:</strong> Push quality checks to the earliest stage (pre-commit hooks).</em></li><li><strong><em>Blast Radius:</strong> How do we limit the impact of a bug? (Feature Flags, Canary Releases).</em></li><li><strong><em>Tech Debt:</strong> Schedule regular time to pay down technical debt.</em></li></ul>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+<ol><li><a href="https://google.github.io/eng-practices/review/">Google Engineering Practices — Code Review</a></li><li><a href="https://www.atlassian.com/continuous-delivery/software-testing/shift-left-testing">Shift-Left Testing — Atlassian</a></li><li><a href="https://sre.google/sre-book/postmortem-culture/">Blameless Post-Mortems — SRE Book (Google)</a></li></ol>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象你在管理一个厨房。保证菜品质量不能靠你每道菜都尝一口（你会累死）。你要做的是：买好刀具（工具），写好菜谱（规范），装好烟雾报警器（监控），并且在菜做砸了的时候，大家一起讨论怎么改进，而不是骂厨师（文化）。</p>
+
+<p><em>Imagine managing a kitchen. You can't taste every dish to ensure quality (you'd be exhausted). Instead, you buy good knives (tooling), write clear recipes (standards), install smoke alarms (monitoring), and when a dish fails, you discuss how to improve the recipe instead of yelling at the chef (culture).</em></p>
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 / Frontend — Day 19</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 / Frontend — Day 19</h1>
+<p><strong>Topic:</strong> React Server Components (RSC) — What Actually Changes</p>
+<p><strong>Date:</strong> 2026-04-07</p>
+
+<hr/>
+
+<p>🎨 <strong>前端 / Frontend</strong></p>
+
+<p><strong>React Server Components (RSC) — 到底改变了什么？</strong></p>
+<p><strong>React Server Components (RSC) — What Actually Changes?</strong></p>
+
+<hr/>
+
+<h3>🌍 真实场景 / Real-World Scenario</h3>
+
+<p>你在做一个博客文章页面。文章内容很长，包含大量 Markdown 解析库（比如 <code>marked</code>，体积很大）。如果用传统的 React（客户端渲染），用户需要把整个 <code>marked</code> 库下载到浏览器，然后才能看到文章。这太慢了！</p>
+
+<p><em>You're building a blog post page. The content is long and uses a massive Markdown parsing library (e.g., <code>marked</code>). With traditional React (Client-Side Rendering), the user has to download the entire <code>marked</code> library to their browser just to see the post. That's way too slow!</em></p>
+
+<hr/>
+
+<h3>💻 代码对比 / Code Snippet</h3>
+
+<p><strong>❌ 传统 React (Client Component):</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import { marked } from 'marked'; // 🚨 整个库被打包发给浏览器！(Bundle size ++!)&#10;&#10;export default function BlogPost({ content }) {&#10;  // 浏览器在运行时解析 Markdown&#10;  const html = marked.parse(content);&#10;  return &lt;div dangerouslySetInnerHTML={{ __html: html }} /&gt;;&#10;}">Copy</button>
+  <pre><code class="language-tsx">import { marked } from 'marked'; // 🚨 整个库被打包发给浏览器！(Bundle size ++!)
+
+export default function BlogPost({ content }) {
+  // 浏览器在运行时解析 Markdown
+  const html = marked.parse(content);
+  return &lt;div dangerouslySetInnerHTML={{ __html: html }} /&gt;;
+}</code></pre>
+</div>
+
+<p><strong>✅ React Server Component (RSC - Next.js App Router 默认):</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import { marked } from 'marked'; // 🟢 只在服务器端运行，不发给浏览器！(Zero bundle size!)&#10;&#10;// 注意：这是一个 async 组件！(RSC 独有超能力)&#10;export default async function BlogPost({ id }) {&#10;  // 直接在组件里查数据库！(Mind blown 🤯)&#10;  const post = await db.posts.findUnique({ where: { id } });&#10;  &#10;  // 服务器解析完 Markdown，直接把生成的 HTML 发给浏览器&#10;  const html = marked.parse(post.content);&#10;  return &lt;div dangerouslySetInnerHTML={{ __html: html }} /&gt;;&#10;}">Copy</button>
+  <pre><code class="language-tsx">import { marked } from 'marked'; // 🟢 只在服务器端运行，不发给浏览器！(Zero bundle size!)
+
+// 注意：这是一个 async 组件！(RSC 独有超能力)
+export default async function BlogPost({ id }) {
+  // 直接在组件里查数据库！(Mind blown 🤯)
+  const post = await db.posts.findUnique({ where: { id } });
+  
+  // 服务器解析完 Markdown，直接把生成的 HTML 发给浏览器
+  const html = marked.parse(post.content);
+  return &lt;div dangerouslySetInnerHTML={{ __html: html }} /&gt;;
+}</code></pre>
+</div>
+
+<hr/>
+
+<h3>🧠 核心概念 / Core Concept</h3>
+
+<p>RSC 的本质是：<strong>把组件分成两类，各司其职。</strong></p>
+
+<ol><li><strong>Server Components (默认):</strong></li></ol>
+<p>   - 跑在服务器上。</p>
+<p>   - 负责：获取数据（直接读 DB）、繁重的计算（解析 Markdown）。</p>
+<p>   - 结果：它们的代码<strong>永远不会</strong>发送到浏览器。浏览器只收到它们渲染出的最终 HTML/UI 树。</p>
+
+<ol><li><strong>Client Components (<code>"use client"</code>):</strong></li></ol>
+<p>   - 跑在浏览器上（但也支持 SSR 预渲染）。</p>
+<p>   - 负责：交互（<code>onClick</code>）、状态（<code>useState</code>）、生命周期（<code>useEffect</code>）、浏览器 API（<code>window</code>）。</p>
+<p>   - 结果：它们的代码会被打包发送给浏览器。</p>
+
+<p><em>RSC splits components into two types:</em></p>
+<ol><li><strong><em>Server Components (Default):</strong> Run on the server. Fetch data directly, do heavy lifting. Their code is <strong>never</strong> sent to the client. The client only gets the resulting UI.</em></li><li><strong><em>Client Components (<code>"use client"</code>):</strong> Run on the client. Handle interactivity, state, and browser APIs. Their code is bundled and sent to the client.</em></li></ol>
+
+<hr/>
+
+<h3>⚠️ 常见误区 / Common Mistake</h3>
+
+<p>❌ <strong>误区：</strong> "Server Components 就是 SSR (Server-Side Rendering)。"</p>
+<p>✅ <strong>真相：</strong> 不是！SSR 是把整个页面在服务器上渲染成 HTML，然后发给浏览器，浏览器还要下载所有的 JS 代码去 "hydrate"（注水，绑定事件）。RSC 是<strong>连 JS 代码都不发了</strong>，直接发渲染好的 UI 树。</p>
+
+<p>❌ <strong>误区：</strong> "所有的组件都应该变成 Server Components。"</p>
+<p>✅ <strong>真相：</strong> 需要交互的地方（按钮、输入框、动画）必须用 Client Components。RSC 和 Client Components 是互补的。</p>
+
+<hr/>
+
+<h3>🎯 什么时候用什么？ / When to use what?</h3>
+
+<table><thead><tr><th>场景</th><th>Server Component</th><th>Client Component (<code>"use client"</code>)</th></tr></thead><tbody><tr><td>获取数据 (Fetch data)</td><td>✅</td><td>❌ (尽量避免)</td></tr><tr><td>直接访问后端资源 (DB, API keys)</td><td>✅</td><td>❌ (安全风险)</td></tr><tr><td>保持大依赖包在服务器 (Large dependencies)</td><td>✅</td><td>❌</td></tr><tr><td>添加交互 (onClick, onChange)</td><td>❌</td><td>✅</td></tr><tr><td>使用状态和生命周期 (useState, useEffect)</td><td>❌</td><td>✅</td></tr><tr><td>使用浏览器 API (window, localStorage)</td><td>❌</td><td>✅</td></tr></tbody></table>
+
+<hr/>
+
+<h3>🧩 猜猜这段代码输出什么？ / Quiz</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// app/page.tsx (Next.js App Router)&#10;import Button from './Button';&#10;&#10;export default function Page() {&#10;  console.log(&quot;Where am I running?&quot;);&#10;  return &lt;Button /&gt;;&#10;}">Copy</button>
+  <pre><code class="language-tsx">// app/page.tsx (Next.js App Router)
+import Button from './Button';
+
+export default function Page() {
+  console.log("Where am I running?");
+  return &lt;Button /&gt;;
+}</code></pre>
+</div>
+
+<p><strong>选项：</strong></p>
+<p>A. 浏览器的控制台</p>
+<p>B. 服务器的终端 (Terminal)</p>
+<p>C. 都会打印</p>
+<p>D. 报错</p>
+
+<p><em>(答案见下方 JSON)</em></p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+<ol><li><a href="https://react.dev/reference/rsc/server-components">React Server Components — React Docs</a></li><li><a href="https://nextjs.org/docs/app/building-your-application/rendering/server-components">Next.js App Router — Server Components</a></li><li><a href="https://www.joshwcomeau.com/react/server-components/">Making Sense of React Server Components — Josh W. Comeau</a></li></ol>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>以前去餐厅（传统 React），厨师（服务器）把生的菜和菜谱（JS 代码）打包寄到你家，让你自己炒（浏览器渲染）。现在有了 RSC，厨师在后厨把菜炒好（服务器渲染），直接端上桌（HTML），你只管吃就行了！只有需要你自己加盐加醋的菜（交互），才会给你调料瓶（Client Components）。</p>
+
+<p><em>Before (Traditional React), the chef (server) mailed you raw ingredients and a recipe (JS bundle) to cook at home (browser rendering). Now with RSC, the chef cooks the heavy meals in the kitchen and serves them ready-to-eat (HTML). You only get the salt shaker (Client Components) for dishes you need to interact with!</em></p>
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 19</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI — Day 19</h1>
+<p><strong>Topic:</strong> NEWS</p>
+<p><strong>Date:</strong> 2026-04-07</p>
+
+<hr/>
+
+<p>🤖 <strong>AI</strong></p>
+
+<p><strong>AI 资讯速递 / AI News Roundup</strong></p>
+
+<hr/>
+
+<h3>📰 1. Bezos 挖角 xAI 联合创始人 / Bezos' Project Prometheus Poaches xAI Co-founder from OpenAI</h3>
+
+<p><strong>发生了什么 (What happened):</strong></p>
+<p>Jeff Bezos 的 AI 实验室（Project Prometheus）成功挖走了 xAI 联合创始人 Kyle Kozic（他此前在 OpenAI 任职）。Kozic 将在 Bezos 领导的初创公司专注于 AI 基础设施建设，该公司正致力于利用 AI 改进制造业，已获超 60 亿美元融资。这是近期 AI 领域人才争夺战的最新动向。</p>
+
+<p><em>Jeff Bezos' AI lab (Project Prometheus) has poached xAI co-founder Kyle Kozic, who had been working at OpenAI. Kozic will focus on AI infrastructure at the well-funded startup, which Bezos co-founded alongside former Google exec Vik Bajaj. Project Prometheus focuses on using AI to improve manufacturing — and has already raised $6.2B. The latest move in the ongoing AI talent war.</em></p>
+
+<p><strong>为什么重要 (Why it matters):</strong></p>
+<ul><li>顶尖 AI 人才的流动正在加速，科技巨头和资金雄厚的初创公司都在争夺核心基础设施专家。</li><li>AI 在制造业（实体经济）的应用正成为下一个重要战场。</li></ul>
+
+<p>🔗 <strong>来源 (Source):</strong> <a href="https://www.theverge.com/ai-artificial-intelligence">The Verge - Jeff Bezos' AI lab poaches xAI cofounder Kyle Kozic from OpenAI</a></p>
+
+<hr/>
+
+<h3>📰 2. Anthropic 与谷歌和博通达成重大基础设施协议 / Anthropic Signs Major Infrastructure Deal with Google and Broadcom</h3>
+
+<p><strong>发生了什么 (What happened):</strong></p>
+<p>Anthropic 宣布与谷歌和博通（Broadcom）签署了一项大型 AI 基础设施协议。预计从 2027 年开始，将有“数千兆瓦（multiple gigawatts）的下一代 TPU 算力”上线，用于“驱动我们的前沿 Claude 模型”。此外，该公司表示其年化收入已超过 300 亿美元。</p>
+
+<p><em>Anthropic has signed a massive AI infrastructure deal with Google and Broadcom. "Multiple gigawatts of next-generation TPU capacity" are expected to come online starting in 2027 to "power our frontier Claude models." The company also reported its run-rate revenue has surpassed $30 billion.</em></p>
+
+<p><strong>为什么重要 (Why it matters):</strong></p>
+<ul><li><strong>算力即权力：</strong> 确保未来的计算资源是训练下一代大模型的关键。</li><li><strong>TPU 生态：</strong> Anthropic 选择谷歌的 TPU 而非完全依赖 Nvidia GPU，显示了 AI 硬件市场的多元化趋势。</li><li><strong>惊人的商业化速度：</strong> 300 亿美元的年化收入表明企业级 AI 市场的需求极其强劲。</li></ul>
+
+<p>🔗 <strong>来源 (Source):</strong> <a href="https://www.theverge.com/ai-artificial-intelligence">The Verge - Anthropic has signed a big AI infrastructure deal with Google and Broadcom</a></p>
+
+<hr/>
+
+<h3>📰 3. 谷歌推出免费离线 AI 听写应用 / Google Launches Free Offline AI Dictation App</h3>
+
+<p><strong>发生了什么 (What happened):</strong></p>
+<p>谷歌推出了一款名为 "Google AI Edge Eloquent" 的全新实时 AI 转录应用。该应用免费、无需订阅、没有使用限制，并且可以在离线状态下自动润色你的语音（例如过滤掉“嗯”、“啊”等语气词）。目前仅支持 iOS，但计划未来登陆 Android 和 macOS。</p>
+
+<p><em>Google has launched "Google AI Edge Eloquent," a new live AI transcription app that is free, offline, requires no subscription, and has no usage limits. It automatically polishes your speech by filtering out filler words like "um." Currently on iOS, with plans for Android and macOS.</em></p>
+
+<p><strong>为什么重要 (Why it matters):</strong></p>
+<ul><li><strong>端侧 AI (Edge AI) 的胜利：</strong> 强大的语音处理能力现在可以直接在手机本地运行，无需将音频发送到云端，极大地保护了隐私并降低了延迟。</li><li><strong>实用工具的普及：</strong> AI 正在从“聊天机器人”变成无缝融入日常工作流的隐形助手。</li></ul>
+
+<p>🔗 <strong>来源 (Source):</strong> <a href="https://www.theverge.com/ai-artificial-intelligence">The Verge - Google has launched a free, offline AI dictation app</a></p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+<ol><li><a href="https://www.theverge.com/ai-artificial-intelligence">The Verge - Artificial Intelligence</a></li><li><a href="https://techcrunch.com/category/artificial-intelligence/">TechCrunch - Artificial Intelligence</a></li></ol>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+<p>今天的新闻就像是一场大富翁游戏：贝索斯花重金请来了 OpenAI 老将帮忙建工厂；Anthropic 提前预订了谷歌未来几年的“超级电脑”来训练更聪明的 Claude；而谷歌则送给大家一个免费的“随身秘书”，能在你不联网的时候帮你把说的话变成漂亮的文章。</p>
+
+<p><em>Today's news is like a game of Monopoly: Amazon hired an OpenAI veteran to help build their factories; Anthropic pre-ordered Google's future supercomputers to train smarter versions of Claude; and Google gave everyone a free, offline "pocket secretary" that turns your spoken words into polished text without needing the internet.</em></p>
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
