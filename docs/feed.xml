@@ -5,8 +5,327 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 07 Apr 2026 15:14:18 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 09 Apr 2026 15:28:09 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-09</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-09</guid>
+      <pubDate>Thu, 09 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<p>🏗️ <strong>系统设计 / System Design</strong></p>
+
+<p><strong>想象你在设计... / Imagine you are designing...</strong></p>
+<p>一个键值存储系统（Key-Value Store），比如 Amazon DynamoDB 或 Redis。</p>
+<p>A Key-Value Store, like Amazon DynamoDB or Redis.</p>
+
+<p><strong>架构图 / Architecture Diagram</strong></p>
+<pre><code>
+Client -&gt; [ API Gateway ] -&gt; [ Load Balancer ]
+                                |
+                   +------------+------------+
+                   |            |            |
+             [ Node A ]   [ Node B ]   [ Node C ]
+             (Data 1-3)   (Data 4-6)   (Data 7-9)
+                   |            |            |
+                   +---(Gossip Protocol)-----+
+</code></pre>
+
+<p><strong>核心权衡 / Key Tradeoffs</strong></p>
+<p>- <strong>CAP 定理 (CAP Theorem):</strong> 在分布式系统中，你只能在一致性（Consistency）、可用性（Availability）和分区容错性（Partition Tolerance）中选择两个。大多数键值存储（如 Dynamo）选择 AP（高可用性），通过最终一致性来解决冲突。</p>
+<p>- <strong>数据分片 (Data Partitioning):</strong> 使用一致性哈希（Consistent Hashing）将数据均匀分布在多个节点上，并在节点增减时最小化数据迁移。</p>
+<p>- <strong>数据复制 (Data Replication):</strong> 将数据复制到多个节点（如 N=3）以保证高可用性和容错性。</p>
+
+<p><strong>常见误区 / Common Mistakes</strong></p>
+<p>- <strong>单点故障 (Single Point of Failure):</strong> 依赖单一的协调节点。应使用去中心化的架构（如 Gossip 协议）进行集群成员管理。</p>
+<p>- <strong>忽略冲突解决 (Ignoring Conflict Resolution):</strong> 在最终一致性模型中，并发写入可能导致冲突。需要使用向量时钟（Vector Clocks）或最后写入胜出（LWW）来解决。</p>
+
+<p><strong>📚 References</strong></p>
+<p>- [Dynamo: Amazon’s Highly Available Key-value Store](https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf)</p>
+<p>- [System Design: Key-Value Store](https://bytebytego.com/courses/system-design-interview/design-a-key-value-store)</p>
+<p>- [Redis Cluster Specification](https://redis.io/docs/reference/cluster-spec/)</p>
+
+<p><strong>🧒 ELI5 (Explain Like I&#x27;m 5)</strong></p>
+<p>想象你有很多个抽屉（节点）来放玩具（数据）。为了不让一个抽屉太满，你用一个特殊的规则（一致性哈希）决定玩具放哪个抽屉。而且，为了防止某个抽屉坏了，你把每个玩具都复制三份，放在不同的抽屉里。</p>
+<p>Imagine you have many drawers (nodes) to store toys (data). To avoid overfilling one drawer, you use a special rule (consistent hashing) to decide where each toy goes. Also, in case a drawer breaks, you make 3 copies of each toy and put them in different drawers.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<p>💻 <strong>算法 / Algorithms</strong> — #76 Minimum Window Substring (Hard) — Sliding Window</p>
+
+<p>🧩 <strong>滑动窗口模式 (5/6)</strong> — building on the template from Day 19</p>
+<p>这个题目是滑动窗口的终极形态。与之前的题目不同，这里我们需要在窗口内包含目标字符串 <code>t</code> 的所有字符，并且要求<strong>最短</strong>的窗口。</p>
+<p>This is the ultimate form of the sliding window. Unlike previous problems, we need to include all characters of the target string <code>t</code> in the window, and we want the <strong>shortest</strong> window.</p>
+
+<p>🔗 [LeetCode 76](https://leetcode.com/problems/minimum-window-substring/) | 🔴 Hard | 📹 [NeetCode](https://www.youtube.com/watch?v=jSto0O4PIzM)</p>
+
+<p><strong>现实类比 / Real-world Analogy</strong></p>
+<p>想象你在寻宝，你需要收集一套特定的宝石（字符串 <code>t</code>）。你沿着一条路（字符串 <code>s</code>）走，把路上的宝石都捡起来（右指针扩张）。一旦你集齐了所有需要的宝石，你就开始扔掉最早捡到的没用的宝石（左指针收缩），直到你不能再扔为止，这时候你手里的宝石就是最短的有效集合。</p>
+<p>Imagine you are treasure hunting and need a specific set of gems (string <code>t</code>). You walk along a path (string <code>s</code>), picking up gems (right pointer expands). Once you have all the required gems, you start dropping the earliest useless ones (left pointer shrinks) until you can&#x27;t drop any more. The gems you hold at that moment form the shortest valid set.</p>
+
+<p><strong>映射到模式 / Map to Pattern</strong></p>
+<p>- <strong>Expand (Right Pointer):</strong> 将字符加入窗口频率字典。如果该字符是 <code>t</code> 中需要的，并且频率达到了要求，则 <code>have</code> 计数器加一。</p>
+<p>- <strong>Shrink (Left Pointer):</strong> 当 <code>have == need</code> 时，说明当前窗口有效。记录当前窗口大小和位置，然后尝试收缩：移除左指针字符，如果该字符是 <code>t</code> 中需要的且频率低于要求，则 <code>have</code> 减一。左指针右移。</p>
+
+<p><strong>Python Solution</strong></p>
+<pre><code>
+class Solution:
+    def minWindow(self, s: str, t: str) -&gt; str:
+        if t == &quot;&quot;: return &quot;&quot;
+
+        countT, window = {}, {}
+        for c in t:
+            countT[c] = 1 + countT.get(c, 0)
+
+        have, need = 0, len(countT)
+        res, resLen = [-1, -1], float(&quot;infinity&quot;)
+        l = 0
+
+        for r in range(len(s)):
+            c = s[r]
+            window[c] = 1 + window.get(c, 0)
+
+            if c in countT and window[c] == countT[c]:
+                have += 1
+
+            while have == need:
+                # update our result
+                if (r - l + 1) &lt; resLen:
+                    res = [l, r]
+                    resLen = (r - l + 1)
+                
+                # pop from the left of our window
+                window[s[l]] -= 1
+                if s[l] in countT and window[s[l]] &lt; countT[s[l]]:
+                    have -= 1
+                l += 1
+                
+        l, r = res
+        return s[l:r+1] if resLen != float(&quot;infinity&quot;) else &quot;&quot;
+</code></pre>
+
+<p><strong>复杂度 / Complexity</strong></p>
+<p>- Time: O(N + M) where N is len(s) and M is len(t). Each character is visited at most twice.</p>
+<p>- Space: O(1) if we consider the character set is fixed (e.g., 26 letters or 128 ASCII characters).</p>
+
+<p><strong>举一反三 / Connect to other problems</strong></p>
+<p>- 这是滑动窗口求<strong>最短</strong>子串的经典题。对比 #3 Longest Substring Without Repeating Characters，那是求<strong>最长</strong>，所以是在不满足条件时收缩；而本题是求最短，是在<strong>满足</strong>条件时收缩。</p>
+
+<p><strong>📚 References</strong></p>
+<p>- [NeetCode 76. Minimum Window Substring](https://neetcode.io/problems/minimum-window-with-characters)</p>
+<p>- [LeetCode Discuss: Sliding Window template](https://leetcode.com/problems/find-all-anagrams-in-a-string/discuss/92007/Sliding-Window-algorithm-template-to-solve-all-the-Leetcode-substring-search-problem.)</p>
+
+<p><strong>🧒 ELI5</strong></p>
+<p>一直往右走，直到集齐了所有需要的卡片。然后看看能不能把最左边没用的卡片扔掉，让手里的卡片越少越好。</p>
+<p>Keep walking right until you collect all the needed cards. Then see if you can throw away useless cards from the left to make your hand as small as possible.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<p>🗣️ <strong>软技能 / Soft Skills</strong></p>
+
+<p><strong>Describe a time you had to say no to a popular idea</strong></p>
+<p>描述一次你不得不拒绝一个受欢迎的想法的经历。</p>
+
+<p><strong>为什么这很重要 / Why this matters</strong></p>
+<p>高级工程师（Senior/Staff）不仅要会写代码，还要能把控项目方向。拒绝一个受欢迎但有风险/不切实际的想法，展现了你的技术判断力、沟通能力和对业务目标的聚焦。</p>
+<p>Senior/Staff engineers need to steer project direction. Saying no to a popular but risky/impractical idea shows technical judgment, communication skills, and focus on business goals.</p>
+
+<p><strong>STAR 拆解 / STAR Breakdown</strong></p>
+<p>- <strong>Situation:</strong> 团队对一个新工具/框架/功能非常热情（例如：大家都想用微服务重构，或者引入一个花哨的 AI 功能）。</p>
+<p>- <strong>Task:</strong> 评估这个想法的可行性、成本和对当前业务目标的影响。</p>
+<p>- <strong>Action:</strong> 收集数据（性能测试、维护成本、开发周期）。通过技术文档（RFC/Design Doc）客观展示利弊。组织会议，不直接说“不行”，而是展示“如果这样做，我们需要放弃什么”。提出一个更务实的替代方案。</p>
+<p>- <strong>Result:</strong> 团队理解了权衡，同意采用替代方案，最终按时交付了项目，避免了技术债务或延期。</p>
+
+<p><strong>❌ 糟糕的回答 vs ✅ 好的回答</strong></p>
+<p>- ❌ <strong>Bad:</strong> &quot;I told them it was a stupid idea because it would take too long, and I was the tech lead so they had to listen to me.&quot; (Arrogant, dictatorial / 傲慢，独裁)</p>
+<p>- ✅ <strong>Good:</strong> &quot;The team wanted to rewrite our monolith into microservices. I did a cost-benefit analysis showing it would halt feature development for 6 months. I presented this data and proposed we only extract the most heavily loaded module first. The team agreed, and we improved performance without stopping business growth.&quot; (Data-driven, collaborative, pragmatic / 数据驱动，协作，务实)</p>
+
+<p><strong>Senior/Staff 提示 / Senior/Staff Tips</strong></p>
+<p>- 永远不要凭直觉拒绝，要用<strong>数据</strong>和<strong>业务目标</strong>说话。</p>
+<p>- 给出<strong>替代方案 (Alternative)</strong>，而不是单纯的拒绝。</p>
+<p>- 关注<strong>权衡 (Trade-offs)</strong>，让团队自己意识到成本。</p>
+
+<p><strong>核心收获 / Key Takeaways</strong></p>
+<p>Saying &quot;no&quot; is easy; saying &quot;no&quot; while keeping the team motivated and aligned requires data, empathy, and a solid alternative plan.</p>
+
+<p><strong>📚 References</strong></p>
+<p>- [How to Say No to a Good Idea](https://hbr.org/2021/05/how-to-say-no-to-a-good-idea)</p>
+<p>- [Staff Engineer: Leadership beyond the management track](https://staffeng.com/guides/work-on-what-matters)</p>
+
+<p><strong>🧒 ELI5</strong></p>
+<p>大家都想去游乐园，但你发现钱不够而且会错过晚饭。你没有直接说“不去”，而是算了一笔账给大家看，然后提议去附近的公园吃冰淇淋。大家都很开心。</p>
+<p>Everyone wanted to go to the amusement park, but you realized it was too expensive and you&#x27;d miss dinner. Instead of just saying &quot;no,&quot; you showed everyone the math and suggested going to a local park for ice cream instead. Everyone was happy.</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<p>🎨 <strong>前端 / Frontend</strong></p>
+
+<p><strong>React Forms — Controlled vs Uncontrolled</strong></p>
+<p>React 表单：受控组件与非受控组件</p>
+
+<p><strong>你在做一个 dashboard，需要... / You&#x27;re building a dashboard and need to...</strong></p>
+<p>创建一个包含很多输入字段的复杂表单。你需要决定是由 React 的 state 来管理输入的值，还是让 DOM 自己管理。</p>
+<p>Create a complex form with many input fields. You need to decide whether to manage the input values with React state or let the DOM handle it.</p>
+
+<p><strong>代码示例 / Code Snippet</strong></p>
+
+<p><em>Controlled Component (受控组件)</em></p>
+<pre><code>
+import { useState } from &#x27;react&#x27;;
+
+function ControlledForm() {
+  const [name, setName] = useState(&#x27;&#x27;);
+
+  return (
+    &lt;form&gt;
+      &lt;input 
+        value={name} 
+        onChange={(e) =&gt; setName(e.target.value)} 
+        placeholder=&quot;Name&quot; 
+      /&gt;
+      &lt;p&gt;Typing: {name}&lt;/p&gt;
+    &lt;/form&gt;
+  );
+}
+</code></pre>
+
+<p><em>Uncontrolled Component (非受控组件)</em></p>
+<pre><code>
+import { useRef } from &#x27;react&#x27;;
+
+function UncontrolledForm() {
+  const nameRef = useRef&lt;HTMLInputElement&gt;(null);
+
+  const handleSubmit = (e: React.FormEvent) =&gt; {
+    e.preventDefault();
+    console.log(nameRef.current?.value);
+  };
+
+  return (
+    &lt;form onSubmit={handleSubmit}&gt;
+      &lt;input ref={nameRef} defaultValue=&quot;Default Name&quot; /&gt;
+      &lt;button type=&quot;submit&quot;&gt;Submit&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}
+</code></pre>
+
+<p><strong>猜猜这段代码输出什么？ / Quiz</strong></p>
+<p>If you type &quot;A&quot; in a controlled input but forget to provide the <code>onChange</code> handler:</p>
+<p><code>&lt;input value={name} /&gt;</code></p>
+<p>A) The input shows &quot;A&quot; and React throws an error.</p>
+<p>B) The input remains empty (or whatever <code>name</code> initially was) and you can&#x27;t type anything.</p>
+<p>C) The input shows &quot;A&quot; but the state doesn&#x27;t update.</p>
+<p>D) The component crashes.</p>
+<p><em>Answer: B. The value is locked to the state. Without onChange to update the state, the input is read-only.</em></p>
+
+<p><strong>常见误区 / Common Mistake</strong></p>
+<p>❌ <strong>Bad:</strong> 在不需要实时验证或动态 UI 的大表单中使用受控组件，导致每次按键整个表单重新渲染，产生性能问题。</p>
+<p>✅ <strong>Good:</strong> 对于简单表单或需要实时验证的表单使用受控组件；对于庞大且性能敏感的表单，使用非受控组件（或 <code>react-hook-form</code> 库）。</p>
+
+<p><strong>何时使用 / When to use</strong></p>
+<p>- <strong>Controlled:</strong> 需要实时验证 (live validation)、禁用按钮直到表单有效、强制输入格式（如信用卡号）。</p>
+<p>- <strong>Uncontrolled:</strong> 只需要在提交时获取值、集成非 React 库、极其复杂的表单且遇到性能瓶颈。</p>
+
+<p><strong>📚 References</strong></p>
+<p>- [React Docs: Controlled and uncontrolled components](https://react.dev/learn/sharing-state-between-components#controlled-and-uncontrolled-components)</p>
+<p>- [React Hook Form (Uses uncontrolled inputs for performance)](https://react-hook-form.com/)</p>
+
+<p><strong>🧒 ELI5</strong></p>
+<p>受控组件就像一个直升机父母，你每写一个字他都要检查并记录下来。非受控组件就像一个放养的父母，你随便写，写完了交卷（Submit）时他才看一眼。</p>
+<p>A controlled component is like a helicopter parent who checks and records every single letter you write. An uncontrolled component is like a hands-off parent who lets you write whatever and only checks when you hand in the paper (Submit).</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<p>🤖 <strong>AI</strong></p>
+
+<p><strong>CONCEPT: AI Agents vs. LLMs</strong></p>
+<p>AI 代理与大语言模型</p>
+
+<p><strong>直观解释 / Intuitive Explanation</strong></p>
+<p>大语言模型（LLM）就像一个被关在房间里、读过世界上所有书的聪明人。你问他问题，他靠记忆回答。</p>
+<p>AI 代理（Agent）则是这个聪明人拿到了手机、电脑和信用卡。他不仅能回答问题，还能上网搜索、运行代码、发邮件、甚至帮你订外卖。</p>
+<p>An LLM is like a brilliant person locked in a room who has read every book. You ask a question, they answer from memory.</p>
+<p>An AI Agent is that same person given a phone, a computer, and a credit card. They can search the web, run code, send emails, and order food.</p>
+
+<p><strong>它是如何工作的 / How it works</strong></p>
+<p>1. <strong>感知 (Perception):</strong> 接收用户的指令（Prompt）。</p>
+<p>2. <strong>思考 (Thinking/Reasoning):</strong> 使用 LLM 分析任务，将其拆解为多个步骤（如 ReAct 或 Chain-of-Thought 模式）。</p>
+<p>3. <strong>行动 (Action):</strong> 调用外部工具（Tools/APIs），如计算器、搜索引擎、数据库查询。</p>
+<p>4. <strong>观察 (Observation):</strong> 获取工具的返回结果，评估是否完成了任务，如果没有，则循环回到思考阶段。</p>
+
+<p><strong>应用场景 / Applications</strong></p>
+<p>- <strong>AutoGPT / BabyAGI:</strong> 给定一个目标（如“帮我策划一次去日本的旅行并预订机票”），它会自动拆解任务并执行。</p>
+<p>- <strong>Coding Agents:</strong> 像 Devin 或 GitHub Copilot Workspace，能够阅读代码库、编写代码、运行测试并修复 bug。</p>
+<p>- <strong>Data Analysis:</strong> 自动连接数据库，编写 SQL 查询，生成图表并撰写分析报告。</p>
+
+<p><strong>Runnable Python Snippet</strong></p>
+<p>一个极简的 Agent 逻辑（伪代码风格）：</p>
+<pre><code>
+# pip install openai
+import openai
+
+def simple_agent(goal):
+    messages = [{&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;You are an agent. You can use tools: [search(), calculate()]. Think step-by-step.&quot;}]
+    messages.append({&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: goal})
+    
+    while True:
+        response = openai.ChatCompletion.create(model=&quot;gpt-4&quot;, messages=messages)
+        action = response.choices[0].message.content
+        
+        if &quot;DONE&quot; in action:
+            return action
+        elif &quot;search(&quot; in action:
+            # Parse query, run real search, append result to messages
+            messages.append({&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Search result: ...&quot;})
+        elif &quot;calculate(&quot; in action:
+            # Parse math, calculate, append result
+            messages.append({&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Calculation result: ...&quot;})
+</code></pre>
+
+<p><strong>📚 References</strong></p>
+<p>- [LLM Powered Autonomous Agents - Lilian Weng]</p>
+<p>- [ReAct: Synergizing Reasoning and Acting in Language Models]</p>
+
+<p><strong>🧒 ELI5</strong></p>
+<p>LLM 是一本会说话的百科全书。Agent 是一个带着这本百科全书、还能帮你跑腿买东西的机器人管家。</p>
+<p>An LLM is a talking encyclopedia. An Agent is a robot butler who carries that encyclopedia and can also run errands for you.</p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-04-08</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-08</guid>
+      <pubDate>Wed, 08 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<p>🔄 <strong>复习日 / Review Day</strong></p>
+<p>今天是复习日！回顾过去4天的内容。</p>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+<p>Pick 3 topics from 3 different sections.</p>
+
+<p><strong>Q1: [🏗️ System Design]</strong> 设计 URL Shortener 时，为什么「短链 → 长链」映射通常不能只放在单机内存里？如果你改成分布式缓存（如 Redis）+ 持久化数据库，你会如何处理：一致性、缓存穿透/击穿、以及读写高峰？</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+<p>单机内存会成为单点故障且容量/扩展受限，一旦重启映射丢失会直接导致短链失效。常见做法是“缓存读为主、DB 为真源”：写入时先生成唯一 code（如雪花/号段/哈希+冲突处理），写 DB 成功后再写缓存；读取时走缓存未命中再查 DB 并回填缓存（cache-aside）。为防穿透可对不存在的短码做短 TTL 的 negative cache 或 Bloom Filter；为防击穿/热点可加互斥锁/请求合并、并对热点 key 做预热与更长 TTL；一致性上接受短暂不一致（最终一致）通常更划算，但要确保“写后读”路径可通过写穿/双写顺序与幂等更新降低概率。</p>
+<p>&lt;/details&gt;</p>
+
+<p><strong>Q2: [💻 Algorithms]</strong> 在「Permutation in String」里，用滑动窗口比较频次时，为什么很多实现会维护一个 <code>matches</code>（或 <code>need</code>）计数，而不是每次都比较 26 个字符计数？你需要小心哪些边界更新才能保证 <code>matches</code> 不出错？</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+<p>维护 <code>matches</code> 的核心是把“是否全等”从 O(26) 的全量比较降到 O(1) 的增量更新：窗口右移时只会影响进入和移出的两个字符。每次只在某个字符计数从“等于目标”变为“不等于目标”（或反过来）时调整 <code>matches</code>，最终当 <code>matches == 26</code>（或等价条件）即可判定成功。边界上要确保：更新计数前后顺序一致（先增/减再判断，或先判断再改，但要成对）、处理从 <code>target-1 → target</code> 与 <code>target → target+1</code> 两种跨越、以及窗口长度固定为 <code>len(s1)</code> 时每一步都同时处理进出字符。任何漏掉的跨越都会导致 <code>matches</code> 偶尔“卡住”或提前满足。</p>
+<p>&lt;/details&gt;</p>
+
+<p><strong>Q3: [🤖 AI]</strong> 你在做一个基于 RAG 的问答系统：为什么单纯“把更多文档塞进向量库”往往不会让答案更好？请用 3 个维度说明（检索、生成、评估），并给出你会优先做的 2 个改进动作。</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+<p>文档越多不等于命中率更高：检索层会面临噪声增大、相似度分数更难区分、以及 chunk 粒度/重叠不合理导致关键信息被切碎；生成层则会遇到上下文拥挤（有效信息被淹没）、模型对冲突信息无法仲裁、以及引用不稳定；评估层如果没有“可量化”的离线集与指标（如 answer correctness、citation faithfulness、latency），你很难知道到底是检索还是生成在拖后腿。优先改进通常是：① 做检索质量工程（更好的 chunking + metadata 过滤 + 关键词/向量混合检索 + reranker）；② 建立评估闭环（黄金问答集、自动评测+人工抽检），用数据驱动地迭代提示词、检索 top-k、与 rerank 策略。</p>
+<p>&lt;/details&gt;</p>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。</em></p>
+<p>📅 明天继续新内容！</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-07</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
