@@ -5,8 +5,745 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 09 Apr 2026 15:28:09 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 10 Apr 2026 15:09:06 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-10</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-10</guid>
+      <pubDate>Fri, 10 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Design a Key-Value Store</h2>
+
+<p>&gt; Day 21 · Phase: Growth · Est. 3 min</p>
+
+<hr/>
+
+<h2>想象你在设计... / Real-World Scenario</h2>
+
+<p>想象你在设计 Redis——世界上使用最广泛的键值存储之一。每天有数十亿次请求打到它：缓存数据、存储 session、实现排行榜。你需要设计一个既高性能又高可用的键值存储系统。</p>
+
+<p><em>Imagine you&#x27;re designing Redis — one of the world&#x27;s most widely used key-value stores. Billions of requests hit it daily: caching data, storing sessions, powering leaderboards. You need to design a high-performance, highly available key-value store.</em></p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+Client Requests
+      │
+      ▼
+┌─────────────────────────────────────────────┐
+│            API / Client Layer                │
+│   GET key / SET key value / DEL key / TTL   │
+└───────────────────────┬─────────────────────┘
+                        │
+          ┌─────────────▼──────────────┐
+          │     Request Router          │
+          │  (Consistent Hashing)       │
+          └──────┬──────────┬───────────┘
+                 │          │
+     ┌───────────▼──┐   ┌───▼────────────┐
+     │  Node A       │   │  Node B         │
+     │ ┌───────────┐ │   │ ┌───────────┐  │
+     │ │MemTable   │ │   │ │MemTable   │  │
+     │ │(in-memory)│ │   │ │(in-memory)│  │
+     │ └─────┬─────┘ │   │ └─────┬─────┘  │
+     │       │ flush │   │       │ flush   │
+     │ ┌─────▼─────┐ │   │ ┌─────▼─────┐  │
+     │ │  SSTable  │ │   │ │  SSTable  │  │
+     │ │ (on disk) │ │   │ │ (on disk) │  │
+     │ └───────────┘ │   │ └───────────┘  │
+     └───────────────┘   └────────────────┘
+                │                │
+                └────────────────┘
+                        │
+              ┌─────────▼──────────┐
+              │  Replication Log    │
+              │  (Write-Ahead Log)  │
+              └────────────────────┘
+</code></pre>
+
+<p><strong>核心数据结构 / Core Data Structures:</strong></p>
+<p>- <strong>MemTable</strong>: 内存中的有序跳表，写操作先落这里 / In-memory sorted skip-list, writes land here first</p>
+<p>- <strong>SSTable</strong>: 磁盘上的不可变有序文件 / Immutable sorted files on disk</p>
+<p>- <strong>Write-Ahead Log (WAL)</strong>: 崩溃恢复用 / For crash recovery</p>
+<p>- <strong>Bloom Filter</strong>: 快速判断 key 是否可能存在，避免无效磁盘读 / Quickly check if key might exist to avoid unnecessary disk reads</p>
+
+<hr/>
+
+<h2>关键权衡 / Key Tradeoffs</h2>
+
+<h3>为什么这样设计？/ Why design it this way?</h3>
+
+<p><strong>1. LSM Tree vs B-Tree</strong></p>
+
+<p>| 维度 | LSM Tree | B-Tree |</p>
+<p>|------|----------|--------|</p>
+<p>| 写性能 | ✅ 顺序写，极快 | 🔄 随机写，较慢 |</p>
+<p>| 读性能 | 🔄 需合并多层 | ✅ 直接查找 |</p>
+<p>| 空间放大 | 🔄 Compaction 前有冗余 | ✅ 较少冗余 |</p>
+<p>| 适用场景 | 写多读少，如日志系统 | 读多写少，如数据库索引 |</p>
+
+<p>&gt; LSM 是 RocksDB、LevelDB 的基础；B-Tree 是 PostgreSQL、MySQL 的基础</p>
+
+<p><strong>2. 一致性 vs 性能</strong></p>
+<p>- <strong>强一致性</strong> (同步复制): 写操作等所有副本确认 → 延迟高但不丢数据</p>
+<p>- <strong>最终一致性</strong> (异步复制): 写操作只等主节点 → 延迟低但可能短暂不一致</p>
+
+<p><strong>3. 内存 vs 持久化</strong></p>
+<p>- 纯内存方案 (Memcached): 极快但重启丢数据</p>
+<p>- 混合方案 (Redis with AOF/RDB): 定期持久化，兼顾性能与持久性</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>忘记处理热点 Key (Hot Keys)</strong></p>
+<p>某些 key 被频繁访问（如明星发微博时 user:123 被千万次读取），单节点会成为瓶颈。</p>
+<p>解决：本地缓存 + 请求合并 (request coalescing)</p>
+
+<p>❌ <strong>没有 TTL 机制导致内存泄漏</strong></p>
+<p>不过期的 key 会撑爆内存。Redis 用懒删除 + 主动扫描双策略。</p>
+
+<p>❌ <strong>忽视 Compaction 调优</strong></p>
+<p>LSM 的 Compaction 会突发 I/O 竞争，影响正常读写。生产环境要限速 (rate limiting)。</p>
+
+<p>❌ <strong>Consistent Hashing 中节点数量设置错误</strong></p>
+<p>虚拟节点 (virtual nodes) 数量太少会导致负载不均衡，建议 100-200 个虚拟节点/物理节点。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Designing Data-Intensive Applications — Chapter 3 (Kleppmann)](https://dataintensive.net/)</p>
+<p>- [RocksDB Architecture Overview](https://github.com/facebook/rocksdb/wiki/RocksDB-Overview)</p>
+<p>- [Redis Persistence (AOF + RDB)](https://redis.io/docs/management/persistence/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 (给五岁小孩解释)</h2>
+
+<p>键值存储就像一个超级快的字典。你说&quot;帮我记住 <code>user:123</code> 的密码是 <code>abc</code>&quot;，它就记住了。下次你问&quot;user:123 的密码是什么&quot;，它立刻告诉你。重要的是：这本字典要很快、要记很多东西、还要不怕服务器崩溃。LSM Tree 就像先在便利贴（内存）上写，然后定期整理到笔记本（磁盘）上——写得很快，整理在后台做。</p>
+
+<p><em>A key-value store is like a super-fast dictionary. You say &quot;remember that user:123&#x27;s password is abc&quot; and it does. Later you ask &quot;what&#x27;s user:123&#x27;s password?&quot; and it tells you instantly. The trick is making it fast, able to hold tons of data, and crash-proof. LSM Tree is like jotting notes on sticky notes (memory) first, then organizing them into a notebook (disk) later — writes are super fast, cleanup happens in the background.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — #76 Minimum Window Substring (Hard)</h2>
+
+<p>&gt; Day 21 · Phase: Growth · Est. 4 min</p>
+<p>&gt; 🧩 <strong>滑动窗口模式 (5/6)</strong> — building on the template from Day 17</p>
+
+<hr/>
+
+<h2>🧩 滑动窗口 (5/6) — 模式回顾 / Pattern Recap</h2>
+
+<p>这是滑动窗口第 5 题（共 6 题）。今天我们看最难的变体：<strong>最小窗口子串</strong>。</p>
+<p><em>This is problem 5/6 in our Sliding Window block. Today: the hardest variant — Minimum Window Substring.</em></p>
+
+<p><strong>本块所有题 / Block problems:</strong></p>
+<p>1. #121 Best Time to Buy and Sell Stock (Easy) ✅</p>
+<p>2. #3 Longest Substring Without Repeating Characters (Medium) ✅</p>
+<p>3. #424 Longest Repeating Character Replacement (Medium) ✅</p>
+<p>4. #567 Permutation in String (Medium) ✅</p>
+<p>5. <strong>#76 Minimum Window Substring (Hard) ← 今天 / Today</strong></p>
+<p>6. #239 Sliding Window Maximum (Hard) → 明天 / Tomorrow</p>
+
+<p><strong>模版回顾 / Template Recap:</strong></p>
+<pre><code>
+left = 0
+for right in range(len(arr)):
+    window.add(arr[right])  # expand right
+    while CONDITION_VIOLATED:
+        window.remove(arr[left])  # shrink left
+        left += 1
+    result = update(result, right - left + 1)
+</code></pre>
+<p><strong>核心洞察 / Key Insight:</strong> 右指针扩张探索，左指针收缩维护约束。每个元素最多进出窗口各一次 → O(n)</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 [LeetCode #76 — Minimum Window Substring](https://leetcode.com/problems/minimum-window-substring/) 🔴 Hard</p>
+<p>📹 [NeetCode 讲解](https://www.youtube.com/watch?v=jSto0O4AJbM)</p>
+
+<p><strong>题意：</strong> 给定字符串 <code>s</code> 和 <code>t</code>，找 <code>s</code> 中包含 <code>t</code> 所有字符的最短子串。</p>
+<p><em>Find the minimum window in <code>s</code> that contains all characters of <code>t</code>.</em></p>
+
+<pre><code>
+Input: s = &quot;ADOBECODEBANC&quot;, t = &quot;ABC&quot;
+Output: &quot;BANC&quot;
+Explanation: &quot;BANC&quot; is the smallest window containing A, B, C
+</code></pre>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象你在新闻文章中找一段话，必须包含&quot;人工智能&quot;、&quot;融资&quot;、&quot;OpenAI&quot;这三个词。你希望找到包含这三个词的最短段落——不是全文，而是最紧凑的片段。这就是最小窗口子串问题。</p>
+
+<p><em>Imagine you&#x27;re searching a news article for a passage that must contain &quot;artificial intelligence&quot;, &quot;funding&quot;, and &quot;OpenAI&quot;. You want the shortest paragraph that includes all three — not the whole article, the most compact snippet. That&#x27;s this problem.</em></p>
+
+<hr/>
+
+<h2>与模版的映射 / Mapping to Template</h2>
+
+<p>| 模版概念 | 本题实现 |</p>
+<p>|----------|----------|</p>
+<p>| <code>window.add()</code> | 右指针字符加入窗口计数 <code>window[c] += 1</code>，若满足 t 的需求则 <code>formed += 1</code> |</p>
+<p>| <code>CONDITION_VIOLATED</code> → shrink when? | <code>formed == required</code>（已包含所有字符）时<strong>收缩</strong>（找更短的） |</p>
+<p>| <code>window.remove()</code> | 左指针字符移出，若不再满足需求 <code>formed -= 1</code> |</p>
+<p>| <code>result</code> | 记录 <code>(window_size, left, right)</code> 最小值 |</p>
+
+<p>⚠️ <strong>关键区别 vs 前几题：</strong> 之前是窗口违反约束时收缩；本题是窗口<strong>满足条件时</strong>收缩（贪心地找更短）。</p>
+<p><em>Key difference vs. previous problems: we shrink when the window IS valid (greedy — find shorter), not when it&#x27;s invalid.</em></p>
+
+<hr/>
+
+<h2>Python 解法 + 追踪 / Solution + Trace</h2>
+
+<pre><code>
+from collections import Counter
+
+def minWindow(s: str, t: str) -&gt; str:
+    if not t or not s:
+        return &quot;&quot;
+    
+    # Count chars needed from t
+    need = Counter(t)          # {&#x27;A&#x27;:1, &#x27;B&#x27;:1, &#x27;C&#x27;:1}
+    required = len(need)       # 3 distinct chars needed
+    
+    window = {}
+    formed = 0                 # how many chars satisfy their count in t
+    
+    # (window_length, left, right)
+    best = float(&quot;inf&quot;), 0, 0
+    
+    left = 0
+    for right in range(len(s)):
+        c = s[right]
+        window[c] = window.get(c, 0) + 1
+        
+        # Check if this char now satisfies t&#x27;s requirement
+        if c in need and window[c] == need[c]:
+            formed += 1
+        
+        # Shrink while window is valid (all chars present)
+        while formed == required:
+            # Update best
+            win_len = right - left + 1
+            if win_len &lt; best[0]:
+                best = (win_len, left, right)
+            
+            # Remove left char
+            left_c = s[left]
+            window[left_c] -= 1
+            if left_c in need and window[left_c] &lt; need[left_c]:
+                formed -= 1
+            left += 1
+    
+    return &quot;&quot; if best[0] == float(&quot;inf&quot;) else s[best[1]:best[2]+1]
+</code></pre>
+
+<p><strong>追踪 / Trace</strong> (<code>s = &quot;ADOBECODEBANC&quot;</code>, <code>t = &quot;ABC&quot;</code>):</p>
+<pre><code>
+right=0(A): window={A:1}, formed=1
+right=1(D): window={A:1,D:1}, formed=1
+right=2(O): formed=1
+right=3(B): window={..B:1}, formed=2
+right=4(E): formed=2
+right=5(C): window={..C:1}, formed=3 ← 满足!
+  shrink: best=(6,0,5)=&quot;ADOBEC&quot;, remove A → formed=2
+right=...继续扩张...
+right=9(B): formed=3 again
+  shrink: best=min(6, right-left+1)...
+最终: best=&quot;BANC&quot; (length 4) ✅
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- ⏱ Time: O(|s| + |t|) — 每个字符最多进出窗口一次</p>
+<p>- 🗂 Space: O(|s| + |t|) — 窗口计数哈希表</p>
+
+<hr/>
+
+<h2>举一反三 / Connect to the Block</h2>
+
+<p>| 题目 | 约束类型 | 收缩时机 |</p>
+<p>|------|----------|----------|</p>
+<p>| #567 Permutation in String | 窗口 = 固定大小 | 固定长度收缩 |</p>
+<p>| #3 Longest Substring | 无重复字符 | 有重复时收缩 |</p>
+<p>| <strong>#76 Min Window</strong> | 包含所有目标字符 | <strong>满足条件时贪心收缩</strong> |</p>
+<p>| #239 Sliding Window Max | 最大值 | 固定大小 (明天!) |</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;In #76 Minimum Window Substring, when do we shrink the left pointer?&quot;,&quot;options&quot;:[&quot;When the window is invalid (missing chars from t)&quot;,&quot;When the window is valid (contains all chars of t)&quot;,&quot;When the window size exceeds len(t)&quot;,&quot;When we find a repeated character&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [LeetCode #76 Official](https://leetcode.com/problems/minimum-window-substring/)</p>
+<p>- [NeetCode Video Explanation](https://www.youtube.com/watch?v=jSto0O4AJbM)</p>
+<p>- [Sliding Window Patterns — LeetCode Discuss](https://leetcode.com/discuss/study-guide/1773891/sliding-window-technique-and-question-bank)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你有一盒彩色积木，我给你一张清单说&quot;我需要红、蓝、绿各一块&quot;。你从左到右扫描这盒积木，用一个滑动框框住它们。当框里有清单上所有颜色时，你试着从左边缩小这个框（看能不能更短）。一旦缺了某个颜色，就从右边继续扩大。最后记录你找到的最小的框。</p>
+
+<p><em>Imagine a box of colored blocks, and I give you a checklist: &quot;I need one red, one blue, one green.&quot; You scan the blocks left to right with a sliding frame. When the frame contains all the colors, you try to shrink it from the left (can it be shorter?). Once you&#x27;re missing a color, expand from the right. Record the smallest valid frame you found.</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Saying No to a Popular Idea</h2>
+
+<p>&gt; Day 21 · Phase: Growth · Est. 2 min</p>
+<p>&gt; Category: Decision Making · Level: Senior/Staff</p>
+
+<hr/>
+
+<h2>为什么这很重要 / Why This Matters</h2>
+
+<p>&quot;说不&quot;是高级工程师最难学的技能之一。初级工程师往往迎合团队氛围，资深工程师懂得拒绝那些听起来好但实际有害的想法——同时不损害关系。面试官想看你是否有独立判断力，还是随大流。</p>
+
+<p><em>Saying &quot;no&quot; is one of the hardest skills for senior engineers. Junior engineers often go along to get along; senior engineers know how to reject ideas that sound good but are actually harmful — without damaging relationships. Interviewers want to see if you have independent judgment, or if you just follow the crowd.</em></p>
+
+<hr/>
+
+<h2>STAR 结构 / STAR Breakdown</h2>
+
+<p><strong>情境 (Situation):</strong></p>
+<p>团队在讨论将某个功能提前发布以赶上季度 OKR，大多数人支持这个想法。但你发现这个功能的某个关键边缘情况还没测试。</p>
+
+<p><em>Your team is discussing shipping a feature early to hit quarterly OKRs. Most people are on board. But you&#x27;ve noticed a critical edge case that hasn&#x27;t been tested.</em></p>
+
+<p><strong>任务 (Task):</strong></p>
+<p>作为技术 lead，你需要在不成为&quot;阻碍者&quot;的情况下，阻止一个有风险的决策。</p>
+
+<p><em>As tech lead, you need to block a risky decision without becoming &quot;the blocker.&quot;</em></p>
+
+<p><strong>行动 (Action):</strong></p>
+<p>1. <strong>先理解再反对</strong> — 先问&quot;我理解大家想赶上 Q3，能帮我理解为什么这个时间点很关键吗？&quot;</p>
+<p>2. <strong>用数据说话</strong> — 展示具体风险：&quot;如果这个 edge case 触发，会影响 X% 的付费用户的数据完整性&quot;</p>
+<p>3. <strong>提供替代方案</strong> — &quot;我们可以在两周内修复这个问题，或者先 flag-gate 这个功能给 5% 用户&quot;</p>
+<p>4. <strong>让决策者做决定</strong> — &quot;我已经展示了风险。你们来决定。&quot;</p>
+
+<p><strong>结果 (Result):</strong></p>
+<p>团队选择了 flag-gate 方案。两周后，edge case 被触发了——因为有限发布，只有少量用户受影响，很快修复。</p>
+
+<p><em>The team chose the flag-gate approach. Two weeks later, the edge case was triggered — but with limited rollout, only a small percentage of users were affected and it was fixed quickly.</em></p>
+
+<hr/>
+
+<h2>❌ 差答案 vs ✅ 好答案</h2>
+
+<p><strong>❌ 差答案：</strong></p>
+<p>&gt; &quot;我直接告诉大家这个 idea 不行，我们不能这么做。&quot;</p>
+
+<p>这显得武断，没有解释原因，也没有提供出路。</p>
+
+<p><strong>❌ 另一种差答案：</strong></p>
+<p>&gt; &quot;我虽然有顾虑，但还是跟着大家走了。&quot;</p>
+
+<p>这表明你没有独立判断力，或者你害怕冲突。</p>
+
+<p><strong>✅ 好答案的关键要素：</strong></p>
+<p>- 具体的技术风险（不是感觉，是数据）</p>
+<p>- 展示了你<strong>理解业务压力</strong>（不是纯技术思维）</p>
+<p>- 提供了<strong>替代方案</strong>而不只是否定</p>
+<p>- 最终<strong>让决策者决定</strong>（你不是独断者）</p>
+
+<hr/>
+
+<h2>Senior/Staff 进阶技巧 / Senior/Staff Tips</h2>
+
+<p><strong>1. &quot;我有顾虑&quot; vs &quot;这不行&quot;</strong></p>
+<p>前者邀请对话；后者关闭对话。措辞很重要。</p>
+
+<p><em>&quot;I have concerns&quot; vs &quot;this won&#x27;t work&quot; — the first invites dialogue, the second closes it.</em></p>
+
+<p><strong>2. 建立&quot;技术债追踪&quot;习惯</strong></p>
+<p>在 Jira/Linear 上记录你的反对意见和理由，即使你被否决了。这样当问题真的发生时，有记录可循。</p>
+
+<p><em>Document your objections in Jira/Linear even when overruled. When the problem surfaces, you have a paper trail.</em></p>
+
+<p><strong>3. 区分&quot;我反对&quot;和&quot;我不支持&quot;</strong></p>
+<p>有时候你可以说：&quot;我不支持这个方向，但如果团队决定做，我会全力帮助执行。&quot; — 展示了判断力，同时不破坏团队凝聚力。</p>
+
+<p><em>Sometimes you can say &quot;I don&#x27;t support this direction, but if the team decides to proceed, I&#x27;ll give my full effort.&quot; — Shows judgment without breaking team cohesion.</em></p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>- 🎯 <strong>说不不是阻碍，是负责任</strong> — Saying no is leadership, not obstruction</p>
+<p>- 📊 <strong>用数据而非感觉</strong> — Use data, not gut feelings</p>
+<p>- 🔄 <strong>永远提供替代方案</strong> — Always offer alternatives</p>
+<p>- 🤝 <strong>理解业务压力</strong> — Acknowledge business pressure before pushing back</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [The Art of Saying No in Engineering — Increment Magazine](https://increment.com/teams/the-art-of-the-awkward-1-1/)</p>
+<p>- [Staff Engineer Archetypes — Will Larson](https://staffeng.com/guides/staff-archetypes)</p>
+<p>- [Radical Candor — Kim Scott](https://www.radicalcandor.com/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>假设班里大多数人都想在下雨天去户外玩，你知道会淋湿生病。好的做法是说：&quot;我知道大家很想出去玩（理解诉求），但是今天下雨会让很多人生病（具体风险）。我们可以改在室内玩这个游戏，同样很好玩（替代方案）。你们来决定。&quot; 而不是说&quot;不行，我不去&quot;然后坐那儿。</p>
+
+<p><em>Suppose most of your class wants to play outside in the rain. A good approach is: &quot;I know everyone wants to go out (acknowledge the desire), but we&#x27;ll get sick in the rain (specific risk). We could play this game inside instead — just as fun (alternative). Your call.&quot; Not just &quot;no, I&#x27;m not going&quot; while sitting in the corner.</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — React Forms: Controlled vs Uncontrolled</h2>
+
+<p>&gt; Day 21 · Phase: Growth · Week 4 · Est. 2 min</p>
+<p>&gt; Category: React Patterns</p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个 dashboard，需要一个搜索框：用户输入时实时过滤表格数据，同时在用户提交表单时阻止默认行为。这时候你面临一个选择：用受控组件还是非受控组件？</p>
+
+<p><em>You&#x27;re building a dashboard with a search input that filters a table in real time as the user types, while also preventing default form submission. You face a choice: controlled or uncontrolled component?</em></p>
+
+<hr/>
+
+<h2>核心概念 / Core Concepts</h2>
+
+<h3>受控组件 / Controlled Component</h3>
+<p>React 的 state 是表单值的<strong>唯一数据源</strong>。</p>
+<p><em>React state is the single source of truth for the input value.</em></p>
+
+<pre><code>
+function SearchForm() {
+  const [query, setQuery] = useState(&quot;&quot;); // React controls the value
+
+  return (
+    &lt;form onSubmit={(e) =&gt; e.preventDefault()}&gt;
+      &lt;input
+        type=&quot;text&quot;
+        value={query}           // ← Controlled by React state
+        onChange={(e) =&gt; setQuery(e.target.value)}
+        // hint text: &quot;Search...&quot;
+      /&gt;
+      &lt;p&gt;Searching for: {query}&lt;/p&gt;  {/* Real-time sync */}
+    &lt;/form&gt;
+  );
+}
+</code></pre>
+
+<h3>非受控组件 / Uncontrolled Component</h3>
+<p>DOM 自己管理状态，你用 <code>ref</code> 在需要时<strong>读取</strong>值。</p>
+<p><em>The DOM manages its own state; you read it with a <code>ref</code> when needed.</em></p>
+
+<pre><code>
+function LoginForm() {
+  const emailRef = useRef&lt;HTMLInputElement&gt;(null); // DOM manages value
+  const passwordRef = useRef&lt;HTMLInputElement&gt;(null);
+
+  const handleSubmit = (e: React.FormEvent) =&gt; {
+    e.preventDefault();
+    // Read values only on submit, not on every keystroke
+    const email = emailRef.current?.value;
+    const password = passwordRef.current?.value;
+    console.log({ email, password });
+  };
+
+  return (
+    &lt;form onSubmit={handleSubmit}&gt;
+      &lt;input type=&quot;email&quot; ref={emailRef} defaultValue=&quot;&quot; /&gt;
+      &lt;input type=&quot;password&quot; ref={passwordRef} /&gt;
+      &lt;button type=&quot;submit&quot;&gt;Login&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}
+</code></pre>
+
+<hr/>
+
+<h2>猜猜输出 / Quiz — What happens?</h2>
+
+<pre><code>
+function Mystery() {
+  const [val, setVal] = useState(&quot;hello&quot;);
+  
+  return (
+    &lt;input
+      value={val}
+      // No onChange handler!
+    /&gt;
+  );
+}
+</code></pre>
+
+<p><strong>这段代码会怎样？/ What does this do?</strong></p>
+
+<p>A) 正常渲染，用户可以输入 / Renders normally, user can type</p>
+<p>B) 报错，组件崩溃 / Throws an error, component crashes</p>
+<p>C) 输入框被锁定，用户无法修改 / Input is read-only, user can&#x27;t change it</p>
+<p>D) 忽略 value prop，用 defaultValue 代替 / Ignores value prop, uses defaultValue</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>✅ C</strong> — React 会发出警告，输入框变成只读。这是受控组件的常见陷阱：设置了 <code>value</code> 但没有 <code>onChange</code> 就等于只读。</p>
+
+<p><em>React warns and the input becomes read-only. This is a common trap with controlled components: setting <code>value</code> without <code>onChange</code> makes it effectively read-only.</em></p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>❌ 常见错误 vs ✅ 正确做法</h2>
+
+<p><strong>❌ 混用 value 和 defaultValue:</strong></p>
+<pre><code>
+// This is a bug! Switches from uncontrolled to controlled
+&lt;input defaultValue=&quot;initial&quot; value={someState} /&gt;
+</code></pre>
+
+<p><strong>✅ 选一种，坚持到底:</strong></p>
+<pre><code>
+// Controlled: use value + onChange
+&lt;input value={state} onChange={(e) =&gt; setState(e.target.value)} /&gt;
+
+// Uncontrolled: use defaultValue + ref
+&lt;input defaultValue=&quot;initial&quot; ref={myRef} /&gt;
+</code></pre>
+
+<p><strong>❌ 对每个表单字段都用 useState:</strong></p>
+<pre><code>
+// Verbose for large forms
+const [name, setName] = useState(&quot;&quot;);
+const [email, setEmail] = useState(&quot;&quot;);
+const [phone, setPhone] = useState(&quot;&quot;);
+</code></pre>
+
+<p><strong>✅ 对象化 state 或用 useReducer:</strong></p>
+<pre><code>
+const [form, setForm] = useState({ name: &quot;&quot;, email: &quot;&quot;, phone: &quot;&quot; });
+const handleChange = (e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt;
+  setForm(prev =&gt; ({ ...prev, [e.target.name]: e.target.value }));
+</code></pre>
+
+<hr/>
+
+<h2>何时用哪种 / When to Use Which</h2>
+
+<p>| 场景 | 选择 | 原因 |</p>
+<p>|------|------|------|</p>
+<p>| 实时验证 / 搜索过滤 | 受控 | 需要实时访问值 |</p>
+<p>| 简单登录表单 | 非受控 | 只需要提交时的值 |</p>
+<p>| 文件上传 <code>&lt;input type=&quot;file&quot;&gt;</code> | <strong>只能非受控</strong> | 浏览器不允许程序化设置文件 |</p>
+<p>| 大型复杂表单 | React Hook Form | 性能优化，减少重渲染 |</p>
+<p>| 需要格式化输入（电话号码等）| 受控 | 需要拦截并格式化用户输入 |</p>
+
+<p><strong>经验法则 / Rule of thumb:</strong></p>
+<p>需要在输入时对值做什么 → <strong>受控</strong></p>
+<p>只需要提交时的最终值 → <strong>非受控</strong>（或 React Hook Form）</p>
+
+<p><em>If you need to do something with the value as the user types → <strong>Controlled</strong>. If you only need the final value on submit → <strong>Uncontrolled</strong> (or React Hook Form).</em></p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;Which input type MUST use an uncontrolled component in React?&quot;,&quot;options&quot;:[&quot;type=&#x27;text&#x27;&quot;,&quot;type=&#x27;file&#x27;&quot;,&quot;type=&#x27;checkbox&#x27;&quot;,&quot;type=&#x27;radio&#x27;&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [React Docs — Controlled Components](https://react.dev/reference/react-dom/components/input)</p>
+<p>- [React Hook Form — Performance-first forms](https://react-hook-form.com/)</p>
+<p>- [Controlled vs Uncontrolled — React Blog](https://legacy.reactjs.org/blog/2018/06/07/you-probably-dont-need-derived-state.html)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象一个白板上写字。受控组件是：你每写一个字，就立刻复印一份到 React 的笔记本里——React 始终知道白板上写了什么。非受控组件是：你随便写，React 不管——只有你喊&quot;好了，给我看看&quot;的时候，React 才去白板上看。大多数情况下两种都行，但如果你需要在用户写字的时候就做事（比如实时搜索），就用受控的；如果只关心最终结果，就用非受控的。</p>
+
+<p><em>Imagine writing on a whiteboard. Controlled: every letter you write gets instantly copied into React&#x27;s notebook — React always knows what&#x27;s on the board. Uncontrolled: you write freely, React ignores it — only when you say &quot;show me now&quot; does React check the board. Both work in most cases, but if you need to react as the user types (like live search), use controlled; if you only care about the final result, use uncontrolled.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Prompt Engineering: Beyond Basic Prompts</h2>
+
+<p>&gt; Day 21 · Phase: Growth · Est. 2 min</p>
+<p>&gt; Category: Practical · Mode: CONCEPT (web search unavailable)</p>
+
+<hr/>
+
+<h2>直觉解释 / Intuitive Explanation</h2>
+
+<p>大多数人用 LLM 的方式就像对着搜索引擎说话：&quot;给我写一首诗&quot;。但 prompt engineering 是一门真正的技术——理解语言模型如何&quot;思考&quot;，然后设计输入让它给出更好的输出。</p>
+
+<p>这不是在&quot;哄&quot;AI，而是在<strong>工程化地引导概率分布</strong>。</p>
+
+<p><em>Most people use LLMs like a search engine: &quot;write me a poem.&quot; But prompt engineering is a real engineering discipline — understanding how language models &quot;think,&quot; then designing inputs that steer toward better outputs. It&#x27;s not about &quot;sweet-talking&quot; AI; it&#x27;s about <strong>engineering the probability distribution</strong>.</em></p>
+
+<hr/>
+
+<h2>核心技术 / How It Works</h2>
+
+<h3>1. Zero-Shot vs Few-Shot</h3>
+
+<pre><code>
+# Zero-shot: 直接问
+prompt = &quot;Classify the sentiment: &#x27;I love this product!&#x27;&quot;
+# → &quot;Positive&quot;
+
+# Few-shot: 提供示例，大幅提升准确率
+prompt = &quot;&quot;&quot;
+Classify sentiment:
+&quot;I love this!&quot; → Positive
+&quot;It&#x27;s broken.&quot; → Negative
+&quot;Works as expected.&quot; → Neutral
+&quot;I hate waiting so long!&quot; → ?
+&quot;&quot;&quot;
+# → Much more consistent and accurate
+</code></pre>
+
+<p><strong>为什么 few-shot 有效？</strong> 示例在 token 序列中建立了模式，模型通过 in-context learning 学会了格式和判断标准，无需重新训练。</p>
+
+<p><em>Why does few-shot work? Examples establish a pattern in the token sequence; the model learns format and criteria through in-context learning without retraining.</em></p>
+
+<hr/>
+
+<h3>2. Chain-of-Thought (CoT) 思维链</h3>
+
+<pre><code>
+# ❌ 直接问（容易出错）
+prompt = &quot;Roger has 5 tennis balls. He buys 2 more cans of 3 balls each. How many?&quot;
+# → &quot;11&quot; (sometimes wrong)
+
+# ✅ 让模型&quot;思考&quot;
+prompt = &quot;&quot;&quot;
+Roger has 5 tennis balls. He buys 2 more cans of 3 balls each. How many does he have now?
+Let&#x27;s think step by step:
+&quot;&quot;&quot;
+# → &quot;Roger starts with 5 balls.
+#    He buys 2 cans × 3 balls = 6 balls.
+#    Total: 5 + 6 = 11 balls.&quot;
+# Much more reliable!
+</code></pre>
+
+<p><strong>关键洞察：</strong> 让模型输出中间步骤，相当于给它更多&quot;计算空间&quot;（token 序列）。数学推理准确率可提升 20-50%。</p>
+
+<p><em>Key insight: Making the model output intermediate steps gives it more &quot;computation space.&quot; Math reasoning accuracy can improve 20-50%.</em></p>
+
+<hr/>
+
+<h3>3. 结构化 Prompting / Structured Prompting</h3>
+
+<pre><code>
+# System + User + Output format
+SYSTEM = &quot;&quot;&quot;
+You are a senior code reviewer. 
+When reviewing code:
+1. Check for security vulnerabilities FIRST
+2. Then performance issues
+3. Then readability
+Format: JSON with keys: security[], performance[], readability[]
+&quot;&quot;&quot;
+
+USER = &quot;Review this: def get_user(id): return db.query(f&#x27;SELECT * FROM users WHERE id={id}&#x27;)&quot;
+
+# → {&quot;security&quot;: [&quot;SQL injection vulnerability: use parameterized queries&quot;],
+#    &quot;performance&quot;: [&quot;SELECT * fetches unnecessary columns&quot;],
+#    &quot;readability&quot;: [&quot;Missing type hints, no docstring&quot;]}
+</code></pre>
+
+<hr/>
+
+<h3>4. 高级技术 / Advanced Techniques</h3>
+
+<p><strong>ReAct (Reason + Act):</strong> 让模型交替推理和行动</p>
+<pre><code>
+Thought: I need to find the current weather in SF
+Action: search(&quot;weather San Francisco today&quot;)
+Observation: 62°F, partly cloudy
+Thought: Now I can answer
+Answer: It&#x27;s 62°F and partly cloudy in SF.
+</code></pre>
+
+<p><strong>Self-Consistency:</strong> 同一问题运行 5 次，取最多数答案 → 准确率+15%</p>
+
+<p><strong>Constitutional AI:</strong> 让模型用一套原则自我审查输出</p>
+
+<hr/>
+
+<h2>可运行代码 / Runnable Python Snippet</h2>
+
+<pre><code>
+# pip install openai
+import openai
+
+client = openai.OpenAI()  # uses OPENAI_API_KEY env var
+
+def chain_of_thought(question: str) -&gt; str:
+    &quot;&quot;&quot;Add CoT to any question automatically.&quot;&quot;&quot;
+    response = client.chat.completions.create(
+        model=&quot;gpt-4o-mini&quot;,
+        messages=[
+            {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;Think step by step before answering.&quot;},
+            {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: f&quot;{question}\n\nLet&#x27;s think step by step:&quot;}
+        ],
+        temperature=0  # deterministic for reasoning tasks
+    )
+    return response.choices[0].message.content
+
+# Example
+result = chain_of_thought(&quot;If a train travels 120km in 2 hours, how far in 5 hours?&quot;)
+print(result)
+# → &quot;The train travels 120km / 2 hours = 60 km/h.
+#    In 5 hours: 60 × 5 = 300 km.&quot;
+</code></pre>
+
+<hr/>
+
+<h2>应用场景 / Applications</h2>
+
+<p>| 技术 | 最适合 |</p>
+<p>|------|--------|</p>
+<p>| Few-shot | 分类、格式转换、风格模仿 |</p>
+<p>| Chain-of-Thought | 数学、逻辑推理、多步骤任务 |</p>
+<p>| Structured output | JSON 提取、表单填写、数据处理 |</p>
+<p>| ReAct | Agent 系统、需要工具调用的任务 |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Chain-of-Thought Prompting Paper (Wei et al. 2022)](https://arxiv.org/abs/2201.11903)</p>
+<p>- [Prompt Engineering Guide — DAIR.AI](https://www.promptingguide.ai/)</p>
+<p>- [OpenAI Prompt Engineering Best Practices](https://platform.openai.com/docs/guides/prompt-engineering)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你让一个新同事做事情。如果你说&quot;帮我分析这份报告&quot;，他可能不知道你要什么格式、关注什么重点。但如果你说&quot;请按照这个格式（示例），分步骤分析，重点看安全和性能问题&quot;——你会得到好得多的结果。Prompt engineering 就是学会怎么给 AI 同事布置任务，让它理解你真正想要什么。</p>
+
+<p><em>Imagine asking a new coworker to do something. &quot;Analyze this report&quot; gets you who-knows-what. But &quot;please follow this format (example), analyze step by step, focus on security and performance&quot; — you get something much better. Prompt engineering is learning how to assign tasks to your AI coworker so it understands what you actually want.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-09</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
