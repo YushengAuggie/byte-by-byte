@@ -5,8 +5,1320 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 13 Apr 2026 15:11:01 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 16 Apr 2026 15:19:56 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-16</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-16</guid>
+      <pubDate>Thu, 16 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<p>🔄 <strong>复习日 / Review Day</strong></p>
+<p>今天是复习日！回顾过去4天的内容。</p>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+<p>Pick 3 topics from 3 different sections.</p>
+
+<p><strong>Q1: [🏗️ System Design]</strong> 在设计分布式唯一ID生成器（如 Twitter Snowflake）时，为什么时间戳部分通常放在最高位（最左边）？ / When designing a distributed unique ID generator (like Twitter Snowflake), why is the timestamp component usually placed in the most significant bits (leftmost)?</p>
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+<p>将时间戳放在高位可以保证生成的ID大致按时间递增（Time-sortable）。这对于数据库索引（如 B+ 树）非常友好，能有效减少页分裂，提高插入性能。 / Placing the timestamp in the most significant bits ensures that the generated IDs are roughly sortable by time. This is highly beneficial for database indexing (like B+ trees) as it reduces page splits and improves insertion performance.</p>
+<p>&lt;/details&gt;</p>
+
+<p><strong>Q2: [💻 Algorithms]</strong> 在解决“有效括号” (Valid Parentheses) 问题时，为什么栈 (Stack) 是最合适的数据结构？ / When solving the &quot;Valid Parentheses&quot; problem, why is a Stack the most appropriate data structure?</p>
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+<p>因为括号的匹配遵循“后进先出”（LIFO）的原则。最后遇到的未闭合左括号，必须最先被相应的右括号闭合。栈完美契合了这种处理顺序。 / Because parenthesis matching follows a &quot;Last-In-First-Out&quot; (LIFO) principle. The most recently encountered unclosed left parenthesis must be closed first by a corresponding right parenthesis. A stack perfectly models this order of operations.</p>
+<p>&lt;/details&gt;</p>
+
+<p><strong>Q3: [🎨 Frontend]</strong> 在 React 中，受控组件 (Controlled) 和非受控组件 (Uncontrolled) 处理表单数据的主要区别是什么？ / In React, what is the main difference between Controlled and Uncontrolled components for handling form data?</p>
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+<p>受控组件的表单数据由 React 的 state 管理，每次输入都会触发状态更新和重新渲染；而非受控组件的表单数据由 DOM 自身管理，通常使用 <code>ref</code> 在需要时（如提交时）一次性读取值。 / In a Controlled component, form data is managed by React state, and every input triggers a state update and re-render. In an Uncontrolled component, form data is managed by the DOM itself, and values are typically read once using a <code>ref</code> when needed (e.g., on submit).</p>
+<p>&lt;/details&gt;</p>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。</em></p>
+<p>📅 明天继续新内容！</p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-04-15</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-15</guid>
+      <pubDate>Wed, 15 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 21: Design a Notification System</h2>
+
+<p>&gt; 📊 Day 24 | Phase: Growth | Topic: System Design Problems</p>
+
+<hr/>
+
+<h2>想象这个场景 / The Scenario</h2>
+
+<p>想象你在 Airbnb 工作。用户订了一个民宿，系统需要同时发送：</p>
+<p>- 📱 Push notification（App 通知）</p>
+<p>- 📧 Email（预订确认）</p>
+<p>- 💬 SMS（支付成功短信）</p>
+
+<p>You&#x27;re at Airbnb. A user books a listing — the system needs to simultaneously send a push notification, confirmation email, and SMS payment receipt. How do you design this at scale?</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+Clients (iOS/Android/Web)
+          │
+          ▼
+    [API Gateway]
+          │
+          ▼
+  [Notification Service]
+     /     |      \
+    ▼      ▼       ▼
+[Push]  [Email]  [SMS]
+Worker  Worker   Worker
+  │       │        │
+  ▼       ▼        ▼
+[APNS] [SendGrid] [Twilio]
+[FCM]
+
+          ▲
+  [Message Queue]  ←── [Event Sources]
+  (Kafka/SQS)          (Order Service,
+                        Payment Service,
+                        etc.)
+
+  [Notification DB]  ←── stores delivery status
+  [User Preference]  ←── opt-in/out per channel
+  [Rate Limiter]     ←── prevent spam
+</code></pre>
+
+<hr/>
+
+<h2>核心设计决策 / Key Design Decisions</h2>
+
+<h3>1. 为什么用消息队列？/ Why Message Queue?</h3>
+
+<p><strong>问题 / Problem:</strong> 通知系统是下游依赖 — 如果 Email 服务挂了，不应该影响核心业务流程（下单、支付）。</p>
+<p><strong>解法 / Solution:</strong> 用 Kafka/SQS 解耦生产者和消费者。生产者（订单服务）发消息就完事，消费者（通知工作进程）异步处理。</p>
+
+<p>&gt; <strong>关键权衡 / Key Tradeoff:</strong> 异步 = 高可用 + 高吞吐，但牺牲了实时性（最终一致）。对通知场景完全可接受。</p>
+
+<h3>2. 用户偏好表 / User Preference Table</h3>
+
+<pre><code>
+CREATE TABLE user_notification_preferences (
+  user_id       BIGINT,
+  channel       ENUM(&#x27;push&#x27;, &#x27;email&#x27;, &#x27;sms&#x27;),
+  notification_type VARCHAR(50),  -- &#x27;marketing&#x27;, &#x27;transactional&#x27;
+  enabled       BOOLEAN DEFAULT true,
+  PRIMARY KEY (user_id, channel, notification_type)
+);
+</code></pre>
+
+<p>发送前先查这张表 — 用户关闭了营销邮件就别发。</p>
+<p>Check this table before sending — respect user opt-outs.</p>
+
+<h3>3. 幂等性 / Idempotency</h3>
+
+<p>Worker 崩溃重启后可能重复发送 → 每条通知有唯一 <code>notification_id</code>，发送成功后写入 DB。再次处理时先查 DB，已发送则跳过。</p>
+
+<p>Worker restarts may cause duplicate sends → each notification has a unique <code>notification_id</code>. Mark as sent in DB; skip if already delivered.</p>
+
+<h3>4. 推送三方服务 / Third-Party Push Services</h3>
+
+<p>- <strong>iOS:</strong> Apple Push Notification Service (APNS)</p>
+<p>- <strong>Android:</strong> Firebase Cloud Messaging (FCM)</p>
+<p>- <strong>Email:</strong> SendGrid / AWS SES</p>
+<p>- <strong>SMS:</strong> Twilio / AWS SNS</p>
+
+<hr/>
+
+<h2>数据量估算 / Scale Estimation</h2>
+
+<p>- DAU: 10M users</p>
+<p>- 每用户每天平均 3 条通知 → 30M notifications/day</p>
+<p>- QPS: 30M / 86400 ≈ <strong>350 notifications/sec</strong> (peak 5x = ~1750/sec)</p>
+<p>- 消息队列分区 / Kafka partitions: 按 <code>user_id % N</code> 分区确保顺序</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>| ❌ 错误做法 | ✅ 正确做法 |</p>
+<p>|-----------|-----------|</p>
+<p>| 同步发送通知（阻塞主流程）| 异步队列解耦 |</p>
+<p>| 不记录发送状态 | 写 DB + 幂等处理 |</p>
+<p>| 忽略用户偏好 | 发送前查 preference 表 |</p>
+<p>| 不限速 | Rate limiter 防骚扰 |</p>
+<p>| 只有一个推送渠道 | 失败重试 + fallback（push → SMS）|</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://systemdesign.one/notification-system-design/</p>
+<p>- https://aws.amazon.com/blogs/mobile/how-to-build-a-scalable-notification-system/</p>
+<p>- https://engineering.fb.com/2015/12/03/ios/delivering-billions-of-messages-instantly/</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你开了一家餐厅。厨师做好菜了，不能亲自跑去告诉每桌客人——他只需要把菜放到传菜台（消息队列），服务员（Worker）去各桌通知。有人不吃辣就不发辣的（用户偏好），菜已经送到就不再送（幂等性）。</p>
+
+<p>Think of it like a restaurant. The chef (core service) puts finished dishes on a conveyor (message queue). Waiters (workers) deliver them to the right tables (push/email/SMS). If a customer said &quot;no spicy food&quot; (user preference), skip it. If the dish was already delivered, don&#x27;t deliver again (idempotency).</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 22: #155 Min Stack (Medium) — Stack</h2>
+
+<p>&gt; 📊 Day 24 | Phase: Growth | Pattern: 单调栈模式 (2/7)</p>
+
+<hr/>
+
+<h2>🧩 单调栈模式 (2/7) — 在 Day 23 的模版基础上延伸</h2>
+
+<p>Yesterday (#20 Valid Parentheses) introduced the Stack pattern for matching. Today&#x27;s Min Stack is a <strong>variation</strong>: instead of using a stack for matching, we use <strong>a stack to augment data retrieval</strong> — specifically, tracking the minimum in O(1).</p>
+
+<p><strong>Pattern recap / 模版回顾:</strong></p>
+<pre><code>
+# Core stack pattern: push/pop with invariant maintenance
+stack = []
+# Each element: (value, auxiliary_info)  ← today&#x27;s twist
+</code></pre>
+
+<hr/>
+
+<h2>🔗 Links</h2>
+
+<p>- 🟡 Medium | [LeetCode #155 Min Stack](https://leetcode.com/problems/min-stack/)</p>
+<p>- 📹 [NeetCode Solution](https://neetcode.io/problems/minimum-stack)</p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象你在整理一摞文件，每次放一份文件上去，你都想随时知道&quot;这摞里最薄的文件是哪本&quot;——不翻找，O(1) 取出。</p>
+
+<p>Imagine stacking folders on your desk. At any moment you need to instantly know the thinnest folder in the stack — without searching through all of them.</p>
+
+<hr/>
+
+<h2>问题描述 / Problem</h2>
+
+<p>设计一个栈，支持 push、pop、top，以及 <strong>O(1) 时间</strong> 获取栈内最小值 <code>getMin()</code>。</p>
+
+<p>Design a stack that supports push, pop, top, and <strong>getMin() in O(1) time</strong>.</p>
+
+<pre><code>
+MinStack stack = new MinStack();
+stack.push(-2);
+stack.push(0);
+stack.push(-3);
+stack.getMin();  # → -3
+stack.pop();
+stack.top();     # → 0
+stack.getMin();  # → -2
+</code></pre>
+
+<hr/>
+
+<h2>映射到模式 / Map to Pattern</h2>
+
+<p><strong>关键洞察 / Key Insight:</strong> 普通栈只记录值，Min Stack 在每个节点额外记录&quot;到目前为止的最小值&quot;。</p>
+
+<p>Normal stack stores values. Min Stack stores <strong>(value, min_so_far)</strong> pairs — so every element &quot;knows&quot; the minimum at the time it was pushed.</p>
+
+<hr/>
+
+<h2>Python 解法 + 执行追踪 / Solution + Trace</h2>
+
+<pre><code>
+class MinStack:
+    def __init__(self):
+        # Each entry: (value, current_min_at_this_point)
+        self.stack = []
+
+    def push(self, val: int) -&gt; None:
+        # If stack is empty, min is val itself
+        # Otherwise, min is min(val, top element&#x27;s recorded min)
+        current_min = val if not self.stack else min(val, self.stack[-1][1])
+        self.stack.append((val, current_min))
+
+    def pop(self) -&gt; None:
+        self.stack.pop()
+
+    def top(self) -&gt; int:
+        return self.stack[-1][0]
+
+    def getMin(self) -&gt; int:
+        return self.stack[-1][1]
+</code></pre>
+
+<p><strong>执行追踪 / Trace:</strong></p>
+<pre><code>
+push(-2): stack = [(-2, -2)]          # min = -2
+push(0):  stack = [(-2,-2), (0,-2)]   # min still -2
+push(-3): stack = [(-2,-2),(0,-2),(-3,-3)]  # new min = -3
+getMin(): → stack[-1][1] = -3  ✅
+pop():    stack = [(-2,-2), (0,-2)]
+getMin(): → stack[-1][1] = -2  ✅ (min &quot;restored&quot; automatically!)
+</code></pre>
+
+<p><strong>神奇之处 / The Magic:</strong> When we pop -3, the min automatically reverts to -2 — because each element carries its own &quot;min context&quot;. No extra work needed!</p>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+
+<p>- <strong>Time:</strong> O(1) for all operations — push, pop, top, getMin</p>
+<p>- <strong>Space:</strong> O(n) — extra space for storing min alongside each element</p>
+
+<hr/>
+
+<h2>与其他模式变体的对比 / Compare to Block Problems</h2>
+
+<p>| Problem | Stack Stores | Key Twist |</p>
+<p>|---------|-------------|-----------|</p>
+<p>| #20 Valid Parentheses | Opening brackets | Match on close |</p>
+<p>| <strong>#155 Min Stack</strong> ← | <strong>(val, min)</strong> pairs | Augment with metadata |</p>
+<p>| #150 Eval RPN (next) | Numbers | Pop two, compute, push result |</p>
+<p>| #739 Daily Temperatures | Indices | Monotonic decreasing values |</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p>这个&quot;携带辅助信息&quot;的技巧在栈中非常通用：</p>
+<p>- <strong>Max Stack</strong> — 同理，存 (val, max_so_far)</p>
+<p>- <strong>频率栈</strong> (LFU Cache 变体) — 存 (val, frequency)</p>
+<p>- <strong>单调栈</strong> (#739) — 存索引，维护单调性</p>
+
+<p>The &quot;carry auxiliary info&quot; trick generalizes broadly:</p>
+<p>- Max Stack → store (val, max_so_far)</p>
+<p>- Daily Temperatures → store indices, maintain monotonic property</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://leetcode.com/problems/min-stack/editorial/</p>
+<p>- https://neetcode.io/problems/minimum-stack</p>
+<p>- https://www.geeksforgeeks.org/design-a-stack-that-supports-getmin-in-o1-time-and-o1-extra-space/</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>每次往盒子里放玩具，你都在玩具上贴一个便利贴，写上&quot;到目前为止，这箱子里最小的玩具是哪个&quot;。想知道最小的？直接看最上面那个玩具的便利贴——不用翻箱子！</p>
+
+<p>Every time you put a toy in the box, write a sticky note on it: &quot;the smallest toy in the box so far is ___.&quot; Want to know the minimum? Just read the note on the top toy — no digging needed!</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 21: Conflict Resolution</h2>
+
+<p>&gt; 📊 Day 24 | Phase: Growth | Level: Senior/Staff</p>
+
+<hr/>
+
+<h2>为什么这很重要？/ Why This Matters</h2>
+
+<p>在 Senior/Staff 级别，技术问题往往只是表象，真正的挑战在于&quot;人&quot;。面试官问冲突解决，不是想听你如何&quot;和稀泥&quot;，而是想看你如何<strong>把冲突转化为建设性的讨论</strong>，并最终达成共识。</p>
+
+<p>At the Senior/Staff level, technical problems are often just symptoms of human alignment issues. Interviewers ask about conflict resolution to see if you can turn friction into constructive dialogue and reach a consensus, rather than just avoiding the argument.</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<h3>🌟 Situation (情境)</h3>
+<p>描述冲突的背景。必须是<strong>工作相关的实质性冲突</strong>（如架构选择、资源分配），而不是个人恩怨。</p>
+<p>Describe the context. It must be a substantive, work-related conflict (e.g., architectural choices, resource allocation), not a personal petty argument.</p>
+<p><em>Example:</em> &quot;前端团队想用 GraphQL 加速开发，而后端团队坚持用 REST 以保持系统稳定性，双方僵持不下。&quot;</p>
+
+<h3>🎯 Task (任务)</h3>
+<p>你的角色是什么？你需要达成什么目标？</p>
+<p>What was your role and the goal?</p>
+<p><em>Example:</em> &quot;作为 Tech Lead，我需要打破僵局，确保项目按时交付，同时兼顾开发效率和系统稳定。&quot;</p>
+
+<h3>🚀 Action (行动) - 核心部分</h3>
+<p>你是如何解决的？强调<strong>倾听、客观数据和寻找共同点</strong>。</p>
+<p>How did you solve it? Emphasize listening, objective data, and finding common ground.</p>
+<p>1. <strong>De-escalate (降温):</strong> 把讨论从&quot;谁对谁错&quot;转移到&quot;我们要解决什么问题&quot;。</p>
+<p>2. <strong>Gather Data (收集数据):</strong> 建立客观的评估标准（如性能测试、开发时间估算）。</p>
+<p>3. <strong>Compromise/Align (妥协/对齐):</strong> 找到双赢方案，或者基于数据做出艰难决定并让各方理解（Disagree and Commit）。</p>
+
+<h3>🏆 Result (结果)</h3>
+<p>冲突解决了没？项目成功了吗？<strong>学到了什么？</strong></p>
+<p>Was the conflict resolved? Did the project succeed? What did you learn?</p>
+<p><em>Example:</em> &quot;我们决定先在非核心服务上试点 GraphQL。项目按时上线，双方都对结果满意。我学到了尽早引入客观评估标准能有效避免情绪化争论。&quot;</p>
+
+<hr/>
+
+<h2>❌ 错误示范 vs ✅ 正确示范</h2>
+
+<p>| ❌ Bad | ✅ Good |</p>
+<p>|--------|---------|</p>
+<p>| &quot;我是对的，所以我强迫他们听我的。&quot; (Too aggressive) | &quot;我组织了白板会议，列出双方方案的优缺点。&quot; (Collaborative) |</p>
+<p>| &quot;我去找老板，让老板来定夺。&quot; (Lacks leadership) | &quot;我们定义了成功指标，用数据说话。&quot; (Data-driven) |</p>
+<p>| &quot;我们各退一步，随便选了个折中方案。&quot; (Weak compromise) | &quot;我们找到了既能满足前端需求，又不需要后端大改的方案。&quot; (Win-win) |</p>
+
+<hr/>
+
+<h2>💡 Senior/Staff 专属建议 / Senior Tips</h2>
+
+<p>- <strong>Focus on the &quot;Why&quot;:</strong> 冲突往往源于对底层目标的不一致。前端想要速度，后端想要稳定。找出这些 underlying motivations。</p>
+<p>- <strong>Disagree and Commit:</strong> 展现你理解即使你的方案没被采纳，你也能全力支持团队的决定。</p>
+<p>- <strong>Systemic Fixes:</strong> 冲突解决后，你有没有建立新的流程或规范，防止类似冲突再次发生？（如：引入 RFC 流程）。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://igotanoffer.com/blogs/tech/behavioral-interview-questions-conflict</p>
+<p>- https://blog.pragmaticengineer.com/resolving-engineering-conflicts/</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>两个小朋友为了玩哪个玩具吵架。你不是去抢玩具，也不是去告老师，而是问他们：&quot;你们到底想玩什么游戏？&quot;然后发现一个人想玩搭房子，一个人想玩开汽车，于是你提议：&quot;我们用积木搭一个停车场吧！&quot;</p>
+
+<p>Two kids are fighting over a toy. Instead of grabbing the toy or telling the teacher, you ask: &quot;What game do you actually want to play?&quot; One wants to build houses, the other wants to drive cars. So you suggest: &quot;Let&#x27;s build a parking garage with blocks!&quot;</p>
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 21: TypeScript Advanced — Utility Types &amp; Type Guards</h2>
+
+<p>&gt; 📊 Day 24 | Phase: Growth | Category: TypeScript</p>
+
+<hr/>
+
+<h2>真实场景 / Real-World Scenario</h2>
+
+<p>你在做一个 dashboard，需要从后端获取用户数据并更新。后端返回的 <code>User</code> 对象有很多字段，但更新接口只需要传几个字段（比如只需要 <code>name</code> 和 <code>email</code>），而且这些字段都是可选的。你该怎么定义这个更新函数的参数类型？难道要重新写一个 <code>UpdateUserPayload</code> 接口吗？</p>
+
+<p>You&#x27;re building a dashboard and need to fetch and update user data. The backend <code>User</code> object has many fields, but the update API only needs a few (like <code>name</code> and <code>email</code>), and they&#x27;re all optional. How do you type the payload without writing a whole new interface?</p>
+
+<hr/>
+
+<h2>核心概念：Utility Types (工具类型)</h2>
+
+<p>TypeScript 内置了强大的工具类型，可以基于现有类型<strong>派生</strong>出新类型，保持代码 DRY (Don&#x27;t Repeat Yourself)。</p>
+
+<p>TypeScript has built-in utility types to <strong>derive</strong> new types from existing ones, keeping your code DRY.</p>
+
+<h3>1. `Partial&lt;T&gt;` &amp; `Pick&lt;T, K&gt;`</h3>
+
+<pre><code>
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: &#x27;admin&#x27; | &#x27;user&#x27;;
+  createdAt: Date;
+}
+
+// ❌ Bad: 重复定义 (Duplication)
+interface UpdateUserPayload {
+  name?: string;
+  email?: string;
+}
+
+// ✅ Good: 组合使用 Utility Types (Composition)
+// 1. 先用 Pick 挑出需要的字段: { name: string; email: string }
+// 2. 再用 Partial 把它们变成可选的: { name?: string; email?: string }
+type UpdateUserPayload = Partial&lt;Pick&lt;User, &#x27;name&#x27; | &#x27;email&#x27;&gt;&gt;;
+
+function updateUser(id: string, payload: UpdateUserPayload) {
+  // api call...
+}
+</code></pre>
+
+<h3>2. `Omit&lt;T, K&gt;`</h3>
+
+<p>如果你只需要排除一两个字段，用 <code>Omit</code> 更方便。</p>
+<p>If you only need to exclude a few fields, <code>Omit</code> is easier.</p>
+
+<pre><code>
+// 创建新用户时，不需要 id 和 createdAt（后端生成）
+type CreateUserPayload = Omit&lt;User, &#x27;id&#x27; | &#x27;createdAt&#x27;&gt;;
+</code></pre>
+
+<hr/>
+
+<h2>核心概念：Type Guards (类型守卫)</h2>
+
+<p>在处理联合类型（Union Types）或 <code>unknown</code>/<code>any</code> 时，TypeScript 需要你&quot;证明&quot;变量是某个特定类型，才能安全地访问其属性。</p>
+
+<p>When dealing with Union Types or <code>unknown</code>/<code>any</code>, TypeScript requires you to &quot;prove&quot; a variable is a specific type before accessing its properties.</p>
+
+<h3>1. `typeof` &amp; `in` (基础守卫)</h3>
+
+<pre><code>
+function processValue(val: string | number | { data: string }) {
+  if (typeof val === &#x27;string&#x27;) {
+    return val.toUpperCase(); // TS 知道这里 val 是 string
+  }
+  
+  if (typeof val === &#x27;number&#x27;) {
+    return val.toFixed(2); // TS 知道这里 val 是 number
+  }
+
+  if (typeof val === &#x27;object&#x27; &amp;&amp; val !== null &amp;&amp; &#x27;data&#x27; in val) {
+    return val.data; // TS 知道这里 val 包含 data 属性
+  }
+}
+</code></pre>
+
+<h3>2. 自定义 Type Guard (`is` 关键字)</h3>
+
+<p>当你需要把复杂的类型检查逻辑抽离成函数时，必须使用 <code>is</code> 谓词。</p>
+<p>When extracting complex type checks into a function, you must use the <code>is</code> predicate.</p>
+
+<pre><code>
+interface Admin { role: &#x27;admin&#x27;; privileges: string[] }
+interface Customer { role: &#x27;user&#x27;; plan: string }
+
+type AppUser = Admin | Customer;
+
+// ❌ Bad: 返回 boolean，TS 调用后依然不知道 user 的具体类型
+function isAdminBad(user: AppUser): boolean {
+  return user.role === &#x27;admin&#x27;;
+}
+
+// ✅ Good: 返回 user is Admin，告诉 TS 如果为 true，user 就是 Admin
+function isAdminGood(user: AppUser): user is Admin {
+  return user.role === &#x27;admin&#x27;;
+}
+
+function handleUser(user: AppUser) {
+  if (isAdminGood(user)) {
+    console.log(user.privileges); // ✅ TS 知道这是 Admin
+  } else {
+    console.log(user.plan);       // ✅ TS 知道这是 Customer
+  }
+}
+</code></pre>
+
+<hr/>
+
+<h2>🧠 猜猜看 / Quick Quiz</h2>
+
+<pre><code>
+interface Config {
+  theme: string;
+  timeout: number;
+}
+type ReadonlyConfig = Readonly&lt;Config&gt;;
+
+const conf: ReadonlyConfig = { theme: &#x27;dark&#x27;, timeout: 5000 };
+conf.theme = &#x27;light&#x27;;
+</code></pre>
+<p>这段代码会发生什么？</p>
+<p>A) 正常运行，<code>conf.theme</code> 变成 &#x27;light&#x27;</p>
+<p>B) 编译报错，提示 <code>theme</code> 是只读属性</p>
+<p>C) 运行时报错</p>
+<p>D) 编译通过，但运行时 <code>theme</code> 不会改变</p>
+
+<p>&lt;details&gt;&lt;summary&gt;答案 / Answer&lt;/summary&gt;</p>
+<p><strong>B) 编译报错，提示 <code>theme</code> 是只读属性</strong></p>
+<p><code>Readonly&lt;T&gt;</code> 会把接口的所有属性都变成 <code>readonly</code>，防止意外修改。</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>| ❌ 错误做法 | ✅ 正确做法 |</p>
+<p>|-----------|-----------|</p>
+<p>| 复制粘贴接口定义来创建 DTO | 使用 <code>Pick</code>, <code>Omit</code>, <code>Partial</code> 派生类型 |</p>
+<p>| 用 <code>as</code> 强行断言类型 (<code>val as Admin</code>) | 使用 Type Guard (<code>isAdmin(val)</code>) 在运行时安全检查 |</p>
+<p>| 自定义检查函数只返回 <code>boolean</code> | 使用 <code>user is Admin</code> 谓词，让 TS 编译器也能理解 |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://www.typescriptlang.org/docs/handbook/utility-types.html</p>
+<p>- https://www.typescriptlang.org/docs/handbook/2/narrowing.html</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>Utility Types 就像是乐高积木的模具。你有一个完整的汽车模型（User），你想做一个只有车轮和方向盘的模型（UpdatePayload），你不需要重新画图纸，只要用模具（Pick/Partial）把需要的部分切下来就行了。</p>
+
+<p>Type Guards 就像是俱乐部的保安。你拿着一张&quot;可能是 VIP 也可能是普通会员&quot;的卡（Union Type），保安（<code>typeof</code> / <code>is</code>）检查了你的卡，确认你是 VIP 后，才允许你进入 VIP 休息室（访问特定属性）。</p>
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 24: Chain of Thought &amp; Reasoning</h2>
+
+<p>&gt; 📊 Day 24 | Phase: Growth | Category: Techniques</p>
+
+<hr/>
+
+<h2>直觉解释 / Intuitive Explanation</h2>
+
+<p>想象你问一个小学生：&quot;池塘里有 5 只青蛙，飞来 3 只鸟，又跳走 2 只青蛙，现在有几只动物？&quot;</p>
+<p>如果他直接脱口而出&quot;6只&quot;，大概率是猜的。但如果他掰着手指算：&quot;5 只青蛙减去 2 只等于 3 只，加上 3 只鸟等于 6 只&quot;，他就算对了。</p>
+
+<p><strong>Chain of Thought (CoT, 思维链)</strong> 就是让大语言模型（LLM）&quot;掰着手指算&quot;。它强迫模型在给出最终答案前，先一步一步写出中间的推理过程。</p>
+
+<p>Imagine asking a kid a math word problem. If they blurt out an answer immediately, it&#x27;s a guess. If they work it out step-by-step (&quot;5 frogs minus 2 is 3, plus 3 birds is 6&quot;), they get it right.</p>
+
+<p><strong>Chain of Thought (CoT)</strong> forces Large Language Models (LLMs) to do exactly this: generate intermediate reasoning steps before outputting the final answer.</p>
+
+<hr/>
+
+<h2>它是如何工作的？/ How it Works</h2>
+
+<p>LLM 本质上是&quot;接字游戏&quot;（Next Token Prediction）。如果直接生成答案，它只有一次预测的机会。如果问题很复杂，一次预测很容易出错。</p>
+
+<p>CoT 通过让模型生成中间步骤，<strong>把一个复杂的大问题，拆解成了多个简单的小问题</strong>。每生成一个中间步骤（Token），模型就多了一次&quot;思考&quot;的时间，并且后续的生成可以基于前面已经写出的正确逻辑。</p>
+
+<p>LLMs are just predicting the next token. For complex problems, a single jump to the answer often fails. CoT breaks a hard problem into smaller, sequential token predictions. Each reasoning step acts as context for the next, dramatically improving accuracy on math, logic, and coding tasks.</p>
+
+<h3>两种常见形式 / Two Common Forms:</h3>
+
+<p>1. <strong>Zero-Shot CoT:</strong> 在 Prompt 结尾加上一句神奇的咒语：<strong>&quot;Let&#x27;s think step by step.&quot;</strong> (让我们一步一步思考)。</p>
+<p>2. <strong>Few-Shot CoT:</strong> 在 Prompt 里给模型提供几个带有完整推理过程的示例（Examples）。</p>
+
+<hr/>
+
+<h2>应用场景 / Applications</h2>
+
+<p>- <strong>复杂数学计算</strong> (Math word problems)</p>
+<p>- <strong>逻辑推理</strong> (Logic puzzles, riddles)</p>
+<p>- <strong>代码生成与 Debug</strong> (Planning architecture before coding)</p>
+<p>- <strong>数据提取与分析</strong> (Explaining <em>why</em> a data point was chosen)</p>
+
+<hr/>
+
+<h2>💻 Runnable Python Snippet</h2>
+
+<p>演示如何用 OpenAI API 实现 Zero-Shot CoT。</p>
+<p>Demonstrating Zero-Shot CoT with the OpenAI API.</p>
+
+<pre><code>
+# pip install openai
+import os
+from openai import OpenAI
+
+client = OpenAI(api_key=os.environ.get(&quot;OPENAI_API_KEY&quot;))
+
+problem = &quot;A juggler has 3 balls. He buys 2 more, loses 1, and finds 4. How many balls does he have?&quot;
+
+# ❌ Without CoT (Might guess wrong)
+# prompt = f&quot;Answer this: {problem}&quot;
+
+# ✅ With Zero-Shot CoT
+prompt = f&quot;Answer this: {problem}\n\nLet&#x27;s think step by step.&quot;
+
+response = client.chat.completions.create(
+    model=&quot;gpt-3.5-turbo&quot;, # Or gpt-4
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}],
+    temperature=0
+)
+
+print(response.choices[0].message.content)
+# Expected Output:
+# 1. The juggler starts with 3 balls.
+# 2. He buys 2 more, so 3 + 2 = 5 balls.
+# 3. He loses 1, so 5 - 1 = 4 balls.
+# 4. He finds 4, so 4 + 4 = 8 balls.
+# The juggler has 8 balls.
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Chain-of-Thought Prompting Elicits Reasoning in Large Language Models (Wei et al., 2022)](https://arxiv.org/abs/2201.11903)</p>
+<p>- [Large Language Models are Zero-Shot Reasoners (Kojima et al., 2022)](https://arxiv.org/abs/2205.11916)</p>
+<p>- https://www.promptingguide.ai/techniques/cot</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>考试的时候，老师为什么要求你写出&quot;解题步骤&quot;而不仅仅是最终答案？因为写步骤能帮你理清思路，不容易算错。CoT 就是让 AI 也在试卷上写出解题步骤。</p>
+
+<p>Why do math teachers tell you to &quot;show your work&quot;? Because writing down the steps prevents silly mistakes. CoT is just telling the AI to show its work before giving the final answer.</p>]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-04-14</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-14</guid>
+      <pubDate>Tue, 14 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 23</h2>
+<p><strong>主题 / Topic:</strong> Design a Web Crawler</p>
+<p><strong>难度 / Difficulty:</strong> Intermediate | <strong>阶段 / Phase:</strong> Growth</p>
+
+<hr/>
+
+<h2>🌐 真实场景 / Real-World Scenario</h2>
+
+<p>想象你在谷歌工程团队——你需要构建一个爬虫，每天抓取数十亿个网页，为搜索引擎建立索引。如何在不压垮服务器、不陷入无限循环的情况下完成这个任务？</p>
+
+<p>Imagine you&#x27;re on the Google engineering team — you need to build a crawler that visits billions of pages every day to build a search index. How do you do this without overwhelming servers or getting stuck in infinite loops?</p>
+
+<hr/>
+
+<h2>🗺️ 架构图 / Architecture Diagram</h2>
+
+<pre><code>
+          ┌─────────────────────────────────────────────┐
+          │              Seed URLs (种子 URL)            │
+          └──────────────────┬──────────────────────────┘
+                             │
+                             ▼
+          ┌─────────────────────────────────────────────┐
+          │         URL Frontier (URL 队列)              │
+          │   Priority Queue (优先级队列)                │
+          │   [politeness delay per domain]             │
+          └──────────┬──────────────────────────────────┘
+                     │
+          ┌──────────▼──────────┐
+          │   DNS Resolver      │  ← DNS 解析缓存
+          │   (with cache)      │
+          └──────────┬──────────┘
+                     │
+     ┌───────────────▼──────────────────┐
+     │        Downloader Workers        │  ← 并行抓取
+     │   (async, N parallel threads)   │
+     └─┬───────────────────────────────┘
+       │
+       ├──▶ robots.txt Checker ──▶ skip if disallowed
+       │
+       ├──▶ Content Parser (HTML/JS)
+       │        │
+       │        ├──▶ Extract new URLs ──▶ URL Deduplication
+       │        │                              │
+       │        │                    ┌─────────▼──────────┐
+       │        │                    │  Bloom Filter /    │
+       │        │                    │  Seen URL Store    │
+       │        │                    └─────────┬──────────┘
+       │        │                              │ (not seen)
+       │        │                              ▼
+       │        │                       URL Frontier
+       │        │
+       │        └──▶ Content Storage (S3 / HDFS)
+       │                    │
+       └────────────────────▼
+                    Indexer (离线处理)
+</code></pre>
+
+<hr/>
+
+<h2>⚖️ 关键权衡 / Key Tradeoffs</h2>
+
+<h3>为什么这样设计？ / Why design it this way?</h3>
+
+<p><strong>1. URL 去重 — Bloom Filter vs. Hash Set</strong></p>
+
+<p>| 方案 | 优点 | 缺点 |</p>
+<p>|------|------|------|</p>
+<p>| Hash Set | 准确，无误报 | 内存占用大（1B URLs ≈ 数十 GB） |</p>
+<p>| Bloom Filter | 极低内存（~1.2 GB for 1B URLs） | 有小概率误报（漏爬少量 URL） |</p>
+
+<p><strong>对于搜索引擎，Bloom Filter 是赢家</strong>——偶尔漏爬一个 URL 可接受。</p>
+<p>For a search engine, Bloom Filter wins — occasionally missing a URL is acceptable.</p>
+
+<p><strong>2. URL 优先级 / URL Prioritization</strong></p>
+<p>- PageRank 高的页面 → 优先级高</p>
+<p>- 更新频繁的网站（新闻站）→ 更高频率重爬</p>
+<p>- 使用<strong>优先级队列</strong>（多个队列，按 tier 分）</p>
+
+<p><strong>3. Politeness（礼貌性）</strong></p>
+<p>同一个域名的请求间隔 ≥ 1 秒，防止对目标网站造成 DDoS。</p>
+<p>Enforce ≥1s delay per domain to avoid accidentally DDoS-ing sites.</p>
+
+<hr/>
+
+<h2>❌ 别踩这个坑 / Common Mistakes</h2>
+
+<p><strong>坑 1: 忘记处理 Spider Trap（蜘蛛陷阱）</strong></p>
+<pre><code>
+example.com/page?color=red&amp;sort=asc&amp;page=1
+example.com/page?color=red&amp;sort=asc&amp;page=2
+... (infinite)
+</code></pre>
+<p>修复：URL 规范化 + 最大深度限制（e.g., depth ≤ 10）</p>
+<p>Fix: URL normalization + max depth limit</p>
+
+<p><strong>坑 2: 爬取重复内容</strong></p>
+<p>不同 URL 可能指向相同内容（www vs non-www, http vs https）。</p>
+<p>Use <strong>content hash</strong> (MD5/SHA1) to detect duplicate content even at different URLs.</p>
+
+<p><strong>坑 3: 忽略 robots.txt</strong></p>
+<p>合法爬虫必须遵守 robots.txt 协议，否则可能面临法律风险和 IP 封禁。</p>
+<p>Legitimate crawlers MUST respect robots.txt — legal liability + IP bans otherwise.</p>
+
+<p><strong>坑 4: 单点故障</strong></p>
+<p>URL Frontier 和存储层都需要分布式、高可用设计（Kafka + distributed DB）。</p>
+
+<hr/>
+
+<h2>📊 规模估算 / Scale Estimation</h2>
+
+<p>- 目标：15 亿网页 in 4 weeks</p>
+<p>- 每秒需爬取：~6,200 pages/sec</p>
+<p>- 存储：平均 100KB/page → <strong>150 TB total</strong></p>
+<p>- 带宽：6,200 × 100KB = <strong>620 MB/s</strong></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://web.stanford.edu/class/cs276/handouts/lecture22-crawling.pdf</p>
+<p>- https://www.cs.cornell.edu/courses/cs6125/2015sp/slides/crawling.pdf</p>
+<p>- https://www.youtube.com/watch?v=BKZxZwUgL3Y (System Design Interview — Web Crawler)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>爬虫就像一个图书馆员，从一本书开始，读完后抄下所有书里提到的其他书名，然后去找那些书来读。为了不重复，他有一个小本子记下所有读过的书。为了礼貌，他每次只借一本，不一次性抢光所有书。</p>
+
+<p>A web crawler is like a librarian who starts with one book, notes down all the other books it references, then goes to read those — and so on. To avoid repeats, she keeps a notebook of everything she&#x27;s already read. To be polite, she only borrows one book at a time and doesn&#x27;t rush the library.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 23</h2>
+<p><strong>题目 / Problem:</strong> #20 Valid Parentheses (Easy)</p>
+<p><strong>模式 / Pattern:</strong> Stack — 第 1/7 题</p>
+
+<hr/>
+
+<h2>🧩 新模式 / New Pattern: 单调栈 (Stack)</h2>
+
+<p>📍 本组共 7 题 / This block: 7 problems</p>
+
+<p><strong>什么时候用 / When to use:</strong></p>
+<p>括号匹配、下一个更大/更小元素、表达式求值、需要&quot;记住历史&quot;的线性扫描</p>
+<p>Parentheses matching, next greater/smaller element, expression evaluation, any linear scan where you need to &quot;remember history&quot;</p>
+
+<p><strong>识别信号 / Signals:</strong></p>
+<p>keywords: <code>next greater element</code>, <code>valid parentheses</code>, <code>evaluate expression</code>, <code>monotonic</code>, &quot;最近的&quot;/&quot;nearest&quot;</p>
+
+<p><strong>通用模版 / Template:</strong></p>
+<pre><code>
+stack = []
+for i, num in enumerate(arr):
+    while stack and arr[stack[-1]] &lt; num:
+        idx = stack.pop()
+        result[idx] = num  # process: num is the &quot;next greater&quot;
+    stack.append(i)
+# remaining in stack have no next greater element
+</code></pre>
+
+<p><strong>核心洞察 / Key Insight:</strong></p>
+<p>栈维护单调递减序列——遇到更大的就弹出结算。这是&quot;懒处理&quot;的精髓：把问题推迟到你有足够信息时再解决。</p>
+<p>The stack maintains a monotonically decreasing sequence — pop and &quot;settle&quot; when you find something bigger. This is the essence of lazy evaluation: defer processing until you have enough information.</p>
+
+<hr/>
+
+<h2>今日问题 / Today&#x27;s Problem</h2>
+
+<p>🔗 [LeetCode #20](https://leetcode.com/problems/valid-parentheses/) 🟢 Easy</p>
+<p>📹 [NeetCode Solution](https://neetcode.io/problems/validate-parentheses)</p>
+
+<h3>🌎 真实类比 / Real-World Analogy</h3>
+
+<p>想象你在审查代码，看到了 <code>{[(</code>。你脑子里是不是会&quot;压栈&quot;，等待对应的 <code>)]}</code> 才放心？这就是栈的直觉！</p>
+
+<p>Imagine reviewing code and seeing <code>{[(</code>. Your brain automatically &quot;pushes&quot; these onto a mental stack, waiting for the matching <code>}])</code> before relaxing. That&#x27;s exactly what a stack does!</p>
+
+<h3>📋 问题 / Problem</h3>
+
+<p>给定一个字符串，仅包含 <code>(</code>, <code>)</code>, <code>{</code>, <code>}</code>, <code>[</code>, <code>]</code>，判断括号是否合法匹配。</p>
+<p>Given a string of brackets, determine if it&#x27;s valid (every open bracket has a matching close in the right order).</p>
+
+<pre><code>
+Input: s = &quot;()[]{}&quot;  → Output: true
+Input: s = &quot;([)]&quot;   → Output: false
+Input: s = &quot;{[]}&quot;   → Output: true
+</code></pre>
+
+<h3>🗺️ 映射到模版 / Map to Template</h3>
+
+<p>这题是栈模式最纯粹的应用——不需要&quot;单调&quot;，只需要&quot;匹配&quot;：</p>
+<p>This is the purest stack application — not monotonic, just matching:</p>
+
+<p>1. 遇到开括号 <code>(</code>, <code>[</code>, <code>{</code> → <strong>压栈 push</strong></p>
+<p>2. 遇到闭括号 → 检查栈顶是否是对应的开括号</p>
+<p>3. 最后栈必须为空</p>
+
+<h3>✅ Python 解法 / Python Solution</h3>
+
+<pre><code>
+def isValid(s: str) -&gt; bool:
+    stack = []
+    # map each closing bracket to its opening counterpart
+    close_to_open = {&quot;)&quot;: &quot;(&quot;, &quot;]&quot;: &quot;[&quot;, &quot;}&quot;: &quot;{&quot;}
+
+    for char in s:
+        if char in close_to_open:
+            # closing bracket: check stack top
+            if not stack or stack[-1] != close_to_open[char]:
+                return False
+            stack.pop()
+        else:
+            # opening bracket: push onto stack
+            stack.append(char)
+
+    return len(stack) == 0  # valid only if nothing left unmatched
+</code></pre>
+
+<p><strong>执行轨迹 / Trace:</strong> <code>s = &quot;{[]}&quot;</code></p>
+<pre><code>
+char=&#x27;{&#x27;  → push    stack=[&#x27;{&#x27;]
+char=&#x27;[&#x27;  → push    stack=[&#x27;{&#x27;,&#x27;[&#x27;]
+char=&#x27;]&#x27;  → top=&#x27;[&#x27; matches &#x27;]&#x27; ✅ → pop  stack=[&#x27;{&#x27;]
+char=&#x27;}&#x27;  → top=&#x27;{&#x27; matches &#x27;}&#x27; ✅ → pop  stack=[]
+→ stack empty → True ✅
+</code></pre>
+
+<p><strong>执行轨迹 / Trace:</strong> <code>s = &quot;([)]&quot;</code></p>
+<pre><code>
+char=&#x27;(&#x27;  → push    stack=[&#x27;(&#x27;]
+char=&#x27;[&#x27;  → push    stack=[&#x27;(&#x27;,&#x27;[&#x27;]
+char=&#x27;)&#x27;  → top=&#x27;[&#x27; ≠ &#x27;(&#x27; ❌ → return False
+</code></pre>
+
+<h3>⏱️ 复杂度 / Complexity</h3>
+
+<p>- <strong>Time:</strong> O(n) — 每个字符只处理一次 / each character processed once</p>
+<p>- <strong>Space:</strong> O(n) — 最坏情况全是开括号 / worst case all opening brackets</p>
+
+<h3>🔗 举一反三 / Pattern Connections</h3>
+
+<p>本组 7 题都用栈，但复杂度递增 / All 7 problems in this block use stacks, increasing in complexity:</p>
+
+<p>| # | 题目 | 栈的用法 |</p>
+<p>|---|------|----------|</p>
+<p>| 20 | Valid Parentheses ← 今天 | 匹配配对 |</p>
+<p>| 155 | Min Stack | 维护辅助栈记录最小值 |</p>
+<p>| 150 | Evaluate RPN | 数字压栈，遇算符弹出运算 |</p>
+<p>| 22 | Generate Parentheses | 回溯 + 栈思维 |</p>
+<p>| 739 | Daily Temperatures | 单调栈找下一个更大 |</p>
+<p>| 853 | Car Fleet | 单调栈思维 |</p>
+<p>| 84 | Largest Rectangle | 单调栈 hard 题 |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://leetcode.com/problems/valid-parentheses/editorial/</p>
+<p>- https://neetcode.io/problems/validate-parentheses</p>
+<p>- https://www.geeksforgeeks.org/check-for-balanced-parentheses-in-an-expression/</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>就像检查你的鞋带是否对称打结：每次遇到一个&quot;开始&quot;就记在本子上，遇到&quot;结束&quot;就检查本子上最新的是不是对应的。如果对，就划掉；如果不对或本子空了，就乱了！</p>
+
+<p>It&#x27;s like checking if your shoelaces are tied symmetrically. Every time you see a &quot;start&quot; mark, write it in your notebook. When you see an &quot;end&quot;, check if the latest note matches. If yes, cross it off. If not — it&#x27;s all tangled!</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;What does the stack contain after processing &#x27;([{&#x27; in Valid Parentheses?&quot;,&quot;options&quot;:[&quot;[&#x27;(&#x27;,&#x27;[&#x27;,&#x27;{&#x27;]&quot;,&quot;[&#x27;{&#x27;,&#x27;[&#x27;,&#x27;(&#x27;]&quot;,&quot;Empty — all balanced&quot;,&quot;[&#x27;)&#x27;,&#x27;[&#x27;,&#x27;{&#x27;]&quot;],&quot;correct_index&quot;:0}
+</code></pre>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 23</h2>
+<p><strong>题目 / Question:</strong> How do you approach designing systems for scale?</p>
+<p><strong>类别 / Category:</strong> Technical Vision | <strong>级别 / Level:</strong> Staff</p>
+<p><strong>阶段 / Phase:</strong> Growth</p>
+
+<hr/>
+
+<h2>🎯 为什么重要 / Why This Matters</h2>
+
+<p>这道题不是在考你背了多少系统设计八股文——面试官真正想知道的是：<strong>你是否有工程判断力</strong>？你是否知道什么时候过度设计比没设计还危险？</p>
+
+<p>This question isn&#x27;t a test of how many system design patterns you&#x27;ve memorized. Interviewers want to know: <strong>do you have engineering judgment</strong>? Do you know when over-engineering is more dangerous than under-engineering?</p>
+
+<p>对于 Staff 级别，这个问题还在考查你能否<strong>影响团队的技术方向</strong>，而不只是单独做出好决策。</p>
+<p>At Staff level, this also tests whether you can <strong>influence your team&#x27;s technical direction</strong>, not just make good decisions yourself.</p>
+
+<hr/>
+
+<h2>⭐ STAR 框架 / STAR Breakdown</h2>
+
+<h3>Situation（背景）</h3>
+<p>&quot;在我的上一个职位，我们的用户数从 10 万增长到 1000 万，历时 18 个月。早期的架构（单体 + 单数据库）开始出现问题——每次大促前工程师都要彻夜待命。&quot;</p>
+
+<p>&quot;At my previous company, we grew from 100K to 10M users over 18 months. Our early architecture — a monolith with a single database — started showing cracks. Engineers were on-call every time there was a major traffic spike.&quot;</p>
+
+<h3>Task（任务）</h3>
+<p>&quot;我被要求制定一个技术路线图，在不停止功能开发的前提下，让系统支撑 10x 的增长。&quot;</p>
+
+<p>&quot;I was asked to create a technical roadmap to support 10x growth without halting feature development.&quot;</p>
+
+<h3>Action（行动）</h3>
+<p>1. <strong>先测量，后优化 / Measure first, optimize later</strong></p>
+<p>- 用 profiling 工具找到真正的瓶颈，而不是凭直觉猜</p>
+<p>- &quot;我们以为数据库是瓶颈，但实际上是缓存未命中率高达 80%&quot;</p>
+<p>- Found the real bottleneck with profiling — cache miss rate was 80%, not DB itself</p>
+
+<p>2. <strong>分阶段演进 / Phased evolution</strong></p>
+<p>- Phase 1 (1个月): 加缓存层 → 立竿见影降低 DB 负载</p>
+<p>- Phase 2 (3个月): 读写分离 → 解放读压力</p>
+<p>- Phase 3 (6个月): 拆分最热的服务（用户服务、支付服务）为微服务</p>
+<p>- 不一步到位，每个 Phase 都有可量化的目标</p>
+
+<p>3. <strong>设计原则先行 / Establish design principles</strong></p>
+<p>- &quot;任何新功能必须考虑 100x 流量下的行为&quot;</p>
+<p>- 写进 ADR（Architecture Decision Records），让整个团队对齐</p>
+
+<h3>Result（结果）</h3>
+<p>&quot;系统平稳支撑了大促（峰值 50k RPS），工程师不再需要彻夜待命，且未延误任何计划功能的发布。&quot;</p>
+
+<p>&quot;The system handled peak traffic of 50k RPS during major events without engineers being paged, while delivering every planned feature on schedule.&quot;</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<p>❌ <strong>&quot;我会用微服务架构，然后加 Kafka、Redis、Kubernetes...&quot;</strong></p>
+<p>&gt; 这是在背八股文，没有展示判断力。面试官会追问：&quot;为什么？你们当时有多少工程师？&quot;</p>
+
+<p>✅ <strong>&quot;我首先会问：我们现在的瓶颈在哪？距离下个量级的增长还有多久？我们团队的规模能支撑微服务的运维成本吗？&quot;</strong></p>
+<p>&gt; 展示了系统性思维和对成本的清醒认识。</p>
+
+<hr/>
+
+<h2>🌟 Senior / Staff 加分点</h2>
+
+<p><strong>1. 技术债务的主动管理</strong></p>
+<p>&quot;我会把可扩展性改进拆成小任务，混进每个 sprint，而不是等到出了大问题再救火。&quot;</p>
+
+<p><strong>2. 影响力而非权威</strong></p>
+<p>&quot;我写 RFC（Request for Comments）文档，让团队评审并达成共识，而不是单方面宣布决定。&quot;</p>
+
+<p><strong>3. 权衡的明确性</strong></p>
+<p>&quot;我们选择最终一致性而不是强一致性，因为我们的业务场景允许几秒的延迟——但我们把这个决定记录下来，以便未来的人理解为什么。&quot;</p>
+
+<hr/>
+
+<h2>📌 关键要点 / Key Takeaways</h2>
+
+<p>1. <strong>先诊断再开药</strong> — 用数据找瓶颈，不要凭直觉</p>
+<p>2. <strong>渐进式演进</strong> — 分 Phase，每 Phase 有 metrics</p>
+<p>3. <strong>成本意识</strong> — 过度设计和欠设计一样有害</p>
+<p>4. <strong>文档化决策</strong> — ADR/RFC 让团队与未来的自己对话</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://martinfowler.com/articles/architect-resurgence.html</p>
+<p>- https://www.oreilly.com/library/view/designing-distributed-systems/9781491983638/</p>
+<p>- https://www.youtube.com/watch?v=Y-Gl4HEyeUQ (Martin Fowler on software architecture)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>就像建房子——你不会一开始就建一栋摩天大楼，因为你不确定是否会有那么多人住。但你会让地基足够结实，方便以后加层。先搞清楚现在哪里最拥挤，再一步一步扩建，每次扩建都要能量化效果。</p>
+
+<p>It&#x27;s like building a house — you don&#x27;t start by building a skyscraper because you don&#x27;t know yet if you&#x27;ll need it. But you make sure the foundation is solid enough to add floors later. First figure out where things are most crowded, then expand step by step — and measure every step.</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 23</h2>
+<p><strong>主题 / Topic:</strong> TypeScript with React — Props, Events, Refs</p>
+<p><strong>类别 / Category:</strong> TypeScript | <strong>Week:</strong> 4</p>
+<p><strong>阶段 / Phase:</strong> Growth</p>
+
+<hr/>
+
+<h2>🎬 真实场景 / Real Scenario</h2>
+
+<p>你在做一个 dashboard 组件库，需要严格约束 props 类型、正确处理 DOM 事件，并且用 ref 访问 DOM 元素（比如自动聚焦一个输入框）。没有 TypeScript？你会在运行时才发现传错了 props。有了 TypeScript？编译时就报错了。</p>
+
+<p>You&#x27;re building a component library for a dashboard. You need to strictly type props, handle DOM events correctly, and use refs to access DOM elements (like auto-focusing an input). Without TypeScript? You&#x27;d find out about wrong props at runtime. With TypeScript? It fails at compile time.</p>
+
+<hr/>
+
+<h2>💡 核心概念 / Core Concepts</h2>
+
+<h3>1. 类型化 Props / Typed Props</h3>
+
+<pre><code>
+// ❌ Bad — no typing, anything goes
+const Button = ({ label, onClick, disabled }) =&gt; { ... }
+
+// ✅ Good — explicit interface
+interface ButtonProps {
+  label: string;
+  onClick: () =&gt; void;         // no arguments, no return
+  disabled?: boolean;          // optional with ?
+  variant?: &quot;primary&quot; | &quot;danger&quot; | &quot;ghost&quot;;  // union type
+}
+
+const Button: React.FC&lt;ButtonProps&gt; = ({
+  label,
+  onClick,
+  disabled = false,
+  variant = &quot;primary&quot;
+}) =&gt; (
+  &lt;button
+    onClick={onClick}
+    disabled={disabled}
+    className={`btn btn-${variant}`}
+  &gt;
+    {label}
+  &lt;/button&gt;
+);
+</code></pre>
+
+<h3>2. 事件类型 / Event Types</h3>
+
+<pre><code>
+// The most common event types you&#x27;ll use daily
+const handleInputChange = (e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt; {
+  console.log(e.target.value);    // string
+};
+
+const handleFormSubmit = (e: React.FormEvent&lt;HTMLFormElement&gt;) =&gt; {
+  e.preventDefault();
+  // ...
+};
+
+const handleButtonClick = (e: React.MouseEvent&lt;HTMLButtonElement&gt;) =&gt; {
+  console.log(e.currentTarget);  // typed as HTMLButtonElement
+};
+
+// Complete form component
+interface SearchFormProps {
+  onSearch: (query: string) =&gt; void;
+}
+
+const SearchForm: React.FC&lt;SearchFormProps&gt; = ({ onSearch }) =&gt; {
+  const [query, setQuery] = React.useState(&quot;&quot;);
+
+  return (
+    &lt;form onSubmit={(e: React.FormEvent&lt;HTMLFormElement&gt;) =&gt; {
+      e.preventDefault();
+      onSearch(query);
+    }}&gt;
+      &lt;input
+        value={query}
+        onChange={(e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt;
+          setQuery(e.target.value)
+        }
+        aria-label=&quot;search&quot;
+      /&gt;
+      &lt;button type=&quot;submit&quot;&gt;Search&lt;/button&gt;
+    &lt;/form&gt;
+  );
+};
+</code></pre>
+
+<h3>3. 类型化 Refs / Typed Refs</h3>
+
+<pre><code>
+// useRef needs a type parameter
+const inputRef = React.useRef&lt;HTMLInputElement&gt;(null);
+//                                   ↑ DOM element type
+//                                              ↑ initial value
+
+// Usage: always check for null (could be before mount)
+const focusInput = () =&gt; {
+  if (inputRef.current) {
+    inputRef.current.focus();   // TypeScript knows this is HTMLInputElement!
+    inputRef.current.select();  // .select() also valid
+  }
+};
+
+// Full example: Auto-focus on mount
+const AutoFocusInput: React.FC = () =&gt; {
+  const inputRef = React.useRef&lt;HTMLInputElement&gt;(null);
+
+  React.useEffect(() =&gt; {
+    inputRef.current?.focus();  // optional chaining: safe if null
+  }, []);
+
+  return &lt;input ref={inputRef} aria-label=&quot;auto-focus-input&quot; /&gt;;
+};
+</code></pre>
+
+<hr/>
+
+<h2>🧠 猜猜输出 / What&#x27;s the Output?</h2>
+
+<pre><code>
+interface CardProps {
+  title: string;
+  count?: number;
+}
+
+const Card: React.FC&lt;CardProps&gt; = ({ title, count = 0 }) =&gt; {
+  return &lt;div&gt;{title}: {count + 1}&lt;/div&gt;;
+};
+
+// Usage:
+&lt;Card title=&quot;Users&quot; /&gt;
+&lt;Card title=&quot;Posts&quot; count={5} /&gt;
+</code></pre>
+
+<p><strong>输出 / Output is:</strong></p>
+<p>- A: <code>Users: 0</code> | <code>Posts: 5</code></p>
+<p>- B: <code>Users: 1</code> | <code>Posts: 6</code></p>
+<p>- C: <code>Users: NaN</code> | <code>Posts: 6</code></p>
+<p>- D: TypeScript error — count is required</p>
+
+<p><strong>答案 / Answer: B</strong> — <code>count</code> defaults to <code>0</code>, so <code>0 + 1 = 1</code>. Second renders <code>5 + 1 = 6</code>.</p>
+
+<hr/>
+
+<h2>❌ vs ✅ Common Mistakes</h2>
+
+<p><strong>坑 1: onClick 类型写错</strong></p>
+<pre><code>
+// ❌ Wrong — MouseEvent is from the DOM API, not React
+onClick: (e: MouseEvent) =&gt; void;
+
+// ✅ Correct — React&#x27;s synthetic event
+onClick: (e: React.MouseEvent&lt;HTMLButtonElement&gt;) =&gt; void;
+</code></pre>
+
+<p><strong>坑 2: useRef 初始值</strong></p>
+<pre><code>
+// ❌ Wrong — initial value undefined causes issues
+const ref = useRef&lt;HTMLInputElement&gt;();
+
+// ✅ Correct — use null for DOM refs
+const ref = useRef&lt;HTMLInputElement&gt;(null);
+
+// ✅ Also correct — for mutable values (not DOM)
+const countRef = useRef&lt;number&gt;(0);
+</code></pre>
+
+<p><strong>坑 3: children 类型</strong></p>
+<pre><code>
+// ❌ Old pattern — React.FC injects children automatically (deprecated in React 18)
+const Wrapper: React.FC = ({ children }) =&gt; &lt;div&gt;{children}&lt;/div&gt;;  // TS error!
+
+// ✅ Correct — explicitly type children
+interface WrapperProps {
+  children: React.ReactNode;
+}
+const Wrapper: React.FC&lt;WrapperProps&gt; = ({ children }) =&gt; &lt;div&gt;{children}&lt;/div&gt;;
+</code></pre>
+
+<hr/>
+
+<h2>🧭 何时用 / When to Use</h2>
+
+<p>| 场景 | 方案 |</p>
+<p>|------|------|</p>
+<p>| 组件需要接收数据 | 定义 <code>interface XxxProps</code> |</p>
+<p>| 处理用户输入 | <code>React.ChangeEvent&lt;HTMLInputElement&gt;</code> |</p>
+<p>| 访问 DOM 节点 | <code>useRef&lt;HTMLElement&gt;(null)</code> |</p>
+<p>| 传递子组件 | <code>children: React.ReactNode</code> |</p>
+<p>| 组件包装器 | <code>React.ComponentProps&lt;&quot;button&quot;&gt;</code> — inherit all native props |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://react.dev/learn/typescript</p>
+<p>- https://www.totaltypescript.com/tutorials/react-with-typescript</p>
+<p>- https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/basic_type_example/</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>TypeScript 就像给积木零件贴标签——方块只能插方孔，圆球只能插圆孔。如果你试着把圆球塞进方孔，还没搭好你就知道出错了，不用等整个积木城堡倒塌。</p>
+
+<p>TypeScript is like labeling LEGO pieces — square pegs only fit square holes, round pegs only fit round holes. If you try to force the wrong shape, you find out immediately — not after your entire LEGO castle collapses.</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;Which is the correct TypeScript type for an input onChange handler in React?&quot;,&quot;options&quot;:[&quot;(e: Event) =&gt; void&quot;,&quot;(e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt; void&quot;,&quot;(e: InputEvent) =&gt; void&quot;,&quot;(e: React.MouseEvent) =&gt; void&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 23 (NEWS)</h2>
+<p><strong>日期 / Date:</strong> 2026-04-14</p>
+<p><strong>阶段 / Phase:</strong> Growth</p>
+
+<hr/>
+
+<h2>1) 🧑‍⚖️ 联合国 AI 科学小组启动全球影响研究</h2>
+
+<p><strong>中文</strong></p>
+<p>联合国宣布其“独立国际 AI 科学小组”开始开展一项全球影响研究，核心立场是：AI 发展不能只看算法能力，更要确保“人仍然处在决策中心”。对做 AI 产品/平台的人来说，这意味着两件事会越来越重要：</p>
+<p>1) <strong>人类在环（Human-in-the-loop）</strong> 的机制是否清晰（谁能覆盖模型、何时必须人工复核）；</p>
+<p>2) <strong>可追溯性</strong>（你能否解释一个关键决策从数据→模型→输出→行动的链路）。</p>
+
+<p><strong>English</strong></p>
+<p>The UN reported that its “Independent International Scientific Panel on AI” has begun work on a global impact study, emphasizing that AI shouldn’t be treated as purely an algorithmic field and that <strong>humans must remain central to decision-making</strong>. For AI products and platforms, two themes keep rising: (1) clear human-in-the-loop escalation paths, and (2) traceability from data → model → output → action.</p>
+
+<p>Source: https://news.un.org/en/story/2026/04/1167263</p>
+
+<hr/>
+
+<h2>2) 🧭 美国州级 AI 立法继续推进：聊天机器人披露、价格、健康/治疗等</h2>
+
+<p><strong>中文</strong></p>
+<p>一篇隐私法律观察更新梳理了 2026 年 4 月中旬美国多州的 AI 法案进展，覆盖“聊天机器人与未成年人互动披露”“对外表明是否为 AI”“以及与健康/治疗服务相关的限制”等方向。工程上最直接的影响是：</p>
+<p>- 你可能需要<strong>在 UI/对话入口</strong>就做“这不是人类”的披露；</p>
+<p>- 对未成年人/敏感场景，需要<strong>更强的 guardrails</strong>（内容限制、引导到真人/专业人士、日志审计）。</p>
+
+<p><strong>English</strong></p>
+<p>A state-law tracker summarizes progress across multiple US states, including bills focused on conversational AI disclosures (especially for minors), representing whether a system is human, and restrictions in health/therapy contexts. The near-term engineering implications are: (a) disclosure at the UI / conversation entry point, and (b) stronger guardrails for minors and sensitive domains (content constraints, escalation paths, audit logs).</p>
+
+<p>Source: https://www.troutmanprivacy.com/2026/04/proposed-state-ai-law-update-april-13-2026/</p>
+
+<hr/>
+
+<h2>3) 🏢 PwC：AI 经济收益高度集中，领先者更关注“增长与重塑”，并强化治理</h2>
+
+<p><strong>中文</strong></p>
+<p>PwC 的一份新闻稿强调：AI 的经济收益正在向少数“领先公司”集中，这些公司不仅是“加 AI 工具”，而是更倾向于<strong>重塑工作流</strong>并把 AI 用作“业务增长/重塑”的杠杆，同时在治理与信任机制上投入更多。对技术负责人而言，一个可操作的 takeaway 是：</p>
+<p>- 别只做 feature-level 的“加一个 Copilot”；要做 <strong>workflow-level</strong> 的重新设计（例如审批链、数据回填、自动化决策边界）；</p>
+<p>- 把 Responsible AI / governance 当作“可规模化的前提”，而不是合规尾巴。</p>
+
+<p><strong>English</strong></p>
+<p>PwC’s press release argues that AI’s economic gains are concentrated among a small set of leaders. These companies don’t just add AI tools; they <strong>redesign workflows</strong> and use AI for growth and business reinvention, while investing more in governance and trust mechanisms. A practical takeaway for tech leads: optimize at the workflow level (decision boundaries, approvals, data feedback loops), and treat governance as the prerequisite for scale, not an afterthought.</p>
+
+<p>Source: https://www.pwc.com/gx/en/news-room/press-releases/2026/pwc-2026-ai-performance-study.html</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- UN News: https://news.un.org/en/story/2026/04/1167263</p>
+<p>- Troutman Pepper Locke (privacy law update): https://www.troutmanprivacy.com/2026/04/proposed-state-ai-law-update-april-13-2026/</p>
+<p>- PwC press release: https://www.pwc.com/gx/en/news-room/press-releases/2026/pwc-2026-ai-performance-study.html</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p><strong>中文</strong></p>
+<p>这三条新闻合在一起就像在说：AI 变得更常见、更能干了，所以大家会更在意两件事：</p>
+<p>1) 机器说了算还是人说了算？</p>
+<p>2) 出了问题能不能查清楚发生了什么？</p>
+
+<p><strong>English</strong></p>
+<p>Together, these stories say: as AI becomes more common and more capable, people care more about (1) who’s actually in charge  the human or the machine, and (2) whether we can audit what happened when something goes wrong.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-13</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

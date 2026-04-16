@@ -54,3 +54,43 @@
 - Apr 3 orphan issue: unchanged (expected — not actionable)
 - Saturday cron error: unchanged (needs delivery.channel fix)
 - New issue: Apr 9 history gap (P1)
+
+## 2026-04-13 Optimization Run
+
+### Issues Found
+
+**P0 Critical:**
+- None. All 7 days (Apr 7–13) had content delivered via Telegram and email. Zero missed deliveries.
+
+**P1 Quality:**
+1. **Git commit message mismatch (Apr 10 & 12)** — Two commits both say "Day 21": `51876e3 Day 21 (2026-04-10)` and `04378a4 Day 21 (2026-04-12)`. State history shows 22 unique entries with no duplicates, so the content is fine — commit message generation is slightly off. Cosmetic only.
+2. **Apr 9 history gap (carryover from Apr 10 report)** — Still present. History jumps from Day 20 (Apr 8) to Day 21 (Apr 10), skipping Apr 9 even though content was delivered. Means Apr 9 topics won't appear in review quizzes. Low risk since content was sent.
+
+**P2 Maintenance:**
+1. **Optimizer `openclaw cron list --json` parsing fails** — The JSON parsing in the bash data-gathering step errors out (`JSONDecodeError`). The CLI output format may have changed or includes non-JSON preamble. Used the native cron tool instead. Not blocking — the optimizer still works via the API.
+2. **Apr 3 orphan archives + Mar 31 missed email** — Known issues from previous runs, too old to action. Leaving as historical record.
+3. **review-and-send duration creeping up** — 493s (8.2 min) on last run. Timeout is 1200s so there's headroom, but it's the longest-running cron. Worth monitoring.
+
+### Metrics
+- Delivery rate (7d): **7/7** ✅
+- Email delivery (7d): **7/7** ✅
+- Email delivery (14d): **12/14** (Apr 3, Mar 31 missed — known old issues)
+- Cron errors: **0** — all 6 byte-by-byte crons show `consecutiveErrors: 0`, `lastRunStatus: ok`
+- State: Day 22, all indices advancing normally
+- History entries: 22 total, 22 unique (no duplicates)
+
+### Cron Health
+| Job | Last Duration | Status |
+|-----|--------------|--------|
+| weekday | 245s | ✅ ok |
+| review-and-send | 493s | ✅ ok |
+| backup-send | 19s | ✅ ok |
+| saturday | 197s | ✅ ok |
+| sunday | 193s | ✅ ok |
+| optimizer | 116s | ✅ ok |
+
+### Trend vs Last Run (Apr 10)
+- Delivery rate: stable (7/7 → 7/7)
+- Cron errors: improved (2 → 0) — Saturday cron error resolved, optimizer no longer timing out
+- Apr 9 history gap: unchanged (not actionable retroactively)
+- Overall: pipeline is in **healthy steady state** ✅

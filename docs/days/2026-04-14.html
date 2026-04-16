@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-04-14</title>
+  <meta name="description" content="byte-by-byte daily lessons for Tuesday, April 14, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Tuesday, April 14, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-04-14.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-04-13.html" style="color:var(--text2)">← 2026-04-13</a>
+    <a href="2026-04-15.html" style="color:var(--text2)">2026-04-15 →</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-04-14</span>
+    <h1>Tuesday, April 14, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-04-13.html" class="day-nav-btn">← 2026-04-13</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <a href="2026-04-15.html" class="day-nav-btn">2026-04-15 →</a>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 23</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 / System Design — Day 23</h1>
+<p><strong>主题 / Topic:</strong> Design a Web Crawler</p>
+<p><strong>难度 / Difficulty:</strong> Intermediate | <strong>阶段 / Phase:</strong> Growth</p>
+
+<hr/>
+
+<h2>🌐 真实场景 / Real-World Scenario</h2>
+
+<p>想象你在谷歌工程团队——你需要构建一个爬虫，每天抓取数十亿个网页，为搜索引擎建立索引。如何在不压垮服务器、不陷入无限循环的情况下完成这个任务？</p>
+
+<p>Imagine you're on the Google engineering team — you need to build a crawler that visits billions of pages every day to build a search index. How do you do this without overwhelming servers or getting stuck in infinite loops?</p>
+
+<hr/>
+
+<h2>🗺️ 架构图 / Architecture Diagram</h2>
+
+<div class="diagram-block">          ┌─────────────────────────────────────────────┐
+          │              Seed URLs (种子 URL)            │
+          └──────────────────┬──────────────────────────┘
+                             │
+                             ▼
+          ┌─────────────────────────────────────────────┐
+          │         URL Frontier (URL 队列)              │
+          │   Priority Queue (优先级队列)                │
+          │   [politeness delay per domain]             │
+          └──────────┬──────────────────────────────────┘
+                     │
+          ┌──────────▼──────────┐
+          │   DNS Resolver      │  ← DNS 解析缓存
+          │   (with cache)      │
+          └──────────┬──────────┘
+                     │
+     ┌───────────────▼──────────────────┐
+     │        Downloader Workers        │  ← 并行抓取
+     │   (async, N parallel threads)   │
+     └─┬───────────────────────────────┘
+       │
+       ├──▶ robots.txt Checker ──▶ skip if disallowed
+       │
+       ├──▶ Content Parser (HTML/JS)
+       │        │
+       │        ├──▶ Extract new URLs ──▶ URL Deduplication
+       │        │                              │
+       │        │                    ┌─────────▼──────────┐
+       │        │                    │  Bloom Filter /    │
+       │        │                    │  Seen URL Store    │
+       │        │                    └─────────┬──────────┘
+       │        │                              │ (not seen)
+       │        │                              ▼
+       │        │                       URL Frontier
+       │        │
+       │        └──▶ Content Storage (S3 / HDFS)
+       │                    │
+       └────────────────────▼
+                    Indexer (离线处理)</div>
+
+<hr/>
+
+<h2>⚖️ 关键权衡 / Key Tradeoffs</h2>
+
+<h3>为什么这样设计？ / Why design it this way?</h3>
+
+<p><strong>1. URL 去重 — Bloom Filter vs. Hash Set</strong></p>
+
+<table><thead><tr><th>方案</th><th>优点</th><th>缺点</th></tr></thead><tbody><tr><td>Hash Set</td><td>准确，无误报</td><td>内存占用大（1B URLs ≈ 数十 GB）</td></tr><tr><td>Bloom Filter</td><td>极低内存（~1.2 GB for 1B URLs）</td><td>有小概率误报（漏爬少量 URL）</td></tr></tbody></table>
+
+<p><strong>对于搜索引擎，Bloom Filter 是赢家</strong>——偶尔漏爬一个 URL 可接受。</p>
+<p>For a search engine, Bloom Filter wins — occasionally missing a URL is acceptable.</p>
+
+<p><strong>2. URL 优先级 / URL Prioritization</strong></p>
+<ul><li>PageRank 高的页面 → 优先级高</li><li>更新频繁的网站（新闻站）→ 更高频率重爬</li><li>使用<strong>优先级队列</strong>（多个队列，按 tier 分）</li></ul>
+
+<p><strong>3. Politeness（礼貌性）</strong></p>
+<p>同一个域名的请求间隔 ≥ 1 秒，防止对目标网站造成 DDoS。</p>
+<p>Enforce ≥1s delay per domain to avoid accidentally DDoS-ing sites.</p>
+
+<hr/>
+
+<h2>❌ 别踩这个坑 / Common Mistakes</h2>
+
+<p><strong>坑 1: 忘记处理 Spider Trap（蜘蛛陷阱）</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="example.com/page?color=red&amp;sort=asc&amp;page=1&#10;example.com/page?color=red&amp;sort=asc&amp;page=2&#10;... (infinite)">Copy</button>
+  <pre><code class="language-text">example.com/page?color=red&amp;sort=asc&amp;page=1
+example.com/page?color=red&amp;sort=asc&amp;page=2
+... (infinite)</code></pre>
+</div>
+<p>修复：URL 规范化 + 最大深度限制（e.g., depth ≤ 10）</p>
+<p>Fix: URL normalization + max depth limit</p>
+
+<p><strong>坑 2: 爬取重复内容</strong></p>
+<p>不同 URL 可能指向相同内容（www vs non-www, http vs https）。</p>
+<p>Use <strong>content hash</strong> (MD5/SHA1) to detect duplicate content even at different URLs.</p>
+
+<p><strong>坑 3: 忽略 robots.txt</strong></p>
+<p>合法爬虫必须遵守 robots.txt 协议，否则可能面临法律风险和 IP 封禁。</p>
+<p>Legitimate crawlers MUST respect robots.txt — legal liability + IP bans otherwise.</p>
+
+<p><strong>坑 4: 单点故障</strong></p>
+<p>URL Frontier 和存储层都需要分布式、高可用设计（Kafka + distributed DB）。</p>
+
+<hr/>
+
+<h2>📊 规模估算 / Scale Estimation</h2>
+
+<ul><li>目标：15 亿网页 in 4 weeks</li><li>每秒需爬取：~6,200 pages/sec</li><li>存储：平均 100KB/page → <strong>150 TB total</strong></li><li>带宽：6,200 × 100KB = <strong>620 MB/s</strong></li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li>https://web.stanford.edu/class/cs276/handouts/lecture22-crawling.pdf</li><li>https://www.cs.cornell.edu/courses/cs6125/2015sp/slides/crawling.pdf</li><li>https://www.youtube.com/watch?v=BKZxZwUgL3Y (System Design Interview — Web Crawler)</li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>爬虫就像一个图书馆员，从一本书开始，读完后抄下所有书里提到的其他书名，然后去找那些书来读。为了不重复，他有一个小本子记下所有读过的书。为了礼貌，他每次只借一本，不一次性抢光所有书。</p>
+
+<p>A web crawler is like a librarian who starts with one book, notes down all the other books it references, then goes to read those — and so on. To avoid repeats, she keeps a notebook of everything she's already read. To be polite, she only borrows one book at a time and doesn't rush the library.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 23</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 / Algorithms — Day 23</h1>
+<p><strong>题目 / Problem:</strong> #20 Valid Parentheses (Easy)</p>
+<p><strong>模式 / Pattern:</strong> Stack — 第 1/7 题</p>
+
+<hr/>
+
+<h2>🧩 新模式 / New Pattern: 单调栈 (Stack)</h2>
+
+<p>📍 本组共 7 题 / This block: 7 problems</p>
+
+<p><strong>什么时候用 / When to use:</strong></p>
+<p>括号匹配、下一个更大/更小元素、表达式求值、需要"记住历史"的线性扫描</p>
+<p>Parentheses matching, next greater/smaller element, expression evaluation, any linear scan where you need to "remember history"</p>
+
+<p><strong>识别信号 / Signals:</strong></p>
+<p>keywords: <code>next greater element</code>, <code>valid parentheses</code>, <code>evaluate expression</code>, <code>monotonic</code>, "最近的"/"nearest"</p>
+
+<p><strong>通用模版 / Template:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="stack = []&#10;for i, num in enumerate(arr):&#10;    while stack and arr[stack[-1]] &lt; num:&#10;        idx = stack.pop()&#10;        result[idx] = num  # process: num is the &quot;next greater&quot;&#10;    stack.append(i)&#10;# remaining in stack have no next greater element">Copy</button>
+  <pre><code class="language-python">stack = []
+<span style="color:#c678dd;">for</span> i, num <span style="color:#c678dd;">in</span> enumerate(arr):
+    <span style="color:#c678dd;">while</span> stack <span style="color:#c678dd;">and</span> arr[stack[-<span style="color:#56b6c2;">1</span>]] &lt; num:
+        idx = stack.pop()
+        result[idx] = num  <span style="color:#5c6370;"># process: num is the "next greater"</span>
+    stack.append(i)
+<span style="color:#5c6370;"># remaining in stack have no next greater element</span></code></pre>
+</div>
+
+<p><strong>核心洞察 / Key Insight:</strong></p>
+<p>栈维护单调递减序列——遇到更大的就弹出结算。这是"懒处理"的精髓：把问题推迟到你有足够信息时再解决。</p>
+<p>The stack maintains a monotonically decreasing sequence — pop and "settle" when you find something bigger. This is the essence of lazy evaluation: defer processing until you have enough information.</p>
+
+<hr/>
+
+<h2>今日问题 / Today's Problem</h2>
+
+<p>🔗 <a href="https://leetcode.com/problems/valid-parentheses/">LeetCode #20</a> 🟢 Easy</p>
+<p>📹 <a href="https://neetcode.io/problems/validate-parentheses">NeetCode Solution</a></p>
+
+<h3>🌎 真实类比 / Real-World Analogy</h3>
+
+<p>想象你在审查代码，看到了 <code>{[(</code>。你脑子里是不是会"压栈"，等待对应的 <code>)]}</code> 才放心？这就是栈的直觉！</p>
+
+<p>Imagine reviewing code and seeing <code>{[(</code>. Your brain automatically "pushes" these onto a mental stack, waiting for the matching <code>}])</code> before relaxing. That's exactly what a stack does!</p>
+
+<h3>📋 问题 / Problem</h3>
+
+<p>给定一个字符串，仅包含 <code>(</code>, <code>)</code>, <code>{</code>, <code>}</code>, <code>[</code>, <code>]</code>，判断括号是否合法匹配。</p>
+<p>Given a string of brackets, determine if it's valid (every open bracket has a matching close in the right order).</p>
+
+<div class="diagram-block">Input: s = "()[]{}"  → Output: true
+Input: s = "([)]"   → Output: false
+Input: s = "{[]}"   → Output: true</div>
+
+<h3>🗺️ 映射到模版 / Map to Template</h3>
+
+<p>这题是栈模式最纯粹的应用——不需要"单调"，只需要"匹配"：</p>
+<p>This is the purest stack application — not monotonic, just matching:</p>
+
+<ol><li>遇到开括号 <code>(</code>, <code>[</code>, <code>{</code> → <strong>压栈 push</strong></li><li>遇到闭括号 → 检查栈顶是否是对应的开括号</li><li>最后栈必须为空</li></ol>
+
+<h3>✅ Python 解法 / Python Solution</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def isValid(s: str) -&gt; bool:&#10;    stack = []&#10;    # map each closing bracket to its opening counterpart&#10;    close_to_open = {&quot;)&quot;: &quot;(&quot;, &quot;]&quot;: &quot;[&quot;, &quot;}&quot;: &quot;{&quot;}&#10;&#10;    for char in s:&#10;        if char in close_to_open:&#10;            # closing bracket: check stack top&#10;            if not stack or stack[-1] != close_to_open[char]:&#10;                return False&#10;            stack.pop()&#10;        else:&#10;            # opening bracket: push onto stack&#10;            stack.append(char)&#10;&#10;    return len(stack) == 0  # valid only if nothing left unmatched">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> isValid(s: str) -&gt; bool:
+    stack = []
+    <span style="color:#5c6370;"># map each closing bracket to its opening counterpart</span>
+    close_to_open = {<span style="color:#e5c07b;">")"</span>: <span style="color:#e5c07b;">"("</span>, <span style="color:#e5c07b;">"]"</span>: <span style="color:#e5c07b;">"["</span>, <span style="color:#e5c07b;">"}"</span>: <span style="color:#e5c07b;">"{"</span>}
+
+    <span style="color:#c678dd;">for</span> char <span style="color:#c678dd;">in</span> s:
+        <span style="color:#c678dd;">if</span> char <span style="color:#c678dd;">in</span> close_to_open:
+            <span style="color:#5c6370;"># closing bracket: check stack top</span>
+            <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> stack <span style="color:#c678dd;">or</span> stack[-<span style="color:#56b6c2;">1</span>] != close_to_open[char]:
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+            stack.pop()
+        <span style="color:#c678dd;">else</span>:
+            <span style="color:#5c6370;"># opening bracket: push onto stack</span>
+            stack.append(char)
+
+    <span style="color:#c678dd;">return</span> len(stack) == <span style="color:#56b6c2;">0</span>  <span style="color:#5c6370;"># valid only if nothing left unmatched</span></code></pre>
+</div>
+
+<p><strong>执行轨迹 / Trace:</strong> <code>s = "{[]}"</code></p>
+<div class="diagram-block">char='{'  → push    stack=['{']
+char='['  → push    stack=['{','[']
+char=']'  → top='[' matches ']' ✅ → pop  stack=['{']
+char='}'  → top='{' matches '}' ✅ → pop  stack=[]
+→ stack empty → True ✅</div>
+
+<p><strong>执行轨迹 / Trace:</strong> <code>s = "([)]"</code></p>
+<div class="diagram-block">char='('  → push    stack=['(']
+char='['  → push    stack=['(','[']
+char=')'  → top='[' ≠ '(' ❌ → return False</div>
+
+<h3>⏱️ 复杂度 / Complexity</h3>
+
+<ul><li><strong>Time:</strong> O(n) — 每个字符只处理一次 / each character processed once</li><li><strong>Space:</strong> O(n) — 最坏情况全是开括号 / worst case all opening brackets</li></ul>
+
+<h3>🔗 举一反三 / Pattern Connections</h3>
+
+<p>本组 7 题都用栈，但复杂度递增 / All 7 problems in this block use stacks, increasing in complexity:</p>
+
+<table><thead><tr><th>#</th><th>题目</th><th>栈的用法</th></tr></thead><tbody><tr><td>20</td><td>Valid Parentheses ← 今天</td><td>匹配配对</td></tr><tr><td>155</td><td>Min Stack</td><td>维护辅助栈记录最小值</td></tr><tr><td>150</td><td>Evaluate RPN</td><td>数字压栈，遇算符弹出运算</td></tr><tr><td>22</td><td>Generate Parentheses</td><td>回溯 + 栈思维</td></tr><tr><td>739</td><td>Daily Temperatures</td><td>单调栈找下一个更大</td></tr><tr><td>853</td><td>Car Fleet</td><td>单调栈思维</td></tr><tr><td>84</td><td>Largest Rectangle</td><td>单调栈 hard 题</td></tr></tbody></table>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li>https://leetcode.com/problems/valid-parentheses/editorial/</li><li>https://neetcode.io/problems/validate-parentheses</li><li>https://www.geeksforgeeks.org/check-for-balanced-parentheses-in-an-expression/</li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>就像检查你的鞋带是否对称打结：每次遇到一个"开始"就记在本子上，遇到"结束"就检查本子上最新的是不是对应的。如果对，就划掉；如果不对或本子空了，就乱了！</p>
+
+<p>It's like checking if your shoelaces are tied symmetrically. Every time you see a "start" mark, write it in your notebook. When you see an "end", check if the latest note matches. If yes, cross it off. If not — it's all tangled!</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="{&quot;question&quot;:&quot;What does the stack contain after processing '([{' in Valid Parentheses?&quot;,&quot;options&quot;:[&quot;['(','[','{']&quot;,&quot;['{','[','(']&quot;,&quot;Empty — all balanced&quot;,&quot;[')','[','{']&quot;],&quot;correct_index&quot;:0}">Copy</button>
+  <pre><code class="language-json">{<span style="color:#56b6c2;">"question"</span>:"What does the stack contain after processing '([{' in Valid Parentheses?",<span style="color:#56b6c2;">"options"</span>:["['(','[','{']","['{','[','(']","Empty — all balanced","[')','[','{']"],<span style="color:#56b6c2;">"correct_index"</span>:<span style="color:#56b6c2;">0</span>}</code></pre>
+</div>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 23</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 / Soft Skills — Day 23</h1>
+<p><strong>题目 / Question:</strong> How do you approach designing systems for scale?</p>
+<p><strong>类别 / Category:</strong> Technical Vision | <strong>级别 / Level:</strong> Staff</p>
+<p><strong>阶段 / Phase:</strong> Growth</p>
+
+<hr/>
+
+<h2>🎯 为什么重要 / Why This Matters</h2>
+
+<p>这道题不是在考你背了多少系统设计八股文——面试官真正想知道的是：<strong>你是否有工程判断力</strong>？你是否知道什么时候过度设计比没设计还危险？</p>
+
+<p>This question isn't a test of how many system design patterns you've memorized. Interviewers want to know: <strong>do you have engineering judgment</strong>? Do you know when over-engineering is more dangerous than under-engineering?</p>
+
+<p>对于 Staff 级别，这个问题还在考查你能否<strong>影响团队的技术方向</strong>，而不只是单独做出好决策。</p>
+<p>At Staff level, this also tests whether you can <strong>influence your team's technical direction</strong>, not just make good decisions yourself.</p>
+
+<hr/>
+
+<h2>⭐ STAR 框架 / STAR Breakdown</h2>
+
+<h3>Situation（背景）</h3>
+<p>"在我的上一个职位，我们的用户数从 10 万增长到 1000 万，历时 18 个月。早期的架构（单体 + 单数据库）开始出现问题——每次大促前工程师都要彻夜待命。"</p>
+
+<p>"At my previous company, we grew from 100K to 10M users over 18 months. Our early architecture — a monolith with a single database — started showing cracks. Engineers were on-call every time there was a major traffic spike."</p>
+
+<h3>Task（任务）</h3>
+<p>"我被要求制定一个技术路线图，在不停止功能开发的前提下，让系统支撑 10x 的增长。"</p>
+
+<p>"I was asked to create a technical roadmap to support 10x growth without halting feature development."</p>
+
+<h3>Action（行动）</h3>
+<ol><li><strong>先测量，后优化 / Measure first, optimize later</strong></li></ol>
+<p>   - 用 profiling 工具找到真正的瓶颈，而不是凭直觉猜</p>
+<p>   - "我们以为数据库是瓶颈，但实际上是缓存未命中率高达 80%"</p>
+<p>   - Found the real bottleneck with profiling — cache miss rate was 80%, not DB itself</p>
+
+<ol><li><strong>分阶段演进 / Phased evolution</strong></li></ol>
+<p>   - Phase 1 (1个月): 加缓存层 → 立竿见影降低 DB 负载</p>
+<p>   - Phase 2 (3个月): 读写分离 → 解放读压力</p>
+<p>   - Phase 3 (6个月): 拆分最热的服务（用户服务、支付服务）为微服务</p>
+<p>   - 不一步到位，每个 Phase 都有可量化的目标</p>
+
+<ol><li><strong>设计原则先行 / Establish design principles</strong></li></ol>
+<p>   - "任何新功能必须考虑 100x 流量下的行为"</p>
+<p>   - 写进 ADR（Architecture Decision Records），让整个团队对齐</p>
+
+<h3>Result（结果）</h3>
+<p>"系统平稳支撑了大促（峰值 50k RPS），工程师不再需要彻夜待命，且未延误任何计划功能的发布。"</p>
+
+<p>"The system handled peak traffic of 50k RPS during major events without engineers being paged, while delivering every planned feature on schedule."</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<p>❌ <strong>"我会用微服务架构，然后加 Kafka、Redis、Kubernetes..."</strong></p>
+<blockquote>这是在背八股文，没有展示判断力。面试官会追问："为什么？你们当时有多少工程师？"</blockquote>
+
+<p>✅ <strong>"我首先会问：我们现在的瓶颈在哪？距离下个量级的增长还有多久？我们团队的规模能支撑微服务的运维成本吗？"</strong></p>
+<blockquote>展示了系统性思维和对成本的清醒认识。</blockquote>
+
+<hr/>
+
+<h2>🌟 Senior / Staff 加分点</h2>
+
+<p><strong>1. 技术债务的主动管理</strong></p>
+<p>"我会把可扩展性改进拆成小任务，混进每个 sprint，而不是等到出了大问题再救火。"</p>
+
+<p><strong>2. 影响力而非权威</strong></p>
+<p>"我写 RFC（Request for Comments）文档，让团队评审并达成共识，而不是单方面宣布决定。"</p>
+
+<p><strong>3. 权衡的明确性</strong></p>
+<p>"我们选择最终一致性而不是强一致性，因为我们的业务场景允许几秒的延迟——但我们把这个决定记录下来，以便未来的人理解为什么。"</p>
+
+<hr/>
+
+<h2>📌 关键要点 / Key Takeaways</h2>
+
+<ol><li><strong>先诊断再开药</strong> — 用数据找瓶颈，不要凭直觉</li><li><strong>渐进式演进</strong> — 分 Phase，每 Phase 有 metrics</li><li><strong>成本意识</strong> — 过度设计和欠设计一样有害</li><li><strong>文档化决策</strong> — ADR/RFC 让团队与未来的自己对话</li></ol>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li>https://martinfowler.com/articles/architect-resurgence.html</li><li>https://www.oreilly.com/library/view/designing-distributed-systems/9781491983638/</li><li>https://www.youtube.com/watch?v=Y-Gl4HEyeUQ (Martin Fowler on software architecture)</li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>就像建房子——你不会一开始就建一栋摩天大楼，因为你不确定是否会有那么多人住。但你会让地基足够结实，方便以后加层。先搞清楚现在哪里最拥挤，再一步一步扩建，每次扩建都要能量化效果。</p>
+
+<p>It's like building a house — you don't start by building a skyscraper because you don't know yet if you'll need it. But you make sure the foundation is solid enough to add floors later. First figure out where things are most crowded, then expand step by step — and measure every step.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 / Frontend — Day 23</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 / Frontend — Day 23</h1>
+<p><strong>主题 / Topic:</strong> TypeScript with React — Props, Events, Refs</p>
+<p><strong>类别 / Category:</strong> TypeScript | <strong>Week:</strong> 4</p>
+<p><strong>阶段 / Phase:</strong> Growth</p>
+
+<hr/>
+
+<h2>🎬 真实场景 / Real Scenario</h2>
+
+<p>你在做一个 dashboard 组件库，需要严格约束 props 类型、正确处理 DOM 事件，并且用 ref 访问 DOM 元素（比如自动聚焦一个输入框）。没有 TypeScript？你会在运行时才发现传错了 props。有了 TypeScript？编译时就报错了。</p>
+
+<p>You're building a component library for a dashboard. You need to strictly type props, handle DOM events correctly, and use refs to access DOM elements (like auto-focusing an input). Without TypeScript? You'd find out about wrong props at runtime. With TypeScript? It fails at compile time.</p>
+
+<hr/>
+
+<h2>💡 核心概念 / Core Concepts</h2>
+
+<h3>1. 类型化 Props / Typed Props</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// ❌ Bad — no typing, anything goes&#10;const Button = ({ label, onClick, disabled }) =&gt; { ... }&#10;&#10;// ✅ Good — explicit interface&#10;interface ButtonProps {&#10;  label: string;&#10;  onClick: () =&gt; void;         // no arguments, no return&#10;  disabled?: boolean;          // optional with ?&#10;  variant?: &quot;primary&quot; | &quot;danger&quot; | &quot;ghost&quot;;  // union type&#10;}&#10;&#10;const Button: React.FC&lt;ButtonProps&gt; = ({&#10;  label,&#10;  onClick,&#10;  disabled = false,&#10;  variant = &quot;primary&quot;&#10;}) =&gt; (&#10;  &lt;button&#10;    onClick={onClick}&#10;    disabled={disabled}&#10;    className={`btn btn-${variant}`}&#10;  &gt;&#10;    {label}&#10;  &lt;/button&gt;&#10;);">Copy</button>
+  <pre><code class="language-typescript">// ❌ Bad — no typing, anything goes
+const Button = ({ label, onClick, disabled }) =&gt; { ... }
+
+// ✅ Good — explicit interface
+interface ButtonProps {
+  label: string;
+  onClick: () =&gt; void;         // no arguments, no return
+  disabled?: boolean;          // optional with ?
+  variant?: "primary" | "danger" | "ghost";  // union type
+}
+
+const Button: React.FC&lt;ButtonProps&gt; = ({
+  label,
+  onClick,
+  disabled = false,
+  variant = "primary"
+}) =&gt; (
+  &lt;button
+    onClick={onClick}
+    disabled={disabled}
+    className={`btn btn-${variant}`}
+  &gt;
+    {label}
+  &lt;/button&gt;
+);</code></pre>
+</div>
+
+<h3>2. 事件类型 / Event Types</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// The most common event types you'll use daily&#10;const handleInputChange = (e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt; {&#10;  console.log(e.target.value);    // string&#10;};&#10;&#10;const handleFormSubmit = (e: React.FormEvent&lt;HTMLFormElement&gt;) =&gt; {&#10;  e.preventDefault();&#10;  // ...&#10;};&#10;&#10;const handleButtonClick = (e: React.MouseEvent&lt;HTMLButtonElement&gt;) =&gt; {&#10;  console.log(e.currentTarget);  // typed as HTMLButtonElement&#10;};&#10;&#10;// Complete form component&#10;interface SearchFormProps {&#10;  onSearch: (query: string) =&gt; void;&#10;}&#10;&#10;const SearchForm: React.FC&lt;SearchFormProps&gt; = ({ onSearch }) =&gt; {&#10;  const [query, setQuery] = React.useState(&quot;&quot;);&#10;&#10;  return (&#10;    &lt;form onSubmit={(e: React.FormEvent&lt;HTMLFormElement&gt;) =&gt; {&#10;      e.preventDefault();&#10;      onSearch(query);&#10;    }}&gt;&#10;      &lt;input&#10;        value={query}&#10;        onChange={(e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt;&#10;          setQuery(e.target.value)&#10;        }&#10;        aria-label=&quot;search&quot;&#10;      /&gt;&#10;      &lt;button type=&quot;submit&quot;&gt;Search&lt;/button&gt;&#10;    &lt;/form&gt;&#10;  );&#10;};">Copy</button>
+  <pre><code class="language-typescript">// The most common event types you'll use daily
+const handleInputChange = (e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt; {
+  console.log(e.target.value);    // string
+};
+
+const handleFormSubmit = (e: React.FormEvent&lt;HTMLFormElement&gt;) =&gt; {
+  e.preventDefault();
+  // ...
+};
+
+const handleButtonClick = (e: React.MouseEvent&lt;HTMLButtonElement&gt;) =&gt; {
+  console.log(e.currentTarget);  // typed as HTMLButtonElement
+};
+
+// Complete form component
+interface SearchFormProps {
+  onSearch: (query: string) =&gt; void;
+}
+
+const SearchForm: React.FC&lt;SearchFormProps&gt; = ({ onSearch }) =&gt; {
+  const [query, setQuery] = React.useState("");
+
+  return (
+    &lt;form onSubmit={(e: React.FormEvent&lt;HTMLFormElement&gt;) =&gt; {
+      e.preventDefault();
+      onSearch(query);
+    }}&gt;
+      &lt;input
+        value={query}
+        onChange={(e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt;
+          setQuery(e.target.value)
+        }
+        aria-label="search"
+      /&gt;
+      &lt;button type="submit"&gt;Search&lt;/button&gt;
+    &lt;/form&gt;
+  );
+};</code></pre>
+</div>
+
+<h3>3. 类型化 Refs / Typed Refs</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// useRef needs a type parameter&#10;const inputRef = React.useRef&lt;HTMLInputElement&gt;(null);&#10;//                                   ↑ DOM element type&#10;//                                              ↑ initial value&#10;&#10;// Usage: always check for null (could be before mount)&#10;const focusInput = () =&gt; {&#10;  if (inputRef.current) {&#10;    inputRef.current.focus();   // TypeScript knows this is HTMLInputElement!&#10;    inputRef.current.select();  // .select() also valid&#10;  }&#10;};&#10;&#10;// Full example: Auto-focus on mount&#10;const AutoFocusInput: React.FC = () =&gt; {&#10;  const inputRef = React.useRef&lt;HTMLInputElement&gt;(null);&#10;&#10;  React.useEffect(() =&gt; {&#10;    inputRef.current?.focus();  // optional chaining: safe if null&#10;  }, []);&#10;&#10;  return &lt;input ref={inputRef} aria-label=&quot;auto-focus-input&quot; /&gt;;&#10;};">Copy</button>
+  <pre><code class="language-typescript">// useRef needs a type parameter
+const inputRef = React.useRef&lt;HTMLInputElement&gt;(null);
+//                                   ↑ DOM element type
+//                                              ↑ initial value
+
+// Usage: always check for null (could be before mount)
+const focusInput = () =&gt; {
+  if (inputRef.current) {
+    inputRef.current.focus();   // TypeScript knows this is HTMLInputElement!
+    inputRef.current.select();  // .select() also valid
+  }
+};
+
+// Full example: Auto-focus on mount
+const AutoFocusInput: React.FC = () =&gt; {
+  const inputRef = React.useRef&lt;HTMLInputElement&gt;(null);
+
+  React.useEffect(() =&gt; {
+    inputRef.current?.focus();  // optional chaining: safe if null
+  }, []);
+
+  return &lt;input ref={inputRef} aria-label="auto-focus-input" /&gt;;
+};</code></pre>
+</div>
+
+<hr/>
+
+<h2>🧠 猜猜输出 / What's the Output?</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="interface CardProps {&#10;  title: string;&#10;  count?: number;&#10;}&#10;&#10;const Card: React.FC&lt;CardProps&gt; = ({ title, count = 0 }) =&gt; {&#10;  return &lt;div&gt;{title}: {count + 1}&lt;/div&gt;;&#10;};&#10;&#10;// Usage:&#10;&lt;Card title=&quot;Users&quot; /&gt;&#10;&lt;Card title=&quot;Posts&quot; count={5} /&gt;">Copy</button>
+  <pre><code class="language-typescript">interface CardProps {
+  title: string;
+  count?: number;
+}
+
+const Card: React.FC&lt;CardProps&gt; = ({ title, count = 0 }) =&gt; {
+  return &lt;div&gt;{title}: {count + 1}&lt;/div&gt;;
+};
+
+// Usage:
+&lt;Card title="Users" /&gt;
+&lt;Card title="Posts" count={5} /&gt;</code></pre>
+</div>
+
+<p><strong>输出 / Output is:</strong></p>
+<ul><li>A: <code>Users: 0</code> | <code>Posts: 5</code></li><li>B: <code>Users: 1</code> | <code>Posts: 6</code></li><li>C: <code>Users: NaN</code> | <code>Posts: 6</code></li><li>D: TypeScript error — count is required</li></ul>
+
+<p><strong>答案 / Answer: B</strong> — <code>count</code> defaults to <code>0</code>, so <code>0 + 1 = 1</code>. Second renders <code>5 + 1 = 6</code>.</p>
+
+<hr/>
+
+<h2>❌ vs ✅ Common Mistakes</h2>
+
+<p><strong>坑 1: onClick 类型写错</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// ❌ Wrong — MouseEvent is from the DOM API, not React&#10;onClick: (e: MouseEvent) =&gt; void;&#10;&#10;// ✅ Correct — React's synthetic event&#10;onClick: (e: React.MouseEvent&lt;HTMLButtonElement&gt;) =&gt; void;">Copy</button>
+  <pre><code class="language-typescript">// ❌ Wrong — MouseEvent is from the DOM API, not React
+onClick: (e: MouseEvent) =&gt; void;
+
+// ✅ Correct — React's synthetic event
+onClick: (e: React.MouseEvent&lt;HTMLButtonElement&gt;) =&gt; void;</code></pre>
+</div>
+
+<p><strong>坑 2: useRef 初始值</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// ❌ Wrong — initial value undefined causes issues&#10;const ref = useRef&lt;HTMLInputElement&gt;();&#10;&#10;// ✅ Correct — use null for DOM refs&#10;const ref = useRef&lt;HTMLInputElement&gt;(null);&#10;&#10;// ✅ Also correct — for mutable values (not DOM)&#10;const countRef = useRef&lt;number&gt;(0);">Copy</button>
+  <pre><code class="language-typescript">// ❌ Wrong — initial value undefined causes issues
+const ref = useRef&lt;HTMLInputElement&gt;();
+
+// ✅ Correct — use null for DOM refs
+const ref = useRef&lt;HTMLInputElement&gt;(null);
+
+// ✅ Also correct — for mutable values (not DOM)
+const countRef = useRef&lt;number&gt;(0);</code></pre>
+</div>
+
+<p><strong>坑 3: children 类型</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// ❌ Old pattern — React.FC injects children automatically (deprecated in React 18)&#10;const Wrapper: React.FC = ({ children }) =&gt; &lt;div&gt;{children}&lt;/div&gt;;  // TS error!&#10;&#10;// ✅ Correct — explicitly type children&#10;interface WrapperProps {&#10;  children: React.ReactNode;&#10;}&#10;const Wrapper: React.FC&lt;WrapperProps&gt; = ({ children }) =&gt; &lt;div&gt;{children}&lt;/div&gt;;">Copy</button>
+  <pre><code class="language-typescript">// ❌ Old pattern — React.FC injects children automatically (deprecated in React 18)
+const Wrapper: React.FC = ({ children }) =&gt; &lt;div&gt;{children}&lt;/div&gt;;  // TS error!
+
+// ✅ Correct — explicitly type children
+interface WrapperProps {
+  children: React.ReactNode;
+}
+const Wrapper: React.FC&lt;WrapperProps&gt; = ({ children }) =&gt; &lt;div&gt;{children}&lt;/div&gt;;</code></pre>
+</div>
+
+<hr/>
+
+<h2>🧭 何时用 / When to Use</h2>
+
+<table><thead><tr><th>场景</th><th>方案</th></tr></thead><tbody><tr><td>组件需要接收数据</td><td>定义 <code>interface XxxProps</code></td></tr><tr><td>处理用户输入</td><td><code>React.ChangeEvent&lt;HTMLInputElement&gt;</code></td></tr><tr><td>访问 DOM 节点</td><td><code>useRef&lt;HTMLElement&gt;(null)</code></td></tr><tr><td>传递子组件</td><td><code>children: React.ReactNode</code></td></tr><tr><td>组件包装器</td><td><code>React.ComponentProps&lt;"button"&gt;</code> — inherit all native props</td></tr></tbody></table>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li>https://react.dev/learn/typescript</li><li>https://www.totaltypescript.com/tutorials/react-with-typescript</li><li>https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/basic_type_example/</li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>TypeScript 就像给积木零件贴标签——方块只能插方孔，圆球只能插圆孔。如果你试着把圆球塞进方孔，还没搭好你就知道出错了，不用等整个积木城堡倒塌。</p>
+
+<p>TypeScript is like labeling LEGO pieces — square pegs only fit square holes, round pegs only fit round holes. If you try to force the wrong shape, you find out immediately — not after your entire LEGO castle collapses.</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="{&quot;question&quot;:&quot;Which is the correct TypeScript type for an input onChange handler in React?&quot;,&quot;options&quot;:[&quot;(e: Event) =&gt; void&quot;,&quot;(e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt; void&quot;,&quot;(e: InputEvent) =&gt; void&quot;,&quot;(e: React.MouseEvent) =&gt; void&quot;],&quot;correct_index&quot;:1}">Copy</button>
+  <pre><code class="language-json">{<span style="color:#56b6c2;">"question"</span>:"Which is the correct TypeScript type for an input onChange handler in React?",<span style="color:#56b6c2;">"options"</span>:["(e: Event) =&gt; void","(e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt; void","(e: InputEvent) =&gt; void","(e: React.MouseEvent) =&gt; void"],<span style="color:#56b6c2;">"correct_index"</span>:<span style="color:#56b6c2;">1</span>}</code></pre>
+</div>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 23 (NEWS)</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI — Day 23 (NEWS)</h1>
+<p><strong>日期 / Date:</strong> 2026-04-14  </p>
+<p><strong>阶段 / Phase:</strong> Growth</p>
+
+<hr/>
+
+<h2>1) 🧑‍⚖️ 联合国 AI 科学小组启动全球影响研究</h2>
+
+<p><strong>中文</strong></p>
+<p>联合国宣布其“独立国际 AI 科学小组”开始开展一项全球影响研究，核心立场是：AI 发展不能只看算法能力，更要确保“人仍然处在决策中心”。对做 AI 产品/平台的人来说，这意味着两件事会越来越重要：</p>
+<p>1) <strong>人类在环（Human-in-the-loop）</strong> 的机制是否清晰（谁能覆盖模型、何时必须人工复核）；</p>
+<div class="diagram-block">2) **可追溯性**（你能否解释一个关键决策从数据→模型→输出→行动的链路）。</div>
+
+<p><strong>English</strong></p>
+<div class="diagram-block">The UN reported that its “Independent International Scientific Panel on AI” has begun work on a global impact study, emphasizing that AI shouldn’t be treated as purely an algorithmic field and that **humans must remain central to decision-making**. For AI products and platforms, two themes keep rising: (1) clear human-in-the-loop escalation paths, and (2) traceability from data → model → output → action.</div>
+
+<p>Source: https://news.un.org/en/story/2026/04/1167263</p>
+
+<hr/>
+
+<h2>2) 🧭 美国州级 AI 立法继续推进：聊天机器人披露、价格、健康/治疗等</h2>
+
+<p><strong>中文</strong></p>
+<p>一篇隐私法律观察更新梳理了 2026 年 4 月中旬美国多州的 AI 法案进展，覆盖“聊天机器人与未成年人互动披露”“对外表明是否为 AI”“以及与健康/治疗服务相关的限制”等方向。工程上最直接的影响是：</p>
+<ul><li>你可能需要<strong>在 UI/对话入口</strong>就做“这不是人类”的披露；</li><li>对未成年人/敏感场景，需要<strong>更强的 guardrails</strong>（内容限制、引导到真人/专业人士、日志审计）。</li></ul>
+
+<p><strong>English</strong></p>
+<p>A state-law tracker summarizes progress across multiple US states, including bills focused on conversational AI disclosures (especially for minors), representing whether a system is human, and restrictions in health/therapy contexts. The near-term engineering implications are: (a) disclosure at the UI / conversation entry point, and (b) stronger guardrails for minors and sensitive domains (content constraints, escalation paths, audit logs).</p>
+
+<p>Source: https://www.troutmanprivacy.com/2026/04/proposed-state-ai-law-update-april-13-2026/</p>
+
+<hr/>
+
+<h2>3) 🏢 PwC：AI 经济收益高度集中，领先者更关注“增长与重塑”，并强化治理</h2>
+
+<p><strong>中文</strong></p>
+<p>PwC 的一份新闻稿强调：AI 的经济收益正在向少数“领先公司”集中，这些公司不仅是“加 AI 工具”，而是更倾向于<strong>重塑工作流</strong>并把 AI 用作“业务增长/重塑”的杠杆，同时在治理与信任机制上投入更多。对技术负责人而言，一个可操作的 takeaway 是：</p>
+<ul><li>别只做 feature-level 的“加一个 Copilot”；要做 <strong>workflow-level</strong> 的重新设计（例如审批链、数据回填、自动化决策边界）；</li><li>把 Responsible AI / governance 当作“可规模化的前提”，而不是合规尾巴。</li></ul>
+
+<p><strong>English</strong></p>
+<p>PwC’s press release argues that AI’s economic gains are concentrated among a small set of leaders. These companies don’t just add AI tools; they <strong>redesign workflows</strong> and use AI for growth and business reinvention, while investing more in governance and trust mechanisms. A practical takeaway for tech leads: optimize at the workflow level (decision boundaries, approvals, data feedback loops), and treat governance as the prerequisite for scale, not an afterthought.</p>
+
+<p>Source: https://www.pwc.com/gx/en/news-room/press-releases/2026/pwc-2026-ai-performance-study.html</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>UN News: https://news.un.org/en/story/2026/04/1167263</li><li>Troutman Pepper Locke (privacy law update): https://www.troutmanprivacy.com/2026/04/proposed-state-ai-law-update-april-13-2026/</li><li>PwC press release: https://www.pwc.com/gx/en/news-room/press-releases/2026/pwc-2026-ai-performance-study.html</li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p><strong>中文</strong></p>
+<p>这三条新闻合在一起就像在说：AI 变得更常见、更能干了，所以大家会更在意两件事：</p>
+<p>1) 机器说了算还是人说了算？</p>
+<p>2) 出了问题能不能查清楚发生了什么？</p>
+
+<p><strong>English</strong></p>
+<p>Together, these stories say: as AI becomes more common and more capable, people care more about (1) who’s actually in charge  the human or the machine, and (2) whether we can audit what happened when something goes wrong.</p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>

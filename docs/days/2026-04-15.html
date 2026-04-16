@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-04-15</title>
+  <meta name="description" content="byte-by-byte daily lessons for Wednesday, April 15, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Wednesday, April 15, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-04-15.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: #ffffff; }
+.section-header-sub { font-size: 0.8rem; color: #ddd0f0; margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: #f0ecff;
+}
+.section-content h1 { font-size: 1.2rem; color: #ffffff; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: #e2e0f0; }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: #e2e0f0;
+}
+.section-content li { margin-bottom: 4px; color: #e2e0f0; }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: #d0cce8; font-style: italic;
+}
+.section-content strong { color: #ffffff; }
+.section-content em { color: #c8c4e0; }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1a1a2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-04-14.html" style="color:var(--text2)">← 2026-04-14</a>
+    <a href="2026-04-16.html" style="color:var(--text2)">2026-04-16 →</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-04-15</span>
+    <h1>Wednesday, April 15, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-04-14.html" class="day-nav-btn">← 2026-04-14</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <a href="2026-04-16.html" class="day-nav-btn">2026-04-16 →</a>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 21: Design a Notification System</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 / System Design — Day 21: Design a Notification System</h1>
+
+<blockquote>📊 Day 24 | Phase: Growth | Topic: System Design Problems</blockquote>
+
+<hr/>
+
+<h2>想象这个场景 / The Scenario</h2>
+
+<p>想象你在 Airbnb 工作。用户订了一个民宿，系统需要同时发送：</p>
+<ul><li>📱 Push notification（App 通知）</li><li>📧 Email（预订确认）</li><li>💬 SMS（支付成功短信）</li></ul>
+
+<p>You're at Airbnb. A user books a listing — the system needs to simultaneously send a push notification, confirmation email, and SMS payment receipt. How do you design this at scale?</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<div class="diagram-block">Clients (iOS/Android/Web)
+          │
+          ▼
+    [API Gateway]
+          │
+          ▼
+  [Notification Service]
+     /     |      \
+    ▼      ▼       ▼
+[Push]  [Email]  [SMS]
+Worker  Worker   Worker
+  │       │        │
+  ▼       ▼        ▼
+[APNS] [SendGrid] [Twilio]
+[FCM]
+
+          ▲
+  [Message Queue]  ←── [Event Sources]
+  (Kafka/SQS)          (Order Service,
+                        Payment Service,
+                        etc.)
+
+  [Notification DB]  ←── stores delivery status
+  [User Preference]  ←── opt-in/out per channel
+  [Rate Limiter]     ←── prevent spam</div>
+
+<hr/>
+
+<h2>核心设计决策 / Key Design Decisions</h2>
+
+<h3>1. 为什么用消息队列？/ Why Message Queue?</h3>
+
+<p><strong>问题 / Problem:</strong> 通知系统是下游依赖 — 如果 Email 服务挂了，不应该影响核心业务流程（下单、支付）。  </p>
+<p><strong>解法 / Solution:</strong> 用 Kafka/SQS 解耦生产者和消费者。生产者（订单服务）发消息就完事，消费者（通知工作进程）异步处理。</p>
+
+<blockquote><strong>关键权衡 / Key Tradeoff:</strong> 异步 = 高可用 + 高吞吐，但牺牲了实时性（最终一致）。对通知场景完全可接受。</blockquote>
+
+<h3>2. 用户偏好表 / User Preference Table</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="CREATE TABLE user_notification_preferences (&#10;  user_id       BIGINT,&#10;  channel       ENUM('push', 'email', 'sms'),&#10;  notification_type VARCHAR(50),  -- 'marketing', 'transactional'&#10;  enabled       BOOLEAN DEFAULT true,&#10;  PRIMARY KEY (user_id, channel, notification_type)&#10;);">Copy</button>
+  <pre><code class="language-sql">CREATE TABLE user_notification_preferences (
+  user_id       BIGINT,
+  channel       ENUM('push', 'email', 'sms'),
+  notification_type VARCHAR(50),  -- 'marketing', 'transactional'
+  enabled       BOOLEAN DEFAULT true,
+  PRIMARY KEY (user_id, channel, notification_type)
+);</code></pre>
+</div>
+
+<p>发送前先查这张表 — 用户关闭了营销邮件就别发。  </p>
+<p>Check this table before sending — respect user opt-outs.</p>
+
+<h3>3. 幂等性 / Idempotency</h3>
+
+<p>Worker 崩溃重启后可能重复发送 → 每条通知有唯一 <code>notification_id</code>，发送成功后写入 DB。再次处理时先查 DB，已发送则跳过。</p>
+
+<p>Worker restarts may cause duplicate sends → each notification has a unique <code>notification_id</code>. Mark as sent in DB; skip if already delivered.</p>
+
+<h3>4. 推送三方服务 / Third-Party Push Services</h3>
+
+<ul><li><strong>iOS:</strong> Apple Push Notification Service (APNS)</li><li><strong>Android:</strong> Firebase Cloud Messaging (FCM)</li><li><strong>Email:</strong> SendGrid / AWS SES</li><li><strong>SMS:</strong> Twilio / AWS SNS</li></ul>
+
+<hr/>
+
+<h2>数据量估算 / Scale Estimation</h2>
+
+<ul><li>DAU: 10M users</li><li>每用户每天平均 3 条通知 → 30M notifications/day</li><li>QPS: 30M / 86400 ≈ <strong>350 notifications/sec</strong> (peak 5x = ~1750/sec)</li><li>消息队列分区 / Kafka partitions: 按 <code>user_id % N</code> 分区确保顺序</li></ul>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<table><thead><tr><th>❌ 错误做法</th><th>✅ 正确做法</th></tr></thead><tbody><tr><td>同步发送通知（阻塞主流程）</td><td>异步队列解耦</td></tr><tr><td>不记录发送状态</td><td>写 DB + 幂等处理</td></tr><tr><td>忽略用户偏好</td><td>发送前查 preference 表</td></tr><tr><td>不限速</td><td>Rate limiter 防骚扰</td></tr><tr><td>只有一个推送渠道</td><td>失败重试 + fallback（push → SMS）</td></tr></tbody></table>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li>https://systemdesign.one/notification-system-design/</li><li>https://aws.amazon.com/blogs/mobile/how-to-build-a-scalable-notification-system/</li><li>https://engineering.fb.com/2015/12/03/ios/delivering-billions-of-messages-instantly/</li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你开了一家餐厅。厨师做好菜了，不能亲自跑去告诉每桌客人——他只需要把菜放到传菜台（消息队列），服务员（Worker）去各桌通知。有人不吃辣就不发辣的（用户偏好），菜已经送到就不再送（幂等性）。</p>
+
+<p>Think of it like a restaurant. The chef (core service) puts finished dishes on a conveyor (message queue). Waiters (workers) deliver them to the right tables (push/email/SMS). If a customer said "no spicy food" (user preference), skip it. If the dish was already delivered, don't deliver again (idempotency).</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 22: #155 Min Stack (Medium) — Stack</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 / Algorithms — Day 22: #155 Min Stack (Medium) — Stack</h1>
+
+<blockquote>📊 Day 24 | Phase: Growth | Pattern: 单调栈模式 (2/7)</blockquote>
+
+<hr/>
+
+<h2>🧩 单调栈模式 (2/7) — 在 Day 23 的模版基础上延伸</h2>
+
+<p>Yesterday (#20 Valid Parentheses) introduced the Stack pattern for matching. Today's Min Stack is a <strong>variation</strong>: instead of using a stack for matching, we use <strong>a stack to augment data retrieval</strong> — specifically, tracking the minimum in O(1).</p>
+
+<p><strong>Pattern recap / 模版回顾:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Core stack pattern: push/pop with invariant maintenance&#10;stack = []&#10;# Each element: (value, auxiliary_info)  ← today's twist">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Core stack pattern: push/pop with invariant maintenance</span>
+stack = []
+<span style="color:#5c6370;"># Each element: (value, auxiliary_info)  ← today's twist</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>🔗 Links</h2>
+
+<ul><li>🟡 Medium | <a href="https://leetcode.com/problems/min-stack/">LeetCode #155 Min Stack</a></li><li>📹 <a href="https://neetcode.io/problems/minimum-stack">NeetCode Solution</a></li></ul>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象你在整理一摞文件，每次放一份文件上去，你都想随时知道"这摞里最薄的文件是哪本"——不翻找，O(1) 取出。</p>
+
+<p>Imagine stacking folders on your desk. At any moment you need to instantly know the thinnest folder in the stack — without searching through all of them.</p>
+
+<hr/>
+
+<h2>问题描述 / Problem</h2>
+
+<p>设计一个栈，支持 push、pop、top，以及 <strong>O(1) 时间</strong> 获取栈内最小值 <code>getMin()</code>。</p>
+
+<p>Design a stack that supports push, pop, top, and <strong>getMin() in O(1) time</strong>.</p>
+
+<div class="diagram-block">MinStack stack = new MinStack();
+stack.push(-2);
+stack.push(0);
+stack.push(-3);
+stack.getMin();  # → -3
+stack.pop();
+stack.top();     # → 0
+stack.getMin();  # → -2</div>
+
+<hr/>
+
+<h2>映射到模式 / Map to Pattern</h2>
+
+<p><strong>关键洞察 / Key Insight:</strong> 普通栈只记录值，Min Stack 在每个节点额外记录"到目前为止的最小值"。</p>
+
+<p>Normal stack stores values. Min Stack stores <strong>(value, min_so_far)</strong> pairs — so every element "knows" the minimum at the time it was pushed.</p>
+
+<hr/>
+
+<h2>Python 解法 + 执行追踪 / Solution + Trace</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="class MinStack:&#10;    def __init__(self):&#10;        # Each entry: (value, current_min_at_this_point)&#10;        self.stack = []&#10;&#10;    def push(self, val: int) -&gt; None:&#10;        # If stack is empty, min is val itself&#10;        # Otherwise, min is min(val, top element's recorded min)&#10;        current_min = val if not self.stack else min(val, self.stack[-1][1])&#10;        self.stack.append((val, current_min))&#10;&#10;    def pop(self) -&gt; None:&#10;        self.stack.pop()&#10;&#10;    def top(self) -&gt; int:&#10;        return self.stack[-1][0]&#10;&#10;    def getMin(self) -&gt; int:&#10;        return self.stack[-1][1]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">class</span> MinStack:
+    <span style="color:#c678dd;">def</span> __init__(self):
+        <span style="color:#5c6370;"># Each entry: (value, current_min_at_this_point)</span>
+        self.stack = []
+
+    <span style="color:#c678dd;">def</span> push(self, val: int) -&gt; <span style="color:#c678dd;">None</span>:
+        <span style="color:#5c6370;"># If stack is empty, min is val itself</span>
+        <span style="color:#5c6370;"># Otherwise, min is min(val, top element's recorded min)</span>
+        current_min = val <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> self.stack <span style="color:#c678dd;">else</span> min(val, self.stack[-<span style="color:#56b6c2;">1</span>][<span style="color:#56b6c2;">1</span>])
+        self.stack.append((val, current_min))
+
+    <span style="color:#c678dd;">def</span> pop(self) -&gt; <span style="color:#c678dd;">None</span>:
+        self.stack.pop()
+
+    <span style="color:#c678dd;">def</span> top(self) -&gt; int:
+        <span style="color:#c678dd;">return</span> self.stack[-<span style="color:#56b6c2;">1</span>][<span style="color:#56b6c2;">0</span>]
+
+    <span style="color:#c678dd;">def</span> getMin(self) -&gt; int:
+        <span style="color:#c678dd;">return</span> self.stack[-<span style="color:#56b6c2;">1</span>][<span style="color:#56b6c2;">1</span>]</code></pre>
+</div>
+
+<p><strong>执行追踪 / Trace:</strong></p>
+<div class="diagram-block">push(-2): stack = [(-2, -2)]          # min = -2
+push(0):  stack = [(-2,-2), (0,-2)]   # min still -2
+push(-3): stack = [(-2,-2),(0,-2),(-3,-3)]  # new min = -3
+getMin(): → stack[-1][1] = -3  ✅
+pop():    stack = [(-2,-2), (0,-2)]
+getMin(): → stack[-1][1] = -2  ✅ (min "restored" automatically!)</div>
+
+<p><strong>神奇之处 / The Magic:</strong> When we pop -3, the min automatically reverts to -2 — because each element carries its own "min context". No extra work needed!</p>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+
+<ul><li><strong>Time:</strong> O(1) for all operations — push, pop, top, getMin</li><li><strong>Space:</strong> O(n) — extra space for storing min alongside each element</li></ul>
+
+<hr/>
+
+<h2>与其他模式变体的对比 / Compare to Block Problems</h2>
+
+<table><thead><tr><th>Problem</th><th>Stack Stores</th><th>Key Twist</th></tr></thead><tbody><tr><td>#20 Valid Parentheses</td><td>Opening brackets</td><td>Match on close</td></tr><tr><td><strong>#155 Min Stack</strong> ←</td><td><strong>(val, min)</strong> pairs</td><td>Augment with metadata</td></tr><tr><td>#150 Eval RPN (next)</td><td>Numbers</td><td>Pop two, compute, push result</td></tr><tr><td>#739 Daily Temperatures</td><td>Indices</td><td>Monotonic decreasing values</td></tr></tbody></table>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p>这个"携带辅助信息"的技巧在栈中非常通用：</p>
+<ul><li><strong>Max Stack</strong> — 同理，存 (val, max_so_far)</li><li><strong>频率栈</strong> (LFU Cache 变体) — 存 (val, frequency)</li><li><strong>单调栈</strong> (#739) — 存索引，维护单调性</li></ul>
+
+<p>The "carry auxiliary info" trick generalizes broadly:</p>
+<ul><li>Max Stack → store (val, max_so_far)</li><li>Daily Temperatures → store indices, maintain monotonic property</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li>https://leetcode.com/problems/min-stack/editorial/</li><li>https://neetcode.io/problems/minimum-stack</li><li>https://www.geeksforgeeks.org/design-a-stack-that-supports-getmin-in-o1-time-and-o1-extra-space/</li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>每次往盒子里放玩具，你都在玩具上贴一个便利贴，写上"到目前为止，这箱子里最小的玩具是哪个"。想知道最小的？直接看最上面那个玩具的便利贴——不用翻箱子！</p>
+
+<p>Every time you put a toy in the box, write a sticky note on it: "the smallest toy in the box so far is ___." Want to know the minimum? Just read the note on the top toy — no digging needed!</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 21: Conflict Resolution</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 / Soft Skills — Day 21: Conflict Resolution</h1>
+
+<blockquote>📊 Day 24 | Phase: Growth | Level: Senior/Staff</blockquote>
+
+<hr/>
+
+<h2>为什么这很重要？/ Why This Matters</h2>
+
+<p>在 Senior/Staff 级别，技术问题往往只是表象，真正的挑战在于"人"。面试官问冲突解决，不是想听你如何"和稀泥"，而是想看你如何<strong>把冲突转化为建设性的讨论</strong>，并最终达成共识。</p>
+
+<p>At the Senior/Staff level, technical problems are often just symptoms of human alignment issues. Interviewers ask about conflict resolution to see if you can turn friction into constructive dialogue and reach a consensus, rather than just avoiding the argument.</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<h3>🌟 Situation (情境)</h3>
+<p>描述冲突的背景。必须是<strong>工作相关的实质性冲突</strong>（如架构选择、资源分配），而不是个人恩怨。</p>
+<p>Describe the context. It must be a substantive, work-related conflict (e.g., architectural choices, resource allocation), not a personal petty argument.</p>
+<p><em>Example:</em> "前端团队想用 GraphQL 加速开发，而后端团队坚持用 REST 以保持系统稳定性，双方僵持不下。"</p>
+
+<h3>🎯 Task (任务)</h3>
+<p>你的角色是什么？你需要达成什么目标？</p>
+<p>What was your role and the goal?</p>
+<p><em>Example:</em> "作为 Tech Lead，我需要打破僵局，确保项目按时交付，同时兼顾开发效率和系统稳定。"</p>
+
+<h3>🚀 Action (行动) - 核心部分</h3>
+<p>你是如何解决的？强调<strong>倾听、客观数据和寻找共同点</strong>。</p>
+<p>How did you solve it? Emphasize listening, objective data, and finding common ground.</p>
+<ol><li><strong>De-escalate (降温):</strong> 把讨论从"谁对谁错"转移到"我们要解决什么问题"。</li><li><strong>Gather Data (收集数据):</strong> 建立客观的评估标准（如性能测试、开发时间估算）。</li><li><strong>Compromise/Align (妥协/对齐):</strong> 找到双赢方案，或者基于数据做出艰难决定并让各方理解（Disagree and Commit）。</li></ol>
+
+<h3>🏆 Result (结果)</h3>
+<p>冲突解决了没？项目成功了吗？<strong>学到了什么？</strong></p>
+<p>Was the conflict resolved? Did the project succeed? What did you learn?</p>
+<p><em>Example:</em> "我们决定先在非核心服务上试点 GraphQL。项目按时上线，双方都对结果满意。我学到了尽早引入客观评估标准能有效避免情绪化争论。"</p>
+
+<hr/>
+
+<h2>❌ 错误示范 vs ✅ 正确示范</h2>
+
+<table><thead><tr><th>❌ Bad</th><th>✅ Good</th></tr></thead><tbody><tr><td>"我是对的，所以我强迫他们听我的。" (Too aggressive)</td><td>"我组织了白板会议，列出双方方案的优缺点。" (Collaborative)</td></tr><tr><td>"我去找老板，让老板来定夺。" (Lacks leadership)</td><td>"我们定义了成功指标，用数据说话。" (Data-driven)</td></tr><tr><td>"我们各退一步，随便选了个折中方案。" (Weak compromise)</td><td>"我们找到了既能满足前端需求，又不需要后端大改的方案。" (Win-win)</td></tr></tbody></table>
+
+<hr/>
+
+<h2>💡 Senior/Staff 专属建议 / Senior Tips</h2>
+
+<ul><li><strong>Focus on the "Why":</strong> 冲突往往源于对底层目标的不一致。前端想要速度，后端想要稳定。找出这些 underlying motivations。</li><li><strong>Disagree and Commit:</strong> 展现你理解即使你的方案没被采纳，你也能全力支持团队的决定。</li><li><strong>Systemic Fixes:</strong> 冲突解决后，你有没有建立新的流程或规范，防止类似冲突再次发生？（如：引入 RFC 流程）。</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li>https://igotanoffer.com/blogs/tech/behavioral-interview-questions-conflict</li><li>https://blog.pragmaticengineer.com/resolving-engineering-conflicts/</li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>两个小朋友为了玩哪个玩具吵架。你不是去抢玩具，也不是去告老师，而是问他们："你们到底想玩什么游戏？"然后发现一个人想玩搭房子，一个人想玩开汽车，于是你提议："我们用积木搭一个停车场吧！"</p>
+
+<p>Two kids are fighting over a toy. Instead of grabbing the toy or telling the teacher, you ask: "What game do you actually want to play?" One wants to build houses, the other wants to drive cars. So you suggest: "Let's build a parking garage with blocks!"</p>
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 / Frontend — Day 21: TypeScript Advanced — Utility Types & Typ...</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 / Frontend — Day 21: TypeScript Advanced — Utility Types &amp; Type Guards</h1>
+
+<blockquote>📊 Day 24 | Phase: Growth | Category: TypeScript</blockquote>
+
+<hr/>
+
+<h2>真实场景 / Real-World Scenario</h2>
+
+<p>你在做一个 dashboard，需要从后端获取用户数据并更新。后端返回的 <code>User</code> 对象有很多字段，但更新接口只需要传几个字段（比如只需要 <code>name</code> 和 <code>email</code>），而且这些字段都是可选的。你该怎么定义这个更新函数的参数类型？难道要重新写一个 <code>UpdateUserPayload</code> 接口吗？</p>
+
+<p>You're building a dashboard and need to fetch and update user data. The backend <code>User</code> object has many fields, but the update API only needs a few (like <code>name</code> and <code>email</code>), and they're all optional. How do you type the payload without writing a whole new interface?</p>
+
+<hr/>
+
+<h2>核心概念：Utility Types (工具类型)</h2>
+
+<p>TypeScript 内置了强大的工具类型，可以基于现有类型<strong>派生</strong>出新类型，保持代码 DRY (Don't Repeat Yourself)。</p>
+
+<p>TypeScript has built-in utility types to <strong>derive</strong> new types from existing ones, keeping your code DRY.</p>
+
+<h3>1. <code>Partial&lt;T&gt;</code> &amp; <code>Pick&lt;T, K&gt;</code></h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="interface User {&#10;  id: string;&#10;  name: string;&#10;  email: string;&#10;  role: 'admin' | 'user';&#10;  createdAt: Date;&#10;}&#10;&#10;// ❌ Bad: 重复定义 (Duplication)&#10;interface UpdateUserPayload {&#10;  name?: string;&#10;  email?: string;&#10;}&#10;&#10;// ✅ Good: 组合使用 Utility Types (Composition)&#10;// 1. 先用 Pick 挑出需要的字段: { name: string; email: string }&#10;// 2. 再用 Partial 把它们变成可选的: { name?: string; email?: string }&#10;type UpdateUserPayload = Partial&lt;Pick&lt;User, 'name' | 'email'&gt;&gt;;&#10;&#10;function updateUser(id: string, payload: UpdateUserPayload) {&#10;  // api call...&#10;}">Copy</button>
+  <pre><code class="language-typescript">interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+  createdAt: Date;
+}
+
+// ❌ Bad: 重复定义 (Duplication)
+interface UpdateUserPayload {
+  name?: string;
+  email?: string;
+}
+
+// ✅ Good: 组合使用 Utility Types (Composition)
+// 1. 先用 Pick 挑出需要的字段: { name: string; email: string }
+// 2. 再用 Partial 把它们变成可选的: { name?: string; email?: string }
+type UpdateUserPayload = Partial&lt;Pick&lt;User, 'name' | 'email'&gt;&gt;;
+
+function updateUser(id: string, payload: UpdateUserPayload) {
+  // api call...
+}</code></pre>
+</div>
+
+<h3>2. <code>Omit&lt;T, K&gt;</code></h3>
+
+<p>如果你只需要排除一两个字段，用 <code>Omit</code> 更方便。</p>
+<p>If you only need to exclude a few fields, <code>Omit</code> is easier.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// 创建新用户时，不需要 id 和 createdAt（后端生成）&#10;type CreateUserPayload = Omit&lt;User, 'id' | 'createdAt'&gt;;">Copy</button>
+  <pre><code class="language-typescript">// 创建新用户时，不需要 id 和 createdAt（后端生成）
+type CreateUserPayload = Omit&lt;User, 'id' | 'createdAt'&gt;;</code></pre>
+</div>
+
+<hr/>
+
+<h2>核心概念：Type Guards (类型守卫)</h2>
+
+<p>在处理联合类型（Union Types）或 <code>unknown</code>/<code>any</code> 时，TypeScript 需要你"证明"变量是某个特定类型，才能安全地访问其属性。</p>
+
+<p>When dealing with Union Types or <code>unknown</code>/<code>any</code>, TypeScript requires you to "prove" a variable is a specific type before accessing its properties.</p>
+
+<h3>1. <code>typeof</code> &amp; <code>in</code> (基础守卫)</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="function processValue(val: string | number | { data: string }) {&#10;  if (typeof val === 'string') {&#10;    return val.toUpperCase(); // TS 知道这里 val 是 string&#10;  }&#10;  &#10;  if (typeof val === 'number') {&#10;    return val.toFixed(2); // TS 知道这里 val 是 number&#10;  }&#10;&#10;  if (typeof val === 'object' &amp;&amp; val !== null &amp;&amp; 'data' in val) {&#10;    return val.data; // TS 知道这里 val 包含 data 属性&#10;  }&#10;}">Copy</button>
+  <pre><code class="language-typescript">function processValue(val: string | number | { data: string }) {
+  if (typeof val === 'string') {
+    return val.toUpperCase(); // TS 知道这里 val 是 string
+  }
+  
+  if (typeof val === 'number') {
+    return val.toFixed(2); // TS 知道这里 val 是 number
+  }
+
+  if (typeof val === 'object' &amp;&amp; val !== null &amp;&amp; 'data' in val) {
+    return val.data; // TS 知道这里 val 包含 data 属性
+  }
+}</code></pre>
+</div>
+
+<h3>2. 自定义 Type Guard (<code>is</code> 关键字)</h3>
+
+<p>当你需要把复杂的类型检查逻辑抽离成函数时，必须使用 <code>is</code> 谓词。</p>
+<p>When extracting complex type checks into a function, you must use the <code>is</code> predicate.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="interface Admin { role: 'admin'; privileges: string[] }&#10;interface Customer { role: 'user'; plan: string }&#10;&#10;type AppUser = Admin | Customer;&#10;&#10;// ❌ Bad: 返回 boolean，TS 调用后依然不知道 user 的具体类型&#10;function isAdminBad(user: AppUser): boolean {&#10;  return user.role === 'admin';&#10;}&#10;&#10;// ✅ Good: 返回 user is Admin，告诉 TS 如果为 true，user 就是 Admin&#10;function isAdminGood(user: AppUser): user is Admin {&#10;  return user.role === 'admin';&#10;}&#10;&#10;function handleUser(user: AppUser) {&#10;  if (isAdminGood(user)) {&#10;    console.log(user.privileges); // ✅ TS 知道这是 Admin&#10;  } else {&#10;    console.log(user.plan);       // ✅ TS 知道这是 Customer&#10;  }&#10;}">Copy</button>
+  <pre><code class="language-typescript">interface Admin { role: 'admin'; privileges: string[] }
+interface Customer { role: 'user'; plan: string }
+
+type AppUser = Admin | Customer;
+
+// ❌ Bad: 返回 boolean，TS 调用后依然不知道 user 的具体类型
+function isAdminBad(user: AppUser): boolean {
+  return user.role === 'admin';
+}
+
+// ✅ Good: 返回 user is Admin，告诉 TS 如果为 true，user 就是 Admin
+function isAdminGood(user: AppUser): user is Admin {
+  return user.role === 'admin';
+}
+
+function handleUser(user: AppUser) {
+  if (isAdminGood(user)) {
+    console.log(user.privileges); // ✅ TS 知道这是 Admin
+  } else {
+    console.log(user.plan);       // ✅ TS 知道这是 Customer
+  }
+}</code></pre>
+</div>
+
+<hr/>
+
+<h2>🧠 猜猜看 / Quick Quiz</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="interface Config {&#10;  theme: string;&#10;  timeout: number;&#10;}&#10;type ReadonlyConfig = Readonly&lt;Config&gt;;&#10;&#10;const conf: ReadonlyConfig = { theme: 'dark', timeout: 5000 };&#10;conf.theme = 'light';">Copy</button>
+  <pre><code class="language-typescript">interface Config {
+  theme: string;
+  timeout: number;
+}
+type ReadonlyConfig = Readonly&lt;Config&gt;;
+
+const conf: ReadonlyConfig = { theme: 'dark', timeout: 5000 };
+conf.theme = 'light';</code></pre>
+</div>
+<p>这段代码会发生什么？</p>
+<p>A) 正常运行，<code>conf.theme</code> 变成 'light'</p>
+<p>B) 编译报错，提示 <code>theme</code> 是只读属性</p>
+<p>C) 运行时报错</p>
+<p>D) 编译通过，但运行时 <code>theme</code> 不会改变</p>
+
+<p>&lt;details&gt;&lt;summary&gt;答案 / Answer&lt;/summary&gt;</p>
+<p><strong>B) 编译报错，提示 <code>theme</code> 是只读属性</strong></p>
+<p><code>Readonly&lt;T&gt;</code> 会把接口的所有属性都变成 <code>readonly</code>，防止意外修改。</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<table><thead><tr><th>❌ 错误做法</th><th>✅ 正确做法</th></tr></thead><tbody><tr><td>复制粘贴接口定义来创建 DTO</td><td>使用 <code>Pick</code>, <code>Omit</code>, <code>Partial</code> 派生类型</td></tr><tr><td>用 <code>as</code> 强行断言类型 (<code>val as Admin</code>)</td><td>使用 Type Guard (<code>isAdmin(val)</code>) 在运行时安全检查</td></tr><tr><td>自定义检查函数只返回 <code>boolean</code></td><td>使用 <code>user is Admin</code> 谓词，让 TS 编译器也能理解</td></tr></tbody></table>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li>https://www.typescriptlang.org/docs/handbook/utility-types.html</li><li>https://www.typescriptlang.org/docs/handbook/2/narrowing.html</li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>Utility Types 就像是乐高积木的模具。你有一个完整的汽车模型（User），你想做一个只有车轮和方向盘的模型（UpdatePayload），你不需要重新画图纸，只要用模具（Pick/Partial）把需要的部分切下来就行了。</p>
+
+<p>Type Guards 就像是俱乐部的保安。你拿着一张"可能是 VIP 也可能是普通会员"的卡（Union Type），保安（<code>typeof</code> / <code>is</code>）检查了你的卡，确认你是 VIP 后，才允许你进入 VIP 休息室（访问特定属性）。</p>
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 24: Chain of Thought & Reasoning</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI — Day 24: Chain of Thought &amp; Reasoning</h1>
+
+<blockquote>📊 Day 24 | Phase: Growth | Category: Techniques</blockquote>
+
+<hr/>
+
+<h2>直觉解释 / Intuitive Explanation</h2>
+
+<p>想象你问一个小学生："池塘里有 5 只青蛙，飞来 3 只鸟，又跳走 2 只青蛙，现在有几只动物？"</p>
+<p>如果他直接脱口而出"6只"，大概率是猜的。但如果他掰着手指算："5 只青蛙减去 2 只等于 3 只，加上 3 只鸟等于 6 只"，他就算对了。</p>
+
+<p><strong>Chain of Thought (CoT, 思维链)</strong> 就是让大语言模型（LLM）"掰着手指算"。它强迫模型在给出最终答案前，先一步一步写出中间的推理过程。</p>
+
+<p>Imagine asking a kid a math word problem. If they blurt out an answer immediately, it's a guess. If they work it out step-by-step ("5 frogs minus 2 is 3, plus 3 birds is 6"), they get it right.</p>
+
+<p><strong>Chain of Thought (CoT)</strong> forces Large Language Models (LLMs) to do exactly this: generate intermediate reasoning steps before outputting the final answer.</p>
+
+<hr/>
+
+<h2>它是如何工作的？/ How it Works</h2>
+
+<p>LLM 本质上是"接字游戏"（Next Token Prediction）。如果直接生成答案，它只有一次预测的机会。如果问题很复杂，一次预测很容易出错。</p>
+
+<p>CoT 通过让模型生成中间步骤，<strong>把一个复杂的大问题，拆解成了多个简单的小问题</strong>。每生成一个中间步骤（Token），模型就多了一次"思考"的时间，并且后续的生成可以基于前面已经写出的正确逻辑。</p>
+
+<p>LLMs are just predicting the next token. For complex problems, a single jump to the answer often fails. CoT breaks a hard problem into smaller, sequential token predictions. Each reasoning step acts as context for the next, dramatically improving accuracy on math, logic, and coding tasks.</p>
+
+<h3>两种常见形式 / Two Common Forms:</h3>
+
+<ol><li><strong>Zero-Shot CoT:</strong> 在 Prompt 结尾加上一句神奇的咒语：<strong>"Let's think step by step."</strong> (让我们一步一步思考)。</li><li><strong>Few-Shot CoT:</strong> 在 Prompt 里给模型提供几个带有完整推理过程的示例（Examples）。</li></ol>
+
+<hr/>
+
+<h2>应用场景 / Applications</h2>
+
+<ul><li><strong>复杂数学计算</strong> (Math word problems)</li><li><strong>逻辑推理</strong> (Logic puzzles, riddles)</li><li><strong>代码生成与 Debug</strong> (Planning architecture before coding)</li><li><strong>数据提取与分析</strong> (Explaining <em>why</em> a data point was chosen)</li></ul>
+
+<hr/>
+
+<h2>💻 Runnable Python Snippet</h2>
+
+<p>演示如何用 OpenAI API 实现 Zero-Shot CoT。</p>
+<p>Demonstrating Zero-Shot CoT with the OpenAI API.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# pip install openai&#10;import os&#10;from openai import OpenAI&#10;&#10;client = OpenAI(api_key=os.environ.get(&quot;OPENAI_API_KEY&quot;))&#10;&#10;problem = &quot;A juggler has 3 balls. He buys 2 more, loses 1, and finds 4. How many balls does he have?&quot;&#10;&#10;# ❌ Without CoT (Might guess wrong)&#10;# prompt = f&quot;Answer this: {problem}&quot;&#10;&#10;# ✅ With Zero-Shot CoT&#10;prompt = f&quot;Answer this: {problem}\n\nLet's think step by step.&quot;&#10;&#10;response = client.chat.completions.create(&#10;    model=&quot;gpt-3.5-turbo&quot;, # Or gpt-4&#10;    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}],&#10;    temperature=0&#10;)&#10;&#10;print(response.choices[0].message.content)&#10;# Expected Output:&#10;# 1. The juggler starts with 3 balls.&#10;# 2. He buys 2 more, so 3 + 2 = 5 balls.&#10;# 3. He loses 1, so 5 - 1 = 4 balls.&#10;# 4. He finds 4, so 4 + 4 = 8 balls.&#10;# The juggler has 8 balls.">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># pip install openai</span>
+<span style="color:#c678dd;">import</span> os
+<span style="color:#c678dd;">from</span> openai <span style="color:#c678dd;">import</span> OpenAI
+
+client = OpenAI(api_key=os.environ.get(<span style="color:#e5c07b;">"OPENAI_API_KEY"</span>))
+
+problem = <span style="color:#e5c07b;">"A juggler has 3 balls. He buys 2 more, loses 1, and finds 4. How many balls does he have?"</span>
+
+<span style="color:#5c6370;"># ❌ Without CoT (Might guess wrong)</span>
+<span style="color:#5c6370;"># prompt = f"Answer this: {problem}"</span>
+
+<span style="color:#5c6370;"># ✅ With Zero-Shot CoT</span>
+prompt = f<span style="color:#e5c07b;">"Answer this: {problem}\n\nLet's think step by step."</span>
+
+response = client.chat.completions.create(
+    model=<span style="color:#e5c07b;">"gpt-3.5-turbo"</span>, <span style="color:#5c6370;"># Or gpt-4</span>
+    messages=[{<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"user"</span>, <span style="color:#e5c07b;">"content"</span>: prompt}],
+    temperature=<span style="color:#56b6c2;">0</span>
+)
+
+print(response.choices[<span style="color:#56b6c2;">0</span>].message.content)
+<span style="color:#5c6370;"># Expected Output:</span>
+<span style="color:#5c6370;"># 1. The juggler starts with 3 balls.</span>
+<span style="color:#5c6370;"># 2. He buys 2 more, so 3 + 2 = 5 balls.</span>
+<span style="color:#5c6370;"># 3. He loses 1, so 5 - 1 = 4 balls.</span>
+<span style="color:#5c6370;"># 4. He finds 4, so 4 + 4 = 8 balls.</span>
+<span style="color:#5c6370;"># The juggler has 8 balls.</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li><a href="https://arxiv.org/abs/2201.11903">Chain-of-Thought Prompting Elicits Reasoning in Large Language Models (Wei et al., 2022)</a></li><li><a href="https://arxiv.org/abs/2205.11916">Large Language Models are Zero-Shot Reasoners (Kojima et al., 2022)</a></li><li>https://www.promptingguide.ai/techniques/cot</li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>考试的时候，老师为什么要求你写出"解题步骤"而不仅仅是最终答案？因为写步骤能帮你理清思路，不容易算错。CoT 就是让 AI 也在试卷上写出解题步骤。</p>
+
+<p>Why do math teachers tell you to "show your work"? Because writing down the steps prevents silly mistakes. CoT is just telling the AI to show its work before giving the final answer.</p>
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
