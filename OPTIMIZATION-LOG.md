@@ -94,3 +94,45 @@
 - Cron errors: improved (2 → 0) — Saturday cron error resolved, optimizer no longer timing out
 - Apr 9 history gap: unchanged (not actionable retroactively)
 - Overall: pipeline is in **healthy steady state** ✅
+
+## 2026-04-16 Optimization Run
+
+### Issues Found
+
+**P0 Critical:**
+- None. All 7 days (Apr 10–16) had content delivered via Telegram and email. Zero missed deliveries.
+
+**P1 Quality:**
+1. **backup-send cron timed out** — `consecutiveErrors: 1`, last error: "cron: job execution timed out". The job has a 120s `timeoutSeconds` but the LLM took 882s. This is a **pure bash** script — it shouldn't need an LLM at all. The cron prompt says "Run this command exactly as written and report the output" which invokes a shell script, but the agentTurn wrapping adds unnecessary overhead and makes it fragile. Today the review-and-send completed first (so backup-send correctly found nothing to do), but the timeout is still a failure state that triggers alerts. Should either increase timeout or convert to a non-LLM approach.
+2. **review-and-send duration spiked 2.3x** — 1145s (19 min) vs 493s last report. Still under 1200s timeout but only 55s of headroom. If it grows further, content delivery could fail. Likely caused by deeper QA review iterations. Worth monitoring.
+3. **Apr 9 email sent only 4 sections** (should be 5 for a weekday). Content was delivered, but one section may have been missing or merged. History has no entry for Apr 9 (known gap from previous report). This is an old issue but the 4-section email confirms something went wrong that day.
+4. **Git commit "Day 21" appears twice** (Apr 10 & Apr 12) — carryover from last report. Cosmetic only, content is correct.
+
+**P2 Maintenance:**
+1. **`openclaw cron list --json` parsing still broken** — JSONDecodeError in the bash data-gathering step. CLI output format may include non-JSON preamble. Non-blocking since the native cron API works fine.
+2. **Apr 11 (Sat) and Apr 12 (Sun) emails show `sections=1`** — This is correct behavior (deepdive and week-review are single-section emails), but the naming is slightly confusing. Not a bug.
+
+### Metrics
+- Delivery rate (7d): **7/7** ✅
+- Email delivery (7d): **7/7** ✅
+- Email delivery (14d): **14/14** ✅
+- Cron errors: **1** — backup-send timed out (not delivery-affecting)
+- State: Day 25, all indices advancing normally (review day today)
+- History entries: 25 total
+
+### Cron Health
+| Job | Last Duration | Status | Notes |
+|-----|--------------|--------|-------|
+| weekday | ~1117s (18.6min) | ✅ ok | |
+| review-and-send | 1145s (19.1min) | ✅ ok | ⚠️ Near 1200s timeout |
+| backup-send | 882s (timed out) | ❌ error | 120s timeout too low for LLM-wrapped shell |
+| saturday | 197s | ✅ ok | |
+| sunday | 193s | ✅ ok | |
+| optimizer | 76s | ✅ ok | |
+
+### Trend vs Last Run (Apr 13)
+- Delivery rate: stable (7/7 → 7/7) ✅
+- Cron errors: regressed (0 → 1) — backup-send timeout
+- review-and-send duration: concerning (493s → 1145s, +132%)
+- History completeness: improved (22 → 25 entries, continuous since Apr 10)
+- Overall: delivery pipeline **healthy** but backup-send and review-and-send durations need attention

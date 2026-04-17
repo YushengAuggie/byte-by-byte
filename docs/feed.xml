@@ -5,8 +5,744 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 16 Apr 2026 15:19:56 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 17 Apr 2026 15:10:33 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-17</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-17</guid>
+      <pubDate>Fri, 17 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 22</h2>
+<h2>设计自动补全 / Typeahead — Design an Autocomplete / Typeahead System</h2>
+
+<hr/>
+
+<h3>🌍 真实场景 / Real-World Scenario</h3>
+
+<p>想象你在谷歌搜索框里输入 &quot;how to&quot;，瞬间出现 10 条建议。这背后是什么？</p>
+<p><em>Imagine typing &quot;how to&quot; in Google&#x27;s search box and instantly seeing 10 suggestions. What&#x27;s behind it?</em></p>
+
+<p>每次用户输入一个字符，系统必须在 <strong>&lt;100ms</strong> 内返回最相关的补全结果。谷歌、YouTube、Amazon、GitHub 都有这个功能——它看似简单，工程上却很复杂。</p>
+<p><em>Each keystroke must return the most relevant completions in &lt;100ms. Google, YouTube, Amazon, GitHub all have this — it looks simple but is engineering-hard.</em></p>
+
+<hr/>
+
+<h3>🏛️ 架构图 / Architecture</h3>
+
+<pre><code>
+用户输入 &quot;app&quot;
+     │
+     ▼
+[Client] ──(debounce 50ms)──► [API Gateway]
+                                    │
+                         ┌──────────┴──────────┐
+                         ▼                     ▼
+                  [Cache Layer]         [Search Service]
+                  (Redis, TTL:5min)      │
+                                    ┌───┴────────────┐
+                                    ▼                ▼
+                              [Trie Store]    [ML Ranking]
+                              (Prefix Index)  (popularity,
+                                              personalization)
+                                    │
+                                    ▼
+                             [Data Pipeline]
+                             (Kafka → Spark)
+                             counts queries
+                             every 10 mins
+</code></pre>
+
+<p><strong>数据流 / Data Flow:</strong></p>
+<p>1. 用户输入 → 客户端 debounce 50ms（减少请求量）</p>
+<p>2. API Gateway → 先查 Redis cache</p>
+<p>3. Cache miss → Trie 查找 Top-K 前缀</p>
+<p>4. ML 模型 rerank（考虑个性化、地理位置）</p>
+<p>5. 日志写入 Kafka → Spark 定期更新 Trie 权重</p>
+
+<hr/>
+
+<h3>⚙️ 核心数据结构 / Core Data Structure: Trie</h3>
+
+<pre><code>
+             root
+           /  |  \
+          a   b   c
+         /|    \
+        p  r    e
+       /    \
+      p      o
+     /|       \
+    l  [end]   w
+   /            \
+  e               s
+  [end,&quot;apple,5&quot;]  [end,&quot;browse,3&quot;]
+</code></pre>
+
+<p>每个节点存储：</p>
+<p>- <code>children: dict</code></p>
+<p>- <code>is_end: bool</code></p>
+<p>- <code>top_k: list[{word, freq}]</code> ← <strong>预计算 Top-10，避免遍历</strong></p>
+
+<p><em>Each node stores precomputed Top-10 completions → avoids traversal on query.</em></p>
+
+<p><strong>关键优化：</strong> 每个节点缓存 Top-K，查询 O(prefix_length)，无需 DFS。</p>
+<p><em>Key optimization: cache Top-K at each node, query is O(prefix_length), no DFS needed.</em></p>
+
+<hr/>
+
+<h3>⚖️ 核心权衡 / Key Tradeoffs</h3>
+
+<p>| 决策 | 选项 A | 选项 B | 选择 |</p>
+<p>|------|--------|--------|------|</p>
+<p>| 存储结构 | Trie (prefix-native) | Inverted index (Elastic) | Trie for latency, ES for fuzzy |</p>
+<p>| 更新频率 | 实时 (每次搜索) | 批量 (每10分钟) | 批量—实时代价太高 |</p>
+<p>| 个性化 | 全局热榜 | 用户历史 | 两者结合 |</p>
+<p>| 多语言 | Unicode Trie | 语言分片 | 按语言分片 |</p>
+
+<p><strong>为什么不实时更新 Trie？</strong></p>
+<p>每次搜索都更新 Trie 需要全局锁，QPS 百万级时会变成瓶颈。批量更新（每10分钟）是工程实际选择。</p>
+<p><em>Why not real-time Trie updates? Global locks at million QPS become a bottleneck. Batch updates every 10 min is the engineering reality.</em></p>
+
+<hr/>
+
+<h3>🚫 别踩这个坑 / Common Mistakes</h3>
+
+<p><strong>❌ 坑1: 忘记 debounce</strong></p>
+<p>每次 keypress 都发请求 → 用户输入 &quot;apple&quot; = 5 个请求。加 debounce 50~100ms，节省 80% 请求。</p>
+<p><em>Not debouncing = 5 requests for &quot;apple&quot;. Add debounce 50-100ms, saves 80% of requests.</em></p>
+
+<p><strong>❌ 坑2: Trie 存完整路径</strong></p>
+<p>只存 top-K 在每个节点，不要在查询时做完整 DFS。</p>
+<p><em>Store top-K at each node, don&#x27;t do full DFS at query time.</em></p>
+
+<p><strong>❌ 坑3: 忘记限速</strong></p>
+<p>恶意用户可以爆破搜索建议接口。Rate limit + IP 封锁必须有。</p>
+<p><em>Malicious users can hammer the suggest endpoint. Rate limiting is non-negotiable.</em></p>
+
+<p><strong>❌ 坑4: 大写/Unicode 不一致</strong></p>
+<p>输入 &quot;Apple&quot; vs &quot;apple&quot; 应该返回一样结果。存储前统一 lowercase + normalize。</p>
+<p><em>&quot;Apple&quot; and &quot;apple&quot; should return same results. Normalize to lowercase before storing.</em></p>
+
+<hr/>
+
+<h3>📐 规模估算 / Scale Numbers</h3>
+
+<p>- DAU: 10M 用户</p>
+<p>- 平均每次搜索 5 次 keypress → 50M 建议请求/天</p>
+<p>- QPS: ~600 req/s（峰值 2000）</p>
+<p>- Trie 大小: 英文词典 ~100K 词 → ~50MB（可放内存）</p>
+<p>- Cache hit rate: 60%（热词覆盖大量请求）</p>
+
+<hr/>
+
+<h3>📚 深入阅读 / References</h3>
+
+<p>1. [System Design Primer — Autocomplete](https://github.com/donnemartin/system-design-primer) — 经典参考</p>
+<p>2. [Designing Instagram&#x27;s Typeahead Search](https://instagram-engineering.com/search-architecture-eeb34a936d3a) — 真实案例</p>
+<p>3. [Trie Data Structure — NeetCode](https://neetcode.io/courses/advanced-algorithms/14) — Trie 详解</p>
+
+<hr/>
+
+<h3>🧒 ELI5 (像我5岁一样解释)</h3>
+
+<p>想象你有一本超大的电话簿，里面有所有可能的词。每次你写一个字母，电话簿就帮你翻到那一页，显示最热门的词。为了不让你等太久，电话簿提前把每一页最热门的10个词写在页眉上了！</p>
+<p><em>Imagine a giant phonebook. Each letter you type, the book flips to that page and shows the top 10 popular words it already wrote at the top of the page — no searching needed!</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 23</h2>
+<h2>#150 Evaluate Reverse Polish Notation (Medium) — Stack Pattern</h2>
+
+<hr/>
+
+<p>🧩 <strong>Stack 模式 (3/7)</strong> — 基于 Day 21 (Valid Parentheses) 和 Day 24 (Min Stack) 的模版</p>
+
+<p>上次 Min Stack 用栈<strong>存最小值</strong>，这次用栈<strong>做运算</strong>——同样的工具，不同的用途。</p>
+<p><em>Last time (Min Stack) we used the stack to track minimums; this time we use it to evaluate — same tool, different job.</em></p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+
+<p>- 🔗 [LeetCode #150](https://leetcode.com/problems/evaluate-reverse-polish-notation/) 🟡 Medium</p>
+<p>- 📹 [NeetCode Video](https://www.youtube.com/watch?v=iu0082c4HDE)</p>
+
+<hr/>
+
+<h3>🌍 现实类比 / Real-World Analogy</h3>
+
+<p>逆波兰表达式（RPN）是计算器的内部语言。当你在科学计算器上按 <code>3 4 + 2 *</code>，计算器内部其实就是在用栈处理 RPN。Forth 语言、PostScript 都基于 RPN。</p>
+<p><em>RPN is the internal language of calculators. When you press <code>3 4 + 2 </em></code> on a scientific calculator, it&#x27;s processing RPN with a stack internally. Forth, PostScript are all RPN-based.*</p>
+
+<hr/>
+
+<h3>🧩 问题 / Problem</h3>
+
+<p>给你一个字符串数组，表示逆波兰表达式：</p>
+<p><em>Given a string array representing a Reverse Polish Notation expression:</em></p>
+
+<pre><code>
+Input: [&quot;2&quot;,&quot;1&quot;,&quot;+&quot;,&quot;3&quot;,&quot;*&quot;]
+Output: 9
+Explanation: ((2 + 1) * 3) = 9
+
+Input: [&quot;4&quot;,&quot;13&quot;,&quot;5&quot;,&quot;/&quot;,&quot;+&quot;]
+Output: 6
+Explanation: (4 + (13 / 5)) = 6
+</code></pre>
+
+<p><strong>规则 / Rules:</strong> 遇到数字 → 入栈；遇到运算符 → 弹出两个数计算 → 结果入栈。</p>
+<p><em>Rule: number → push; operator → pop two, compute, push result.</em></p>
+
+<hr/>
+
+<h3>🗺️ 映射到模版 / Map to Template</h3>
+
+<p><strong>通用栈模版：</strong> 遍历 → 条件判断 → push 或 pop</p>
+<p><strong>这道题的变化：</strong> 不是找&quot;下一个更大元素&quot;，而是把数字当操作数，遇到运算符就出栈计算</p>
+
+<pre><code>
+stack = []
+for token in tokens:
+    if token is NUMBER:
+        stack.append(int(token))     # push
+    else:
+        b = stack.pop()              # 注意顺序！b是后弹出的
+        a = stack.pop()              # a是先弹出的（先入栈的）
+        result = apply(a, op, b)
+        stack.append(result)         # push result back
+return stack[0]
+</code></pre>
+
+<p><strong>关键陷阱 / Key Trap:</strong> 弹出顺序！<code>a - b</code> 中，a 是先入栈的（先到达），所以：</p>
+<p>先 pop b（后到），再 pop a（先到），计算 <code>a op b</code>。</p>
+<p><em>Pop order matters! For <code>a - b</code>: a was pushed first, so pop b first, then a.</em></p>
+
+<hr/>
+
+<h3>🐍 Python 解法 / Solution</h3>
+
+<pre><code>
+def evalRPN(tokens: list[str]) -&gt; int:
+    stack = []
+    ops = {
+        &#x27;+&#x27;: lambda a, b: a + b,
+        &#x27;-&#x27;: lambda a, b: a - b,
+        &#x27;*&#x27;: lambda a, b: a * b,
+        &#x27;/&#x27;: lambda a, b: int(a / b)  # truncate toward zero (not //!)
+    }
+    
+    for token in tokens:
+        if token in ops:
+            b = stack.pop()   # second operand (pushed last)
+            a = stack.pop()   # first operand (pushed first)
+            stack.append(ops[token](a, b))
+        else:
+            stack.append(int(token))
+    
+    return stack[0]
+
+# Trace: [&quot;2&quot;,&quot;1&quot;,&quot;+&quot;,&quot;3&quot;,&quot;*&quot;]
+# &quot;2&quot; → stack: [2]
+# &quot;1&quot; → stack: [2, 1]
+# &quot;+&quot; → pop 1,2 → 2+1=3 → stack: [3]
+# &quot;3&quot; → stack: [3, 3]
+# &quot;*&quot; → pop 3,3 → 3*3=9 → stack: [9]
+# return 9 ✓
+</code></pre>
+
+<p><strong>注意 <code>/</code> 的处理！</strong></p>
+<p>Python <code>//</code> 向负无穷截断：<code>-7 // 2 = -4</code></p>
+<p>题目要求向零截断：<code>-7 / 2 = -3</code></p>
+<p>所以用 <code>int(a / b)</code>，不用 <code>a // b</code>！</p>
+<p><em>Python <code>//</code> truncates toward negative infinity, but the problem wants truncation toward zero. Use <code>int(a/b)</code> not <code>a//b</code>!</em></p>
+
+<hr/>
+
+<h3>📊 复杂度 / Complexity</h3>
+
+<p>- <strong>时间 Time:</strong> O(n) — 每个 token 处理一次</p>
+<p>- <strong>空间 Space:</strong> O(n) — 栈最大存 n/2 个数字</p>
+
+<hr/>
+
+<h3>🔄 举一反三 / Pattern Block: Stack (3/7)</h3>
+
+<p>| 题目 | 栈的用途 | 关键变化 |</p>
+<p>|------|---------|---------|</p>
+<p>| #20 Valid Parentheses | 匹配括号 | 用栈检查匹配 |</p>
+<p>| #155 Min Stack | 追踪最小值 | 额外辅助栈 |</p>
+<p>| <strong>#150 RPN</strong> ← 今天 | <strong>操作数暂存</strong> | <strong>pop 顺序陷阱</strong> |</p>
+<p>| #22 Generate Parentheses | 生成有效括号 | DFS + 栈思维 |</p>
+<p>| #739 Daily Temperatures | 单调栈 | 找下一个更大 |</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>1. [LeetCode #150 — Evaluate Reverse Polish Notation](https://leetcode.com/problems/evaluate-reverse-polish-notation/)</p>
+<p>2. [NeetCode — Stack Playlist](https://www.youtube.com/watch?v=iu0082c4HDE)</p>
+<p>3. [Wikipedia — Reverse Polish Notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象你在排队买东西，每次看到数字就记下来（放进口袋）。看到加减乘除号，就从口袋里掏出最后两个数字算完再放回去。最后口袋里只剩一个数，就是答案！</p>
+<p><em>Imagine a queue: see a number → put in pocket. See an operator → take out last 2 numbers, compute, put result back. When done, one number left in pocket = answer!</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 22</h2>
+<h2>成长型思维 / Growth Mindset</h2>
+<h3>题目：告诉我你收到了一次很难听的反馈。你是怎么应对的？</h3>
+<h3>*Tell me about a time you received tough feedback. How did you respond?*</h3>
+
+<hr/>
+
+<h3>🎯 为什么这道题很重要 / Why This Matters</h3>
+
+<p>这道题考察的不是你有没有犯过错，而是你<strong>如何面对批评</strong>。</p>
+<p>Senior/Staff 工程师的标志之一：能从批评中学习，而不是防御或逃避。</p>
+<p>面试官在看：自我认知、情绪成熟度、持续改进的能力。</p>
+
+<p><em>This question doesn&#x27;t test whether you made mistakes — it tests how you handle criticism. A marker of Senior/Staff engineers: learning from feedback instead of defending or deflecting. Interviewers look for: self-awareness, emotional maturity, capacity to grow.</em></p>
+
+<hr/>
+
+<h3>⭐ STAR 框架 / STAR Breakdown</h3>
+
+<p><strong>S — Situation（背景）:</strong></p>
+<p>设置具体场景。是代码评审？设计评审？绩效评估？</p>
+<p>避免模糊的 &quot;有一次我的老板批评了我&quot;。</p>
+<p><em>Set a specific context. Code review? Design review? Performance review? Avoid vague &quot;my manager criticized me once.&quot;</em></p>
+
+<p><strong>T — Task（任务）:</strong></p>
+<p>你当时做的是什么项目/决策？</p>
+<p><em>What were you working on or what decision had you made?</em></p>
+
+<p><strong>A — Action（行动）:</strong></p>
+<p>这是关键！要展示：</p>
+<p>1. 你<strong>冷静地接受</strong>了反馈（没有立刻防御）</p>
+<p>2. 你<strong>主动寻求理解</strong>（问了澄清问题）</p>
+<p>3. 你<strong>具体做出了改变</strong></p>
+<p><em>This is the key! Show: 1) You received feedback calmly (no immediate defensiveness), 2) You sought to understand (asked clarifying questions), 3) You made concrete changes.</em></p>
+
+<p><strong>R — Result（结果）:</strong></p>
+<p>量化结果 + 长期影响（你从中学到了什么习惯？）</p>
+<p><em>Quantify the result + long-term impact (what habit did you develop?)</em></p>
+
+<hr/>
+
+<h3>❌ 差答案 vs ✅ 好答案 / Bad vs Good</h3>
+
+<p><strong>❌ 差答案:</strong></p>
+<p>&gt; &quot;有一次我老板说我沟通不好，我就多发了些邮件，后来他满意了。&quot;</p>
+
+<p>问题：太模糊、没有自我反思、没有展示成长。</p>
+<p><em>Too vague, no self-reflection, no demonstrated growth.</em></p>
+
+<hr/>
+
+<p><strong>✅ 好答案 (Sample):</strong></p>
+
+<p>&gt; &quot;在做一个后端服务重构时，我的 Tech Lead 在代码评审中说我的 PR 很难 review——改动超过 2000 行，没有原子化。我当时第一反应是有点委屈，因为我觉得改动是连贯的。</p>
+<p>&gt;</p>
+<p>&gt; 但我没有立刻反驳，而是先问他：&#x27;你觉得最难理解的是哪部分？&#x27; 他指出我把接口变更和实现变更混在一起了。</p>
+<p>&gt;</p>
+<p>&gt; 我重新把 PR 拆成 4 个：接口定义 → 数据层 → 业务逻辑 → 集成测试。每个 PR 独立可测试。</p>
+<p>&gt;</p>
+<p>&gt; 结果 review 时间从 3 天缩短到 1 天，后来团队把&#x27;PR ≤ 400 行&#x27;写进了我们的开发规范。这个习惯我现在每个项目都在用。&quot;</p>
+
+<p><strong>为什么好：</strong> 具体场景、初始情绪诚实、主动提问理解根因、行动可量化、有长期影响。</p>
+<p><em>Why it works: specific scenario, honest about initial emotion, proactively sought root cause, quantifiable action, lasting impact.</em></p>
+
+<hr/>
+
+<h3>💎 Senior/Staff 加分项 / Senior/Staff Tips</h3>
+
+<p><strong>展示元认知 (metacognition):</strong></p>
+<p>&gt; &quot;那次反馈让我意识到，我倾向于在「把东西做完」和「让别人容易理解」之间优先前者。这是一个我持续在调整的倾向。&quot;</p>
+
+<p><strong>展示你帮助他人成长:</strong></p>
+<p>&gt; &quot;后来我成为了团队的 code review mentorship 负责人，把这个经验传给了新人。&quot;</p>
+
+<p><strong>避免假谦虚:</strong></p>
+<p>不要说 &quot;我最大的缺点是工作太努力了&quot;——面试官会翻白眼。</p>
+<p><em>Don&#x27;t say &quot;my biggest weakness is working too hard&quot; — interviewers will roll their eyes.</em></p>
+
+<hr/>
+
+<h3>🗝️ 关键要点 / Key Takeaways</h3>
+
+<p>1. <strong>诚实 &gt; 完美</strong> — 展示真实的成长比假装从不犯错更有说服力</p>
+<p>2. <strong>行动比情绪重要</strong> — 你感受到委屈是正常的，关键是你做了什么</p>
+<p>3. <strong>量化长期影响</strong> — 把个人成长转化为团队/系统改进</p>
+<p>4. <strong>成长型思维的核心：</strong> 失败是数据，不是定义</p>
+
+<p><em>1. Honest &gt; Perfect — real growth &gt; pretending perfection. 2. Action &gt; Emotion — feeling stung is normal, what matters is what you did. 3. Quantify long-term impact. 4. Growth mindset core: failure is data, not identity.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>1. [Radical Candor — Kim Scott](https://www.radicalcandor.com/) — 给予和接受反馈的经典框架</p>
+<p>2. [Mindset: The New Psychology of Success — Carol Dweck](https://www.amazon.com/Mindset-Psychology-Carol-S-Dweck/dp/0345472322) — 成长型思维原著</p>
+<p>3. [The STAR Method — Indeed](https://www.indeed.com/career-advice/interviewing/how-to-use-the-star-interview-response-technique) — STAR 答题法详解</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像在游戏里输了一局，好的玩家不会摔手柄，而是看录像找出哪里操作失误了，然后练习那个技能。面试官想看到的就是：你是那个会复盘的玩家。</p>
+<p><em>Like losing a game: a good player doesn&#x27;t rage-quit, they watch the replay to find the mistake and practice that skill. Interviewers want to see: are you the player who reviews the tape?</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 22</h2>
+<h2>TypeScript Generics 深度解析 — 构建类型安全的 API Client</h2>
+<h2>*TypeScript Generics Deep Dive — Build a Type-Safe API Client*</h2>
+
+<hr/>
+
+<h3>🌍 真实场景 / Real Scenario</h3>
+
+<p>你在做一个 dashboard，需要从多个 API 端点获取数据：<code>/api/users</code>、<code>/api/orders</code>、<code>/api/products</code>。</p>
+<p>每个端点返回不同的数据类型，但 fetch 逻辑相同（error handling、token、timeout）。</p>
+<p>不用 Generics 的话，你要写 3 个几乎相同的函数——有了 Generics，只写 1 个。</p>
+
+<p><em>You&#x27;re building a dashboard fetching from multiple API endpoints. Each returns different data shapes but the fetch logic is identical. Without Generics: 3 near-identical functions. With Generics: 1.</em></p>
+
+<hr/>
+
+<h3>💡 从基础到实战 / From Basic to Production</h3>
+
+<p><strong>❌ 没有 Generics 的痛苦:</strong></p>
+
+<pre><code>
+// Must duplicate for every type — painful!
+async function fetchUsers(): Promise&lt;User[]&gt; {
+  const res = await fetch(&#x27;/api/users&#x27;);
+  return res.json();
+}
+async function fetchOrders(): Promise&lt;Order[]&gt; {
+  const res = await fetch(&#x27;/api/orders&#x27;);
+  return res.json();  // copy-paste hell
+}
+</code></pre>
+
+<p><strong>✅ 用 Generic 函数:</strong></p>
+
+<pre><code>
+// T = Type variable, filled in at call site
+async function fetchData&lt;T&gt;(url: string): Promise&lt;T&gt; {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json() as T;
+}
+
+// Usage — TypeScript infers the return type!
+const users = await fetchData&lt;User[]&gt;(&#x27;/api/users&#x27;);   // users: User[]
+const order = await fetchData&lt;Order&gt;(&#x27;/api/orders/1&#x27;); // order: Order
+</code></pre>
+
+<hr/>
+
+<h3>🏗️ 进阶：类型安全的 API Client / Production API Client</h3>
+
+<pre><code>
+// Define the shape of all your API endpoints
+interface ApiRoutes {
+  &#x27;/api/users&#x27;: User[];
+  &#x27;/api/orders&#x27;: Order[];
+  &#x27;/api/products&#x27;: Product[];
+}
+
+// Generic client with endpoint type inference
+class ApiClient {
+  private baseUrl: string;
+  private token: string;
+
+  constructor(baseUrl: string, token: string) {
+    this.baseUrl = baseUrl;
+    this.token = token;
+  }
+
+  // K extends keyof ApiRoutes — K must be a valid route key
+  // ApiRoutes[K] — the return type is determined by the route
+  async get&lt;K extends keyof ApiRoutes&gt;(
+    endpoint: K
+  ): Promise&lt;ApiRoutes[K]&gt; {
+    const res = await fetch(`${this.baseUrl}${endpoint}`, {
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    if (!res.ok) throw new Error(`Failed: ${endpoint}`);
+    return res.json();
+  }
+}
+
+const client = new ApiClient(&#x27;https://api.example.com&#x27;, &#x27;my-token&#x27;);
+
+// TypeScript KNOWS the return type from the endpoint string!
+const users = await client.get(&#x27;/api/users&#x27;);   // User[] — no type annotation needed!
+const orders = await client.get(&#x27;/api/orders&#x27;); // Order[] — inferred!
+// client.get(&#x27;/api/invalid&#x27;); // ❌ TypeScript ERROR! Not in ApiRoutes
+</code></pre>
+
+<p><strong>魔法在哪？</strong> TypeScript 用 <code>K extends keyof ApiRoutes</code> 把字符串和类型绑定在一起，让 IDE 自动补全 URL 路径，同时推断返回类型。</p>
+<p><em>The magic: <code>K extends keyof ApiRoutes</code> binds string literals to types, giving IDE autocomplete on URLs AND inferring return types.</em></p>
+
+<hr/>
+
+<h3>🤔 猜猜这段代码的类型 / What&#x27;s the type?</h3>
+
+<pre><code>
+function firstOrDefault&lt;T&gt;(arr: T[], defaultValue: T): T {
+  return arr.length &gt; 0 ? arr[0] : defaultValue;
+}
+
+const result = firstOrDefault([1, 2, 3], 0);
+</code></pre>
+
+<p><strong>A)</strong> <code>result: number</code></p>
+<p><strong>B)</strong> <code>result: number | undefined</code></p>
+<p><strong>C)</strong> <code>result: unknown</code></p>
+<p><strong>D)</strong> <code>result: T</code> (literal T)</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+<p><strong>A) <code>result: number</code></strong> ✅</p>
+
+<p>TypeScript 从参数推断 T = number（因为 arr 是 number[]，defaultValue 是 0），所以返回类型是 number。不需要显式写 <code>firstOrDefault&lt;number&gt;(...)</code>——TypeScript 自动推断！</p>
+<p><em>TypeScript infers T = number from the arguments (number[] and 0), so return type is number. No need to write <code>firstOrDefault&lt;number&gt;(...)</code> explicitly — inference handles it!</em></p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>⚖️ 常见模式对比 / Common Generic Patterns</h3>
+
+<pre><code>
+// ✅ Constrained Generic — T must have .length
+function longest&lt;T extends { length: number }&gt;(a: T, b: T): T {
+  return a.length &gt;= b.length ? a : b;
+}
+longest(&quot;hello&quot;, &quot;hi&quot;);       // ✅ strings have .length
+longest([1, 2], [1]);         // ✅ arrays have .length
+longest(10, 20);              // ❌ numbers don&#x27;t have .length
+
+// ✅ Generic with default
+function createPair&lt;T = string&gt;(a: T, b: T): [T, T] {
+  return [a, b];
+}
+createPair(&quot;x&quot;, &quot;y&quot;);    // T inferred as string
+createPair(1, 2);        // T inferred as number
+createPair();            // Uses default: T = string (TS error without args though)
+
+// ✅ Utility type using Generics (built into TypeScript)
+type Partial&lt;T&gt; = { [K in keyof T]?: T[K] };  // Make all fields optional
+type Required&lt;T&gt; = { [K in keyof T]-?: T[K] }; // Make all fields required
+type Pick&lt;T, K extends keyof T&gt; = { [P in K]: T[P] }; // Pick subset of keys
+</code></pre>
+
+<hr/>
+
+<h3>🎯 何时用 / 何时不用 / When to Use vs Avoid</h3>
+
+<p><strong>✅ 用 Generics 当:</strong></p>
+<p>- 多个函数/类逻辑相同，只是类型不同</p>
+<p>- 你想保留类型信息（不想用 <code>any</code>）</p>
+<p>- 构建可复用的库/工具函数</p>
+
+<p><strong>❌ 不要过度使用:</strong></p>
+<p>- 简单函数强行加 Generic → 代码变复杂但没收益</p>
+<p>- 类型约束太复杂 → 用 overloads 更清晰</p>
+<p>- 只用一次的类型 → 直接写具体类型</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>1. [TypeScript Handbook — Generics](https://www.typescriptlang.org/docs/handbook/2/generics.html) — 官方文档</p>
+<p>2. [Matt Pocock — TypeScript Generics](https://www.totaltypescript.com/tutorials/typescript-generics) — 最好的 TS 教程之一</p>
+<p>3. [TypeScript Deep Dive — Generics](https://basarat.gitbook.io/typescript/type-system/generics) — 深度讲解</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>泛型就像饭店里的通用容器。不管是装汤还是装沙拉，容器的形状是一样的，只是里面的东西不同。<code>function eat&lt;T&gt;(food: T)</code> 就是这个通用容器——你告诉它装什么，它就知道里面是什么。</p>
+<p><em>Generics are like a restaurant&#x27;s all-purpose container. Whether it holds soup or salad, same container shape, different contents. <code>function eat&lt;T&gt;(food: T)</code> is that container — you tell it what&#x27;s inside, and it knows.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 26</h2>
+<h2>AI Agents：ReAct、工具调用与规划</h2>
+<h2>*AI Agents: ReAct, Tool Use, and Planning*</h2>
+
+<hr/>
+
+<h3>🧠 什么是 AI Agent？/ What Is an AI Agent?</h3>
+
+<p>普通 LLM：你问 → 它答 → 结束。一次性的。</p>
+<p><em>Regular LLM: you ask → it answers → done. One-shot.</em></p>
+
+<p>AI Agent：<strong>目标 → 思考 → 行动 → 观察 → 再思考 → 再行动…</strong> 直到完成目标。</p>
+<p><em>AI Agent: <strong>goal → think → act → observe → think again → act again…</strong> until goal achieved.</em></p>
+
+<p>关键区别：Agent 可以<strong>使用工具</strong>（搜索、代码执行、数据库查询）并<strong>自主规划多步骤</strong>任务。</p>
+<p><em>Key difference: Agents can <strong>use tools</strong> (search, code execution, DB queries) and <strong>autonomously plan multi-step</strong> tasks.</em></p>
+
+<hr/>
+
+<h3>🔄 ReAct 框架 / The ReAct Framework</h3>
+
+<p>ReAct = <strong>Re</strong>asoning + <strong>Act</strong>ing</p>
+<p>来源：2022 年论文 [&quot;ReAct: Synergizing Reasoning and Acting in Language Models&quot;](https://arxiv.org/abs/2210.03629)</p>
+
+<p><strong>循环 / The Loop:</strong></p>
+
+<pre><code>
+┌─────────────────────────────────────────┐
+│  Goal: &quot;Find the CEO of OpenAI and      │
+│         their most recent tweet&quot;        │
+└─────────────────────┬───────────────────┘
+                      │
+        ┌─────────────▼─────────────┐
+        │  THOUGHT: I need to search │
+        │  for OpenAI&#x27;s current CEO  │
+        └─────────────┬─────────────┘
+                      │
+        ┌─────────────▼─────────────┐
+        │  ACTION: search(&quot;OpenAI   │
+        │  CEO 2024&quot;)               │
+        └─────────────┬─────────────┘
+                      │
+        ┌─────────────▼─────────────┐
+        │  OBSERVATION: &quot;Sam Altman  │
+        │  is CEO of OpenAI&quot;        │
+        └─────────────┬─────────────┘
+                      │
+        ┌─────────────▼─────────────┐
+        │  THOUGHT: Now I need to   │
+        │  find his latest tweet    │
+        └─────────────┬─────────────┘
+                      │
+        ┌─────────────▼─────────────┐
+        │  ACTION: search(&quot;Sam      │
+        │  Altman latest tweet&quot;)    │
+        └─────────────┬─────────────┘
+                      │
+        ┌─────────────▼─────────────┐
+        │  OBSERVATION: [tweet...] │
+        └─────────────┬─────────────┘
+                      │
+        ┌─────────────▼─────────────┐
+        │  ANSWER: &quot;Sam Altman is   │
+        │  CEO. His latest tweet...&quot; │
+        └───────────────────────────┘
+</code></pre>
+
+<p><strong>为什么有效？</strong> 思考（CoT）让模型推理，行动让它获取外部信息，观察让它根据现实反馈修正计划。</p>
+<p><em>Why it works: Thinking (CoT) enables reasoning; Actions gather real-world data; Observations allow course correction.</em></p>
+
+<hr/>
+
+<h3>🛠️ 工具调用 / Tool Use</h3>
+
+<p>现代 LLM（GPT-4, Claude, Gemini）支持 <strong>function calling</strong>：模型决定何时调用哪个工具。</p>
+
+<pre><code>
+# Define tools the agent can use
+tools = [
+    {
+        &quot;name&quot;: &quot;web_search&quot;,
+        &quot;description&quot;: &quot;Search the web for current information&quot;,
+        &quot;parameters&quot;: {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;query&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;description&quot;: &quot;Search query&quot;}
+            }
+        }
+    },
+    {
+        &quot;name&quot;: &quot;run_python&quot;,
+        &quot;description&quot;: &quot;Execute Python code and return output&quot;,
+        &quot;parameters&quot;: {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;code&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;description&quot;: &quot;Python code to run&quot;}
+            }
+        }
+    }
+]
+
+# pip install openai
+import openai
+
+client = openai.OpenAI()
+
+response = client.chat.completions.create(
+    model=&quot;gpt-4o&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What&#x27;s 1234 * 5678?&quot;}],
+    tools=tools,
+    tool_choice=&quot;auto&quot;  # Model decides whether to use a tool
+)
+
+# Model returns: use run_python with code=&quot;print(1234 * 5678)&quot;
+# You execute the tool, send result back, model gives final answer
+print(response.choices[0].message.tool_calls)
+</code></pre>
+
+<p><strong>关键点：</strong> 模型<strong>建议</strong>调用工具，<strong>你的代码</strong>实际执行它——安全边界在这里！</p>
+<p><em>Key: the model <strong>suggests</strong> tool calls, <strong>your code</strong> actually executes them — the safety boundary is here!</em></p>
+
+<hr/>
+
+<h3>📐 规划模式 / Planning Patterns</h3>
+
+<p>| 模式 | 描述 | 适用场景 |</p>
+<p>|------|------|---------|</p>
+<p>| <strong>ReAct</strong> | 交替思考+行动 | 信息检索、研究任务 |</p>
+<p>| <strong>Plan-and-Execute</strong> | 先整体规划，再逐步执行 | 复杂多步骤任务 |</p>
+<p>| <strong>Reflexion</strong> | 执行后反思，自我纠错 | 代码生成、写作 |</p>
+<p>| <strong>Multi-Agent</strong> | 多个 Agent 协作分工 | 大规模复杂任务 |</p>
+
+<hr/>
+
+<h3>🌍 2026 年趋势 / 2026 Trends</h3>
+
+<p>- <strong>Google 开源了官方 terminal agent</strong>（April 2026），内置 ReAct 循环</p>
+<p>- <strong>LangGraph、LlamaIndex</strong> 提供预构建的 ReAct agent 模块，快速落地</p>
+<p>- <strong>生产就绪挑战：</strong> 幂等性（工具重复调用结果一致）+ durable checkpoints（保存 agent 状态）</p>
+<p>- <strong>个人 AI Agent 预测：</strong> 自动改签机票、重排日程、下订单——复杂规划的实际落地</p>
+
+<p><em>Sources: [IBM ReAct Agent](https://www.ibm.com/think/topics/react-agent), [Goldman Sachs 2026 AI Predictions](https://www.goldmansachs.com/insights/articles/what-to-expect-from-ai-in-2026-personal-agents-mega-alliances), [ByteByteGo AI Trends](https://blog.bytebytego.com/p/whats-next-in-ai-five-trends-to-watch)</em></p>
+
+<hr/>
+
+<h3>⚠️ Agent 的挑战 / Challenges</h3>
+
+<p><strong>😱 失控问题：</strong> Agent 可能无限循环或采取意外行动 → 需要 <strong>max_iterations</strong> 限制</p>
+<p><strong>💸 成本问题：</strong> 每次 Thought-Action-Observation 都消耗 tokens，多步任务很贵</p>
+<p><strong>🔒 安全问题：</strong> Prompt injection 攻击（恶意网页内容欺骗 agent）是真实威胁</p>
+<p><strong>🐌 速度问题：</strong> 串行规划很慢；多 Agent 并行是方向</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>1. [ReAct Paper (arXiv)](https://arxiv.org/abs/2210.03629) — 原始论文</p>
+<p>2. [LangGraph — Agent Frameworks](https://www.langchain.com/langgraph) — 实用框架</p>
+<p>3. [IBM — What is a ReAct Agent?](https://www.ibm.com/think/topics/react-agent) — 概念讲解</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>AI Agent 就像一个会自己查资料的助手。你说&quot;帮我订机票&quot;，它不是直接回答，而是：想一下需要什么信息 → 去查机票网站 → 看结果 → 再想 → 再查 → 最后告诉你最好的选择。和普通 AI 的区别是它会&quot;自己动手&quot;！</p>
+<p><em>An AI Agent is like an assistant who can look things up themselves. You say &quot;book me a flight&quot; — instead of just answering, it thinks → searches → reads results → thinks again → searches more → tells you the best option. Unlike regular AI: it takes action!</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-16</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
