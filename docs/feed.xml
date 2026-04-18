@@ -5,8 +5,122 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 17 Apr 2026 15:10:33 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 18 Apr 2026 15:06:32 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-18</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-18</guid>
+      <pubDate>Sat, 18 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Design a News Feed (Twitter/Facebook) (15 min read)</strong></p>
+<p>📊 NeetCode: 23/150 · SysDesign: 22/40 · Behavioral: 22/40 · Frontend: 22/50 · AI: 11/30</p>
+<p>🔥 26-day streak!</p>
+
+<h2>Overview / 概述</h2>
+<p>Designing a news feed is a classic system design interview question. It tests your ability to handle massive scale, balance read/write heavy workloads, and make trade-offs between latency and consistency.</p>
+<p>设计信息流（News Feed）是一道经典的系统设计面试题。它考察你处理海量并发、平衡读写重负载以及在延迟和一致性之间做出权衡的能力。</p>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+<p>At its core, a news feed system has two main flows:</p>
+<p>1. <strong>Feed Publishing (Fan-out):</strong> When a user publishes a post, it must be pushed to all their followers&#x27; feeds.</p>
+<p>2. <strong>Feed Retrieval:</strong> When a user opens the app, they retrieve their pre-computed or on-the-fly generated feed.</p>
+
+<p><strong>Fan-out on Write (Push Model):</strong> Pre-compute the feed during the write phase. Fast reads, but slow writes for users with millions of followers (Justin Bieber problem).</p>
+<p><strong>Fan-out on Read (Pull Model):</strong> Generate the feed when the user requests it. Fast writes, but slow reads.</p>
+<p><strong>Hybrid Model:</strong> Push for normal users, pull for celebrities.</p>
+
+<p>核心理论包括两个主要流程：</p>
+<p>1. <strong>发布（Fan-out）：</strong> 用户发布动态时，推送到所有粉丝的信息流中。</p>
+<p>2. <strong>读取：</strong> 用户打开应用时，获取预先计算好或实时生成的信息流。</p>
+
+<p><strong>写时扩散（推模式）：</strong> 在写入时预先计算信息流。读取快，但对于拥有数百万粉丝的用户（如明星）写入极慢。</p>
+<p><strong>读时扩散（拉模式）：</strong> 在用户请求时生成信息流。写入快，但读取慢。</p>
+<p><strong>混合模式：</strong> 普通用户使用推模式，明星使用拉模式。</p>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<pre><code>
+[Client] --&gt; [Load Balancer] --&gt; [Web Servers]
+                                      |
+                 +--------------------+--------------------+
+                 |                                         |
+        [Post Service]                              [Feed Service]
+                 |                                         |
+        [Fan-out Workers]                           [Feed Cache (Redis)]
+                 |                                         |
+    +------------+------------+                            |
+    |                         |                            |
+[Post DB]               [Graph DB]                 [User Feed DB]
+(Cassandra)             (Followers)                (Cassandra/Redis)
+</code></pre>
+
+<p><strong>Flow Trace:</strong></p>
+<p>1. User A posts a message -&gt; Post Service.</p>
+<p>2. Post Service saves to Post DB, sends event to Fan-out Workers.</p>
+<p>3. Fan-out Workers fetch User A&#x27;s followers from Graph DB.</p>
+<p>4. Workers push the post ID to each follower&#x27;s Feed Cache.</p>
+<p>5. User B (a follower) requests feed -&gt; Feed Service.</p>
+<p>6. Feed Service reads User B&#x27;s Feed Cache (list of post IDs), fetches post details from Post DB, and returns to Client.</p>
+
+<p><strong>代码模拟 (Python-like Pseudocode):</strong></p>
+<pre><code>
+class NewsFeedSystem:
+    def __init__(self):
+        self.post_db = {}       # post_id -&gt; post_data
+        self.feed_cache = {}    # user_id -&gt; list of post_ids
+        self.followers_db = {}  # user_id -&gt; list of follower_ids
+        
+    def publish_post(self, user_id, post_id, content):
+        # 1. Save post
+        self.post_db[post_id] = {&quot;author&quot;: user_id, &quot;content&quot;: content}
+        
+        # 2. Fan-out (Push model)
+        followers = self.followers_db.get(user_id, [])
+        for follower in followers:
+            if follower not in self.feed_cache:
+                self.feed_cache[follower] = []
+            # Prepend to feed cache
+            self.feed_cache[follower].insert(0, post_id)
+            
+    def get_feed(self, user_id):
+        # 1. Fetch post IDs from cache
+        post_ids = self.feed_cache.get(user_id, [])
+        
+        # 2. Hydrate posts
+        feed = []
+        for pid in post_ids:
+            feed.append(self.post_db[pid])
+        return feed
+</code></pre>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+<p>- <strong>The Celebrity Problem (Hotkey issue):</strong> A celebrity with 100M followers posting a tweet will crash the fan-out workers. Use a hybrid approach: don&#x27;t push celebrity posts; instead, when a user loads their feed, pull the celebrity&#x27;s recent posts and merge them.</p>
+<p>- <strong>Cache Eviction:</strong> Only keep the top ~1000 posts in the Redis feed cache. Older posts can be fetched from the database if the user scrolls that far.</p>
+
+<p>- <strong>明星问题（热点问题）：</strong> 拥有上亿粉丝的明星发帖会压垮 Fan-out 工作节点。解决方案是混合模式：不主动推送明星的帖子，而是在用户刷信息流时，拉取明星的最新帖子并进行合并。</p>
+<p>- <strong>缓存淘汰：</strong> Redis 中只保留最近的 1000 条动态。如果用户继续向下滚动，再从数据库中读取。</p>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+<p>- <strong>Twitter / X:</strong> Uses a massive Redis cluster for timeline caching. They heavily optimize the fan-out process for different tiers of users.</p>
+<p>- <strong>Instagram / Facebook:</strong> Uses similar hybrid models but with complex machine learning ranking algorithms on top of the chronological feed.</p>
+
+<p>- <strong>Twitter / X：</strong> 使用庞大的 Redis 集群进行时间线缓存，并针对不同层级的用户深度优化 fan-out 流程。</p>
+<p>- <strong>Instagram / Facebook：</strong> 使用类似的混合模式，但在时间线基础上增加了复杂的机器学习排序算法。</p>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+<p>1. <strong>Q: How do you handle media (images/videos) in posts?</strong></p>
+<p>A: Store media in object storage (S3) and use a CDN. The Post DB only stores URLs to the media.</p>
+<p>2. <strong>Q: What database is best for storing the feed?</strong></p>
+<p>A: Cassandra or DynamoDB (NoSQL) is excellent for heavy write workloads and time-series data.</p>
+<p>3. <strong>Q: How do you implement feed ranking (non-chronological)?</strong></p>
+<p>A: The feed service passes the fetched posts to a Ranking Service (ML model) before returning them to the user.</p>
+<p>4. <strong>Q: What happens if a fan-out worker fails?</strong></p>
+<p>A: Use a message queue (Kafka/RabbitMQ) for fan-out tasks. If a worker dies, another worker picks up the unacknowledged message.</p>
+<p>5. <strong>Q: How to reduce memory usage in the feed cache?</strong></p>
+<p>A: Store only <code>[post_id, user_id]</code> in the cache, not the full post content. Hydrate the content during the read phase.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-17</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
