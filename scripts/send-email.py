@@ -451,6 +451,22 @@ def load_subscribers(repo_dir, config):
                     if line.lower() not in [s.lower() for s in subscribers]:
                         subscribers.append(line)
 
+    # Filter out unsubscribed addresses
+    unsub_file = os.path.join(repo_dir, 'unsubscribed.txt')
+    if os.path.exists(unsub_file):
+        with open(unsub_file) as f:
+            unsubscribed = set()
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '@' in line:
+                    unsubscribed.add(line.lower())
+        if unsubscribed:
+            before = len(subscribers)
+            subscribers = [s for s in subscribers if s.lower() not in unsubscribed]
+            removed = before - len(subscribers)
+            if removed:
+                print('  🚫 Removed {} unsubscribed address(es)'.format(removed))
+
     return subscribers
 
 def validate_email_content(sections_html, plain_parts):
