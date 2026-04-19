@@ -62,6 +62,7 @@ Every lesson is written in both Chinese and English — not translated, but **na
 
 ### 🌐 Sharing & Growth
 - **Email subscribers** — Anyone can [subscribe via Google Form](https://forms.gle/UJw1YPmzsA4mKRHK6) — auto-delivered daily
+- **One-click unsubscribe** — [Unsubscribe form](https://forms.gle/L7B3EJDQF1vgmuX88) linked in every email footer
 - **GitHub Pages site** — Beautiful dark-mode landing page
 - **RSS feed** — Subscribe at `docs/feed.xml`
 - **Archive browser** — Browsable HTML for every past day
@@ -215,6 +216,8 @@ Most algorithm courses teach one random problem per day. That doesn't work — y
 ### Option 1: Subscribe to email (easiest)
 
 [**Subscribe here**](https://forms.gle/UJw1YPmzsA4mKRHK6) — one beautiful HTML email with all 5 sections, delivered daily. Free.
+
+Want to stop? [Unsubscribe here](https://forms.gle/L7B3EJDQF1vgmuX88) — instant, no questions asked.
 
 ### Option 2: Browse online
 
