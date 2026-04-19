@@ -451,21 +451,56 @@ def load_subscribers(repo_dir, config):
                     if line.lower() not in [s.lower() for s in subscribers]:
                         subscribers.append(line)
 
-    # Filter out unsubscribed addresses
+    # Filter out unsubscribed addresses (Google Sheet + local file)
+    unsubscribed = set()
+
+    # Source A: Unsubscribe Google Sheet CSV
+    unsub_csv_url = config.get('UNSUBSCRIBE_CSV_URL', '')
+    if unsub_csv_url:
+        try:
+            import urllib.request
+            import csv
+            import io
+            import ssl
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            req = urllib.request.Request(unsub_csv_url, headers={'User-Agent': 'byte-by-byte/1.0'})
+            with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
+                text = resp.read().decode('utf-8')
+            reader = csv.reader(io.StringIO(text))
+            header = next(reader, None)
+            email_col = 0
+            if header:
+                for i, col in enumerate(header):
+                    if 'email' in col.lower():
+                        email_col = i
+                        break
+            for row in reader:
+                if len(row) > email_col:
+                    email = row[email_col].strip()
+                    if email and '@' in email:
+                        unsubscribed.add(email.lower())
+            if unsubscribed:
+                print('  📋 Loaded {} unsubscribe(s) from Google Sheet'.format(len(unsubscribed)))
+        except Exception as e:
+            print('  ⚠️  Could not fetch unsubscribe sheet: {}'.format(e))
+
+    # Source B: Local unsubscribed.txt (manual additions)
     unsub_file = os.path.join(repo_dir, 'unsubscribed.txt')
     if os.path.exists(unsub_file):
         with open(unsub_file) as f:
-            unsubscribed = set()
             for line in f:
                 line = line.strip()
                 if line and not line.startswith('#') and '@' in line:
                     unsubscribed.add(line.lower())
-        if unsubscribed:
-            before = len(subscribers)
-            subscribers = [s for s in subscribers if s.lower() not in unsubscribed]
-            removed = before - len(subscribers)
-            if removed:
-                print('  🚫 Removed {} unsubscribed address(es)'.format(removed))
+
+    if unsubscribed:
+        before = len(subscribers)
+        subscribers = [s for s in subscribers if s.lower() not in unsubscribed]
+        removed = before - len(subscribers)
+        if removed:
+            print('  🚫 Removed {} unsubscribed address(es)'.format(removed))
 
     return subscribers
 
@@ -624,22 +659,22 @@ def main():
     {sections}
     <div class="footer">
         <p>🧠 <a href="https://github.com/YushengAuggie/byte-by-byte">byte-by-byte</a> — open source daily learning</p>
+        <p style="margin-top:8px;"><small><a href="{unsub_url}">Unsubscribe</a> from byte-by-byte</small></p>
     </div>
 </div>
 </body>
-</html>'''.format(css=CSS, today=today, toc=toc_links, sections=section_blocks)
+</html>'''.format(css=CSS, today=today, toc=toc_links, sections=section_blocks,
+            unsub_url=config.get('UNSUBSCRIBE_FORM_URL', '#'))
 
     # Build plain text fallback
     plain_text = 'byte-by-byte - {}\n\n'.format(today)
     plain_text += '\n\n---\n\n'.join(plain_parts)
     plain_text += '\n\n---\nA little bit every day. A lot over time.'
-    plain_text += "\n\nReply to this email with 'UNSUBSCRIBE' to stop receiving byte-by-byte"
-
-    # Add unsubscribe note to HTML footer
-    full_html = full_html.replace(
-        'open source daily learning</p>',
-        "open source daily learning<br><small>Reply to this email with 'UNSUBSCRIBE' to stop receiving byte-by-byte</small></p>"
-    )
+    unsub_url = config.get('UNSUBSCRIBE_FORM_URL', '')
+    if unsub_url:
+        plain_text += '\n\nUnsubscribe: {}'.format(unsub_url)
+    else:
+        plain_text += "\n\nReply to this email with 'UNSUBSCRIBE' to stop receiving byte-by-byte"
 
     # Send to all recipients
     socket.setdefaulttimeout(20)
