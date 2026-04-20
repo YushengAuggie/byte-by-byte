@@ -136,3 +136,46 @@
 - review-and-send duration: concerning (493s → 1145s, +132%)
 - History completeness: improved (22 → 25 entries, continuous since Apr 10)
 - Overall: delivery pipeline **healthy** but backup-send and review-and-send durations need attention
+
+## 2026-04-19 Optimization Run
+
+### Issues Found
+
+**P0 Critical:**
+- None. All 7 days (Apr 13–19) had content delivered via Telegram and email. Zero missed deliveries.
+
+**P1 Quality:**
+1. **Apr 17 email sent only 4 sections** (should be 5 for a weekday). All 5 archive files exist and are well-sized (4820–7602 bytes), so the `send-email.py` script likely failed to include one section. This is a recurring pattern (also happened Apr 9). Needs investigation in the email script.
+2. **Apr 14 missing QA report** — content was delivered (5 sections in archive, 5 sections in email log) but no `qa-report.md` was written. Either the review-and-send cron skipped QA reporting or it was a transient issue. Content quality appears fine based on subsequent days.
+3. **Sunday generate cron took 29 minutes** (1743s) — this is 3x longer than previous Sunday runs (~193s last report). The `review-and-send` cron that runs after it has a 1200s timeout. If the generate cron delays or overlaps, review-and-send could start before content is ready. Today it succeeded, but this spike is concerning.
+4. **`openclaw cron list --json` parsing still broken** — JSONDecodeError in the bash data-gathering step. Non-blocking (native cron API works), but the optimizer's Step 0 bash script gets incomplete cron error data.
+
+**P2 Maintenance:**
+1. **3 historical weekday gaps** in state history: Mar 30, Apr 3, Apr 9. These are old and not actionable retroactively.
+2. **Duplicate git commits** for Day 26 (Apr 19): `973474f` and `56174b7` both say "Day 26 (2026-04-19)". Cosmetic only.
+3. **backup-send cron** has recovered from last report's timeout issue — now running clean (11.9s, status=ok). Previous timeout was due to LLM overhead on a pure bash task.
+
+### Metrics
+- Delivery rate (7d): **7/7** ✅
+- Email delivery (7d): **7/7** ✅
+- Cron errors (active): **0** (all 6 jobs last status = ok)
+- State: Day 26, all indices advancing normally
+- History entries: 27 total, 3 legacy gaps (not recent)
+
+### Cron Health
+| Job | Last Duration | Status | Notes |
+|-----|--------------|--------|-------|
+| weekday | — (next Mon) | ✅ ok | |
+| review-and-send | 217s (3.6min) | ✅ ok | Improved from 1145s last report |
+| backup-send | 12s | ✅ ok | Recovered from timeout |
+| saturday | 189s | ✅ ok | |
+| sunday | 1743s (29min) | ✅ ok | ⚠️ 9x spike vs last run (193s) |
+| optimizer | — (this run) | ✅ ok | |
+
+### Trend vs Last Run (Apr 16)
+- Delivery rate: stable (7/7 → 7/7) ✅
+- Cron errors: improved (1 → 0) — backup-send recovered
+- review-and-send duration: improved (1145s → 217s) ✅
+- Sunday generate duration: regressed (193s → 1743s) ⚠️ needs monitoring
+- Apr 17 email 4-section issue: new P1 (same pattern as Apr 9)
+- Overall: pipeline is **healthy** but Apr 17 email section count and Sunday duration spike need attention

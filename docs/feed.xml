@@ -5,8 +5,559 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 19 Apr 2026 16:12:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 20 Apr 2026 17:19:43 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-20</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-20</guid>
+      <pubDate>Mon, 20 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<p>📊 NeetCode: 23/150 · SysDesign: 22/40 · Behavioral: 22/40 · Frontend: 22/50 · AI: 11/30</p>
+<p>🔥 1-day streak!</p>
+
+<p>🏗️ <strong>系统设计 / System Design</strong></p>
+<h2>设计新闻流（Twitter / Facebook）/ Design a News Feed</h2>
+
+<h2>1) 场景 / Scenario</h2>
+<p>想象你在做一个社交 App：</p>
+<p>- 用户关注很多人</p>
+<p>- 打开首页要看到“关注的人最新动态”（按时间倒序）</p>
+<p>- 需要：快速打开、可无限下拉、支持发帖/删帖、支持隐私（拉黑/仅好友）</p>
+
+<p>You’re building a social app:</p>
+<p>- Users follow many accounts</p>
+<p>- Home timeline shows recent posts from followees (reverse chronological)</p>
+<p>- Requirements: fast load, infinite scroll, post/delete, privacy (blocks / friends-only)</p>
+
+<hr/>
+
+<h2>2) 关键 API / Core APIs</h2>
+<p>- <code>POST /posts</code> 创建动态 / create post</p>
+<p>- <code>POST /follow</code> 关注 / follow</p>
+<p>- <code>GET /feed?cursor=...</code> 拉取首页流 / fetch feed</p>
+<p>- <code>DELETE /posts/{id}</code> 删除动态 / delete</p>
+
+<hr/>
+
+<h2>3) 两种主流方案 / Two common approaches</h2>
+<h3>A. Fanout-on-write（写入时推送）</h3>
+<p>发帖时把这条 post “复制/投递”到所有粉丝的 inbox/feed 存储。</p>
+
+<p>Pros:</p>
+<p>- 读快：<code>GET /feed</code> 只扫自己的 inbox</p>
+
+<p>Cons:</p>
+<p>- 写放大：大 V 发帖会写爆</p>
+<p>- 需要异步队列 + 回压</p>
+
+<h3>B. Fanout-on-read（读取时拉取）</h3>
+<p>读首页时：查自己关注列表 → 拉取每个关注者的最近 posts → 合并排序（k-way merge）。</p>
+
+<p>Pros:</p>
+<p>- 写轻：发帖只写一份</p>
+
+<p>Cons:</p>
+<p>- 读慢：关注很多人时合并开销大</p>
+<p>- 需要缓存/预计算</p>
+
+<p>现实里通常是 <strong>混合</strong>：普通用户 fanout-on-write；大 V / 名人用 fanout-on-read 或“部分推送”。</p>
+
+<p>In practice it’s hybrid: push for normal users; pull (or partial push) for celebrities.</p>
+
+<hr/>
+
+<h2>4) 推荐架构（混合）/ Suggested architecture (Hybrid)</h2>
+
+<pre><code>
+          +-------------------+
+Client --&gt;|  API Gateway      |
+          +---------+---------+
+                    |
+          +---------v---------+
+          |  Feed Service     |&lt;-------------------+
+          +----+---------+----+                    |
+               |         |                         |
+   (read path) |         | (write path)            |
+               |         v                         |
+        +------v--+   +--+----------------+        |
+        |  Cache  |   |  Post Service     |        |
+        | (Redis) |   +--+----------------+        |
+        +----+----+      |                         |
+             |           v                         |
+             |     +-----+------+                  |
+             |     |  Post Store | (Cassandra/LSM)  |
+             |     +-----+------+                  |
+             |           |                         |
+             |           v                         |
+             |     +-----+------+      +-----------+--------+
+             |     |  MQ / Log  |-----&gt;| Fanout Workers     |
+             |     | (Kafka)    |      | (async push)       |
+             |     +------------+      +-----------+--------+
+             |                                     |
+             |                                     v
+             |                           +---------+--------+
+             +--------------------------&gt;|  Inbox Store      |
+                                         | (per user feed)   |
+                                         +------------------+
+</code></pre>
+
+<p>关键点 / Key ideas:</p>
+<p>- <strong>Post Store</strong>：存权威 post（可按 authorId + time 索引）</p>
+<p>- <strong>Inbox Store</strong>：每个用户一个“收件箱时间线”（只存 postId + ts + authorId）</p>
+<p>- <strong>MQ</strong>：解耦发帖与推送；可重放、可扩容</p>
+<p>- <strong>Cache</strong>：热点用户首页、关注列表、作者最新 posts</p>
+
+<hr/>
+
+<h2>5) 读路径 / Read path (GET /feed)</h2>
+<p>1. 先查 Redis：是否有缓存的第一页（或 cursor 对应页）</p>
+<p>2. 没命中：从 Inbox Store 取 <code>N</code> 条（按时间倒序），拿到 postIds</p>
+<p>3. 批量去 Post Store / Cache 取 post 内容（MGET / batch)</p>
+<p>4. 过滤隐私（block / friends-only）并返回</p>
+
+<p>Cursor 设计：用 <code>(lastTimestamp, lastPostId)</code> 做稳定翻页，避免 offset 分页在插入/删除时乱跳。</p>
+
+<hr/>
+
+<h2>6) 写路径 / Write path (POST /posts)</h2>
+<p>1. 写入 Post Store（生成 snowflake/UUID）</p>
+<p>2. 投递事件到 Kafka：<code>PostCreated(postId, authorId, ts)</code></p>
+<p>3. Fanout worker：</p>
+<p>- 取 author 的 followers</p>
+<p>- 对普通作者：批量写入 followers 的 Inbox Store</p>
+<p>- 对大 V：不 fanout（只写作者自己的 “author timeline”）</p>
+
+<hr/>
+
+<h2>7) 关键取舍 / Key tradeoffs</h2>
+<p>- <strong>读延迟 vs 写放大</strong>：push 读快但写爆；pull 写轻但读慢</p>
+<p>- <strong>一致性</strong>：首页允许 eventual consistency（秒级延迟可接受）</p>
+<p>- <strong>存储成本</strong>：inbox 只存指针（postId），否则成本爆炸</p>
+<p>- <strong>名人策略</strong>：按 follower 数阈值切换策略（并动态调整）</p>
+
+<hr/>
+
+<h2>8) 常见坑 / Common mistakes</h2>
+<p>- 只做 fanout-on-write：遇到“大 V”直接写入风暴</p>
+<p>- Inbox 存全量 post 内容：重复数据导致存储/回填困难</p>
+<p>- 用 offset 分页：新帖插入后翻页错乱、重复/漏读</p>
+<p>- 忽视隐私与删除：需要支持“撤回/删除”传播（tombstone + read-time filter）</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>把新闻流想成“报纸投递”：</p>
+<p>- <strong>推送</strong>：作者一发文章，就把报纸送到每个订阅者门口（读很快，但送货很累）。</p>
+<p>- <strong>拉取</strong>：你想看时自己去每个作者家门口拿最新报纸，再拼成一份（写很轻，但你得跑很多家）。</p>
+<p>所以现实里：普通作者直接投递；大明星让你来取。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://www.hellointerview.com/learn/system-design/answer-keys/design-twitter</p>
+<p>- https://www.hellointerview.com/learn/system-design/answer-keys/design-facebook-news-feed</p>
+<p>- https://kafka.apache.org/documentation/</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<p>📊 NeetCode: 23/150 · SysDesign: 22/40 · Behavioral: 22/40 · Frontend: 22/50 · AI: 11/30</p>
+<p>🔥 1-day streak!</p>
+
+<p>💻 <strong>算法 / Algorithms</strong> — #22 Generate Parentheses (Medium) — Stack</p>
+
+<p>🧩 <strong>Stack (4/7)</strong> — building on the template from Day 1</p>
+<p>今天这题和“括号匹配 / Valid Parentheses”同属一类：<strong>用栈表示“当前还没闭合的结构”</strong>。不同点是：</p>
+<p>- Valid Parentheses 是“验证”</p>
+<p>- Generate Parentheses 是“生成所有合法结果”</p>
+
+<p>Today is in the same family as Valid Parentheses: use a stack to represent “currently open structures”. Difference:</p>
+<p>- Valid Parentheses = verify</p>
+<p>- Generate Parentheses = generate all valid sequences</p>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/generate-parentheses/ 🟡</p>
+<p>📹 NeetCode: https://www.youtube.com/watch?v=s9fokUqJ76A</p>
+
+<hr/>
+
+<h2>1) 现实类比 / Real-world analogy</h2>
+<p>把它想成写代码时的“自动补全括号”功能：你打了 <code>(</code>，编辑器知道你欠一个 <code>)</code>；但为了不出错，任何时候都不能让 <code>)</code> 的数量超过 <code>(</code>。</p>
+
+<p>Think of an editor auto-completing parentheses: every <code>(</code> creates a debt of <code>)</code>; you can never close more than you opened.</p>
+
+<hr/>
+
+<h2>2) 问题重述 / Restate</h2>
+<p>给定 n 对括号，生成所有长度 2n 的字符串，使得任意前缀里 <code>(</code> 数量 ≥ <code>)</code> 数量，且最终 <code>(</code> == <code>)</code>。</p>
+
+<p>Given n pairs, generate all length-2n strings such that for every prefix, opens ≥ closes, and total opens == closes.</p>
+
+<hr/>
+
+<h2>3) 映射到模式 / Map to the pattern</h2>
+<p>这里的“栈”不一定真的要存字符（也可以只用计数），关键是它代表：</p>
+<p>- <code>stack</code> 里有多少个“还没关掉的左括号”</p>
+
+<p>So the “stack” conceptually is the number of unmatched <code>(</code>.</p>
+
+<p>生成规则（约束驱动）：</p>
+<p>- 还能放 <code>(</code>：当 <code>open &lt; n</code></p>
+<p>- 还能放 <code>)</code>：当 <code>close &lt; open</code>（否则会出现非法前缀）</p>
+
+<hr/>
+
+<h2>4) Python 解法（回溯 + 栈含义）/ Python solution (Backtracking)</h2>
+<pre><code>
+from typing import List
+
+class Solution:
+    def generateParenthesis(self, n: int) -&gt; List[str]:
+        res: List[str] = []
+
+        def dfs(open_cnt: int, close_cnt: int, path: List[str]) -&gt; None:
+            # open_cnt: number of &#x27;(&#x27; used
+            # close_cnt: number of &#x27;)&#x27; used
+            # stack size == open_cnt - close_cnt (unmatched opens)
+            if open_cnt == n and close_cnt == n:
+                res.append(&#x27;&#x27;.join(path))
+                return
+
+            # Option 1: add &#x27;(&#x27; if we still can
+            if open_cnt &lt; n:
+                path.append(&#x27;(&#x27;)
+                dfs(open_cnt + 1, close_cnt, path)
+                path.pop()
+
+            # Option 2: add &#x27;)&#x27; only if it won&#x27;t break validity
+            if close_cnt &lt; open_cnt:
+                path.append(&#x27;)&#x27;)
+                dfs(open_cnt, close_cnt + 1, path)
+                path.pop()
+
+        dfs(0, 0, [])
+        return res
+</code></pre>
+
+<h3>小 trace / Mini trace (n=3)</h3>
+<p>- start: open=0 close=0 path=&quot;&quot;</p>
+<p>- add &quot;(&quot;: open=1 close=0 path=&quot;(&quot;</p>
+<p>- add &quot;(&quot;: open=2 close=0 path=&quot;((&quot;</p>
+<p>- add &quot;)&quot;: open=2 close=1 path=&quot;(()&quot;  ✅（因为 close &lt; open）</p>
+<p>- ...</p>
+
+<p>核心：任何时刻都保证 <code>close_cnt &lt;= open_cnt</code>，这等价于“栈从不变成负数”。</p>
+
+<p>Key: maintain <code>close_cnt &lt;= open_cnt</code> always (stack never negative).</p>
+
+<hr/>
+
+<h2>5) 复杂度 / Complexity</h2>
+<p>- 时间：输出规模主导，结果数是第 n 个 Catalan 数 <code>C_n</code>，大约 <code>O(C_n * n)</code>（每个字符串长度 2n）</p>
+<p>- 空间：递归深度 <code>O(n)</code> + 输出</p>
+
+<p>Time is output-dominated: ~<code>O(C_n * n)</code>. Space <code>O(n)</code> (excluding output).</p>
+
+<hr/>
+
+<h2>6) 举一反三（同一模式块）/ Transfer (same pattern block)</h2>
+<p>- #20 Valid Parentheses：栈匹配（验证）</p>
+<p>- #150 Evaluate RPN：栈求值（表达式）</p>
+<p>- #739 Daily Temperatures：单调栈（找下一个更大元素）</p>
+<p>- #84 Largest Rectangle：单调栈（结算区间）</p>
+
+<p>同一个“Stack”家族里，核心都是：<strong>把“未完成的东西”压栈，遇到触发条件就出栈结算</strong>。</p>
+
+<p>Across the Stack family, the idea is: push unfinished work, pop when a condition resolves it.</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>你在搭积木：</p>
+<p>- 放 <code>(</code> 就像搭一层楼</p>
+<p>- 放 <code>)</code> 就像关掉一层楼</p>
+<p>规则是：你不能先关楼再建楼，所以 <code>)</code> 只能在已经有没关的 <code>(</code> 时出现。</p>
+
+<p>Like building floors: you can’t close a floor that wasn’t opened.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://leetcode.com/problems/generate-parentheses/</p>
+<p>- https://neetcode.io/problems/generate-parentheses</p>
+<p>- https://en.wikipedia.org/wiki/Catalan_number</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<p>📊 NeetCode: 23/150 · SysDesign: 22/40 · Behavioral: 22/40 · Frontend: 22/50 · AI: 11/30</p>
+<p>🔥 1-day streak!</p>
+
+<p>🗣️ <strong>软技能 / Soft Skills</strong></p>
+<h2>如何在新团队建立信任？/ How do you build trust with a new team?</h2>
+
+<h2>为什么重要 / Why this matters</h2>
+<p>中文：在新团队里，信任不是“人好就有”，而是一个<strong>降低协作摩擦的系统</strong>：大家相信你会按时交付、沟通透明、在关键时刻站得住。</p>
+
+<p>English: Trust reduces coordination cost. People rely on you to deliver, communicate clearly, and act predictably under pressure.</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR breakdown</h2>
+<h3>S (Situation)</h3>
+<p>中文：刚加入团队/跨组接手一个服务，代码和 ownership 都不熟，大家担心你会“乱改”。</p>
+
+<p>English: You join a new team or inherit a service; ownership is unclear and people fear risky changes.</p>
+
+<h3>T (Task)</h3>
+<p>中文：在不打扰团队节奏的前提下，快速形成可靠产出，并让关键同事愿意与你协作。</p>
+
+<p>English: Become productive without disrupting flow, and earn collaboration from key partners.</p>
+
+<h3>A (Action)</h3>
+<p>中文（可直接照着说，偏 Senior/Staff）：</p>
+<p>1. <strong>先对齐“成功定义”</strong>：1:1 问清楚本季度最重要的指标、风险点、谁是决策者。</p>
+<p>2. <strong>用小而稳的交付建立信用</strong>：先做一两个低风险改动（修 bug、补监控、改善 oncall runbook），在 PR 里解释“为什么”。</p>
+<p>3. <strong>默认透明</strong>：写 short design doc / RFC，记录 tradeoff；在 standup 里讲进展 + 阻塞 + 下一步。</p>
+<p>4. <strong>让别人更容易跟你合作</strong>：缩短 review turnaround；把复杂问题拆成可并行的 task；把“需要谁决定什么”写清楚。</p>
+<p>5. <strong>遇到问题先扛责再复盘</strong>：出事故时先稳定系统、同步影响面，再做 blameless postmortem。</p>
+
+<p>English:</p>
+<p>1. Align on what “success” means (metrics, risks, decision makers).</p>
+<p>2. Build credibility with small, low-risk wins (bugfixes, monitoring, runbooks) and explain the “why” in PRs.</p>
+<p>3. Default to transparency (short RFCs, tradeoffs, steady status updates).</p>
+<p>4. Make collaboration easy (fast reviews, parallelizable tasks, explicit decisions needed).</p>
+<p>5. In incidents: stabilize first, communicate clearly, then run a blameless postmortem.</p>
+
+<h3>R (Result)</h3>
+<p>中文：你会得到两类信任：</p>
+<p>- <strong>执行力信任</strong>（你说到做到）</p>
+<p>- <strong>判断力信任</strong>（你做的选择是靠谱的）</p>
+
+<p>English: You earn both execution trust (you deliver) and judgment trust (your decisions are sound).</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good（示例回答对比）/ Bad vs Good</h2>
+<p>❌ 中文：</p>
+<p>“我会多和大家沟通，努力融入团队。”（太空、不可验证）</p>
+
+<p>✅ 中文：</p>
+<p>“前两周我先做两件事：补齐关键指标监控 + 写 oncall runbook，并在每个 PR 里把风险和 rollback 写清楚。第三周开始我会发一个 1 页的 feed latency 优化 RFC，列出 2 个方案和 tradeoff，请 tech lead 做决策。”</p>
+
+<p>❌ English:</p>
+<p>“I communicate a lot and try to fit in.” (vague)</p>
+
+<p>✅ English:</p>
+<p>“In the first two weeks I shipped monitoring + an oncall runbook, and every PR included risk + rollback. In week three I proposed a 1-page latency RFC with two options and tradeoffs for the TL to decide.”</p>
+
+<hr/>
+
+<h2>Senior / Staff 加分点 / Senior/Staff tips</h2>
+<p>- 中文：<strong>把信任当成 SLO</strong>：可预测的节奏（updates、designs、rollbacks）就是可靠性。</p>
+<p>- 中文：<strong>用“决策日志”建立判断力</strong>：记录你为什么选 A 不选 B，半年后复盘你是否在提升。</p>
+<p>- English: Treat trust like an SLO: predictable cadence beats charisma.</p>
+<p>- English: Keep a decision log to demonstrate and improve judgment.</p>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+<p>- 中文：信任=可预测 + 透明 + 稳定交付。</p>
+<p>- 中文：先小胜建立信用，再啃硬骨头。</p>
+<p>- English: Trust = predictability + transparency + delivery.</p>
+<p>- English: Start with small wins, then tackle the hard problems.</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>中文：你刚加入新班级，大家不认识你。你先按时交作业、说话算数、遇到问题会解释清楚，大家自然就信你。</p>
+
+<p>English: In a new class, you earn trust by doing what you say, on time, and explaining things clearly.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://staffeng.com/guides/staff-archetypes/</p>
+<p>- https://www.pmcouncil.org/insights/psychological-safety/</p>
+<p>- https://hbr.org/2019/01/the-fundamental-attribution-error</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<p>📊 NeetCode: 23/150 · SysDesign: 22/40 · Behavioral: 22/40 · Frontend: 22/50 · AI: 11/30</p>
+<p>🔥 1-day streak!</p>
+
+<p>🎨 <strong>前端 / Frontend</strong></p>
+<h2>Closures &amp; Lexical Scope — JS Interview Classic</h2>
+
+<h2>场景 / Scenario</h2>
+<p>中文：你在做一个 dashboard，需要给每一行渲染一个“重试 / Retry”按钮。点击时要带上该行的 <code>rowId</code>。如果你不小心写错闭包，你可能会发现：不管点哪个按钮，拿到的都是同一个 <code>rowId</code>（通常是最后一个）。</p>
+
+<p>English: You’re building a dashboard with a “Retry” button per row. If you misuse closures, every button can end up using the same <code>rowId</code> (often the last one).</p>
+
+<hr/>
+
+<h2>核心概念 / Core idea</h2>
+<p>中文：</p>
+<p>- <strong>词法作用域（lexical scope）</strong>：变量能否被访问，取决于代码“写在哪里”，不是“从哪里调用”。</p>
+<p>- <strong>闭包（closure）</strong>：函数 + 它创建时捕获的外部变量环境。</p>
+
+<p>English:</p>
+<p>- <strong>Lexical scope</strong>: what you can access depends on where code is written, not where it’s called.</p>
+<p>- <strong>Closure</strong>: a function plus the environment it captured when created.</p>
+
+<hr/>
+
+<h2>代码示例 / Code snippet</h2>
+<pre><code>
+// The closure captures `rowId`.
+export function makeRetryHandler(rowId: string) {
+  return async function onRetryClick() {
+    // Comments in English
+    await fetch(`/api/retry?rowId=${encodeURIComponent(rowId)}`, { method: &#x27;POST&#x27; });
+  };
+}
+
+// Usage (e.g., inside a component render)
+const handler = makeRetryHandler(row.id);
+</code></pre>
+
+<p>中文：<code>makeRetryHandler</code> 返回的内部函数，会把 <code>rowId</code> “记住”。这就是闭包。</p>
+
+<p>English: The inner function “remembers” <code>rowId</code> — that’s a closure.</p>
+
+<hr/>
+
+<h2>猜猜输出什么？/ Quiz (A/B/C/D)</h2>
+<pre><code>
+const fns: Array&lt;() =&gt; number&gt; = [];
+for (var i = 0; i &lt; 3; i++) {
+  fns.push(() =&gt; i);
+}
+console.log(fns[0](), fns[1](), fns[2]());
+</code></pre>
+<p>A) <code>0 1 2</code></p>
+<p>B) <code>3 3 3</code></p>
+<p>C) <code>0 0 0</code></p>
+<p>D) 抛异常 / throws</p>
+
+<p>答案 / Answer: <strong>B</strong></p>
+<p>中文解释：<code>var</code> 是函数作用域，循环结束后 <code>i</code> 变成 3；三个函数闭包捕获的是“同一个 i”。</p>
+<p>English: <code>var</code> is function-scoped; after the loop <code>i === 3</code>, and all closures reference the same <code>i</code>.</p>
+
+<hr/>
+
+<h2>常见错误 vs 正确写法 / Common mistake vs correct</h2>
+<p>❌ 错误（捕获同一个变量）/ Wrong:</p>
+<pre><code>
+const fns: Array&lt;() =&gt; number&gt; = [];
+for (var i = 0; i &lt; 3; i++) {
+  fns.push(() =&gt; i);
+}
+</code></pre>
+
+<p>✅ 正确 1：用 <code>let</code>（块级作用域）/ Correct 1: use <code>let</code>:</p>
+<pre><code>
+const fns: Array&lt;() =&gt; number&gt; = [];
+for (let i = 0; i &lt; 3; i++) {
+  fns.push(() =&gt; i);
+}
+</code></pre>
+
+<p>✅ 正确 2：用工厂函数制造新作用域 / Correct 2: scope factory:</p>
+<pre><code>
+const fns: Array&lt;() =&gt; number&gt; = [];
+for (var i = 0; i &lt; 3; i++) {
+  const fn = ((x: number) =&gt; () =&gt; x)(i);
+  fns.push(fn);
+}
+</code></pre>
+
+<hr/>
+
+<h2>什么时候用 / 什么时候别用 / When to use / when NOT to</h2>
+<p>中文（实战判断）：</p>
+<p>- ✅ 用闭包：</p>
+<p>- 你需要“绑定参数”给回调（事件处理、定时器、重试函数、日志上下文）</p>
+<p>- 你需要封装内部状态（不想暴露成全局/类字段）</p>
+<p>- ❌ 小心闭包：</p>
+<p>- 在热路径里创建大量闭包（每次 render 都 new 很多函数）→ 可能导致子组件重复渲染</p>
+<p>- 闭包捕获了会变化的大对象（例如 props/state 的整个对象）→ 容易产生“旧值 / stale value”问题</p>
+
+<p>English (practical):</p>
+<p>- ✅ Use closures to bind parameters to callbacks or to encapsulate private state.</p>
+<p>- ⚠️ Be careful when creating tons of closures on hot render paths, or capturing changing objects that can cause stale values.</p>
+
+<hr/>
+
+<h2>小提示（React/TS 实战）/ React/TS production tip</h2>
+<p>中文：如果你把 handler 传给 <code>React.memo</code> 子组件，并且不想每次 render 都变引用：</p>
+<p>- 用 <code>useCallback</code>，并确保依赖是最小的（不要把整个对象塞进去）。</p>
+
+<p>English: If passing handlers to memoized children, use <code>useCallback</code> with minimal dependencies.</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>中文：闭包就像你把一个小纸条（变量）塞进函数口袋里。以后不管函数走到哪儿，都能掏出纸条看。</p>
+<p>English: A closure is a function carrying a note in its pocket.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures</p>
+<p>- https://developer.mozilla.org/en-US/docs/Glossary/Lexical_scope</p>
+<p>- https://react.dev/reference/react/useCallback</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<p>📊 NeetCode: 23/150 · SysDesign: 22/40 · Behavioral: 22/40 · Frontend: 22/50 · AI: 11/30</p>
+<p>🔥 1-day streak!</p>
+
+<p>🤖 <strong>AI 动态 / AI News</strong></p>
+
+<hr/>
+
+<h2>📰 本周 AI 要闻 / This Week in AI</h2>
+
+<h3>1. Sergey Brin：Google 要向 Anthropic 的编码智能体学习</h3>
+
+<p>据报道，Google 联合创始人 Sergey Brin 在内部备忘录中写道，Google 工程师必须强制使用内部 AI 智能体完成复杂任务，因为 Anthropic 的编码工具目前领先。他还暗示，赶上 Anthropic 是迈向&quot;AI 自我改进&quot;的一步。</p>
+
+<p>According to reports, Google co-founder Sergey Brin wrote in an internal memo that every Gemini engineer &quot;must be forced to use internal agents for complex, multistep tasks.&quot; Brin reportedly said Anthropic&#x27;s coding tools are currently leading the race, and catching up is a step toward building AI that can improve itself.</p>
+
+<p>🔗 [The Verge](https://www.theverge.com/ai-artificial-intelligence) · [The Information原报道](https://www.theinformation.com/articles/google-creates-strike-team-improve-coding-models)</p>
+
+<hr/>
+
+<h3>2. Anthropic 发布 Claude Design（Opus 4.7 驱动）</h3>
+
+<p>Anthropic 推出 Claude Design，基于最新的 Opus 4.7 模型，允许用户创建设计稿、原型、Pitch Deck 和营销素材。目前在付费用户中以研究预览版开放。</p>
+
+<p>Anthropic launched Claude Design — powered by Claude Opus 4.7 — letting users create designs, prototypes, pitch decks, and marketing materials. Available in research preview for paying subscribers.</p>
+
+<p>🔗 [The Verge 报道](https://www.theverge.com/ai-artificial-intelligence/913184/anthropic-claude-opus-4-7-cybersecurity)</p>
+
+<hr/>
+
+<h3>3. AI 影响力账号涌入社交媒体</h3>
+
+<p>据纽约时报调查，Instagram、TikTok、Facebook 上出现了数百个 AI 生成的假账号，疑似服务于政治目的。随着 AI 生成头像的成本大幅降低，批量创建虚假影响力账号变得前所未有的容易。</p>
+
+<p>The New York Times found hundreds of AI-generated fake accounts across Instagram, TikTok, and Facebook, reportedly pushing political messaging. Experts note that creating such avatars is increasingly cheap and easy, with entire contractor networks specializing in bulk AI avatar deployment.</p>
+
+<p>🔗 [The Verge 报道](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>AI 这周：Google 承认落后了，Anthropic 出了个&quot;AI 设计师&quot;，社交媒体上 AI 假人越来越多也越来越便宜。</p>
+
+<p>Google admitted it&#x27;s behind on AI coding agents, Anthropic shipped an AI designer tool, and fake AI social media accounts are getting cheaper and easier to deploy at scale.</p>
+
+<p>📚 References:</p>
+<p>- https://www.theverge.com/ai-artificial-intelligence</p>
+<p>- https://www.theinformation.com/articles/google-creates-strike-team-improve-coding-models</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-19</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
