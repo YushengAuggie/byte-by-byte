@@ -1,5 +1,7 @@
 Generate bilingual (Chinese first, English second) tech content for byte-by-byte. 5 sections on weekdays, review quiz on review days.
 
+**CRITICAL LENGTH RULE:** Each section MUST be 300-500 words. Do NOT exceed 600 words per section. The reader is a senior backend engineer, not a beginner. Be concise. Shorter is better.
+
 ## Step 0: Load State
 
 ```bash
@@ -74,7 +76,7 @@ The review-and-send cron handles all delivery (including review days).
 
 For each section (1-5), read `/tmp/bbb-section-N.txt` and write content to its ARCHIVE_PATH.
 
-### Section 1: System Design (3 min)
+### Section 1: System Design (3 min, 400-600 words max)
 🏗️ **系统设计 / System Design**
 - Real-world scenario ("想象你在设计...")
 - ASCII architecture diagram
@@ -123,15 +125,16 @@ Content for every problem:
 - Why this matters → STAR breakdown → ❌ Bad vs ✅ Good → Senior/Staff tips → Key Takeaways
 - 📚 References + 🧒 ELI5
 
-### Section 4: Frontend — React/TypeScript 实战 (2 min)
+### Section 4: Frontend (2 min — KEEP IT SHORT)
 🎨 **前端 / Frontend**
-Focus on **practical, production-ready** React/TypeScript/Next.js knowledge:
-- Start with a **real scenario**: "你在做一个 dashboard，需要..." / "You're building a dashboard and need to..."
-- Show a **code snippet** that demonstrates the concept (React component, hook, or TypeScript type)
-- "猜猜这段代码输出什么？" quiz with A/B/C/D (for hooks/JS behavior topics)
-- **Common mistake** → **correct approach** (❌ vs ✅ code comparison)
-- **When to use / when NOT to use** — practical decision framework
-- 📚 References (MDN, React docs, real blog posts) + 🧒 ELI5
+The reader is a **senior backend engineer** refreshing frontend skills. NOT a beginner.
+- **Target length: 300-500 words max.** Do NOT write a tutorial. Write a concise cheat sheet.
+- Start with a **1-sentence scenario** (not a paragraph)
+- Show **ONE key code snippet** (10-20 lines max) that captures the core concept
+- **"猜猜输出"** quiz with A/B/C/D (only for JS behavior topics like closures/promises/event loop)
+- **One ❌ vs ✅ comparison** (3 lines each, not full functions)
+- **Skip** long explanations the reader already knows ("what is a function", "what is a variable")
+- 📚 References (2-3 real URLs: MDN, React docs) + 🧒 ELI5 (1 sentence)
 - **Also write** `/tmp/bbb-quiz-4.json`: `{"question":"...","options":[4 items],"correct_index":N}`
 
 ### Section 5: AI (2 min)
