@@ -5,8 +5,745 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 20 Apr 2026 17:19:43 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 21 Apr 2026 15:13:32 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-21</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-21</guid>
+      <pubDate>Tue, 21 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 28</h2>
+<h2>Design a Chat System (WhatsApp/Slack)</h2>
+
+<p>&gt; <strong>难度 / Difficulty:</strong> Advanced | <strong>阶段 / Phase:</strong> Growth | <strong>预计阅读 / Read time:</strong> 3 min</p>
+
+<hr/>
+
+<h3>🧠 真实场景 / Real-World Scenario</h3>
+
+<p>想象你在设计一个即时通讯系统，目标是支持 <strong>5亿用户</strong>，每天发送 <strong>500亿条消息</strong>（就像WhatsApp）。你的系统需要支持：一对一私聊、群组聊天（最多500人）、消息状态（已发送/已送达/已读）、在线状态显示、文件/图片传输。</p>
+
+<p>Imagine you&#x27;re designing a real-time messaging system to support <strong>500M users</strong> with <strong>50B messages/day</strong> (think WhatsApp). Requirements: 1:1 chat, group chat (up to 500 members), message status (sent/delivered/read), online presence, and file/media sharing.</p>
+
+<hr/>
+
+<h3>📐 Architecture Overview</h3>
+
+<pre><code>
+                        ┌─────────────────────────────────────┐
+                        │          Client (Mobile/Web)         │
+                        └──────────────┬──────────────────────┘
+                                       │ WebSocket (persistent)
+                        ┌──────────────▼──────────────────────┐
+                        │          API Gateway / LB            │
+                        └──────┬──────────────┬───────────────┘
+                               │              │
+              ┌────────────────▼──┐    ┌──────▼──────────────┐
+              │  Chat Service     │    │  Presence Service    │
+              │  (WebSocket Mgr)  │    │  (Redis Pub/Sub)     │
+              └────────┬──────────┘    └──────┬───────────────┘
+                       │                      │
+         ┌─────────────▼──────────┐    ┌──────▼───────────────┐
+         │  Message Queue (Kafka) │    │  Redis (Online State)│
+         └─────────────┬──────────┘    └──────────────────────┘
+                       │
+         ┌─────────────▼──────────────────────────────┐
+         │  Message Processor                          │
+         │  - fan-out to recipients                    │
+         │  - push notification if offline             │
+         └───┬────────────────────────┬───────────────┘
+             │                        │
+    ┌────────▼──────────┐    ┌────────▼───────────────┐
+    │  Message DB        │    │  Push Notification      │
+    │  (Cassandra)       │    │  Service (APNs/FCM)     │
+    └───────────────────┘    └────────────────────────┘
+
+    ┌──────────────────────────────────────────────────┐
+    │  Media Service                                   │
+    │  - S3 for storage, CDN for delivery             │
+    │  - Pre-signed URLs for upload/download          │
+    └──────────────────────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>⚡ Key Design Decisions / 关键设计决策</h3>
+
+<p>#### 1. WebSocket vs HTTP Polling</p>
+<p><strong>用WebSocket，不用轮询。</strong></p>
+<p>WebSocket keeps a persistent bidirectional connection — ideal for real-time messaging. HTTP long-polling (Comet) works but wastes resources. Server-Sent Events (SSE) is one-way only.</p>
+
+<p><strong>选WebSocket的原因:</strong> 延迟低（&lt; 100ms），服务器可主动推送，连接复用减少握手开销。</p>
+
+<p>#### 2. Message Storage: Cassandra (not MySQL)</p>
+<p>- 写入极重 (write-heavy): 每秒数百万条消息</p>
+<p>- 按 <code>(chat_id, message_id)</code> 分区，天然支持时间范围查询</p>
+<p>- 高可用，无单点故障</p>
+<p>- <strong>Schema:</strong></p>
+<pre><code>
+  CREATE TABLE messages (
+    chat_id     UUID,
+    message_id  TIMEUUID,   -- sortable by time
+    sender_id   UUID,
+    content     TEXT,
+    type        TEXT,       -- &#x27;text&#x27;, &#x27;image&#x27;, &#x27;file&#x27;
+    status      TEXT,       -- &#x27;sent&#x27;, &#x27;delivered&#x27;, &#x27;read&#x27;
+    PRIMARY KEY (chat_id, message_id)
+  ) WITH CLUSTERING ORDER BY (message_id DESC);
+</code></pre>
+
+<p>#### 3. Message Fan-Out Strategy</p>
+<p>For 1:1 chat: simple — push to recipient&#x27;s WebSocket connection.</p>
+<p>For group chat (up to 500 members): <strong>fan-out on write</strong> via Kafka.</p>
+<p>- Message lands in Kafka topic</p>
+<p>- Consumer service fans out to each member&#x27;s inbox</p>
+<p>- Why Kafka? Durability, replay, and decouples producers from consumers</p>
+
+<p><strong>群组消息扇出 (fan-out on write) vs 扇出读取 (fan-out on read):</strong></p>
+<p>Fan-out on write = 写入时复制到每人收件箱（适合中小群组）</p>
+<p>Fan-out on read = 读取时聚合（适合超大群组/Twitter模式）</p>
+<p><strong>500人以内：写时扇出</strong> — 读取延迟更低，体验更好。</p>
+
+<p>#### 4. Online Presence</p>
+<p>- Use <strong>Redis pub/sub</strong> per user channel</p>
+<p>- Client sends heartbeat every 5s; server marks user online in Redis with TTL=10s</p>
+<p>- Subscribe to friend&#x27;s channel to receive presence updates</p>
+<p>- <strong>问题:</strong> 5亿用户在线状态 → Redis Cluster，按用户ID分片</p>
+
+<hr/>
+
+<h3>❌ 别踩这些坑 / Common Mistakes</h3>
+
+<p>| ❌ 误区 | ✅ 正确做法 |</p>
+<p>|---------|------------|</p>
+<p>| 用MySQL存消息 | 用Cassandra/HBase — 写入QPS太高 |</p>
+<p>| HTTP轮询实现&quot;实时&quot; | WebSocket长连接 |</p>
+<p>| 同步fan-out到群成员 | 异步Kafka消费 |</p>
+<p>| 不做消息去重 | 每条消息UUID + 客户端幂等性 |</p>
+<p>| 媒体文件存数据库 | S3 + CDN + pre-signed URL |</p>
+<p>| 忘记离线消息 | 推送通知 (APNs/FCM) + 消息持久化 |</p>
+
+<hr/>
+
+<h3>🔢 Back-of-Envelope / 估算</h3>
+
+<pre><code>
+DAU: 500M users
+Messages per user per day: 40
+Total messages/day: 20B
+Peak QPS: 20B / 86400 * 2 (peak factor) ≈ 460K msg/s
+
+Storage per message: ~100 bytes
+Daily storage: 20B * 100 = 2TB/day
+5-year retention: ~3.6PB (need compression + tiering)
+
+WebSocket connections (peak): ~100M concurrent
+→ Need ~10,000 chat servers (each handles ~10K connections)
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [System Design Interview – WhatsApp](https://www.youtube.com/watch?v=vvhC64hQZMk) — Alex Xu walkthrough</p>
+<p>- [How Discord Stores Billions of Messages](https://discord.com/blog/how-discord-stores-billions-of-messages) — Real Cassandra story</p>
+<p>- [WhatsApp Architecture](https://highscalability.com/blog/2014/2/26/the-whatsapp-architecture-facebook-bought-for-19-billion.html) — HighScalability</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>把聊天系统想成邮局：你发信（消息）→ 邮局（服务器）分拣 → 立刻送到收件人信箱（WebSocket）。如果收件人不在家（离线），就留张纸条（推送通知）让他回来取。Cassandra就像超大容量的信件档案室，永不丢信。</p>
+
+<p>Think of it like a postal service: you drop a letter → post office (server) sorts it → delivers to recipient&#x27;s mailbox instantly (WebSocket). If they&#x27;re offline, leave a note (push notification). Cassandra is the giant mail archive that never loses a letter.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 28</h2>
+<h2>#739 Daily Temperatures (Medium) — Stack Pattern (5/7)</h2>
+
+<p>&gt; <strong>模式 / Pattern:</strong> 单调栈 (Monotonic Stack) | <strong>阶段 / Phase:</strong> Growth | <strong>预计阅读 / Read time:</strong> 4 min</p>
+
+<hr/>
+
+<p>🧩 <strong>单调栈 (Monotonic Stack) — 5/7</strong> — building on the template from Day 23 (Valid Parentheses), Day 24 (Min Stack), Day 26 (Evaluate Reverse Polish Notation)</p>
+
+<p>今天是单调栈模式的第5题。前面我们用栈做了括号匹配、最小值追踪、表达式求值。今天进入<strong>单调栈最经典的用法：找下一个更大元素 (next greater element)</strong>。</p>
+
+<p>Today is the 5th problem in the stack block. We&#x27;ve used stacks for parentheses, min tracking, and expression evaluation. Now we hit the <strong>most classic monotonic stack use case: finding the next greater element</strong>.</p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+<p>- 🔗 [LeetCode #739](https://leetcode.com/problems/daily-temperatures/) 🟡 Medium</p>
+<p>- 📹 [NeetCode Video](https://www.neetcode.io/problems/daily-temperatures)</p>
+
+<hr/>
+
+<h3>🌍 Real-World Analogy / 现实类比</h3>
+
+<p>你站在一排人群中，每个人都想知道：<strong>后面什么时候会出现比我更高的人？</strong></p>
+<p>暴力解法：每个人回头一个个数。</p>
+<p>聪明解法：维护一个&quot;等待队列&quot;——还没找到更高者的人先排队，一旦出现更高的，通知所有比他矮的人。</p>
+
+<p>You&#x27;re in a queue; each person wants to know: <strong>when will someone taller appear behind me?</strong></p>
+<p>Brute force: each person looks back one by one.</p>
+<p>Smart: maintain a &quot;waiting list&quot; — those who haven&#x27;t found someone taller yet wait in stack. When a taller person appears, notify everyone shorter.</p>
+
+<hr/>
+
+<h3>📋 Problem</h3>
+
+<pre><code>
+Input:  temperatures = [73, 74, 75, 71, 69, 72, 76, 73]
+Output: [1,  1,  4,  2,  1,  1,  0,  0]
+</code></pre>
+
+<p>For each day, find how many days until a warmer temperature. If none, return 0.</p>
+
+<hr/>
+
+<h3>🗺️ Mapping to Pattern Template</h3>
+
+<pre><code>
+# Template (from Day 22 intro):
+# stack = []
+# for i, num in enumerate(arr):
+#     while stack and arr[stack[-1]] &lt; num:
+#         idx = stack.pop()
+#         result[idx] = num  # next greater
+#     stack.append(i)
+
+# Daily Temperatures — direct application:
+# arr = temperatures
+# result[idx] = i - idx  (distance, not value)
+</code></pre>
+
+<p><strong>这题 vs 模板的区别 / Difference from template:</strong></p>
+<p>- Template records the &quot;next greater value&quot; → this problem records the <strong>distance</strong> (i - idx)</p>
+<p>- Everything else is identical: maintain decreasing stack of indices</p>
+
+<hr/>
+
+<h3>✅ Solution with Trace</h3>
+
+<pre><code>
+def dailyTemperatures(temperatures: list[int]) -&gt; list[int]:
+    n = len(temperatures)
+    result = [0] * n
+    stack = []  # stack of indices, temperatures[stack top] is always decreasing
+    
+    for i, temp in enumerate(temperatures):
+        # Pop all indices where we found a warmer day
+        while stack and temperatures[stack[-1]] &lt; temp:
+            prev_idx = stack.pop()
+            result[prev_idx] = i - prev_idx  # days to wait
+        stack.append(i)
+    
+    # Remaining indices in stack → no warmer day found, result stays 0
+    return result
+</code></pre>
+
+<p><strong>逐步追踪 / Step-by-step trace:</strong></p>
+<pre><code>
+temperatures = [73, 74, 75, 71, 69, 72, 76, 73]
+index:          [0,  1,  2,  3,  4,  5,  6,  7 ]
+
+i=0, temp=73: stack=[] → push 0.      stack=[0]
+i=1, temp=74: 74&gt;73(idx0)→result[0]=1; push 1.  stack=[1]
+i=2, temp=75: 75&gt;74(idx1)→result[1]=1; push 2.  stack=[2]
+i=3, temp=71: 71&lt;75 → just push 3.    stack=[2,3]
+i=4, temp=69: 69&lt;71 → just push 4.    stack=[2,3,4]
+i=5, temp=72: 72&gt;69(idx4)→result[4]=1
+              72&gt;71(idx3)→result[3]=2
+              72&lt;75 → stop, push 5.   stack=[2,5]
+i=6, temp=76: 76&gt;72(idx5)→result[5]=1
+              76&gt;75(idx2)→result[2]=4; push 6.   stack=[6]
+i=7, temp=73: 73&lt;76 → push 7.         stack=[6,7]
+
+result = [1, 1, 4, 2, 1, 1, 0, 0] ✓
+</code></pre>
+
+<p><strong>⏱️ Complexity:</strong> Time O(n) — each element pushed/popped at most once. Space O(n).</p>
+
+<hr/>
+
+<h3>🔄 举一反三 / Pattern Variations in This Block</h3>
+
+<p>| Problem | Stack Usage | What Changes |</p>
+<p>|---------|------------|--------------|</p>
+<p>| #20 Valid Parentheses (1/7) | matching brackets | pop on match |</p>
+<p>| #155 Min Stack (2/7) | dual stack for min | track minimum |</p>
+<p>| #150 Eval RPN (3/7) | operator/operand | pop two, compute |</p>
+<p>| <strong>#739 Daily Temps (5/7)</strong> | <strong>monotonic decreasing</strong> | <strong>next greater</strong> |</p>
+<p>| #853 Car Fleet (6/7) | monotonic | merge fleets |</p>
+<p>| #84 Histogram (7/7) | monotonic | area calculation |</p>
+
+<p><strong>核心变体 / Core variation to recognize:</strong></p>
+<p>&quot;Next greater/smaller&quot; → <strong>monotonic stack</strong> (today&#x27;s pattern)</p>
+<p>&quot;Matching/balanced&quot; → <strong>bracket stack</strong> (Day 23)</p>
+<p>&quot;Evaluate expression&quot; → <strong>operand/operator stack</strong> (Day 26)</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [LeetCode Discussion — Best Explanation](https://leetcode.com/problems/daily-temperatures/solutions/109832/java-easy-ac-solution-with-stack/)</p>
+<p>- [NeetCode — Monotonic Stack Explained](https://neetcode.io/courses/dsa-for-beginners/29)</p>
+<p>- [Visualgo — Stack Visualization](https://visualgo.net/en/list)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象你在排队买票，每个人记录&quot;我前面什么时候会有空位（比我快的人离开）&quot;。我们维护一个&quot;还在等的人&quot;的列表，按顺序排。一旦有人离开（温度更高），就告诉所有等得比他久的人&quot;你等了几天&quot;。这样每个人最多进出列表一次，比一个个回头数快多了！</p>
+
+<p>Imagine everyone in line tracking &quot;when will someone faster than me appear?&quot; We keep a list of people still waiting in order. When someone faster shows up, we notify everyone slower. Each person enters/leaves the list at most once — way faster than checking one by one!</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 28</h2>
+<h2>Build vs Buy Decision Making</h2>
+
+<p>&gt; <strong>难度 / Level:</strong> Senior/Staff | <strong>类别 / Category:</strong> Decision Making | <strong>预计阅读 / Read time:</strong> 2 min</p>
+
+<hr/>
+
+<h3>🎯 为什么这个问题很重要 / Why This Question Matters</h3>
+
+<p>Build vs buy是每个Senior/Staff工程师都会遇到的战略决策。面试官想看：你会不会权衡<strong>短期成本 vs 长期维护</strong>，<strong>控制权 vs 速度</strong>，<strong>差异化价值 vs 通用功能</strong>。这不只是技术问题，更是工程判断力的体现。</p>
+
+<p>Build vs buy is a strategic decision every Senior/Staff engineer faces. Interviewers want to see: can you weigh <strong>short-term cost vs long-term maintenance</strong>, <strong>control vs speed</strong>, <strong>differentiating value vs commodity functionality</strong>? This tests engineering judgment, not just technical skills.</p>
+
+<hr/>
+
+<h3>⭐ STAR Framework</h3>
+
+<p><strong>Situation / 背景:</strong></p>
+<p>&gt; &quot;我们在构建实时数据管道，需要一个消息队列。团队有人提议自研，也有人提议用Kafka。这是个200万用户的产品，但消息队列不是我们的核心竞争力。&quot;</p>
+
+<p>&gt; &quot;We were building a real-time data pipeline and needed a message queue. Some wanted to build one; others wanted Kafka. 2M users, but messaging wasn&#x27;t our core differentiator.&quot;</p>
+
+<p><strong>Task / 任务:</strong></p>
+<p>&gt; 评估两个方案的真实成本，给出有数据支撑的建议。</p>
+
+<p><strong>Action / 行动:</strong></p>
+<p>&gt; 我做了一个快速分析框架：</p>
+<p>&gt; 1. <strong>核心 vs 非核心</strong> — 消息队列是通用基础设施，不是我们的差异化竞争力</p>
+<p>&gt; 2. <strong>总拥有成本 (TCO)</strong> — 自研：3个工程师×6个月 + 永续维护。Kafka：2周集成 + 运维成本（~$500/月托管服务）</p>
+<p>&gt; 3. <strong>风险矩阵</strong> — 自研：稳定性风险、没有社区支持。Kafka：供应商依赖、少量定制限制</p>
+<p>&gt; 4. <strong>团队能力</strong> — 没有分布式系统专家，自研风险高</p>
+
+<p>&gt; I built a quick decision framework:</p>
+<p>&gt; 1. <strong>Core vs commodity</strong> — message queuing is generic infrastructure, not our differentiation</p>
+<p>&gt; 2. <strong>TCO</strong> — build: 3 engineers × 6 months + perpetual maintenance vs buy: 2-week integration + ~$500/month managed service</p>
+<p>&gt; 3. <strong>Risk matrix</strong> — build: stability risk, no community. Buy: vendor dependency, some customization limits</p>
+<p>&gt; 4. <strong>Team capabilities</strong> — no distributed systems experts on team</p>
+
+<p>&gt; 我建议采用托管Kafka（Confluent Cloud）。节省了约18个工程师月，让团队专注于产品功能。</p>
+
+<p><strong>Result / 结果:</strong></p>
+<p>&gt; 集成用了两周，比预期早6个月上线。运行了1年没有重大故障。后来我把这个框架整理成团队的&quot;Make vs Buy&quot;决策模板，被多个团队复用。</p>
+
+<p>&gt; Integration took 2 weeks, shipped 6 months early. Zero major incidents in year one. I documented the framework as a team &quot;Make vs Buy&quot; template — adopted by 3 other teams.</p>
+
+<hr/>
+
+<h3>❌ Bad Answer vs ✅ Good Answer</h3>
+
+<p><strong>❌ 踩坑回答:</strong></p>
+<p>&gt; &quot;我们选择了Kafka因为它很流行，大家都在用。&quot;</p>
+
+<p><em>问题: 没有展示决策过程，没有权衡，听起来像随大流。</em></p>
+
+<p><strong>✅ 高分回答:</strong></p>
+<p>&gt; &quot;我建立了一个框架来分析核心竞争力、TCO和团队风险，然后带着数据向stakeholders推荐了Kafka。结果节省了18个工程师月，让我们更早交付了用户真正需要的功能。&quot;</p>
+
+<hr/>
+
+<h3>🚀 Senior/Staff级别加分点</h3>
+
+<p>1. <strong>量化影响</strong> — 不只说&quot;省了时间&quot;，要说&quot;节省18个工程师月 = $X万美元&quot;</p>
+<p>2. <strong>展示框架</strong> — 面试官想看你有可复用的决策方法，不是ad-hoc</p>
+<p>3. <strong>考虑长期维护</strong> — &quot;我们今天能构建它，但谁来维护？&quot;</p>
+<p>4. <strong>识别错误的build理由</strong> — &quot;我们想完全控制&quot; → 通常是overengineering的信号</p>
+<p>5. <strong>何时应该build</strong> — 当功能是核心差异化价值，或有严格合规要求（数据主权），或外部方案有根本性gap</p>
+
+<p><strong>经典Build vs Buy框架:</strong></p>
+<pre><code>
+Build when:
+✅ Core differentiator (your competitive moat)
+✅ Existing solutions have fundamental gaps
+✅ Compliance/data sovereignty requirements
+✅ Team has the expertise + bandwidth
+
+Buy when:
+✅ Commodity functionality
+✅ No differentiation value
+✅ High quality options exist
+✅ Speed to market matters
+✅ Team lacks domain expertise
+</code></pre>
+
+<hr/>
+
+<h3>💡 Key Takeaways / 核心要点</h3>
+
+<p>- 🎯 <strong>不要build ego trip</strong> — &quot;因为自己写的更好&quot; 不是理由</p>
+<p>- 📊 <strong>TCO要算全</strong> — 工程时间 + 机会成本 + 永续维护 + 招聘专才</p>
+<p>- 🔑 <strong>核心竞争力优先</strong> — 只在用户愿意为之付钱的差异化功能上build</p>
+<p>- 📝 <strong>记录决策</strong> — ADR (Architecture Decision Record) 让团队对齐，避免反复争论</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [ADR (Architecture Decision Records) — Michael Nygard](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)</p>
+<p>- [Build vs Buy Framework — a16z](https://a16z.com/build-vs-buy/)</p>
+<p>- [Stop building commodity features — pragmatic engineering](https://newsletter.pragmaticengineer.com/)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>自己造汽车还是买车？你要上班，开车去。你是汽车专家吗？不是。造车需要多久？1年。买车需要多久？1周。除非你是赛车手（汽车是你的核心竞争力），否则就买！工程决策也一样——把精力放在你做得比别人更好的地方。</p>
+
+<p>Build a car or buy one? You need to get to work. Are you a car expert? No. How long to build? 1 year. Buy? 1 week. Unless you&#x27;re a race car driver (cars ARE your competitive edge), just buy! Engineering is the same — spend your energy where you&#x27;re uniquely better than others.</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 28</h2>
+<h2>Promises, async/await — Async Control Flow</h2>
+
+<p>&gt; <strong>类别 / Category:</strong> JavaScript Core | <strong>Week:</strong> 5 | <strong>预计阅读 / Read time:</strong> 2 min</p>
+
+<hr/>
+
+<h3>🌍 真实场景 / Real Scenario</h3>
+
+<p>你在做一个 dashboard，需要同时加载用户数据、最新订单、和通知列表。如果按顺序串行请求，会浪费 3x 时间。你需要理解 <strong>Promise 并发控制</strong> 才能写出生产级的异步代码。</p>
+
+<p>You&#x27;re building a dashboard that needs to load user profile, latest orders, and notifications. Sequential requests waste 3x the time. Understanding <strong>Promise concurrency control</strong> is essential for production-grade async code.</p>
+
+<hr/>
+
+<h3>🧪 猜猜输出什么？ / What does this output?</h3>
+
+<pre><code>
+async function fetchDashboard(userId: string) {
+  console.log(&quot;A&quot;);
+  
+  const user = await fetch(`/api/users/${userId}`);
+  console.log(&quot;B&quot;);
+  
+  const [orders, notifications] = await Promise.all([
+    fetch(`/api/orders?userId=${userId}`),
+    fetch(`/api/notifications?userId=${userId}`)
+  ]);
+  console.log(&quot;C&quot;);
+  
+  return { user, orders, notifications };
+}
+
+fetchDashboard(&quot;123&quot;);
+console.log(&quot;D&quot;);
+</code></pre>
+
+<p><strong>What logs first?</strong></p>
+<p>- A) A → B → C → D</p>
+<p>- B) A → D → B → C</p>
+<p>- C) D → A → B → C</p>
+<p>- D) A → B → D → C</p>
+
+<p>&gt; <strong>答案 / Answer: B</strong> — <code>async</code> functions run synchronously until the first <code>await</code>. So &quot;A&quot; logs, then the function suspends at <code>await fetch(...)</code>, and &quot;D&quot; logs immediately. When the fetch resolves, &quot;B&quot; logs, then &quot;C&quot; after Promise.all.</p>
+
+<hr/>
+
+<h3>🔑 Core Concepts</h3>
+
+<p>#### Promise 状态机 / Promise State Machine</p>
+<pre><code>
+pending → fulfilled (resolve)
+        → rejected  (reject)
+
+Once settled, state never changes.
+</code></pre>
+
+<p>#### 三种并发模式 / Three Concurrency Patterns</p>
+
+<pre><code>
+// ❌ Pattern 1: Sequential (串行) — SLOW
+const user = await fetchUser(id);      // waits 200ms
+const orders = await fetchOrders(id);  // waits another 300ms
+// Total: 500ms — unnecessary!
+
+// ✅ Pattern 2: Parallel (并行) — FAST
+const [user, orders] = await Promise.all([
+  fetchUser(id),    // both start at the same time
+  fetchOrders(id),  // 
+]);
+// Total: max(200ms, 300ms) = 300ms 🚀
+
+// ⚠️ Pattern 3: Promise.allSettled — when you need ALL results
+// even if some fail (e.g., non-critical widgets)
+const results = await Promise.allSettled([
+  fetchUser(id),
+  fetchOrders(id),
+  fetchNotifications(id),
+]);
+results.forEach(r =&gt; {
+  if (r.status === &#x27;fulfilled&#x27;) console.log(r.value);
+  else console.error(r.reason);
+});
+</code></pre>
+
+<hr/>
+
+<h3>❌ Common Mistakes / 常见错误</h3>
+
+<pre><code>
+// ❌ Mistake 1: await inside map() — sequential, not parallel
+const data = await Promise.all(
+  ids.map(id =&gt; await fetchUser(id))  // SyntaxError! can&#x27;t await inside non-async map
+);
+
+// ✅ Correct: pass Promise directly
+const data = await Promise.all(
+  ids.map(id =&gt; fetchUser(id))  // no await inside map
+);
+
+// ❌ Mistake 2: unhandled rejection
+const result = await Promise.all([fetchA(), fetchB()]); // if B rejects, A&#x27;s result lost!
+
+// ✅ Correct: use allSettled or try/catch per request
+const [a, b] = await Promise.allSettled([fetchA(), fetchB()]);
+
+// ❌ Mistake 3: missing error handling
+async function loadData() {
+  const data = await fetchData(); // throws? crashes silently!
+  return data;
+}
+
+// ✅ Correct:
+async function loadData() {
+  try {
+    return await fetchData();
+  } catch (err) {
+    console.error(&quot;Failed to load:&quot;, err);
+    return null; // or throw to parent
+  }
+}
+</code></pre>
+
+<hr/>
+
+<h3>🎯 When to Use / When NOT to Use</h3>
+
+<pre><code>
+Use Promise.all when:
+✅ All requests are independent
+✅ You need ALL to succeed (fail fast if any fails)
+✅ Performance matters (dashboard loads, batch ops)
+
+Use Promise.allSettled when:
+✅ Some failures are acceptable
+✅ Non-critical widgets/sections
+✅ You need all results regardless of failure
+
+Use sequential await when:
+✅ Request B depends on result of A
+✅ Ordering matters (database transactions)
+✅ You need to avoid rate limiting
+
+Avoid:
+❌ await in a for loop when items are independent
+❌ new Promise() wrapping async functions (anti-pattern)
+❌ .then() chains when async/await is available (less readable)
+</code></pre>
+
+<hr/>
+
+<h3>🔥 Production Pattern: TypeScript async with error handling</h3>
+
+<pre><code>
+type Result&lt;T&gt; = { data: T; error: null } | { data: null; error: Error };
+
+async function safeAsync&lt;T&gt;(promise: Promise&lt;T&gt;): Promise&lt;Result&lt;T&gt;&gt; {
+  try {
+    const data = await promise;
+    return { data, error: null };
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+  }
+}
+
+// Usage — no try/catch needed at call site:
+const { data: user, error } = await safeAsync(fetchUser(&quot;123&quot;));
+if (error) return &lt;ErrorState message={error.message} /&gt;;
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [MDN — Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)</p>
+<p>- [MDN — async/await](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Promises)</p>
+<p>- [JavaScript.info — Promise API](https://javascript.info/promise-api)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>Promise就像点外卖的收据。你点了3个菜（3个请求）。串行 = 等第一个菜上了再点第二个，太慢。<code>Promise.all</code> = 同时点3个菜，哪个先好哪个先上，全部好了再吃。<code>allSettled</code> = 就算有菜没做出来，你也能知道哪些成功了哪些失败了。</p>
+
+<p>A Promise is like a takeout receipt. You ordered 3 dishes. Sequential = wait for dish 1 before ordering dish 2 (slow!). <code>Promise.all</code> = order all 3 at once, eat when all are ready. <code>allSettled</code> = even if one fails, you know which succeeded and which didn&#x27;t.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 28</h2>
+<h2>MCP (Model Context Protocol) — The USB for AI</h2>
+
+<p>&gt; <strong>类别 / Category:</strong> Agents | <strong>阶段 / Phase:</strong> Growth | <strong>预计阅读 / Read time:</strong> 2 min</p>
+
+<hr/>
+
+<h3>🧠 直觉解释 / Intuitive Explanation</h3>
+
+<p>想象你的电脑没有USB标准。每个设备都需要专用接口——鼠标一种、键盘一种、硬盘一种。你每次想接新设备都要改电脑硬件。这很蠢对吧？</p>
+
+<p><strong>MCP (Model Context Protocol) 就是AI工具的USB标准。</strong></p>
+
+<p>它由Anthropic于2024年底发布，解决了一个核心问题：AI模型（LLMs）如何以统一的方式连接到外部工具、数据库、API？以前每家公司都要自己写集成代码，现在有了MCP，任何AI应用都能&quot;即插即用&quot;地接入MCP服务器。</p>
+
+<p>Imagine your computer had no USB standard. Every device needs a custom port. Annoying, right?</p>
+
+<p><strong>MCP is the USB standard for AI tools.</strong></p>
+
+<p>Released by Anthropic in late 2024, it solves a core problem: how can AI models connect to external tools, databases, and APIs in a <strong>unified way</strong>? Before MCP, every company wrote custom integration code. Now any AI app can &quot;plug in&quot; to any MCP server.</p>
+
+<hr/>
+
+<h3>⚙️ How It Works / 工作原理</h3>
+
+<pre><code>
+┌─────────────────────────────────────────────────────┐
+│                  MCP Architecture                    │
+│                                                     │
+│  ┌──────────────┐     MCP Protocol     ┌──────────┐ │
+│  │  AI Host     │◄──────────────────►│ MCP      │ │
+│  │  (Claude,    │   JSON-RPC over     │ Server   │ │
+│  │   Cursor,    │   stdio / HTTP/SSE  │          │ │
+│  │   Copilot)   │                     │ Exposes: │ │
+│  └──────────────┘                     │ • Tools  │ │
+│                                       │ • Resources│
+│  MCP Client                          │ • Prompts │ │
+│  (built into host)                   └──────────┘ │
+│                                                     │
+│  Examples of MCP Servers:                          │
+│  • Filesystem (read/write local files)             │
+│  • GitHub (search repos, create PRs)               │
+│  • PostgreSQL (query databases)                    │
+│  • Slack (send messages, search)                   │
+│  • Brave Search (web search)                       │
+└─────────────────────────────────────────────────────┘
+</code></pre>
+
+<p><strong>三个核心原语 / Three Core Primitives:</strong></p>
+<p>1. <strong>Tools</strong> (工具) — Functions the AI can call (e.g., <code>search_web</code>, <code>create_file</code>)</p>
+<p>2. <strong>Resources</strong> (资源) — Data the AI can read (e.g., file contents, database rows)</p>
+<p>3. <strong>Prompts</strong> (提示词) — Reusable prompt templates exposed by the server</p>
+
+<hr/>
+
+<h3>🐍 Runnable Python Example</h3>
+
+<pre><code>
+# pip install mcp anthropic
+
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+import mcp.types as types
+
+# Build a minimal MCP server that exposes a weather tool
+app = Server(&quot;weather-server&quot;)
+
+@app.list_tools()
+async def list_tools() -&gt; list[types.Tool]:
+    return [
+        types.Tool(
+            name=&quot;get_weather&quot;,
+            description=&quot;Get current weather for a city&quot;,
+            inputSchema={
+                &quot;type&quot;: &quot;object&quot;,
+                &quot;properties&quot;: {
+                    &quot;city&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;description&quot;: &quot;City name&quot;}
+                },
+                &quot;required&quot;: [&quot;city&quot;]
+            }
+        )
+    ]
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict) -&gt; list[types.TextContent]:
+    if name == &quot;get_weather&quot;:
+        city = arguments[&quot;city&quot;]
+        # In real code: call a weather API here
+        return [types.TextContent(
+            type=&quot;text&quot;,
+            text=f&quot;Weather in {city}: 72°F, sunny ☀️&quot;
+        )]
+
+# Run the server (Claude Desktop can now connect to it!)
+if __name__ == &quot;__main__&quot;:
+    import asyncio
+    asyncio.run(stdio_server(app))
+</code></pre>
+
+<p>Connect this to Claude Desktop via <code>claude_desktop_config.json</code> and Claude can now call <code>get_weather</code> as a native tool!</p>
+
+<hr/>
+
+<h3>🌐 Applications / 应用场景</h3>
+
+<p>| Use Case | MCP Server |</p>
+<p>|----------|-----------|</p>
+<p>| AI reads/writes your codebase | Filesystem MCP |</p>
+<p>| AI creates GitHub PRs | GitHub MCP |</p>
+<p>| AI queries your database | PostgreSQL MCP |</p>
+<p>| AI searches the web | Brave Search MCP |</p>
+<p>| AI books calendar events | Google Calendar MCP |</p>
+<p>| AI reads company docs | Notion/Confluence MCP |</p>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<p>- 标准化 → 生态繁荣（类比：npm为JS，MCP为AI工具）</p>
+<p>- 安全 → MCP服务器可控制权限，AI不能随意访问</p>
+<p>- 可组合 → 一个AI客户端可同时接多个MCP服务器</p>
+
+<hr/>
+
+<h3>⚡ MCP vs Function Calling</h3>
+
+<p>| | Function Calling | MCP |</p>
+<p>|--|--|--|</p>
+<p>| 标准化 | 各厂商自定义 | 统一协议 |</p>
+<p>| 服务器端部署 | 不支持 | 支持 |</p>
+<p>| 资源访问 | 无 | 支持 (Resources) |</p>
+<p>| 跨模型兼容 | ❌ | ✅ |</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [MCP Official Docs — Anthropic](https://modelcontextprotocol.io/introduction)</p>
+<p>- [MCP GitHub Repo](https://github.com/modelcontextprotocol/python-sdk)</p>
+<p>- [Awesome MCP Servers](https://github.com/punkpeye/awesome-mcp-servers)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>以前AI想用工具，就像每次换手机都要重新教它所有的按钮。MCP就是给AI装了个&quot;学徒手册&quot;：任何工具只要按格式写好，AI就能立刻会用，不用每次重新配置。就像学会了用筷子，就能夹任何菜。</p>
+
+<p>Before MCP, teaching an AI a new tool was like rewriting the instruction manual every time. MCP is a standard instruction format — any tool written to spec can be used by any AI immediately. Like learning chopsticks: once you know the technique, you can pick up any food.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-20</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

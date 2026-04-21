@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-04-21</title>
+  <meta name="description" content="byte-by-byte daily lessons for Tuesday, April 21, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Tuesday, April 21, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-04-21.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-04-20.html" style="color:var(--text2)">← 2026-04-20</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-04-21</span>
+    <h1>Tuesday, April 21, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-04-20.html" class="day-nav-btn">← 2026-04-20</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 28</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 / System Design — Day 28</h1>
+<h2>Design a Chat System (WhatsApp/Slack)</h2>
+
+<blockquote><strong>难度 / Difficulty:</strong> Advanced | <strong>阶段 / Phase:</strong> Growth | <strong>预计阅读 / Read time:</strong> 3 min</blockquote>
+
+<hr/>
+
+<h3>🧠 真实场景 / Real-World Scenario</h3>
+
+<p>想象你在设计一个即时通讯系统，目标是支持 <strong>5亿用户</strong>，每天发送 <strong>500亿条消息</strong>（就像WhatsApp）。你的系统需要支持：一对一私聊、群组聊天（最多500人）、消息状态（已发送/已送达/已读）、在线状态显示、文件/图片传输。</p>
+
+<p>Imagine you're designing a real-time messaging system to support <strong>500M users</strong> with <strong>50B messages/day</strong> (think WhatsApp). Requirements: 1:1 chat, group chat (up to 500 members), message status (sent/delivered/read), online presence, and file/media sharing.</p>
+
+<hr/>
+
+<h3>📐 Architecture Overview</h3>
+
+<div class="diagram-block">                        ┌─────────────────────────────────────┐
+                        │          Client (Mobile/Web)         │
+                        └──────────────┬──────────────────────┘
+                                       │ WebSocket (persistent)
+                        ┌──────────────▼──────────────────────┐
+                        │          API Gateway / LB            │
+                        └──────┬──────────────┬───────────────┘
+                               │              │
+              ┌────────────────▼──┐    ┌──────▼──────────────┐
+              │  Chat Service     │    │  Presence Service    │
+              │  (WebSocket Mgr)  │    │  (Redis Pub/Sub)     │
+              └────────┬──────────┘    └──────┬───────────────┘
+                       │                      │
+         ┌─────────────▼──────────┐    ┌──────▼───────────────┐
+         │  Message Queue (Kafka) │    │  Redis (Online State)│
+         └─────────────┬──────────┘    └──────────────────────┘
+                       │
+         ┌─────────────▼──────────────────────────────┐
+         │  Message Processor                          │
+         │  - fan-out to recipients                    │
+         │  - push notification if offline             │
+         └───┬────────────────────────┬───────────────┘
+             │                        │
+    ┌────────▼──────────┐    ┌────────▼───────────────┐
+    │  Message DB        │    │  Push Notification      │
+    │  (Cassandra)       │    │  Service (APNs/FCM)     │
+    └───────────────────┘    └────────────────────────┘
+
+    ┌──────────────────────────────────────────────────┐
+    │  Media Service                                   │
+    │  - S3 for storage, CDN for delivery             │
+    │  - Pre-signed URLs for upload/download          │
+    └──────────────────────────────────────────────────┘</div>
+
+<hr/>
+
+<h3>⚡ Key Design Decisions / 关键设计决策</h3>
+
+<p>#### 1. WebSocket vs HTTP Polling</p>
+<p><strong>用WebSocket，不用轮询。</strong>  </p>
+<p>WebSocket keeps a persistent bidirectional connection — ideal for real-time messaging. HTTP long-polling (Comet) works but wastes resources. Server-Sent Events (SSE) is one-way only.</p>
+
+<p><strong>选WebSocket的原因:</strong> 延迟低（&lt; 100ms），服务器可主动推送，连接复用减少握手开销。</p>
+
+<p>#### 2. Message Storage: Cassandra (not MySQL)</p>
+<ul><li>写入极重 (write-heavy): 每秒数百万条消息</li><li>按 <code>(chat_id, message_id)</code> 分区，天然支持时间范围查询</li><li>高可用，无单点故障</li><li><strong>Schema:</strong></li></ul>
+<p>  ```sql</p>
+<p>  CREATE TABLE messages (</p>
+<p>    chat_id     UUID,</p>
+<p>    message_id  TIMEUUID,   -- sortable by time</p>
+<p>    sender_id   UUID,</p>
+<p>    content     TEXT,</p>
+<p>    type        TEXT,       -- 'text', 'image', 'file'</p>
+<p>    status      TEXT,       -- 'sent', 'delivered', 'read'</p>
+<p>    PRIMARY KEY (chat_id, message_id)</p>
+<p>  ) WITH CLUSTERING ORDER BY (message_id DESC);</p>
+<p>  ```</p>
+
+<p>#### 3. Message Fan-Out Strategy</p>
+<p>For 1:1 chat: simple — push to recipient's WebSocket connection.  </p>
+<p>For group chat (up to 500 members): <strong>fan-out on write</strong> via Kafka.</p>
+<ul><li>Message lands in Kafka topic</li><li>Consumer service fans out to each member's inbox</li><li>Why Kafka? Durability, replay, and decouples producers from consumers</li></ul>
+
+<p><strong>群组消息扇出 (fan-out on write) vs 扇出读取 (fan-out on read):</strong>  </p>
+<p>Fan-out on write = 写入时复制到每人收件箱（适合中小群组）  </p>
+<p>Fan-out on read = 读取时聚合（适合超大群组/Twitter模式）  </p>
+<p><strong>500人以内：写时扇出</strong> — 读取延迟更低，体验更好。</p>
+
+<p>#### 4. Online Presence</p>
+<ul><li>Use <strong>Redis pub/sub</strong> per user channel</li><li>Client sends heartbeat every 5s; server marks user online in Redis with TTL=10s</li><li>Subscribe to friend's channel to receive presence updates</li><li><strong>问题:</strong> 5亿用户在线状态 → Redis Cluster，按用户ID分片</li></ul>
+
+<hr/>
+
+<h3>❌ 别踩这些坑 / Common Mistakes</h3>
+
+<table><thead><tr><th>❌ 误区</th><th>✅ 正确做法</th></tr></thead><tbody><tr><td>用MySQL存消息</td><td>用Cassandra/HBase — 写入QPS太高</td></tr><tr><td>HTTP轮询实现"实时"</td><td>WebSocket长连接</td></tr><tr><td>同步fan-out到群成员</td><td>异步Kafka消费</td></tr><tr><td>不做消息去重</td><td>每条消息UUID + 客户端幂等性</td></tr><tr><td>媒体文件存数据库</td><td>S3 + CDN + pre-signed URL</td></tr><tr><td>忘记离线消息</td><td>推送通知 (APNs/FCM) + 消息持久化</td></tr></tbody></table>
+
+<hr/>
+
+<h3>🔢 Back-of-Envelope / 估算</h3>
+
+<div class="diagram-block">DAU: 500M users
+Messages per user per day: 40
+Total messages/day: 20B
+Peak QPS: 20B / 86400 * 2 (peak factor) ≈ 460K msg/s
+
+Storage per message: ~100 bytes
+Daily storage: 20B * 100 = 2TB/day
+5-year retention: ~3.6PB (need compression + tiering)
+
+WebSocket connections (peak): ~100M concurrent
+→ Need ~10,000 chat servers (each handles ~10K connections)</div>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li><a href="https://www.youtube.com/watch?v=vvhC64hQZMk">System Design Interview – WhatsApp</a> — Alex Xu walkthrough</li><li><a href="https://discord.com/blog/how-discord-stores-billions-of-messages">How Discord Stores Billions of Messages</a> — Real Cassandra story</li><li><a href="https://highscalability.com/blog/2014/2/26/the-whatsapp-architecture-facebook-bought-for-19-billion.html">WhatsApp Architecture</a> — HighScalability</li></ul>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<div class="diagram-block">把聊天系统想成邮局：你发信（消息）→ 邮局（服务器）分拣 → 立刻送到收件人信箱（WebSocket）。如果收件人不在家（离线），就留张纸条（推送通知）让他回来取。Cassandra就像超大容量的信件档案室，永不丢信。</div>
+
+<div class="diagram-block">Think of it like a postal service: you drop a letter → post office (server) sorts it → delivers to recipient's mailbox instantly (WebSocket). If they're offline, leave a note (push notification). Cassandra is the giant mail archive that never loses a letter.</div>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 28</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 / Algorithms — Day 28</h1>
+<h2>#739 Daily Temperatures (Medium) — Stack Pattern (5/7)</h2>
+
+<blockquote><strong>模式 / Pattern:</strong> 单调栈 (Monotonic Stack) | <strong>阶段 / Phase:</strong> Growth | <strong>预计阅读 / Read time:</strong> 4 min</blockquote>
+
+<hr/>
+
+<p>🧩 <strong>单调栈 (Monotonic Stack) — 5/7</strong> — building on the template from Day 23 (Valid Parentheses), Day 24 (Min Stack), Day 26 (Evaluate Reverse Polish Notation)</p>
+
+<p>今天是单调栈模式的第5题。前面我们用栈做了括号匹配、最小值追踪、表达式求值。今天进入<strong>单调栈最经典的用法：找下一个更大元素 (next greater element)</strong>。</p>
+
+<p>Today is the 5th problem in the stack block. We've used stacks for parentheses, min tracking, and expression evaluation. Now we hit the <strong>most classic monotonic stack use case: finding the next greater element</strong>.</p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+<ul><li>🔗 <a href="https://leetcode.com/problems/daily-temperatures/">LeetCode #739</a> 🟡 Medium</li><li>📹 <a href="https://www.neetcode.io/problems/daily-temperatures">NeetCode Video</a></li></ul>
+
+<hr/>
+
+<h3>🌍 Real-World Analogy / 现实类比</h3>
+
+<p>你站在一排人群中，每个人都想知道：<strong>后面什么时候会出现比我更高的人？</strong>  </p>
+<p>暴力解法：每个人回头一个个数。  </p>
+<p>聪明解法：维护一个"等待队列"——还没找到更高者的人先排队，一旦出现更高的，通知所有比他矮的人。</p>
+
+<p>You're in a queue; each person wants to know: <strong>when will someone taller appear behind me?</strong>  </p>
+<p>Brute force: each person looks back one by one.  </p>
+<p>Smart: maintain a "waiting list" — those who haven't found someone taller yet wait in stack. When a taller person appears, notify everyone shorter.</p>
+
+<hr/>
+
+<h3>📋 Problem</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Input:  temperatures = [73, 74, 75, 71, 69, 72, 76, 73]&#10;Output: [1,  1,  4,  2,  1,  1,  0,  0]">Copy</button>
+  <pre><code class="language-text">Input:  temperatures = [73, 74, 75, 71, 69, 72, 76, 73]
+Output: [1,  1,  4,  2,  1,  1,  0,  0]</code></pre>
+</div>
+
+<p>For each day, find how many days until a warmer temperature. If none, return 0.</p>
+
+<hr/>
+
+<h3>🗺️ Mapping to Pattern Template</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Template (from Day 22 intro):&#10;# stack = []&#10;# for i, num in enumerate(arr):&#10;#     while stack and arr[stack[-1]] &lt; num:&#10;#         idx = stack.pop()&#10;#         result[idx] = num  # next greater&#10;#     stack.append(i)&#10;&#10;# Daily Temperatures — direct application:&#10;# arr = temperatures&#10;# result[idx] = i - idx  (distance, not value)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Template (from Day 22 intro):</span>
+<span style="color:#5c6370;"># stack = []</span>
+<span style="color:#5c6370;"># for i, num in enumerate(arr):</span>
+<span style="color:#5c6370;">#     while stack and arr[stack[-1]] &lt; num:</span>
+<span style="color:#5c6370;">#         idx = stack.pop()</span>
+<span style="color:#5c6370;">#         result[idx] = num  # next greater</span>
+<span style="color:#5c6370;">#     stack.append(i)</span>
+
+<span style="color:#5c6370;"># Daily Temperatures — direct application:</span>
+<span style="color:#5c6370;"># arr = temperatures</span>
+<span style="color:#5c6370;"># result[idx] = i - idx  (distance, not value)</span></code></pre>
+</div>
+
+<p><strong>这题 vs 模板的区别 / Difference from template:</strong></p>
+<ul><li>Template records the "next greater value" → this problem records the <strong>distance</strong> (i - idx)</li><li>Everything else is identical: maintain decreasing stack of indices</li></ul>
+
+<hr/>
+
+<h3>✅ Solution with Trace</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def dailyTemperatures(temperatures: list[int]) -&gt; list[int]:&#10;    n = len(temperatures)&#10;    result = [0] * n&#10;    stack = []  # stack of indices, temperatures[stack top] is always decreasing&#10;    &#10;    for i, temp in enumerate(temperatures):&#10;        # Pop all indices where we found a warmer day&#10;        while stack and temperatures[stack[-1]] &lt; temp:&#10;            prev_idx = stack.pop()&#10;            result[prev_idx] = i - prev_idx  # days to wait&#10;        stack.append(i)&#10;    &#10;    # Remaining indices in stack → no warmer day found, result stays 0&#10;    return result">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> dailyTemperatures(temperatures: list[int]) -&gt; list[int]:
+    n = len(temperatures)
+    result = [<span style="color:#56b6c2;">0</span>] * n
+    stack = []  <span style="color:#5c6370;"># stack of indices, temperatures[stack top] is always decreasing</span>
+    
+    <span style="color:#c678dd;">for</span> i, temp <span style="color:#c678dd;">in</span> enumerate(temperatures):
+        <span style="color:#5c6370;"># Pop all indices where we found a warmer day</span>
+        <span style="color:#c678dd;">while</span> stack <span style="color:#c678dd;">and</span> temperatures[stack[-<span style="color:#56b6c2;">1</span>]] &lt; temp:
+            prev_idx = stack.pop()
+            result[prev_idx] = i - prev_idx  <span style="color:#5c6370;"># days to wait</span>
+        stack.append(i)
+    
+    <span style="color:#5c6370;"># Remaining indices in stack → no warmer day found, result stays 0</span>
+    <span style="color:#c678dd;">return</span> result</code></pre>
+</div>
+
+<p><strong>逐步追踪 / Step-by-step trace:</strong></p>
+<div class="diagram-block">temperatures = [73, 74, 75, 71, 69, 72, 76, 73]
+index:          [0,  1,  2,  3,  4,  5,  6,  7 ]
+
+i=0, temp=73: stack=[] → push 0.      stack=[0]
+i=1, temp=74: 74&gt;73(idx0)→result[0]=1; push 1.  stack=[1]
+i=2, temp=75: 75&gt;74(idx1)→result[1]=1; push 2.  stack=[2]
+i=3, temp=71: 71&lt;75 → just push 3.    stack=[2,3]
+i=4, temp=69: 69&lt;71 → just push 4.    stack=[2,3,4]
+i=5, temp=72: 72&gt;69(idx4)→result[4]=1
+              72&gt;71(idx3)→result[3]=2
+              72&lt;75 → stop, push 5.   stack=[2,5]
+i=6, temp=76: 76&gt;72(idx5)→result[5]=1
+              76&gt;75(idx2)→result[2]=4; push 6.   stack=[6]
+i=7, temp=73: 73&lt;76 → push 7.         stack=[6,7]
+
+result = [1, 1, 4, 2, 1, 1, 0, 0] ✓</div>
+
+<p><strong>⏱️ Complexity:</strong> Time O(n) — each element pushed/popped at most once. Space O(n).</p>
+
+<hr/>
+
+<h3>🔄 举一反三 / Pattern Variations in This Block</h3>
+
+<table><thead><tr><th>Problem</th><th>Stack Usage</th><th>What Changes</th></tr></thead><tbody><tr><td>#20 Valid Parentheses (1/7)</td><td>matching brackets</td><td>pop on match</td></tr><tr><td>#155 Min Stack (2/7)</td><td>dual stack for min</td><td>track minimum</td></tr><tr><td>#150 Eval RPN (3/7)</td><td>operator/operand</td><td>pop two, compute</td></tr><tr><td><strong>#739 Daily Temps (5/7)</strong></td><td><strong>monotonic decreasing</strong></td><td><strong>next greater</strong></td></tr><tr><td>#853 Car Fleet (6/7)</td><td>monotonic</td><td>merge fleets</td></tr><tr><td>#84 Histogram (7/7)</td><td>monotonic</td><td>area calculation</td></tr></tbody></table>
+
+<p><strong>核心变体 / Core variation to recognize:</strong>  </p>
+<p>"Next greater/smaller" → <strong>monotonic stack</strong> (today's pattern)  </p>
+<p>"Matching/balanced" → <strong>bracket stack</strong> (Day 23)  </p>
+<p>"Evaluate expression" → <strong>operand/operator stack</strong> (Day 26)</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<ul><li><a href="https://leetcode.com/problems/daily-temperatures/solutions/109832/java-easy-ac-solution-with-stack/">LeetCode Discussion — Best Explanation</a></li><li><a href="https://neetcode.io/courses/dsa-for-beginners/29">NeetCode — Monotonic Stack Explained</a></li><li><a href="https://visualgo.net/en/list">Visualgo — Stack Visualization</a></li></ul>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象你在排队买票，每个人记录"我前面什么时候会有空位（比我快的人离开）"。我们维护一个"还在等的人"的列表，按顺序排。一旦有人离开（温度更高），就告诉所有等得比他久的人"你等了几天"。这样每个人最多进出列表一次，比一个个回头数快多了！</p>
+
+<p>Imagine everyone in line tracking "when will someone faster than me appear?" We keep a list of people still waiting in order. When someone faster shows up, we notify everyone slower. Each person enters/leaves the list at most once — way faster than checking one by one!</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 28</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 / Soft Skills — Day 28</h1>
+<h2>Build vs Buy Decision Making</h2>
+
+<blockquote><strong>难度 / Level:</strong> Senior/Staff | <strong>类别 / Category:</strong> Decision Making | <strong>预计阅读 / Read time:</strong> 2 min</blockquote>
+
+<hr/>
+
+<h3>🎯 为什么这个问题很重要 / Why This Question Matters</h3>
+
+<p>Build vs buy是每个Senior/Staff工程师都会遇到的战略决策。面试官想看：你会不会权衡<strong>短期成本 vs 长期维护</strong>，<strong>控制权 vs 速度</strong>，<strong>差异化价值 vs 通用功能</strong>。这不只是技术问题，更是工程判断力的体现。</p>
+
+<p>Build vs buy is a strategic decision every Senior/Staff engineer faces. Interviewers want to see: can you weigh <strong>short-term cost vs long-term maintenance</strong>, <strong>control vs speed</strong>, <strong>differentiating value vs commodity functionality</strong>? This tests engineering judgment, not just technical skills.</p>
+
+<hr/>
+
+<h3>⭐ STAR Framework</h3>
+
+<p><strong>Situation / 背景:</strong></p>
+<blockquote>"我们在构建实时数据管道，需要一个消息队列。团队有人提议自研，也有人提议用Kafka。这是个200万用户的产品，但消息队列不是我们的核心竞争力。"</blockquote>
+
+<blockquote>"We were building a real-time data pipeline and needed a message queue. Some wanted to build one; others wanted Kafka. 2M users, but messaging wasn't our core differentiator."</blockquote>
+
+<p><strong>Task / 任务:</strong></p>
+<blockquote>评估两个方案的真实成本，给出有数据支撑的建议。</blockquote>
+
+<p><strong>Action / 行动:</strong></p>
+<blockquote>我做了一个快速分析框架：</blockquote>
+<blockquote>1. <strong>核心 vs 非核心</strong> — 消息队列是通用基础设施，不是我们的差异化竞争力</blockquote>
+<blockquote>2. <strong>总拥有成本 (TCO)</strong> — 自研：3个工程师×6个月 + 永续维护。Kafka：2周集成 + 运维成本（~$500/月托管服务）</blockquote>
+<blockquote>3. <strong>风险矩阵</strong> — 自研：稳定性风险、没有社区支持。Kafka：供应商依赖、少量定制限制</blockquote>
+<blockquote>4. <strong>团队能力</strong> — 没有分布式系统专家，自研风险高</blockquote>
+
+<blockquote>I built a quick decision framework:</blockquote>
+<blockquote>1. <strong>Core vs commodity</strong> — message queuing is generic infrastructure, not our differentiation</blockquote>
+<blockquote>2. <strong>TCO</strong> — build: 3 engineers × 6 months + perpetual maintenance vs buy: 2-week integration + ~$500/month managed service</blockquote>
+<blockquote>3. <strong>Risk matrix</strong> — build: stability risk, no community. Buy: vendor dependency, some customization limits</blockquote>
+<blockquote>4. <strong>Team capabilities</strong> — no distributed systems experts on team</blockquote>
+
+<blockquote>我建议采用托管Kafka（Confluent Cloud）。节省了约18个工程师月，让团队专注于产品功能。</blockquote>
+
+<p><strong>Result / 结果:</strong></p>
+<blockquote>集成用了两周，比预期早6个月上线。运行了1年没有重大故障。后来我把这个框架整理成团队的"Make vs Buy"决策模板，被多个团队复用。</blockquote>
+
+<blockquote>Integration took 2 weeks, shipped 6 months early. Zero major incidents in year one. I documented the framework as a team "Make vs Buy" template — adopted by 3 other teams.</blockquote>
+
+<hr/>
+
+<h3>❌ Bad Answer vs ✅ Good Answer</h3>
+
+<p><strong>❌ 踩坑回答:</strong></p>
+<blockquote>"我们选择了Kafka因为它很流行，大家都在用。"</blockquote>
+
+<p><em>问题: 没有展示决策过程，没有权衡，听起来像随大流。</em></p>
+
+<p><strong>✅ 高分回答:</strong></p>
+<blockquote>"我建立了一个框架来分析核心竞争力、TCO和团队风险，然后带着数据向stakeholders推荐了Kafka。结果节省了18个工程师月，让我们更早交付了用户真正需要的功能。"</blockquote>
+
+<hr/>
+
+<h3>🚀 Senior/Staff级别加分点</h3>
+
+<ol><li><strong>量化影响</strong> — 不只说"省了时间"，要说"节省18个工程师月 = $X万美元"</li><li><strong>展示框架</strong> — 面试官想看你有可复用的决策方法，不是ad-hoc</li><li><strong>考虑长期维护</strong> — "我们今天能构建它，但谁来维护？"</li><li><strong>识别错误的build理由</strong> — "我们想完全控制" → 通常是overengineering的信号</li><li><strong>何时应该build</strong> — 当功能是核心差异化价值，或有严格合规要求（数据主权），或外部方案有根本性gap</li></ol>
+
+<p><strong>经典Build vs Buy框架:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Build when:&#10;✅ Core differentiator (your competitive moat)&#10;✅ Existing solutions have fundamental gaps&#10;✅ Compliance/data sovereignty requirements&#10;✅ Team has the expertise + bandwidth&#10;&#10;Buy when:&#10;✅ Commodity functionality&#10;✅ No differentiation value&#10;✅ High quality options exist&#10;✅ Speed to market matters&#10;✅ Team lacks domain expertise">Copy</button>
+  <pre><code class="language-text">Build when:
+✅ Core differentiator (your competitive moat)
+✅ Existing solutions have fundamental gaps
+✅ Compliance/data sovereignty requirements
+✅ Team has the expertise + bandwidth
+
+Buy when:
+✅ Commodity functionality
+✅ No differentiation value
+✅ High quality options exist
+✅ Speed to market matters
+✅ Team lacks domain expertise</code></pre>
+</div>
+
+<hr/>
+
+<h3>💡 Key Takeaways / 核心要点</h3>
+
+<ul><li>🎯 <strong>不要build ego trip</strong> — "因为自己写的更好" 不是理由</li><li>📊 <strong>TCO要算全</strong> — 工程时间 + 机会成本 + 永续维护 + 招聘专才</li><li>🔑 <strong>核心竞争力优先</strong> — 只在用户愿意为之付钱的差异化功能上build</li><li>📝 <strong>记录决策</strong> — ADR (Architecture Decision Record) 让团队对齐，避免反复争论</li></ul>
+
+<hr/>
+
+<h3>📚 References</h3>
+<ul><li><a href="https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions">ADR (Architecture Decision Records) — Michael Nygard</a></li><li><a href="https://a16z.com/build-vs-buy/">Build vs Buy Framework — a16z</a></li><li><a href="https://newsletter.pragmaticengineer.com/">Stop building commodity features — pragmatic engineering</a></li></ul>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>自己造汽车还是买车？你要上班，开车去。你是汽车专家吗？不是。造车需要多久？1年。买车需要多久？1周。除非你是赛车手（汽车是你的核心竞争力），否则就买！工程决策也一样——把精力放在你做得比别人更好的地方。</p>
+
+<p>Build a car or buy one? You need to get to work. Are you a car expert? No. How long to build? 1 year. Buy? 1 week. Unless you're a race car driver (cars ARE your competitive edge), just buy! Engineering is the same — spend your energy where you're uniquely better than others.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 / Frontend — Day 28</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 / Frontend — Day 28</h1>
+<h2>Promises, async/await — Async Control Flow</h2>
+
+<blockquote><strong>类别 / Category:</strong> JavaScript Core | <strong>Week:</strong> 5 | <strong>预计阅读 / Read time:</strong> 2 min</blockquote>
+
+<hr/>
+
+<h3>🌍 真实场景 / Real Scenario</h3>
+
+<p>你在做一个 dashboard，需要同时加载用户数据、最新订单、和通知列表。如果按顺序串行请求，会浪费 3x 时间。你需要理解 <strong>Promise 并发控制</strong> 才能写出生产级的异步代码。</p>
+
+<p>You're building a dashboard that needs to load user profile, latest orders, and notifications. Sequential requests waste 3x the time. Understanding <strong>Promise concurrency control</strong> is essential for production-grade async code.</p>
+
+<hr/>
+
+<h3>🧪 猜猜输出什么？ / What does this output?</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="async function fetchDashboard(userId: string) {&#10;  console.log(&quot;A&quot;);&#10;  &#10;  const user = await fetch(`/api/users/${userId}`);&#10;  console.log(&quot;B&quot;);&#10;  &#10;  const [orders, notifications] = await Promise.all([&#10;    fetch(`/api/orders?userId=${userId}`),&#10;    fetch(`/api/notifications?userId=${userId}`)&#10;  ]);&#10;  console.log(&quot;C&quot;);&#10;  &#10;  return { user, orders, notifications };&#10;}&#10;&#10;fetchDashboard(&quot;123&quot;);&#10;console.log(&quot;D&quot;);">Copy</button>
+  <pre><code class="language-typescript">async function fetchDashboard(userId: string) {
+  console.log("A");
+  
+  const user = await fetch(`/api/users/${userId}`);
+  console.log("B");
+  
+  const [orders, notifications] = await Promise.all([
+    fetch(`/api/orders?userId=${userId}`),
+    fetch(`/api/notifications?userId=${userId}`)
+  ]);
+  console.log("C");
+  
+  return { user, orders, notifications };
+}
+
+fetchDashboard("123");
+console.log("D");</code></pre>
+</div>
+
+<p><strong>What logs first?</strong></p>
+<ul><li>A) A → B → C → D</li><li>B) A → D → B → C</li><li>C) D → A → B → C</li><li>D) A → B → D → C</li></ul>
+
+<blockquote><strong>答案 / Answer: B</strong> — <code>async</code> functions run synchronously until the first <code>await</code>. So "A" logs, then the function suspends at <code>await fetch(...)</code>, and "D" logs immediately. When the fetch resolves, "B" logs, then "C" after Promise.all.</blockquote>
+
+<hr/>
+
+<h3>🔑 Core Concepts</h3>
+
+<p>#### Promise 状态机 / Promise State Machine</p>
+<div class="diagram-block">pending → fulfilled (resolve)
+        → rejected  (reject)
+
+Once settled, state never changes.</div>
+
+<p>#### 三种并发模式 / Three Concurrency Patterns</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// ❌ Pattern 1: Sequential (串行) — SLOW&#10;const user = await fetchUser(id);      // waits 200ms&#10;const orders = await fetchOrders(id);  // waits another 300ms&#10;// Total: 500ms — unnecessary!&#10;&#10;// ✅ Pattern 2: Parallel (并行) — FAST&#10;const [user, orders] = await Promise.all([&#10;  fetchUser(id),    // both start at the same time&#10;  fetchOrders(id),  // &#10;]);&#10;// Total: max(200ms, 300ms) = 300ms 🚀&#10;&#10;// ⚠️ Pattern 3: Promise.allSettled — when you need ALL results&#10;// even if some fail (e.g., non-critical widgets)&#10;const results = await Promise.allSettled([&#10;  fetchUser(id),&#10;  fetchOrders(id),&#10;  fetchNotifications(id),&#10;]);&#10;results.forEach(r =&gt; {&#10;  if (r.status === 'fulfilled') console.log(r.value);&#10;  else console.error(r.reason);&#10;});">Copy</button>
+  <pre><code class="language-typescript">// ❌ Pattern 1: Sequential (串行) — SLOW
+const user = await fetchUser(id);      // waits 200ms
+const orders = await fetchOrders(id);  // waits another 300ms
+// Total: 500ms — unnecessary!
+
+// ✅ Pattern 2: Parallel (并行) — FAST
+const [user, orders] = await Promise.all([
+  fetchUser(id),    // both start at the same time
+  fetchOrders(id),  // 
+]);
+// Total: max(200ms, 300ms) = 300ms 🚀
+
+// ⚠️ Pattern 3: Promise.allSettled — when you need ALL results
+// even if some fail (e.g., non-critical widgets)
+const results = await Promise.allSettled([
+  fetchUser(id),
+  fetchOrders(id),
+  fetchNotifications(id),
+]);
+results.forEach(r =&gt; {
+  if (r.status === 'fulfilled') console.log(r.value);
+  else console.error(r.reason);
+});</code></pre>
+</div>
+
+<hr/>
+
+<h3>❌ Common Mistakes / 常见错误</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// ❌ Mistake 1: await inside map() — sequential, not parallel&#10;const data = await Promise.all(&#10;  ids.map(id =&gt; await fetchUser(id))  // SyntaxError! can't await inside non-async map&#10;);&#10;&#10;// ✅ Correct: pass Promise directly&#10;const data = await Promise.all(&#10;  ids.map(id =&gt; fetchUser(id))  // no await inside map&#10;);&#10;&#10;// ❌ Mistake 2: unhandled rejection&#10;const result = await Promise.all([fetchA(), fetchB()]); // if B rejects, A's result lost!&#10;&#10;// ✅ Correct: use allSettled or try/catch per request&#10;const [a, b] = await Promise.allSettled([fetchA(), fetchB()]);&#10;&#10;// ❌ Mistake 3: missing error handling&#10;async function loadData() {&#10;  const data = await fetchData(); // throws? crashes silently!&#10;  return data;&#10;}&#10;&#10;// ✅ Correct:&#10;async function loadData() {&#10;  try {&#10;    return await fetchData();&#10;  } catch (err) {&#10;    console.error(&quot;Failed to load:&quot;, err);&#10;    return null; // or throw to parent&#10;  }&#10;}">Copy</button>
+  <pre><code class="language-typescript">// ❌ Mistake 1: await inside map() — sequential, not parallel
+const data = await Promise.all(
+  ids.map(id =&gt; await fetchUser(id))  // SyntaxError! can't await inside non-async map
+);
+
+// ✅ Correct: pass Promise directly
+const data = await Promise.all(
+  ids.map(id =&gt; fetchUser(id))  // no await inside map
+);
+
+// ❌ Mistake 2: unhandled rejection
+const result = await Promise.all([fetchA(), fetchB()]); // if B rejects, A's result lost!
+
+// ✅ Correct: use allSettled or try/catch per request
+const [a, b] = await Promise.allSettled([fetchA(), fetchB()]);
+
+// ❌ Mistake 3: missing error handling
+async function loadData() {
+  const data = await fetchData(); // throws? crashes silently!
+  return data;
+}
+
+// ✅ Correct:
+async function loadData() {
+  try {
+    return await fetchData();
+  } catch (err) {
+    console.error("Failed to load:", err);
+    return null; // or throw to parent
+  }
+}</code></pre>
+</div>
+
+<hr/>
+
+<h3>🎯 When to Use / When NOT to Use</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Use Promise.all when:&#10;✅ All requests are independent&#10;✅ You need ALL to succeed (fail fast if any fails)&#10;✅ Performance matters (dashboard loads, batch ops)&#10;&#10;Use Promise.allSettled when:&#10;✅ Some failures are acceptable&#10;✅ Non-critical widgets/sections&#10;✅ You need all results regardless of failure&#10;&#10;Use sequential await when:&#10;✅ Request B depends on result of A&#10;✅ Ordering matters (database transactions)&#10;✅ You need to avoid rate limiting&#10;&#10;Avoid:&#10;❌ await in a for loop when items are independent&#10;❌ new Promise() wrapping async functions (anti-pattern)&#10;❌ .then() chains when async/await is available (less readable)">Copy</button>
+  <pre><code class="language-text">Use Promise.all when:
+✅ All requests are independent
+✅ You need ALL to succeed (fail fast if any fails)
+✅ Performance matters (dashboard loads, batch ops)
+
+Use Promise.allSettled when:
+✅ Some failures are acceptable
+✅ Non-critical widgets/sections
+✅ You need all results regardless of failure
+
+Use sequential await when:
+✅ Request B depends on result of A
+✅ Ordering matters (database transactions)
+✅ You need to avoid rate limiting
+
+Avoid:
+❌ await in a for loop when items are independent
+❌ new Promise() wrapping async functions (anti-pattern)
+❌ .then() chains when async/await is available (less readable)</code></pre>
+</div>
+
+<hr/>
+
+<h3>🔥 Production Pattern: TypeScript async with error handling</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="type Result&lt;T&gt; = { data: T; error: null } | { data: null; error: Error };&#10;&#10;async function safeAsync&lt;T&gt;(promise: Promise&lt;T&gt;): Promise&lt;Result&lt;T&gt;&gt; {&#10;  try {&#10;    const data = await promise;&#10;    return { data, error: null };&#10;  } catch (err) {&#10;    return { data: null, error: err instanceof Error ? err : new Error(String(err)) };&#10;  }&#10;}&#10;&#10;// Usage — no try/catch needed at call site:&#10;const { data: user, error } = await safeAsync(fetchUser(&quot;123&quot;));&#10;if (error) return &lt;ErrorState message={error.message} /&gt;;">Copy</button>
+  <pre><code class="language-typescript">type Result&lt;T&gt; = { data: T; error: null } | { data: null; error: Error };
+
+async function safeAsync&lt;T&gt;(promise: Promise&lt;T&gt;): Promise&lt;Result&lt;T&gt;&gt; {
+  try {
+    const data = await promise;
+    return { data, error: null };
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : new Error(String(err)) };
+  }
+}
+
+// Usage — no try/catch needed at call site:
+const { data: user, error } = await safeAsync(fetchUser("123"));
+if (error) return &lt;ErrorState message={error.message} /&gt;;</code></pre>
+</div>
+
+<hr/>
+
+<h3>📚 References</h3>
+<ul><li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">MDN — Promise</a></li><li><a href="https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Promises">MDN — async/await</a></li><li><a href="https://javascript.info/promise-api">JavaScript.info — Promise API</a></li></ul>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>Promise就像点外卖的收据。你点了3个菜（3个请求）。串行 = 等第一个菜上了再点第二个，太慢。<code>Promise.all</code> = 同时点3个菜，哪个先好哪个先上，全部好了再吃。<code>allSettled</code> = 就算有菜没做出来，你也能知道哪些成功了哪些失败了。</p>
+
+<p>A Promise is like a takeout receipt. You ordered 3 dishes. Sequential = wait for dish 1 before ordering dish 2 (slow!). <code>Promise.all</code> = order all 3 at once, eat when all are ready. <code>allSettled</code> = even if one fails, you know which succeeded and which didn't.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 28</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI — Day 28</h1>
+<h2>MCP (Model Context Protocol) — The USB for AI</h2>
+
+<blockquote><strong>类别 / Category:</strong> Agents | <strong>阶段 / Phase:</strong> Growth | <strong>预计阅读 / Read time:</strong> 2 min</blockquote>
+
+<hr/>
+
+<h3>🧠 直觉解释 / Intuitive Explanation</h3>
+
+<p>想象你的电脑没有USB标准。每个设备都需要专用接口——鼠标一种、键盘一种、硬盘一种。你每次想接新设备都要改电脑硬件。这很蠢对吧？</p>
+
+<p><strong>MCP (Model Context Protocol) 就是AI工具的USB标准。</strong></p>
+
+<p>它由Anthropic于2024年底发布，解决了一个核心问题：AI模型（LLMs）如何以统一的方式连接到外部工具、数据库、API？以前每家公司都要自己写集成代码，现在有了MCP，任何AI应用都能"即插即用"地接入MCP服务器。</p>
+
+<p>Imagine your computer had no USB standard. Every device needs a custom port. Annoying, right?</p>
+
+<p><strong>MCP is the USB standard for AI tools.</strong></p>
+
+<p>Released by Anthropic in late 2024, it solves a core problem: how can AI models connect to external tools, databases, and APIs in a <strong>unified way</strong>? Before MCP, every company wrote custom integration code. Now any AI app can "plug in" to any MCP server.</p>
+
+<hr/>
+
+<h3>⚙️ How It Works / 工作原理</h3>
+
+<div class="diagram-block">┌─────────────────────────────────────────────────────┐
+│                  MCP Architecture                    │
+│                                                     │
+│  ┌──────────────┐     MCP Protocol     ┌──────────┐ │
+│  │  AI Host     │◄──────────────────►│ MCP      │ │
+│  │  (Claude,    │   JSON-RPC over     │ Server   │ │
+│  │   Cursor,    │   stdio / HTTP/SSE  │          │ │
+│  │   Copilot)   │                     │ Exposes: │ │
+│  └──────────────┘                     │ • Tools  │ │
+│                                       │ • Resources│
+│  MCP Client                          │ • Prompts │ │
+│  (built into host)                   └──────────┘ │
+│                                                     │
+│  Examples of MCP Servers:                          │
+│  • Filesystem (read/write local files)             │
+│  • GitHub (search repos, create PRs)               │
+│  • PostgreSQL (query databases)                    │
+│  • Slack (send messages, search)                   │
+│  • Brave Search (web search)                       │
+└─────────────────────────────────────────────────────┘</div>
+
+<p><strong>三个核心原语 / Three Core Primitives:</strong></p>
+<ol><li><strong>Tools</strong> (工具) — Functions the AI can call (e.g., <code>search_web</code>, <code>create_file</code>)</li><li><strong>Resources</strong> (资源) — Data the AI can read (e.g., file contents, database rows)</li><li><strong>Prompts</strong> (提示词) — Reusable prompt templates exposed by the server</li></ol>
+
+<hr/>
+
+<h3>🐍 Runnable Python Example</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# pip install mcp anthropic&#10;&#10;from mcp.server import Server&#10;from mcp.server.stdio import stdio_server&#10;import mcp.types as types&#10;&#10;# Build a minimal MCP server that exposes a weather tool&#10;app = Server(&quot;weather-server&quot;)&#10;&#10;@app.list_tools()&#10;async def list_tools() -&gt; list[types.Tool]:&#10;    return [&#10;        types.Tool(&#10;            name=&quot;get_weather&quot;,&#10;            description=&quot;Get current weather for a city&quot;,&#10;            inputSchema={&#10;                &quot;type&quot;: &quot;object&quot;,&#10;                &quot;properties&quot;: {&#10;                    &quot;city&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;description&quot;: &quot;City name&quot;}&#10;                },&#10;                &quot;required&quot;: [&quot;city&quot;]&#10;            }&#10;        )&#10;    ]&#10;&#10;@app.call_tool()&#10;async def call_tool(name: str, arguments: dict) -&gt; list[types.TextContent]:&#10;    if name == &quot;get_weather&quot;:&#10;        city = arguments[&quot;city&quot;]&#10;        # In real code: call a weather API here&#10;        return [types.TextContent(&#10;            type=&quot;text&quot;,&#10;            text=f&quot;Weather in {city}: 72°F, sunny ☀️&quot;&#10;        )]&#10;&#10;# Run the server (Claude Desktop can now connect to it!)&#10;if __name__ == &quot;__main__&quot;:&#10;    import asyncio&#10;    asyncio.run(stdio_server(app))">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># pip install mcp anthropic</span>
+
+<span style="color:#c678dd;">from</span> mcp.server <span style="color:#c678dd;">import</span> Server
+<span style="color:#c678dd;">from</span> mcp.server.stdio <span style="color:#c678dd;">import</span> stdio_server
+<span style="color:#c678dd;">import</span> mcp.types <span style="color:#c678dd;">as</span> types
+
+<span style="color:#5c6370;"># Build a minimal MCP server that exposes a weather tool</span>
+app = Server(<span style="color:#e5c07b;">"weather-server"</span>)
+
+@app.list_tools()
+<span style="color:#c678dd;">async</span> <span style="color:#c678dd;">def</span> list_tools() -&gt; list[types.Tool]:
+    <span style="color:#c678dd;">return</span> [
+        types.Tool(
+            name=<span style="color:#e5c07b;">"get_weather"</span>,
+            description=<span style="color:#e5c07b;">"Get current weather for a city"</span>,
+            inputSchema={
+                <span style="color:#e5c07b;">"type"</span>: <span style="color:#e5c07b;">"object"</span>,
+                <span style="color:#e5c07b;">"properties"</span>: {
+                    <span style="color:#e5c07b;">"city"</span>: {<span style="color:#e5c07b;">"type"</span>: <span style="color:#e5c07b;">"string"</span>, <span style="color:#e5c07b;">"description"</span>: <span style="color:#e5c07b;">"City name"</span>}
+                },
+                <span style="color:#e5c07b;">"required"</span>: [<span style="color:#e5c07b;">"city"</span>]
+            }
+        )
+    ]
+
+@app.call_tool()
+<span style="color:#c678dd;">async</span> <span style="color:#c678dd;">def</span> call_tool(name: str, arguments: dict) -&gt; list[types.TextContent]:
+    <span style="color:#c678dd;">if</span> name == <span style="color:#e5c07b;">"get_weather"</span>:
+        city = arguments[<span style="color:#e5c07b;">"city"</span>]
+        <span style="color:#5c6370;"># In real code: call a weather API here</span>
+        <span style="color:#c678dd;">return</span> [types.TextContent(
+            type=<span style="color:#e5c07b;">"text"</span>,
+            text=f<span style="color:#e5c07b;">"Weather in {city}: 72°F, sunny ☀️"</span>
+        )]
+
+<span style="color:#5c6370;"># Run the server (Claude Desktop can now connect to it!)</span>
+<span style="color:#c678dd;">if</span> __name__ == <span style="color:#e5c07b;">"__main__"</span>:
+    <span style="color:#c678dd;">import</span> asyncio
+    asyncio.run(stdio_server(app))</code></pre>
+</div>
+
+<p>Connect this to Claude Desktop via <code>claude_desktop_config.json</code> and Claude can now call <code>get_weather</code> as a native tool!</p>
+
+<hr/>
+
+<h3>🌐 Applications / 应用场景</h3>
+
+<table><thead><tr><th>Use Case</th><th>MCP Server</th></tr></thead><tbody><tr><td>AI reads/writes your codebase</td><td>Filesystem MCP</td></tr><tr><td>AI creates GitHub PRs</td><td>GitHub MCP</td></tr><tr><td>AI queries your database</td><td>PostgreSQL MCP</td></tr><tr><td>AI searches the web</td><td>Brave Search MCP</td></tr><tr><td>AI books calendar events</td><td>Google Calendar MCP</td></tr><tr><td>AI reads company docs</td><td>Notion/Confluence MCP</td></tr></tbody></table>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<ul><li>标准化 → 生态繁荣（类比：npm为JS，MCP为AI工具）</li><li>安全 → MCP服务器可控制权限，AI不能随意访问</li><li>可组合 → 一个AI客户端可同时接多个MCP服务器</li></ul>
+
+<hr/>
+
+<h3>⚡ MCP vs Function Calling</h3>
+
+<table><thead><tr><th></th><th>Function Calling</th><th>MCP</th></tr></thead><tbody><tr><td>标准化</td><td>各厂商自定义</td><td>统一协议</td></tr><tr><td>服务器端部署</td><td>不支持</td><td>支持</td></tr><tr><td>资源访问</td><td>无</td><td>支持 (Resources)</td></tr><tr><td>跨模型兼容</td><td>❌</td><td>✅</td></tr></tbody></table>
+
+<hr/>
+
+<h3>📚 References</h3>
+<ul><li><a href="https://modelcontextprotocol.io/introduction">MCP Official Docs — Anthropic</a></li><li><a href="https://github.com/modelcontextprotocol/python-sdk">MCP GitHub Repo</a></li><li><a href="https://github.com/punkpeye/awesome-mcp-servers">Awesome MCP Servers</a></li></ul>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>以前AI想用工具，就像每次换手机都要重新教它所有的按钮。MCP就是给AI装了个"学徒手册"：任何工具只要按格式写好，AI就能立刻会用，不用每次重新配置。就像学会了用筷子，就能夹任何菜。</p>
+
+<p>Before MCP, teaching an AI a new tool was like rewriting the instruction manual every time. MCP is a standard instruction format — any tool written to spec can be used by any AI immediately. Like learning chopsticks: once you know the technique, you can pick up any food.</p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
