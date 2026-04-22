@@ -5,8 +5,232 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 21 Apr 2026 15:13:32 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 22 Apr 2026 15:22:36 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-22</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-22</guid>
+      <pubDate>Wed, 22 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<p>🏗️ <strong>系统设计 / System Design</strong> — Design a Search Engine</p>
+
+<p><strong>场景 / Scenario:</strong></p>
+<p>想象你在设计 Google 或 Bing 的核心搜索功能。用户输入查询，你需要在几毫秒内从数十亿个网页中返回最相关的结果。</p>
+<p>Imagine you are designing the core search functionality of Google or Bing. A user enters a query, and you need to return the most relevant results from billions of web pages in milliseconds.</p>
+
+<p><strong>架构图 / Architecture Diagram:</strong></p>
+<pre><code>
+[User] --&gt; [Load Balancer] --&gt; [Web Servers]
+                                     |
+                                     v
+                            [Query Processor]
+                               /           \
+                              /             \
+                    [Index Cluster]    [Document Store]
+                    (Inverted Index)   (HTML/Snippets)
+                             |
+                      [Ranker / ML]
+</code></pre>
+
+<p><strong>核心权衡 / Key Tradeoffs:</strong></p>
+<p>1. <strong>Inverted Index (倒排索引):</strong> 为什么不直接搜网页？因为太慢。倒排索引将单词映射到包含该单词的文档列表（就像书后的索引），极大加快了查询速度。/ Why not just search web pages directly? Too slow. An inverted index maps words to a list of documents containing them (like an index at the back of a book), drastically speeding up queries.</p>
+<p>2. <strong>Crawling vs Indexing (爬取 vs 索引):</strong> 爬虫（Crawler）异步抓取网页，索引器（Indexer）离线构建索引。查询时只访问索引，不接触爬虫。/ Crawlers fetch pages asynchronously, and Indexers build the index offline. Queries only hit the index, never the crawlers.</p>
+<p>3. <strong>Ranking (排名):</strong> 仅找到文档不够，还需要根据相关性（如 PageRank、TF-IDF、机器学习模型）进行排序。/ Finding documents isn&#x27;t enough; they must be sorted by relevance (e.g., PageRank, TF-IDF, ML models).</p>
+
+<p><strong>常见误区 / Common Mistakes:</strong></p>
+<p>- ❌ <strong>实时更新索引 (Real-time index updates):</strong> 每次有新网页就更新整个索引。/ Updating the entire index every time a new page is found.</p>
+<p>- ✅ <strong>正确做法 (Correct approach):</strong> 使用主索引（只读，定期构建）和辅助/内存索引（处理新文档），查询时合并结果。/ Use a main index (read-only, built periodically) and an auxiliary/in-memory index (for new docs), merging results at query time.</p>
+
+<p><strong>📚 参考文献 / References:</strong></p>
+<p>- [Elasticsearch Architecture](https://www.elastic.co/guide/en/elasticsearch/reference/current/elasticsearch-intro.html)</p>
+<p>- [How Google Search Works](https://www.google.com/search/howsearchworks/)</p>
+<p>- [System Design: Search Engine](https://www.geeksforgeeks.org/design-a-search-engine-system-design-interview/)</p>
+
+<p><strong>🧒 ELI5 (Explain Like I&#x27;m 5):</strong></p>
+<p>搜索引擎就像一个超级图书管理员。他不一页一页翻书找答案，而是提前做了一个巨大的“词汇表”，记录了每个词在哪些书的哪一页。你一问，他查词汇表，瞬间就把书找出来了！</p>
+<p>A search engine is like a super librarian. Instead of flipping through books page by page to find answers, they made a giant &quot;vocabulary list&quot; beforehand, recording which books and pages contain each word. When you ask, they check the list and find the books instantly!</p>
+<hr/>
+<h1>💻 Algorithms</h1>
+<p>💻 <strong>算法 / Algorithms</strong> — #853 Car Fleet (Medium) — Stack</p>
+
+<p>🧩 <strong>单调栈模式 (6/7)</strong> — building on the template from Day X</p>
+
+<p><strong>场景 / Real-world analogy:</strong></p>
+<p>想象你在高速公路上开车，前面有一辆慢车。你不能超车，只能减速跟在它后面，你们就成了一个“车队”。有多少个这样的车队能到达终点？</p>
+<p>Imagine driving on a highway behind a slow car. You can&#x27;t pass it, so you slow down and follow it, forming a &quot;fleet.&quot; How many such fleets will reach the destination?</p>
+
+<p><strong>问题 / Problem:</strong></p>
+<p>有 <code>n</code> 辆车在单车道上行驶，目标是 <code>target</code>。每辆车有初始位置 <code>position[i]</code> 和速度 <code>speed[i]</code>。如果一辆车追上前面的车，它必须降速并与前车组成一个车队（视为一个整体）。求到达终点时的车队数量。</p>
+<p>There are <code>n</code> cars driving on a single-lane road to a <code>target</code>. Each car has an initial <code>position[i]</code> and <code>speed[i]</code>. If a car catches up to the one ahead, it must slow down and form a fleet (treated as one entity). Find the number of car fleets arriving at the target.</p>
+
+<p><strong>映射到模板 / Map to pattern template:</strong></p>
+<p>- <strong>排序 (Sort):</strong> 首先按位置降序排序（离终点近的在前面）。/ Sort by position descending (closest to target first).</p>
+<p>- <strong>时间 (Time):</strong> 计算每辆车到达终点所需的时间 <code>(target - pos) / speed</code>。/ Calculate time to reach target for each car.</p>
+<p>- <strong>单调栈 (Monotonic Stack):</strong> 维护到达时间。如果后面的车（栈顶）比前面的车（栈顶的下一个）时间<strong>短或等于</strong>，说明它能追上，形成车队（弹出后面的车）。/ Maintain arrival times. If a car behind (top of stack) takes <strong>less or equal</strong> time than the car ahead (next in stack), it catches up, forming a fleet (pop the car behind).</p>
+
+<p><strong>Python 代码 / Python Solution:</strong></p>
+<pre><code>
+def carFleet(target: int, position: List[int], speed: List[int]) -&gt; int:
+    # 1. 组合并按位置降序排序 / Combine and sort by position descending
+    cars = sorted(zip(position, speed), reverse=True)
+    stack = []
+    
+    # 2. 遍历每辆车 / Iterate through each car
+    for pos, spd in cars:
+        # 计算到达时间 / Calculate arrival time
+        time = (target - pos) / spd
+        stack.append(time)
+        
+        # 3. 如果当前车（后车）的时间 &lt;= 前车的时间，说明追上了，合并车队
+        # If current car (behind) time &lt;= car ahead time, it catches up, merge fleet
+        if len(stack) &gt;= 2 and stack[-1] &lt;= stack[-2]:
+            stack.pop() # 弹出当前车（后车），保留前车的时间 / Pop current car, keep car ahead&#x27;s time
+            
+    return len(stack) # 栈中剩余的元素个数就是车队数量 / Remaining elements are the number of fleets
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- <strong>时间 / Time:</strong> <code>O(N log N)</code> (排序 / Sorting), <code>O(N)</code> (遍历 / Traversal). Total: <code>O(N log N)</code>.</p>
+<p>- <strong>空间 / Space:</strong> <code>O(N)</code> (栈和排序数组 / Stack and sorted array).</p>
+
+<p><strong>举一反三 / Connect to other problems:</strong></p>
+<p>- #739 Daily Temperatures: 寻找下一个更大的元素（单调递减栈）。/ Find next greater element (monotonic decreasing stack).</p>
+<p>- #84 Largest Rectangle in Histogram: 寻找左右边界（单调递增栈）。/ Find left and right boundaries (monotonic increasing stack).</p>
+
+<p><strong>📚 参考文献 / References:</strong></p>
+<p>- [LeetCode #853 Car Fleet](https://leetcode.com/problems/car-fleet/)</p>
+<p>- [NeetCode Video](https://www.youtube.com/watch?v=Pr6T-3yB9RM)</p>
+
+<p><strong>🧒 ELI5 (Explain Like I&#x27;m 5):</strong></p>
+<p>把车排成一排，离终点近的在最前面。算算每辆车自己开到终点要多久。如果后面的车算出来的时间比前面的短，说明它开得快，会追上前面的车，然后只能跟着前面的车慢慢开（变成一个车队）。我们用一个栈来记录每个车队的时间，最后栈里有几个时间，就有几个车队！</p>
+<p>Line up the cars, closest to the finish line first. Calculate how long each car takes to reach the finish line on its own. If a car behind has a shorter time than the car ahead, it means it&#x27;s faster, will catch up, and then must follow slowly (forming a fleet). We use a stack to record the time of each fleet. The number of times left in the stack is the number of fleets!</p>
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<p>🗣️ <strong>软技能 / Soft Skills</strong> — Tell me about a time you successfully navigated organizational change</p>
+
+<p><strong>为什么这很重要？ / Why this matters:</strong></p>
+<p>在快速发展的科技公司中，唯一不变的就是变化（重组、技术栈迁移、优先级调整）。高级/专家工程师（Senior/Staff）需要展现出在混乱中找到方向、稳定团队并推动落地的能力。</p>
+<p>In fast-paced tech companies, the only constant is change (re-orgs, tech stack migrations, shifting priorities). Senior/Staff engineers must show they can find direction in chaos, stabilize the team, and drive execution.</p>
+
+<p><strong>STAR 拆解 / STAR Breakdown:</strong></p>
+<p>- <strong>S (Situation):</strong> 描述一个具体的组织变革（例如：公司决定从单体架构迁移到微服务，或者你的团队被合并到另一个部门）。/ Describe a specific organizational change (e.g., migrating from monolith to microservices, or your team merging with another).</p>
+<p>- <strong>T (Task):</strong> 你的任务是什么？（不仅是写代码，还包括沟通、规划、缓解团队焦虑）。/ What was your task? (Not just coding, but communication, planning, mitigating team anxiety).</p>
+<p>- <strong>A (Action):</strong> 你采取了什么行动？（主动沟通、制定过渡计划、建立反馈机制）。/ What actions did you take? (Proactive communication, creating a transition plan, setting up feedback loops).</p>
+<p>- <strong>R (Result):</strong> 结果如何？（平稳过渡、系统上线、团队士气恢复）。/ What was the result? (Smooth transition, system launch, team morale restored).</p>
+
+<p><strong>❌ 糟糕的回答 / Bad Answer:</strong></p>
+<p>“公司突然要换框架，我只能跟着学，然后把代码重写了一遍。虽然很烦，但我还是完成了。”</p>
+<p>&quot;The company suddenly wanted to switch frameworks, so I had to learn it and rewrite the code. It was annoying, but I got it done.&quot;</p>
+<p><em>(被动接受，抱怨，没有展现领导力 / Passive acceptance, complaining, no leadership shown)</em></p>
+
+<p><strong>✅ 优秀的回答 / Good Answer:</strong></p>
+<p>“当公司决定从 AWS 迁移到 GCP 时，团队很焦虑。我主动组织了技术分享会，梳理了迁移的风险点，并制定了分阶段的迁移计划。我还与运维团队建立了每日同步机制，确保问题及时解决。最终我们提前两周完成了迁移，并且零故障。”</p>
+<p>&quot;When the company decided to migrate from AWS to GCP, the team was anxious. I proactively organized tech sharing sessions, identified migration risks, and created a phased plan. I also set up daily syncs with Ops to resolve issues quickly. We finished two weeks early with zero downtime.&quot;</p>
+<p><em>(主动出击，稳定军心，跨团队协作 / Proactive, stabilizing the team, cross-team collaboration)</em></p>
+
+<p><strong>💡 Senior/Staff 提示 / Senior/Staff Tips:</strong></p>
+<p>- <strong>Focus on the &quot;Why&quot;:</strong> 解释你如何理解并传达变革背后的商业逻辑。/ Explain how you understood and communicated the business logic behind the change.</p>
+<p>- <strong>Manage Up and Down:</strong> 你不仅要安抚下属，还要向上管理预期。/ You must manage expectations up and soothe anxiety down.</p>
+
+<p><strong>🔑 核心收获 / Key Takeaways:</strong></p>
+<p>拥抱变化，成为团队的“稳定器”，而不是“抱怨者”。</p>
+<p>Embrace change and be the &quot;stabilizer&quot; for the team, not the &quot;complainer.&quot;</p>
+
+<p><strong>📚 参考文献 / References:</strong></p>
+<p>- [Navigating Organizational Change](https://hbr.org/topic/subject/change-management)</p>
+<p>- [The Senior Engineer&#x27;s Guide to Reorgs](https://lethain.com/how-to-survive-and-thrive-during-a-reorg/)</p>
+
+<p><strong>🧒 ELI5 (Explain Like I&#x27;m 5):</strong></p>
+<p>就像大家正在玩搭积木，突然老师说要换成拼图。有的小朋友会哭闹，但你站出来说：“别怕，我教大家怎么拼，我们一起拼个大城堡！”</p>
+<p>It&#x27;s like everyone is playing with blocks, and suddenly the teacher says we have to switch to puzzles. Some kids might cry, but you step up and say, &quot;Don&#x27;t worry, I&#x27;ll show you how, let&#x27;s build a big castle together!&quot;</p>
+<hr/>
+<h1>🎨 Frontend</h1>
+<p>🎨 <strong>前端 / Frontend</strong> — Event Loop — Microtasks, Macrotasks, requestAnimationFrame</p>
+
+<p><strong>场景 / Real-world scenario:</strong></p>
+<p>你在做一个 dashboard，需要在一个复杂的计算后立即更新 UI，但发现页面卡死了，或者动画掉帧了。为什么？因为你可能阻塞了主线程，或者没有正确理解 JavaScript 的事件循环。</p>
+<p>You&#x27;re building a dashboard and need to update the UI immediately after a heavy calculation, but the page freezes or animations drop frames. Why? You might have blocked the main thread or misunderstood the JavaScript Event Loop.</p>
+
+<p><strong>核心概念 / Core Concept:</strong></p>
+<p>JavaScript 是单线程的，它通过<strong>事件循环 (Event Loop)</strong>来处理异步任务。</p>
+<p>JavaScript is single-threaded and uses the <strong>Event Loop</strong> to handle asynchronous tasks.</p>
+
+<p><strong>执行顺序 / Execution Order:</strong></p>
+<p>1. <strong>同步代码 (Synchronous code):</strong> 立即执行。/ Execute immediately.</p>
+<p>2. <strong>微任务 (Microtasks):</strong> 当前宏任务结束后，<strong>在浏览器渲染之前</strong>执行。例如：<code>Promise.then</code>、<code>MutationObserver</code>。/ Execute after the current macrotask, <strong>before browser rendering</strong>. E.g., <code>Promise.then</code>, <code>MutationObserver</code>.</p>
+<p>3. <strong>宏任务 (Macrotasks):</strong> 在下一次事件循环中执行。例如：<code>setTimeout</code>、<code>setInterval</code>、<code>setImmediate</code> (Node.js)、I/O、UI 渲染。/ Execute in the next event loop iteration. E.g., <code>setTimeout</code>, <code>setInterval</code>, <code>setImmediate</code> (Node.js), I/O, UI rendering.</p>
+<p>4. <strong>requestAnimationFrame (rAF):</strong> 在浏览器下一次重绘之前执行，通常是每秒 60 次（约 16.6ms）。/ Execute before the next browser repaint, typically 60 times per second (~16.6ms).</p>
+
+<p><strong>代码示例 / Code Snippet:</strong></p>
+<pre><code>
+console.log(&#x27;1. 同步代码 / Sync&#x27;);
+
+setTimeout(() =&gt; {
+  console.log(&#x27;5. 宏任务 / Macrotask (setTimeout)&#x27;);
+}, 0);
+
+Promise.resolve().then(() =&gt; {
+  console.log(&#x27;3. 微任务 / Microtask (Promise)&#x27;);
+});
+
+requestAnimationFrame(() =&gt; {
+  console.log(&#x27;4. rAF (在下一次重绘前 / Before next repaint)&#x27;);
+});
+
+console.log(&#x27;2. 同步代码 / Sync&#x27;);
+</code></pre>
+
+<p><strong>猜猜输出什么？ / Quiz:</strong></p>
+<p>A) 1, 2, 3, 4, 5</p>
+<p>B) 1, 5, 3, 4, 2</p>
+<p>C) 1, 2, 3, 5, 4</p>
+<p>D) 1, 3, 2, 4, 5</p>
+
+<p><em>答案：A</em></p>
+
+<p><strong>常见误区 / Common Mistake:</strong></p>
+<p>- ❌ <strong>用 setTimeout 做动画 (Using setTimeout for animations):</strong> <code>setTimeout</code> 不保证执行时间，可能会导致掉帧。/ <code>setTimeout</code> doesn&#x27;t guarantee execution time, which can lead to dropped frames.</p>
+<p>- ✅ <strong>用 requestAnimationFrame 做动画 (Using rAF for animations):</strong> 浏览器会自动优化，保证动画流畅。/ The browser optimizes it automatically for smooth animations.</p>
+
+<p><strong>何时使用 / When to use:</strong></p>
+<p>- <strong>微任务 (Microtasks):</strong> 需要在当前任务完成后立即执行，且不希望被渲染打断的操作（如状态更新后的副作用）。/ Operations that need to run immediately after the current task, without being interrupted by rendering (e.g., side effects after state updates).</p>
+<p>- <strong>宏任务 (Macrotasks):</strong> 可以稍后执行的低优先级任务（如定时器、网络请求回调）。/ Low-priority tasks that can run later (e.g., timers, network request callbacks).</p>
+<p>- <strong>rAF:</strong> 任何涉及视觉更新或动画的操作。/ Any operation involving visual updates or animations.</p>
+
+<p><strong>📚 参考文献 / References:</strong></p>
+<p>- [MDN: Event Loop](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Event_loop)</p>
+<p>- [Tasks, microtasks, queues and schedules](https://jakearchibald.com/2015/tasks-microtasks-queues-and-schedules/)</p>
+
+<p><strong>🧒 ELI5 (Explain Like I&#x27;m 5):</strong></p>
+<p>事件循环就像一个餐厅服务员。他先把你点好的菜端上来（同步代码），然后马上把桌子上的空盘子收走（微任务），接着去厨房看看有没有新做好的菜（宏任务）。如果餐厅要关门打扫了，他会在打扫前把最后一点活干完（rAF）。</p>
+<p>The event loop is like a waiter. He serves the food you ordered right away (sync code), then immediately clears the empty plates from the table (microtasks), and then checks the kitchen for newly prepared dishes (macrotasks). If the restaurant is about to close for cleaning, he finishes the last bit of work before cleaning (rAF).</p>
+<hr/>
+<h1>🤖 AI</h1>
+<p>🤖 <strong>AI</strong> — AI News Roundup</p>
+
+<p><strong>1. Google 街景化 AI / Google is Street View-ifying AI</strong></p>
+<p>Google 正在利用 AI 从航拍和卫星图像中提取洞察，或者将“充满想象力的场景锚定在现实世界中”。据报道，这可能对城市规划者非常有用，或者可以把宇宙飞船放在纽约地标前面。</p>
+<p>Google is using new AI tools to unlock insights from aerial and satellite images or anchor &quot;imaginative scenes in the real world.&quot; Reportedly, this could be highly useful for urban planners, or for putting spaceships in front of New York landmarks.</p>
+<p>🔗 [Source: The Verge](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<p><strong>2. Anthropic 的 Mythos 模型发现 271 个 Firefox 漏洞 / Anthropic&#x27;s Mythos model finds 271 bugs in Firefox</strong></p>
+<p>Mozilla 首席技术官 Bobby Holley 表示，Anthropic 专注于网络安全的 AI 模型 Claude Mythos Preview 在 Firefox 150 中发现了 271 个漏洞，称其能力“丝毫不亚于”顶级安全研究人员。不过，Mozilla 也表示尚未发现“顶尖人类研究人员无法发现的漏洞”。</p>
+<p>Anthropic&#x27;s cybersecurity-focused AI model, Claude Mythos Preview, found 271 bugs in Firefox 150. Mozilla CTO Bobby Holley called it &quot;every bit as capable&quot; as top security researchers. Reassuringly, Mozilla hasn&#x27;t &quot;seen any bugs that couldn&#x27;t have been found by an elite human researcher,&quot; either.</p>
+<p>🔗 [Source: The Verge](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<p><strong>3. Google 创始人要求工程师使用内部 AI 编程代理 / Google founder mandates engineers use internal AI coding agents</strong></p>
+<p>据报道，Google 联合创始人 Sergey Brin 在给 DeepMind 员工的备忘录中表示，“必须强制每位 Gemini 工程师使用内部代理来完成复杂的多步任务”。这似乎是为了在 AI 编程竞赛中追赶 Anthropic 的步伐。</p>
+<p>According to reports, Google co-founder Sergey Brin said in a memo to DeepMind employees that &quot;every Gemini engineer must be forced to use internal agents for complex, multistep tasks.&quot; This appears to be a move to catch up to Anthropic in the AI coding race.</p>
+<p>🔗 [Source: The Verge](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<p><strong>📚 参考文献 / References:</strong></p>
+<p>- [The Verge: AI News](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<p><strong>🧒 ELI5 (Explain Like I&#x27;m 5):</strong></p>
+<p>AI 正在变得越来越聪明！它不仅能帮我们在地图上画出未来的城市，还能像超级侦探一样找出电脑程序里的错误。连发明 Google 的大老板都说，写代码的叔叔阿姨们必须学会用 AI 小助手来帮忙工作呢！</p>
+<p>AI is getting smarter! It can not only help us draw future cities on maps but also act like a super detective finding mistakes in computer programs. Even the big boss who invented Google says the people who write code must learn to use AI helpers for their work!</p>]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-21</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
