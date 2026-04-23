@@ -5,8 +5,122 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 22 Apr 2026 15:22:36 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 23 Apr 2026 15:22:07 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-23</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-23</guid>
+      <pubDate>Thu, 23 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 / Review Day — Day 30 (2026-04-23)</h2>
+
+<p>📊 NeetCode: 26/150 · SysDesign: 25/40 · Behavioral: 25/40 · Frontend: 25/50 · AI: 12/30</p>
+<p>🔥 2-day streak!</p>
+
+<hr/>
+
+<p>🔄 <strong>复习日 / Review Day</strong></p>
+<p>今天是复习日！回顾过去4天的内容。</p>
+<p>It&#x27;s review day! Let&#x27;s consolidate the last 4 days of learning.</p>
+
+<p><strong>覆盖的主题 / Topics Covered:</strong></p>
+<p>- Day 26: Autocomplete/Typeahead · Evaluate Reverse Polish Notation · Handling Tough Feedback · TypeScript Generics · AI Agents (ReAct)</p>
+<p>- Day 28: Chat System Design · Daily Temperatures · Build-vs-Buy · Promises &amp; async/await · MCP Protocol</p>
+<p>- Day 29: Search Engine Design · Car Fleet · Navigating Org Change · Event Loop · AI News</p>
+
+<hr/>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+
+<p><strong>Q1: [🏗️ System Design]</strong> 你在设计一个类似 Slack 的聊天系统时，为什么要用 WebSocket 而不是 HTTP 轮询？能说出至少两个技术理由吗？</p>
+
+<p>When designing a chat system like Slack/WhatsApp, why prefer WebSockets over HTTP polling? Name at least two technical reasons.</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>WebSocket 的核心优势在于<strong>双向持久连接</strong>。HTTP 轮询需要客户端反复发起请求（每次都有 TCP 握手和 HTTP 头开销），而 WebSocket 建立一次连接后双方可随时推送数据。</p>
+
+<p>具体理由：</p>
+<p>1. <strong>低延迟</strong>：WebSocket 消息延迟通常 &lt;100ms；轮询间隔造成人为延迟（1-30s）</p>
+<p>2. <strong>更低开销</strong>：WebSocket 帧头只有 2-10 字节，HTTP 请求头动辄几百字节</p>
+<p>3. <strong>服务端推送</strong>：服务器可主动推送新消息，无需客户端反复问&quot;有新消息吗？&quot;</p>
+<p>4. <strong>连接效率</strong>：避免了海量用户同时轮询造成的&quot;惊群效应&quot;</p>
+
+<p><strong>Key insight:</strong> WebSocket is a persistent, full-duplex connection established via HTTP Upgrade. Once connected, either side can send data at any time — perfect for real-time chat where the server needs to push messages to clients without them asking.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [💻 Algorithms]</strong> 在 &quot;Car Fleet&quot; 问题中，为什么要先按起始位置从大到小排序？如果不排序直接用栈会出现什么问题？</p>
+
+<p>In the Car Fleet problem, why must you sort cars by starting position in descending order before using the stack? What goes wrong without sorting?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>核心洞察：</strong> 车队的形成依赖于&quot;追及关系&quot;——只有后车能追上前车才能合并成车队。按位置从大到小排序，相当于从最靠近终点的车开始处理，确保每辆车的&quot;追及对象&quot;已经确定。</p>
+
+<p>如果不排序，你无法知道一辆车的&quot;前方是谁&quot;——会错误地把不相邻的车配对，导致错误的车队合并计算。</p>
+
+<p><strong>算法流程：</strong></p>
+<pre><code>
+sort cars by position descending (closest to target first)
+for each car:
+    time_to_arrive = (target - position) / speed
+    if stack is empty OR time &gt; stack[-1]:
+        stack.append(time)   # new fleet
+    # else: this car catches up → same fleet, discard
+return len(stack)
+</code></pre>
+
+<p><strong>直觉：</strong> 如果一辆车计算出的到达时间 ≤ 前方最近车队的到达时间，说明它会在到达前被&quot;挡住&quot;，合并入同一车队。栈顶永远是当前最近的车队时间。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [🎨 Frontend]</strong> 下面这段代码有什么问题？Event Loop 中 <code>Promise.resolve()</code> 和 <code>setTimeout(() =&gt; {}, 0)</code> 谁先执行？</p>
+
+<pre><code>
+console.log(&#x27;1&#x27;);
+setTimeout(() =&gt; console.log(&#x27;2&#x27;), 0);
+Promise.resolve().then(() =&gt; console.log(&#x27;3&#x27;));
+console.log(&#x27;4&#x27;);
+</code></pre>
+
+<p>What will the output order be, and why?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>输出顺序：</strong> <code>1 → 4 → 3 → 2</code></p>
+
+<p><strong>原因：</strong> JavaScript 事件循环有两种任务队列：</p>
+
+<p>| 队列类型 | 英文 | 例子 | 优先级 |</p>
+<p>|---------|------|------|--------|</p>
+<p>| 微任务 | Microtask Queue | Promise.then, queueMicrotask, MutationObserver | 高 |</p>
+<p>| 宏任务 | Macrotask Queue | setTimeout, setInterval, I/O | 低 |</p>
+
+<p><strong>执行顺序：</strong></p>
+<p>1. 同步代码先执行：<code>console.log(&#x27;1&#x27;)</code> → <code>console.log(&#x27;4&#x27;)</code>（同步，顺序执行）</p>
+<p>2. <code>setTimeout</code> 回调进入<strong>宏任务队列</strong></p>
+<p>3. <code>Promise.then</code> 回调进入<strong>微任务队列</strong></p>
+<p>4. 当前调用栈清空后，<strong>先清空所有微任务</strong>：<code>console.log(&#x27;3&#x27;)</code></p>
+<p>5. 最后处理宏任务：<code>console.log(&#x27;2&#x27;)</code></p>
+
+<p><strong>关键规则：</strong> 每次宏任务执行完毕后，会把当前微任务队列<strong>全部清空</strong>，然后才执行下一个宏任务。<code>Promise.resolve()</code> 虽然是异步，但属于微任务，比 <code>setTimeout(0)</code> 更早执行。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。每一次回顾都让知识更牢固。</em></p>
+<p>Review strengthens memory. Each revisit makes knowledge more durable.</p>
+
+<p>📅 明天继续新内容！Tomorrow: fresh content continues.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-22</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
