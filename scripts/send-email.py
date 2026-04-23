@@ -658,7 +658,7 @@ def main():
     <div class="toc">{toc}</div>
     {sections}
     <div class="footer">
-        <p>🧠 <a href="https://github.com/YushengAuggie/byte-by-byte">byte-by-byte</a> — open source daily learning</p>
+        <p>🧠 <a href="https://yushengauggie.github.io/byte-by-byte">byte-by-byte</a> — open source daily learning</p>
         <p style="margin-top:8px;"><small><a href="{unsub_url}">Unsubscribe</a> from byte-by-byte</small></p>
     </div>
 </div>
