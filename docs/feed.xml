@@ -5,8 +5,683 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 23 Apr 2026 15:22:07 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 24 Apr 2026 15:11:04 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-24</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-24</guid>
+      <pubDate>Fri, 24 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 26: Design YouTube / Netflix (Video Streaming)</h2>
+
+<p>&gt; <strong>阶段 / Phase:</strong> Mastery | <strong>难度 / Difficulty:</strong> Advanced | <strong>阅读时间 / Read time:</strong> ~3 min</p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<p>想象你在设计 YouTube。每天有 500 小时的视频被上传，20 亿用户在观看。你如何让全球每个人都能流畅播放一段 4K 视频，而不是等 buffering 圈圈转个不停？</p>
+
+<p>You&#x27;re designing YouTube. 500 hours of video uploaded every minute, 2 billion users watching. How does every person on earth get buttery-smooth 4K playback without staring at a buffering spinner?</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+                    ┌────────────────────────────────────┐
+                    │         Content Creator             │
+                    └───────────────┬────────────────────┘
+                                    │ Upload (raw video)
+                                    ▼
+                    ┌────────────────────────────────────┐
+                    │    Upload Service (chunked HTTP)    │
+                    │    → Object Storage (raw: S3/GCS)   │
+                    └───────────────┬────────────────────┘
+                                    │ trigger
+                                    ▼
+            ┌────────────────────────────────────────────────┐
+            │         Transcoding Pipeline (async)            │
+            │  • Split → Transcode (360p/720p/1080p/4K)       │
+            │  • Audio normalization                          │
+            │  • Thumbnail generation                         │
+            │  → CDN-ready segments (HLS/DASH chunks)         │
+            └───────────────────┬────────────────────────────┘
+                                │ writes
+                                ▼
+                   ┌─────────────────────────┐
+                   │    CDN (Cloudflare/      │
+                   │    Akamai/AWS CloudFront)│
+                   │    Edge nodes worldwide  │
+                   └────────────┬────────────┘
+                                │ streams
+                                ▼
+                   ┌─────────────────────────┐
+                   │       Video Player       │
+                   │  ABR (Adaptive Bitrate) │
+                   │  Switches quality auto  │
+                   └─────────────────────────┘
+
+   ┌──────────────────────────────────────────────────────┐
+   │                 Metadata Service                      │
+   │  • PostgreSQL: video metadata, user data             │
+   │  • Elasticsearch: full-text search                   │
+   │  • Redis: view counts, trending, recommendations     │
+   └──────────────────────────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>关键设计决策 / Key Design Decisions</h2>
+
+<h3>1. 上传流程 — 分块上传 / Chunked Upload</h3>
+<p>- <strong>为什么？/ Why?</strong> 视频文件可能有 10GB+。断点续传（resumable upload）避免网络中断前功尽弃。</p>
+<p>- 每个 chunk 独立上传 → 并行传输 → 服务端拼接</p>
+<p>- YouTube / GCS 都用 resumable upload API</p>
+
+<h3>2. 转码管道 / Transcoding Pipeline</h3>
+<p>- <strong>ABR (Adaptive Bitrate Rate)</strong>：同一视频存 5 种分辨率（240p/480p/720p/1080p/4K）</p>
+<p>- <strong>HLS vs DASH</strong>：HLS (Apple) / DASH (Android+Web)，现代平台同时支持两者</p>
+<p>- 转码是 CPU 密集型 → 用<strong>消息队列</strong> (Kafka/SQS) 异步解耦，水平扩展 worker</p>
+
+<h3>3. CDN 分发 / CDN Distribution</h3>
+<p>- <strong>为什么不直接读 S3？/ Why not S3?</strong> 延迟太高，S3 按请求收费，全球用户体验差</p>
+<p>- CDN 将视频 segment 缓存在距用户最近的边缘节点</p>
+<p>- Cache key = <code>{video_id}/{quality}/{segment_number}.ts</code></p>
+
+<h3>4. 视频格式 — HLS 分片 / HLS Segmentation</h3>
+<pre><code>
+video.m3u8  (playlist file — tells player which segments exist)
+├── seg_0000.ts  (2-10 second chunks)
+├── seg_0001.ts
+├── seg_0002.ts
+└── ...
+</code></pre>
+<p>播放器只下载<strong>当前 + 预读几个</strong>片段，不需要下载整个视频文件。</p>
+
+<hr/>
+
+<h2>核心权衡 / Key Tradeoffs</h2>
+
+<p>| 决策 | 方案 A | 方案 B | 选择 |</p>
+<p>|------|--------|--------|------|</p>
+<p>| 转码 | 同步（阻塞上传） | 异步（消息队列） | ✅ 异步 |</p>
+<p>| 存储 | 一种质量 | 多种质量（ABR） | ✅ ABR |</p>
+<p>| 分发 | 源站直接服务 | CDN 边缘缓存 | ✅ CDN |</p>
+<p>| 计数 | 强一致（写 DB）| 最终一致（Redis + 批量写）| ✅ 最终一致 |</p>
+
+<hr/>
+
+<h2>⚠️ 常见错误 / Common Mistakes</h2>
+
+<p><strong>坑 1：把转码做成同步的</strong></p>
+<p>上传后立即返回 URL，但转码需要 5-10 分钟 → 用异步队列 + 状态轮询</p>
+
+<p><strong>坑 2：忘了视频 seek（跳转）问题</strong></p>
+<p>用户跳到视频 50 分钟处 → 需要 CDN 缓存那个 segment，不能只缓存开头</p>
+
+<p><strong>坑 3：view count 用强一致数据库</strong></p>
+<p>每秒百万次观看，直接写 DB 会打死数据库 → Redis incr + 定时批量刷新到 DB</p>
+
+<p><strong>坑 4：不考虑版权检测</strong></p>
+<p>YouTube 有 Content ID 系统，上传后异步扫描比对 audio/video fingerprint</p>
+
+<hr/>
+
+<h2>📊 数量估算 / Scale Estimation</h2>
+
+<pre><code>
+上传: 500 min of video/min → ~1GB raw video/min → ~500 MB/min after compression
+存储: 1 video × 5 qualities × avg 500MB = 2.5GB per video
+CDN reads: 2B users × 1 video/day × 500MB = 10^18 bytes/day (1 EB/day)
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>1. [YouTube Architecture — High Scalability](http://highscalability.com/youtube-architecture)</p>
+<p>2. [HLS Specification (Apple Developer)](https://developer.apple.com/documentation/http-live-streaming)</p>
+<p>3. [DASH-IF Industry Forum](https://dashif.org/about/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 / 小孩版解释</h2>
+
+<p>想象你录了一段乐高搭建视频想分享给全世界。你先把视频寄给一个大仓库（S3），仓库的工人把它剪成小片段，做出清晰版和模糊版备用。然后在全球各个城市的小仓库（CDN）都放上一份。当你的朋友在北京看视频，他从北京仓库取片段，快得很！他的网速好就看清晰版，网速差就自动换成模糊版——这就是 Netflix 和 YouTube 背后的秘密。</p>
+
+<p>Think of it like sharing a Lego video worldwide: you send it to a big warehouse, workers cut it into small clips and make both HD and low-quality versions. Then mini-warehouses in cities worldwide get a copy. Viewers get clips from their nearest warehouse — good internet = HD, bad internet = auto-switches to lower quality. That&#x27;s ABR + CDN!</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 27: #84 Largest Rectangle in Histogram 🔴 Hard</h2>
+
+<p>&gt; <strong>阶段 / Phase:</strong> Mastery | <strong>模式 / Pattern:</strong> 单调栈 (Stack) — 7/7 | <strong>阅读时间 / Read time:</strong> ~4 min</p>
+
+<hr/>
+
+<p>🧩 <strong>单调栈模式 (7/7)</strong> — 收尾之作 / Final Problem in Block</p>
+
+<p>本题是单调栈模块的<strong>最后一题也是最难一题</strong>。掌握它，说明你真正理解了单调栈的本质。</p>
+
+<p>This is the <strong>hardest and final problem</strong> in the monotonic stack block. If you understand this one, you&#x27;ve truly internalized the pattern.</p>
+
+<hr/>
+
+<h2>🔗 Links</h2>
+
+<p>- [LeetCode #84](https://leetcode.com/problems/largest-rectangle-in-histogram/) 🔴 Hard</p>
+<p>- [NeetCode Video](https://neetcode.io/problems/largest-rectangle-in-histogram)</p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象你在城市中查看一排楼，要找出能在这排楼里画出的最大矩形广告牌（宽度不限，但高度不能超过范围内最矮的楼）。你需要找到哪一段楼的组合能撑起最大的广告牌面积。</p>
+
+<p>Imagine you&#x27;re looking at a city skyline and want to find the largest billboard that fits within it — the billboard can span multiple buildings but its height is limited by the shortest building in that span.</p>
+
+<hr/>
+
+<h2>问题描述 / Problem</h2>
+
+<p>给定一个直方图，每个 bar 有高度 <code>heights[i]</code>，找出可以组成的最大矩形面积。</p>
+
+<pre><code>
+Input:  heights = [2, 1, 5, 6, 2, 3]
+Output: 10
+
+Visualization:
+  6
+  5 6
+  5 6
+2   2 2 3
+2 1 2 2 2 3
+[2, 1, 5, 6, 2, 3]
+         ↑↑
+  area = 5×2 = 10
+</code></pre>
+
+<hr/>
+
+<h2>映射到单调栈模版 / Mapping to Template</h2>
+
+<p><strong>模版回顾 / Template Recall:</strong></p>
+<pre><code>
+stack = []
+for i, num in enumerate(arr):
+    while stack and arr[stack[-1]] &lt; num:
+        idx = stack.pop()
+        result[idx] = num  # next greater
+    stack.append(i)
+</code></pre>
+
+<p><strong>本题的关键洞察 / Key Insight for this problem:</strong></p>
+
+<p>&gt; 对于每个 bar，它能参与的最大矩形宽度 = <strong>向左延伸直到遇到比它矮的 bar</strong> + <strong>向右延伸直到遇到比它矮的 bar</strong>。</p>
+
+<p>For each bar, the maximum rectangle it participates in spans from its <strong>left boundary</strong> (first shorter bar to the left) to its <strong>right boundary</strong> (first shorter bar to the right).</p>
+
+<p><strong>模版变体 / Template Variation:</strong></p>
+<p>- 原始模版：找<strong>下一个更大</strong>元素（单调递减栈）</p>
+<p>- 本题：找<strong>下一个更小</strong>元素（单调递增栈）</p>
+<p>- 每当弹出元素时，弹出的元素 = 以该高度为准的矩形的高度，此时可以计算面积</p>
+
+<hr/>
+
+<h2>Python 解法 + 追踪 / Solution with Trace</h2>
+
+<pre><code>
+def largestRectangleArea(heights: list[int]) -&gt; int:
+    max_area = 0
+    # stack stores (start_index, height)
+    # start_index = leftmost index this height can extend to
+    stack = []  # monotonic increasing stack
+    
+    for i, h in enumerate(heights):
+        start = i
+        # while top of stack has height &gt;= current h, pop and calculate
+        while stack and stack[-1][1] &gt;= h:
+            idx, height = stack.pop()
+            # width = current position - start of popped bar
+            max_area = max(max_area, height * (i - idx))
+            # current bar can extend back to where popped bar started
+            start = idx
+        stack.append((start, h))
+    
+    # remaining bars in stack extend to end of array
+    for idx, height in stack:
+        max_area = max(max_area, height * (len(heights) - idx))
+    
+    return max_area
+
+# Trace: heights = [2, 1, 5, 6, 2, 3]
+# i=0, h=2: stack=[(0,2)]
+# i=1, h=1: pop (0,2) → area=2×1=2; start=0; stack=[(0,1)]
+# i=2, h=5: stack=[(0,1),(2,5)]
+# i=3, h=6: stack=[(0,1),(2,5),(3,6)]
+# i=4, h=2: pop (3,6)→area=6×1=6; pop (2,5)→area=5×2=10 ✓; start=2
+#           stack=[(0,1),(2,2)]
+# i=5, h=3: stack=[(0,1),(2,2),(5,3)]
+# End: (5,3)→3×1=3; (2,2)→2×4=8; (0,1)→1×6=6
+# max_area = 10 ✅
+</code></pre>
+
+<p><strong>时间复杂度 / Complexity:</strong> O(n) — each index pushed/popped at most once</p>
+<p><strong>空间复杂度 / Space:</strong> O(n) — stack</p>
+
+<hr/>
+
+<h2>与同块问题的对比 / Comparison with Block Problems</h2>
+
+<p>| 题目 | 技巧 | 关键 |</p>
+<p>|------|------|------|</p>
+<p>| #20 Valid Parentheses | 匹配括号 | 字符入栈 |</p>
+<p>| #155 Min Stack | 辅助栈维护最小值 | 双栈 |</p>
+<p>| #150 RPN Evaluation | 操作数入栈，遇操作符弹栈 | 数字栈 |</p>
+<p>| #739 Daily Temperatures | 单调递减栈，找下一个更大 | 索引入栈 |</p>
+<p>| #853 Car Fleet | 排序+栈，模拟追及 | 逆序遍历 |</p>
+<p>| <strong>#84 Histogram</strong> | <strong>单调递增栈，弹出时计算面积</strong> | <strong>extend-left 技巧</strong> |</p>
+
+<p><strong>规律 / Pattern:</strong> 随着题目推进，栈内存储的信息越来越复杂：字符 → 数字 → 索引 → (索引, 高度) 元组</p>
+
+<hr/>
+
+<h2>举一反三 / Related Problems</h2>
+
+<p>- [85. Maximal Rectangle](https://leetcode.com/problems/maximal-rectangle/) — 本题的升级版，矩阵中的最大矩形</p>
+<p>- [42. Trapping Rain Water](https://leetcode.com/problems/trapping-rain-water/) — 已做过，同样用单调栈/双指针</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>1. [NeetCode — Largest Rectangle in Histogram](https://neetcode.io/problems/largest-rectangle-in-histogram)</p>
+<p>2. [Monotonic Stack Explained — Visualized](https://algo.monster/liteproblems/84)</p>
+<p>3. [LeetCode Discuss — Multiple Approaches](https://leetcode.com/problems/largest-rectangle-in-histogram/solutions/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 / 小孩版解释</h2>
+
+<p>你有一排积木，高度各不同。要找最大矩形，就问每块积木：「你能向左右各延伸多远，且所有经过的地方都比你矮或一样高？」——答案就是以你的高度为准，能撑起的最大矩形。单调栈帮你快速找到「左边第一个比你矮的」和「右边第一个比你矮的」。</p>
+
+<p>You have a row of towers of different heights. For each tower, ask: &quot;How far left and right can I stretch while all towers in between are at least as tall as me?&quot; That stretch × your height = your rectangle. The monotonic stack helps you instantly find where each tower&#x27;s reach stops.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 26: How do you measure success for your projects?</h2>
+
+<p>&gt; <strong>阶段 / Phase:</strong> Mastery | <strong>类别 / Category:</strong> Impact | <strong>难度 / Level:</strong> Senior/Staff | <strong>阅读时间 / Read time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>为什么这个问题很重要 / Why This Question Matters</h2>
+
+<p>Senior/Staff 工程师不只是写代码，他们<strong>对结果负责</strong>。面试官问这个问题是想了解：</p>
+<p>- 你是否有 ownership 意识？</p>
+<p>- 你能否把技术工作和业务价值挂钩？</p>
+<p>- 你是否关注项目<strong>之后</strong>的事，还是 ship 了就跑？</p>
+
+<p>Senior/Staff engineers own outcomes, not just code. Interviewers ask this to learn:</p>
+<p>- Do you think beyond technical completion?</p>
+<p>- Can you connect engineering work to business impact?</p>
+<p>- Do you measure what happened <strong>after</strong> launch?</p>
+
+<hr/>
+
+<h2>STAR 分解 / STAR Breakdown</h2>
+
+<p><strong>Situation（情境）:</strong> &quot;在我负责的搜索服务重构项目中...&quot;</p>
+<p><strong>Task（任务）:</strong> &quot;我需要建立指标框架来衡量这次重构是否成功&quot;</p>
+<p><strong>Action（行动）:</strong></p>
+<p>- 定义了 <strong>business metrics</strong>（搜索结果点击率、用户停留时间）</p>
+<p>- 定义了 <strong>technical metrics</strong>（P99 延迟、错误率、索引大小）</p>
+<p>- 建立 <strong>leading indicators</strong>（可以提前预警的指标，如 cache hit rate）</p>
+<p>- 与 PM 对齐：上线后 30 天评估，季度 OKR 追踪</p>
+<p><strong>Result（结果）:</strong> &quot;搜索延迟降低 40%，点击率提升 15%，6 个月后数据支持了下一阶段投资决策&quot;</p>
+
+<hr/>
+
+<h2>❌ 差的回答 vs ✅ 好的回答</h2>
+
+<p><strong>❌ 弱回答:</strong></p>
+<p>&gt; &quot;成功就是项目按时上线，没有 bug。&quot;</p>
+
+<p>这是完成，不是成功。任何 ticket 完成了都能这么说。</p>
+
+<p><strong>✅ 强回答（分层指标）:</strong></p>
+
+<p>&gt; &quot;我用三层指标衡量成功：</p>
+<p>&gt;</p>
+<p>&gt; <strong>第一层——技术健康：</strong> 延迟、错误率、覆盖率目标是否达成。这是必要条件，但不是充分条件。</p>
+<p>&gt;</p>
+<p>&gt; <strong>第二层——用户影响：</strong> 这个功能是否真的让用户更好？通过 A/B test、用户行为数据验证。</p>
+<p>&gt;</p>
+<p>&gt; <strong>第三层——业务价值：</strong> 最终是否推动了核心 KPI？转化率、留存、收入？</p>
+<p>&gt;</p>
+<p>&gt; 对于我上一个项目，我们 Day 1 就定好了这三层 success criteria，而不是在 launch 后才想。&quot;</p>
+
+<hr/>
+
+<h2>📋 指标框架速查 / Metrics Framework Cheatsheet</h2>
+
+<pre><code>
+技术指标          用户指标           业务指标
+───────────       ────────────       ────────────
+Latency (P50/P99) CTR (点击率)       Revenue impact
+Error rate        Engagement         Retention
+Throughput        Activation rate    NPS / CSAT
+Availability      Task completion    Cost savings
+Coverage          A/B test result    OKR progress
+</code></pre>
+
+<p><strong>Leading vs Lagging Indicators:</strong></p>
+<p>- <strong>Leading（领先指标）:</strong> Cache hit rate → 预测延迟改善（可以提前行动）</p>
+<p>- <strong>Lagging（滞后指标）:</strong> 月活增长 → 反映长期结果（只能事后看）</p>
+
+<hr/>
+
+<h2>👨‍💼 Senior/Staff 加分项 / Senior Tips</h2>
+
+<p>1. <strong>在 launch 前就定指标</strong>，而不是 launch 后&quot;找证明自己成功的数据&quot;</p>
+<p>2. <strong>与 PM、data team 对齐</strong>，指标不是工程师自己说了算</p>
+<p>3. <strong>承认失败</strong>：&quot;我们上线后发现用户行为指标没有达到预期，于是我们做了……&quot; 这比吹牛更有说服力</p>
+<p>4. <strong>长期追踪</strong>：区分&quot;spike after launch&quot;和&quot;durable impact&quot;</p>
+
+<hr/>
+
+<h2>💡 关键要点 / Key Takeaways</h2>
+
+<p>- 成功 = <strong>多层次指标</strong>（技术 + 用户 + 业务），而非单一维度</p>
+<p>- 好的工程师在 <strong>kick-off 时就定 success criteria</strong></p>
+<p>- 展示你能用<strong>数据讲故事</strong>，而不只是技术</p>
+<p>- Senior 级别要能把 launch 和<strong>季度 OKR / 年度目标</strong>挂钩</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>1. [Staff Engineer: Leadership Beyond Management — Will Larson](https://staffeng.com/book)</p>
+<p>2. [Metrics That Matter — Julie Zhuo (The Making of a Manager)](https://www.juliezhuo.com/)</p>
+<p>3. [OKRs at Google — re:Work](https://rework.withgoogle.com/guides/set-goals-with-okrs/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 / 小孩版解释</h2>
+
+<p>想象你搭了一座积木塔，怎么判断成功？不只是&quot;塔没倒&quot;（技术指标），还要看&quot;小朋友喜不喜欢玩&quot;（用户指标），和&quot;它帮我们赢了积木比赛吗&quot;（业务指标）。三层都达标才叫真正的成功，只完成了搭积木不算数。</p>
+
+<p>Imagine you built a block tower. Success isn&#x27;t just &quot;it didn&#x27;t fall&quot; (technical). It&#x27;s also &quot;do kids enjoy playing with it?&quot; (user impact) and &quot;did it help us win the contest?&quot; (business value). Real success means all three layers, not just &quot;I shipped it.&quot;</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 26: Prototypes &amp; `this` — How JS Objects Really Work</h2>
+
+<p>&gt; <strong>阶段 / Phase:</strong> Mastery | <strong>类别 / Category:</strong> JavaScript Core | <strong>Week 6</strong> | <strong>阅读时间 / Read time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在 code review 中看到同事写了这段代码：</p>
+
+<pre><code>
+class Button {
+  constructor(label) {
+    this.label = label;
+  }
+  click() {
+    console.log(`Clicked: ${this.label}`);
+  }
+}
+
+const btn = new Button(&quot;Submit&quot;);
+document.getElementById(&quot;btn&quot;).addEventListener(&quot;click&quot;, btn.click);
+// User clicks → what happens?
+</code></pre>
+
+<p>点击后输出什么？</p>
+
+<hr/>
+
+<h2>🤔 猜猜看 / Pop Quiz</h2>
+
+<p><strong>点击按钮后，控制台输出是？/ What does the console log?</strong></p>
+
+<p>A) <code>&quot;Clicked: Submit&quot;</code></p>
+<p>B) <code>&quot;Clicked: undefined&quot;</code></p>
+<p>C) <code>TypeError: Cannot read properties of undefined</code></p>
+<p>D) Nothing, no error</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>答案：B — <code>&quot;Clicked: undefined&quot;</code></strong></p>
+
+<p>原因：<code>btn.click</code> 作为回调传入时，<code>this</code> 绑定丢失了。事件触发时 <code>this</code> 指向 DOM 元素（<code>&lt;button&gt;</code>），而不是 <code>btn</code> 实例，所以 <code>this.label</code> 是 <code>undefined</code>。</p>
+
+<p>Reason: When <code>btn.click</code> is passed as a callback, the <code>this</code> binding is lost. When the event fires, <code>this</code> refers to the DOM element, not the <code>btn</code> instance.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>原型链 / Prototype Chain</h2>
+
+<p>JavaScript 中，<strong>每个对象都有一个隐式指针指向它的&quot;原型&quot;</strong>。当你访问一个属性，JS 先在对象本身找，找不到就沿着原型链往上找。</p>
+
+<pre><code>
+const btn = new Button(&quot;Submit&quot;);
+
+// btn 的原型链：
+// btn → Button.prototype → Object.prototype → null
+
+// 查找 btn.click 的过程：
+// 1. btn 自身有 click 属性吗？❌
+// 2. Button.prototype 有吗？✅ → 找到了
+</code></pre>
+
+<pre><code>
+// 可以直接验证：
+console.log(btn.__proto__ === Button.prototype); // true
+console.log(Button.prototype.__proto__ === Object.prototype); // true
+
+// class 语法是 prototype 的语法糖：
+// class Button {} === function Button() {} + Button.prototype.click = ...
+</code></pre>
+
+<hr/>
+
+<h2>`this` 绑定规则 / The 4 Rules of `this`</h2>
+
+<pre><code>
+// 规则 1: 默认绑定 — 独立调用时 this = global/undefined(strict)
+function greet() { console.log(this); }
+greet(); // window (browser) or undefined (strict mode)
+
+// 规则 2: 隐式绑定 — 方法调用时 this = 调用它的对象
+const obj = { name: &quot;Alice&quot;, greet() { console.log(this.name); } };
+obj.greet(); // &quot;Alice&quot; ✅
+
+// 规则 3: 显式绑定 — call/apply/bind
+greet.call({ name: &quot;Bob&quot; }); // &quot;Bob&quot;
+const boundGreet = obj.greet.bind({ name: &quot;Charlie&quot; });
+boundGreet(); // &quot;Charlie&quot;
+
+// 规则 4: new 绑定 — 构造函数中 this = 新创建的对象
+const btn = new Button(&quot;Submit&quot;); // this = btn
+</code></pre>
+
+<hr/>
+
+<h2>❌ 常见错误 vs ✅ 正确做法</h2>
+
+<pre><code>
+// ❌ 错误：this 绑定丢失
+document.getElementById(&quot;btn&quot;).addEventListener(&quot;click&quot;, btn.click);
+// 点击时 this = DOM element，不是 btn
+
+// ✅ 方法 1：bind
+document.getElementById(&quot;btn&quot;).addEventListener(&quot;click&quot;, btn.click.bind(btn));
+
+// ✅ 方法 2：箭头函数（推荐，更简洁）
+document.getElementById(&quot;btn&quot;).addEventListener(&quot;click&quot;, () =&gt; btn.click());
+// 箭头函数没有自己的 this，捕获外层 this
+
+// ✅ 方法 3：类字段语法（React 中最常见）
+class Button {
+  label: string;
+  // 箭头函数作为类字段 — this 永远绑定到实例
+  click = () =&gt; {
+    console.log(`Clicked: ${this.label}`);
+  };
+}
+// 代价：每个实例都有一份 click 函数的拷贝（vs 原型方法共享一份）
+</code></pre>
+
+<hr/>
+
+<h2>箭头函数 vs 普通函数的 this / Arrow vs Regular</h2>
+
+<pre><code>
+class Timer {
+  constructor() {
+    this.seconds = 0;
+  }
+  
+  // ❌ 普通函数：this 丢失
+  startWrong() {
+    setInterval(function() {
+      this.seconds++; // this = window/undefined!
+    }, 1000);
+  }
+  
+  // ✅ 箭头函数：捕获外层 this
+  startCorrect() {
+    setInterval(() =&gt; {
+      this.seconds++; // this = Timer instance ✅
+    }, 1000);
+  }
+}
+</code></pre>
+
+<p><strong>核心规则：箭头函数没有自己的 <code>this</code>，它&quot;继承&quot;外层作用域的 <code>this</code>。</strong></p>
+<p>Arrow functions don&#x27;t have their own <code>this</code> — they inherit it from the enclosing lexical scope.</p>
+
+<hr/>
+
+<h2>何时用 / When to Use</h2>
+
+<p>| 场景 | 选择 |</p>
+<p>|------|------|</p>
+<p>| React class 组件方法 | 类字段箭头函数 <code>handleClick = () =&gt; {}</code> |</p>
+<p>| 原型方法（共享逻辑）| 普通方法 <code>method() {}</code> |</p>
+<p>| 回调中需要 this | 箭头函数 <code>() =&gt; this.xxx</code> |</p>
+<p>| 工具库 polyfill | <code>.bind(context)</code> |</p>
+<p>| 需要动态 this | 普通函数 + 显式绑定 |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>1. [MDN — <code>this</code> keyword](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this)</p>
+<p>2. [MDN — Inheritance and the prototype chain](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain)</p>
+<p>3. [You Don&#x27;t Know JS — this &amp; Object Prototypes](https://github.com/getify/You-Dont-Know-JS/tree/2nd-ed/objects-classes)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 / 小孩版解释</h2>
+
+<p>JavaScript 里的 <code>this</code> 就像&quot;代词我&quot;——它的意思取决于说话的人是谁。如果你把&quot;我的名字&quot;这句话录下来，播放给别人，&quot;我&quot;就会变成播放的人，而不是你。<code>bind()</code> 就像把&quot;我&quot;直接替换成你的名字，这样不管谁播放都是对的。原型链就像家族遗传——找不到的属性就去问&quot;父辈&quot;。</p>
+
+<p>In JS, <code>this</code> is like the word &quot;I&quot; — it depends on WHO is speaking. If you record &quot;my name is...&quot; and play it for someone else, &quot;my&quot; becomes them, not you. <code>bind()</code> is like replacing &quot;my&quot; with your actual name so it&#x27;s always correct. Prototype chains are like family genes — if you don&#x27;t have a trait, check your parents.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 31: AI News Roundup (April 24, 2026)</h2>
+
+<p>&gt; <strong>阶段 / Phase:</strong> Mastery | <strong>模式 / Mode:</strong> NEWS | <strong>阅读时间 / Read time:</strong> ~2 min</p>
+
+<p><em>Sources searched and verified on 2026-04-24.</em></p>
+
+<hr/>
+
+<h2>🗞️ 本周 AI 大事件 / This Week in AI</h2>
+
+<hr/>
+
+<h3>1. 🔥 Google 发布第八代 TPU，首次分为训练版和推理版</h3>
+
+<p><strong>Google Unveils 8th-Generation TPUs — Now Split Into Two Specialized Chips</strong></p>
+
+<p>Google 在 Google Cloud Next &#x27;26（2026 年 4 月 22-24 日）上发布了第八代 TPU：<strong>TPU 8t</strong>（训练专用）和 <strong>TPU 8i</strong>（推理专用）。这是 Google 首次将训练与推理工作负载拆分为独立芯片。</p>
+
+<p>- <strong>TPU 8t：</strong> 计算性能比上一代提升近 3 倍；单个 Superpod 可扩展至 9,600 个芯片、2 PB 共享高带宽内存；通过 Virgo 网络可线性扩展至百万芯片</p>
+<p>- <strong>TPU 8i：</strong> 专为低延迟推理和强化学习优化；片上 SRAM 增至 384 MB，HBM 增至 288 GB；推理性价比比上代提升 80%</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> AI 工作负载的训练和推理需求差异极大。专用芯片意味着更低的成本和更高的效率——这直接影响 AI API 的定价和可用性。</p>
+
+<p>Source: [Google Blog — TPU 8t and 8i](https://blog.google/innovation-and-ai/infrastructure-and-cloud/google-cloud/eighth-generation-tpu-agentic-era/) | [Google Cloud Blog](https://cloud.google.com/blog/products/compute/ai-infrastructure-at-next26)</p>
+
+<hr/>
+
+<h3>2. 🤖 模型军备竞赛升级：Qwen3、Claude Opus 4.7、DeepSeek V4 Pro Max</h3>
+
+<p><strong>Model Arms Race Intensifies: New Releases Across the Board</strong></p>
+
+<p>April 2026 见证了多家大厂集中发布新模型：</p>
+
+<p>- <strong>Anthropic</strong> 据报道发布 Claude Opus 4.7；具体基准对比数据尚未得到独立验证</p>
+<p>- <strong>阿里巴巴 Qwen 团队</strong>发布 Qwen3.6-27B（开源）和专注于 agentic coding 的 Qwen3.6-Plus（4 月 1 日上线）</p>
+<p>- <strong>DeepSeek</strong> 据报道推出新版本模型（具体版本名称未经权威来源确认）</p>
+<p>- <strong>Zhipu AI</strong> 开源了 GLM-5.1（744B MoE 架构），据报道在编码场景中表现强劲</p>
+
+<p><strong>趋势 / Trend:</strong> 开源模型正在快速追赶闭源模型——开发者在自托管、微调方面的选择越来越多，且成本更低。</p>
+
+<p>Source: [LLM Stats — AI News](https://llm-stats.com/ai-news) | [New AI Models April 2026](https://whatllm.org/blog/new-ai-models-april-2026)</p>
+
+<hr/>
+
+<h3>3. 🔐 Claude Mythos 帮助 Mozilla 修复 271 个 Firefox 漏洞</h3>
+
+<p><strong>Claude Mythos Reportedly Helped Mozilla Patch 271 Firefox Vulnerabilities</strong></p>
+
+<p>Anthropic 的 Claude Mythos（目前仅向部分组织开放的预览版）据报道协助 Mozilla 在 Firefox 中识别和修补了 271 个安全漏洞。这是 AI 在防御性网络安全领域的一个具体案例。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> 传统漏洞扫描需要数周人工审查。AI 辅助安全审计如果成熟，将从根本上改变软件安全的规模和速度。不过目前此能力仍在受控预览阶段。</p>
+
+<p>Source: [AI News Briefs — April 2026](https://radicaldatascience.wordpress.com/2026/04/23/ai-news-briefs-bulletin-board-for-april-2026/)</p>
+
+<hr/>
+
+<h2>💡 工程师视角 / Engineer Takeaway</h2>
+
+<p>从这周的新闻看几个长期趋势：</p>
+
+<p>1. <strong>硬件专业化：</strong> 训练 vs 推理的分离是大趋势——就像 CPU vs GPU 的分工，AI 芯片也在分化</p>
+<p>2. <strong>开源追平：</strong> Qwen、DeepSeek、GLM 持续追赶 OpenAI/Anthropic，开发者的选择窗口正在打开</p>
+<p>3. <strong>AI + 安全：</strong> 代码安全审计是 AI 最具潜力的&quot;killer app&quot;之一，不只是写代码，还能找 bug</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>1. [Google Blog — 8th Gen TPU Agentic Era](https://blog.google/innovation-and-ai/infrastructure-and-cloud/google-cloud/eighth-generation-tpu-agentic-era/)</p>
+<p>2. [Google Cloud Infrastructure Blog](https://cloud.google.com/blog/products/compute/ai-infrastructure-at-next26)</p>
+<p>3. [Claude Mythos Finds 271 Firefox Vulnerabilities — SecurityWeek](https://www.securityweek.com/claude-mythos-finds-271-firefox-vulnerabilities/)</p>
+<p>4. [Mozilla MFSA 2026-30 Security Advisory](https://www.mozilla.org/en-US/security/advisories/mfsa2026-30/)</p>
+<p>5. [Qwen3.6-27B Open Source Release](https://qwen.ai/blog?id=qwen3.6)</p>
+
+<hr/>
+
+<h2>🧒 ELI5 / 小孩版解释</h2>
+
+<p>这周 AI 界像是一场运动会：Google 造了两种专用超级芯片（一个专门练跑步，一个专门练跳高），多家公司推出了新版&quot;大脑&quot;互相比谁更聪明，还有一个 AI 帮 Firefox 找到了 271 个&quot;漏水洞&quot;堵上了。AI 不只会聊天，还开始帮忙守护软件安全了。</p>
+
+<p>This week in AI was like a sports meet: Google built two specialized super-chips (one for training, one for inference), companies released new &quot;brains&quot; competing to be smartest, and an AI helped Firefox patch 271 security holes. AI isn&#x27;t just chatting anymore — it&#x27;s becoming a security guardian too.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-23</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
