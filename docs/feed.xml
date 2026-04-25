@@ -5,8 +5,100 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 24 Apr 2026 15:11:04 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 25 Apr 2026 15:35:18 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-25</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-25</guid>
+      <pubDate>Sat, 25 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Design Google Maps (15 min read)</strong></p>
+<p>📊 NeetCode: 27/150 · SysDesign: 26/40 · Behavioral: 26/40 · Frontend: 26/50 · AI: 12/30</p>
+<p>🔥 31-day streak!</p>
+
+<h2>Overview / 概述</h2>
+<p>Google Maps is a complex system that provides navigation, location search, and map rendering. Designing it requires handling massive amounts of spatial data, calculating optimal routes using graph algorithms, and ensuring low latency for millions of concurrent users.</p>
+<p>Google Maps 是一个复杂的系统，提供导航、位置搜索和地图渲染功能。设计它需要处理海量的空间数据，使用图算法计算最佳路线，并确保数百万并发用户的低延迟。</p>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+<h3>1. Map Rendering (地图渲染)</h3>
+<p>Instead of loading a single massive image, the world map is divided into <strong>tiles</strong> (usually 256x256 pixels) at different zoom levels.</p>
+<p>世界地图被划分为不同缩放级别的<strong>瓦片 (Tiles)</strong>（通常为 256x256 像素），而不是加载一张巨大的图像。</p>
+
+<h3>2. Location Data &amp; Spatial Indexing (位置数据与空间索引)</h3>
+<p>To efficiently find nearby places, we use spatial indexing like <strong>Quadtrees</strong> or <strong>Geohashes</strong>.</p>
+<p>为了高效地找到附近的地方，我们使用空间索引，如<strong>四叉树 (Quadtrees)</strong> 或 <strong>Geohashes</strong>。</p>
+
+<h3>3. Routing &amp; Navigation (路线规划与导航)</h3>
+<p>The road network is represented as a weighted graph. We use algorithms like <strong>Dijkstra&#x27;s</strong> or <strong>A</strong>*, optimized with hierarchical routing.</p>
+<p>道路网络表示为加权图。我们使用 <strong>Dijkstra</strong> 或 <strong>A</strong>* 等算法，并通过分层路由进行优化。</p>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Architecture Diagram / 架构图</h3>
+<pre><code>
+[Client App] 
+    |
+    v
+[API Gateway / Load Balancer]
+    |
+    +---&gt; [Location Service] ---&gt; [Quadtree / Geohash DB]
+    |
+    +---&gt; [Navigation Service] ---&gt; [Routing Engine (A*)] ---&gt; [Graph DB]
+    |
+    +---&gt; [Map Rendering Service] ---&gt; [CDN (Tiles)] ---&gt; [Object Storage]
+</code></pre>
+
+<h3>Core Logic: Geohash (Python)</h3>
+<pre><code>
+# A simplified conceptual representation of Geohash logic
+def encode_geohash(lat, lon, precision=6):
+    # In reality, this interleaves bits of lat/lon
+    # Here we just represent the concept
+    return f&quot;geo_{lat}_{lon}&quot;[:precision]
+
+def get_neighbors(geohash):
+    # Returns the 8 surrounding geohashes
+    return [geohash + &quot;_n1&quot;, geohash + &quot;_n2&quot;] # mock
+
+def query_db(center, neighbors):
+    # Mock DB query
+    return [&quot;Place A&quot;, &quot;Place B&quot;]
+
+def find_nearby_places(lat, lon, radius):
+    # 1. Get current geohash
+    center_hash = encode_geohash(lat, lon)
+    # 2. Get neighboring geohashes to cover the radius
+    neighbors = get_neighbors(center_hash)
+    # 3. Query DB for places in these hashes
+    # SELECT * FROM places WHERE geohash IN (center_hash, neighbors...)
+    return query_db(center_hash, neighbors)
+</code></pre>
+<p><em>Cross-check: A client requests nearby places -&gt; API Gateway -&gt; Location Service -&gt; runs <code>find_nearby_places</code> which queries the Quadtree/Geohash DB. The code and diagram match.</em></p>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+<p>- <strong>High Traffic Areas:</strong> A popular event might cause a massive spike in location updates. Solution: Batch updates and use Redis for real-time aggregation.</p>
+<p>- <strong>Offline Mode:</strong> Users lose connection while navigating. Solution: Pre-download route tiles and graph data for the planned trip.</p>
+<p>- <strong>Traffic Updates:</strong> Traffic changes constantly. Solution: Stream real-time telemetry from active users to update graph edge weights dynamically.</p>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+<p>- <strong>Ride-sharing (Uber/Lyft):</strong> Heavily relies on spatial indexing to match riders and drivers.</p>
+<p>- <strong>Delivery Services (DoorDash):</strong> Uses routing engines to estimate delivery times and optimize multi-stop routes.</p>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+<p>1. <strong>Q:</strong> How do you handle real-time traffic updates?</p>
+<p><strong>A:</strong> Collect telemetry from active users via WebSockets, aggregate it using a stream processor (Kafka/Flink), and update the routing graph weights.</p>
+<p>2. <strong>Q:</strong> Why use Quadtrees over a simple SQL grid?</p>
+<p><strong>A:</strong> Quadtrees dynamically subdivide dense areas (like cities) while keeping sparse areas (like oceans) as large nodes, optimizing memory and search time.</p>
+<p>3. <strong>Q:</strong> How do you minimize latency for map tiles?</p>
+<p><strong>A:</strong> Pre-generate static tiles and serve them exclusively through a global CDN.</p>
+<p>4. <strong>Q:</strong> What if the routing graph is too large to fit in memory?</p>
+<p><strong>A:</strong> Use Hierarchical Routing. Divide the graph into regions (e.g., cities, highways). Route between regions first, then within the region.</p>
+<p>5. <strong>Q:</strong> How do you handle users going off-route?</p>
+<p><strong>A:</strong> The client detects deviation and requests a recalculation from the current GPS coordinate to the destination.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-24</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
