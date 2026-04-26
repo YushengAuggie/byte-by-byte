@@ -226,3 +226,51 @@
 - Overall: pipeline is **healthy** for delivery. Two recurring quality issues need code investigation:
   1. `send-email.py` dropping 1 section on ~15% of weekdays
   2. QA report occasionally not written (review-and-send timing/ordering)
+
+## 2026-04-25 Optimization Run
+
+### Issues Found
+
+**P0 Critical:** None — all content delivered for 7 consecutive days.
+
+**P1 Quality:**
+1. **Apr 21 email sent only 4/5 sections** — All 5 archive files exist (5517–7838 bytes) but `send-email.py` assembled only 4 sections. This is the **4th occurrence** (Apr 9, 17, 21 confirmed; possibly earlier). ~15% of weekday emails lose a section. Subscribers received incomplete content. Root cause likely in `send-email.py` section assembly logic.
+2. **Apr 20 missing QA report** — All 5 archive files exist (2780–5726 bytes), email sent with 5 sections, but no `qa-report.md` written. 3rd occurrence (Apr 14, 20, and possibly others). Review-and-send may time out or skip QA step. No audit trail for that day's content quality.
+3. **Apr 20 history entry malformed** — Entry is `{date, day, type}` instead of standard format with `difficultyPhase` and `sections` keys. This was Monday (after weekend gap Apr 18-19). The advance-state script ran differently. Won't affect delivery but breaks review-day topic lookback.
+4. **Apr 18-19 missing from history** — Saturday deepdive (Apr 18) and Sunday review (Apr 19) have archive files but NO history entries. `advance-state.sh` didn't record them. Same pattern as previous Apr 9 gap. Weekend state advancement is unreliable.
+
+**P2 Maintenance:**
+1. **`openclaw cron list --json` bash parsing still broken** — JSONDecodeError every optimizer run since Apr 13. Non-blocking (native cron API works fine). Consider removing the bash parsing attempt from this script.
+2. **Email log `status` field always missing** — All 7 entries show `status=?`. The `sent_at` and `sections` fields confirm delivery, but the status field isn't being set in `send-email.py`. Cosmetic issue.
+
+### Metrics
+- Delivery rate (7d): **7/7** ✅
+- Email delivery (7d): **7/7** ✅ (but Apr 21 only 4/5 sections)
+- Cron errors (active): **0** — all 6 jobs healthy, 0 consecutive errors
+- State: Day 31, entered Mastery phase
+- History gaps: Apr 18-19 (weekend, no history entries), Apr 20 (malformed entry)
+- QA reports (7d): **5/7** (Apr 19 week-review has QA, Apr 20 missing)
+
+### Cron Health
+| Job | Last Run | Duration | Status |
+|-----|----------|----------|--------|
+| weekday | Apr 22 | 303s (5min) | ✅ |
+| saturday | Apr 25 | 1886s (31min) | ✅ |
+| sunday | Apr 19 | 1743s (29min) | ✅ |
+| review-and-send | Apr 25 | 266s (4min) | ✅ |
+| backup-send | Apr 25 | 11s | ✅ |
+| optimizer | Apr 22 | 67s | ✅ |
+
+### Trend vs Last Run (Apr 22)
+- Delivery rate: stable (7/7 → 7/7) ✅
+- Cron errors: stable (0 → 0) ✅
+- 4-section email bug: **4th occurrence now** — send-email.py section assembly is a recurring P1 ⚠️
+- Missing QA report: **3rd occurrence** — emerging pattern in review-and-send ⚠️
+- Weekend history gaps: **new finding** — advance-state.sh doesn't record Sat/Sun ⚠️
+- review-and-send duration: improved (266s, good headroom vs 1200s timeout) ✅
+- Entered Mastery phase (Day 31) — content difficulty should be increasing
+
+### Recommendations (manual action needed)
+1. **P1 — send-email.py section drop**: Investigate section assembly in `scripts/send-email.py`. Likely off-by-one or file glob issue that intermittently skips a section.
+2. **P1 — Weekend history gaps**: `scripts/advance-state.sh` may not handle Saturday/Sunday content types. Check if it expects weekday-only section format.
+3. **P2 — Remove bash cron parsing**: Replace the `openclaw cron list --json | python3` block in the optimizer with native cron API call (already working).
