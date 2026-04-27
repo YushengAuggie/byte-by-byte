@@ -5,8 +5,782 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 26 Apr 2026 15:06:57 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 27 Apr 2026 15:27:57 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-04-27</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-04-27</guid>
+      <pubDate>Mon, 27 Apr 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 32</h2>
+
+<p><strong>主题 / Topic:</strong> Design Google Maps</p>
+<p><strong>难度 / Difficulty:</strong> Advanced | <strong>阶段 / Phase:</strong> Mastery</p>
+<p><strong>预计阅读 / Read time:</strong> ~3 分钟</p>
+
+<hr/>
+
+<h2>🌍 想象你在设计 Google Maps...</h2>
+
+<p>你需要支持 <strong>10亿用户</strong> 实时导航、路线规划、地图渲染，还要处理交通状况更新。</p>
+<p>You need to support <strong>1B users</strong> doing real-time navigation, route planning, map rendering, and live traffic updates.</p>
+
+<p>这不只是&quot;存地图数据&quot;那么简单——挑战在于数据量庞大、实时性要求高、以及地理空间查询的复杂性。</p>
+<p>It&#x27;s not just &quot;store map data&quot; — the challenge is massive data volume, real-time requirements, and complex geospatial queries.</p>
+
+<hr/>
+
+<h2>🏛️ 架构图 / Architecture</h2>
+
+<pre><code>
+[Mobile/Web Client]
+        |
+   [CDN / Tile Cache]   ← 静态地图瓦片 / Static map tiles
+        |
+   [API Gateway]
+   /     |      \
+[Route  ] [Search] [Traffic]
+[Service] [Service] [Service]
+   |         |          |
+[Graph DB] [Geo Index] [Stream]
+[Roads]   [POI/Places] [Kafka]
+              |              |
+         [PostGIS]    [Real-time
+        [S3 Tiles]    Aggregator]
+              |
+         [Data Lake]
+         (OpenStreetMap
+          + fleet GPS)
+</code></pre>
+
+<hr/>
+
+<h2>🔑 核心设计决策 / Key Design Decisions</h2>
+
+<h3>1. 地图瓦片系统 / Map Tile System</h3>
+
+<p>地图按 <strong>Mercator 投影</strong> 切割为 256×256 瓦片，按 zoom level (0-20) 分层存储。</p>
+<p>Maps are sliced into 256×256 tiles using Mercator projection, stored per zoom level.</p>
+
+<pre><code>
+Zoom 0 = 1 tile (whole world)
+Zoom 10 = 1M tiles (city level)
+Zoom 18 = 68B tiles (street level)
+</code></pre>
+
+<p><strong>存储策略 / Storage:</strong> S3 + CloudFront CDN</p>
+<p>瓦片是静态资源，CDN 命中率 &gt;95%，极大减少源服务器压力。</p>
+<p>Tiles are static assets — &gt;95% CDN hit rate massively reduces origin load.</p>
+
+<h3>2. 路线规划 / Routing Engine</h3>
+
+<p>使用 <strong>Dijkstra / A\</strong>* 算法，但直接跑整个地图不现实（节点太多）。</p>
+<p>Pure Dijkstra on the full map is infeasible (too many nodes).</p>
+
+<p><strong>解决方案 / Solution: Hierarchical Routing (CH — Contraction Hierarchies)</strong></p>
+
+<pre><code>
+Level 3: Highways (interstate)     ← 长途优先走这层
+Level 2: Major roads (city)         ← 城际
+Level 1: Local streets              ← 最后一公里
+</code></pre>
+
+<p>先在高层图快速找大方向，再在低层补充细节——搜索空间缩小 1000x。</p>
+<p>Search at high levels for direction, detail at low levels — 1000x smaller search space.</p>
+
+<h3>3. 实时交通 / Real-Time Traffic</h3>
+
+<p><strong>数据来源 / Sources:</strong></p>
+<p>- 匿名 GPS 轨迹（手机上报）/ Anonymous GPS traces from phones</p>
+<p>- 事故/施工报告 / Incident reports</p>
+<p>- 历史交通模式 / Historical traffic patterns</p>
+
+<p><strong>架构:</strong></p>
+<pre><code>
+GPS probes → Kafka → Stream Processor → Edge Weight Updates
+                                      → Route Re-calculation
+</code></pre>
+
+<p>每条路的&quot;边权重&quot;代表当前行驶时间，每 1-5 分钟更新一次。</p>
+<p>Each road edge weight = current travel time, updated every 1-5 min.</p>
+
+<h3>4. 地理索引 / Geo-Spatial Indexing</h3>
+
+<p>搜索&quot;附近的星巴克&quot;需要高效的地理查询。</p>
+<p>&quot;Find Starbucks nearby&quot; needs efficient geo queries.</p>
+
+<p><strong>方案 / Approach: Geohash + R-Tree (PostGIS)</strong></p>
+
+<pre><code>
+# Geohash: encode lat/lng as string prefix
+# &quot;9q8yy...&quot; = San Francisco downtown
+# Nearby = same prefix → O(1) bucket lookup
+import geohash
+loc = geohash.encode(37.7749, -122.4194, precision=6)
+# &quot;9q8yy4&quot; → search &quot;9q8yy*&quot; for neighbors
+</code></pre>
+
+<hr/>
+
+<h2>⚖️ 权衡 / Key Tradeoffs</h2>
+
+<p>| 决策 / Decision | 方案 A | 方案 B | 选择理由 / Why |</p>
+<p>|---|---|---|---|</p>
+<p>| 路线算法 | Dijkstra (simple) | Contraction Hierarchies | 性能 / Performance |</p>
+<p>| 地图存储 | 矢量 Vector | 栅格瓦片 Raster | CDN 可缓存 / Cacheable |</p>
+<p>| 交通更新 | Pull (客户端轮询) | Push (WebSocket) | 节省带宽 / Bandwidth |</p>
+<p>| 地理索引 | PostGIS | Custom Quadtree | 成熟度 / Maturity |</p>
+
+<hr/>
+
+<h2>⚠️ 别踩这个坑 / Common Mistakes</h2>
+
+<p><strong>❌ 坑 1:</strong> 把路线规划做成单体服务</p>
+<p>路线计算 CPU 密集，必须独立扩展。</p>
+<p>Route computation is CPU-heavy — must scale independently.</p>
+
+<p><strong>❌ 坑 2:</strong> 忽略地图数据更新</p>
+<p>路网每天都在变（新路、施工），需要 ETL pipeline 定期从 OpenStreetMap 导入。</p>
+<p>Road networks change daily — need ETL from OpenStreetMap.</p>
+
+<p><strong>❌ 坑 3:</strong> 以为实时交通只需要快速存储</p>
+<p>真正的挑战是 <strong>数据新鲜度 vs 系统负载</strong> 的权衡——更新太频繁会压垮路由服务。</p>
+<p>Real challenge is freshness vs load — too-frequent updates overwhelm routing.</p>
+
+<hr/>
+
+<h2>📊 容量估算 / Capacity Estimates</h2>
+
+<pre><code>
+DAU: 1B users
+Requests: ~10B/day (navigation + search + tile loads)
+Map tile storage: ~100TB (all zoom levels, global)
+GPS traces ingest: ~5M events/second peak
+Route cache: Redis, 15-min TTL, ~1TB hot data
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://www.uber.com/blog/engineering/h3/ — Uber H3 hexagonal geo-indexing</p>
+<p>- https://www.openstreetmap.org/ — OpenStreetMap (the data behind many map services)</p>
+<p>- https://docs.mapbox.com/help/glossary/vector-tiles/ — Mapbox vector tiles explained</p>
+<p>- https://en.wikipedia.org/wiki/Contraction_hierarchies — Contraction Hierarchies routing</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象地图是一本超大的图画书，按放大倍数分成很多小页（瓦片）。你想要什么页，服务器就给你发什么页——大部分页都缓存好了，超级快。找路就像在地铁图上先找大站，再找小站，而不是一步一步数路口。</p>
+<p>Imagine the map is a huge picture book split into tiny pages (tiles) by zoom level. You ask for the page you need, and the server sends it — most pages are already cached, so it&#x27;s super fast. Finding a route is like finding big subway stations first, then small stops — not counting every intersection one by one.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 32</h2>
+
+<p><strong>题目 / Problem:</strong> #704 Binary Search | 🟢 Easy</p>
+<p><strong>模式 / Pattern:</strong> Binary Search (第1题，共7题 / Problem 1 of 7)</p>
+<p><strong>预计阅读 / Read time:</strong> ~4 分钟</p>
+
+<hr/>
+
+<h2>🧩 新模式 / New Pattern: 二分搜索模式 (Binary Search)</h2>
+
+<p>📍 <strong>本模式共 7 题 / This block: 7 problems</strong></p>
+
+<pre><code>
+#704 Binary Search (Easy)                ← 今天 TODAY
+#74  Search a 2D Matrix (Medium)
+#875 Koko Eating Bananas (Medium)
+#153 Find Minimum in Rotated Sorted Array (Medium)
+#33  Search in Rotated Sorted Array (Medium)
+#981 Time Based Key-Value Store (Medium)
+#4   Median of Two Sorted Arrays (Hard)
+</code></pre>
+
+<h3>什么时候用 / When to Use</h3>
+
+<p>当你看到这些信号时，考虑二分搜索：</p>
+<p>Look for these signals to reach for binary search:</p>
+
+<p>- <strong>排序数组</strong> 里找某个值</p>
+<p>- 要求 <strong>O(log n)</strong> 时间复杂度</p>
+<p>- 找 <strong>&quot;满足条件的最小/最大值&quot;</strong>（最小化/最大化）</p>
+<p>- 搜索空间可以 <strong>单调地判断 True/False</strong></p>
+
+<h3>识别信号 / Signals</h3>
+
+<pre><code>
+sorted array, search, O(log n),
+&quot;find minimum that satisfies condition&quot;,
+&quot;find maximum&quot;, monotonic property
+</code></pre>
+
+<h3>通用模版 / Template</h3>
+
+<pre><code>
+def binary_search(arr, target):
+    left, right = 0, len(arr) - 1
+    
+    while left &lt;= right:
+        mid = (left + right) // 2  # 避免溢出：left + (right - left) // 2
+        
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] &lt; target:
+            left = mid + 1   # target 在右半边
+        else:
+            right = mid - 1  # target 在左半边
+    
+    return -1  # not found
+</code></pre>
+
+<p><strong>Time:</strong> O(log n) | <strong>Space:</strong> O(1)</p>
+
+<h3>核心洞察 / Key Insight</h3>
+
+<p>&gt; 每次排除<strong>一半</strong>搜索空间 — 不只用于排序数组，任何单调性都可以二分。</p>
+<p>&gt; Each step eliminates <strong>half</strong> the search space — works for any monotonic property, not just sorted arrays.</p>
+
+<hr/>
+
+<h2>📖 今天的题目 / Today&#x27;s Problem</h2>
+
+<p><strong>[#704 Binary Search](https://leetcode.com/problems/binary-search/)</strong> 🟢 Easy</p>
+<p>📹 [NeetCode 讲解](https://neetcode.io/problems/binary-search)</p>
+
+<hr/>
+
+<h3>🌍 真实类比 / Real-World Analogy</h3>
+
+<p>想象查字典找 &quot;python&quot; 这个词：</p>
+<p>Imagine looking up &quot;python&quot; in a dictionary:</p>
+
+<p>1. 翻到中间页 → &quot;m&quot; 开头，python &gt; m → 翻右边</p>
+<p>2. 翻到右边中间 → &quot;s&quot; 开头，python &lt; s → 翻左边</p>
+<p>3. 找到 &quot;p&quot; 区，再找 &quot;py&quot; → 命中！</p>
+
+<p>每次翻书都排除一半，不需要从第一页翻到最后。</p>
+<p>Each flip eliminates half — no need to read every page.</p>
+
+<hr/>
+
+<h3>🔍 问题描述 / Problem</h3>
+
+<p>给定升序整数数组 <code>nums</code> 和目标值 <code>target</code>，返回 <code>target</code> 的下标，不存在返回 <code>-1</code>。</p>
+<p>Given a sorted array of integers and a target, return the index of target or -1 if not found.</p>
+
+<pre><code>
+Input: nums = [-1, 0, 3, 5, 9, 12], target = 9
+Output: 4
+
+Input: nums = [-1, 0, 3, 5, 9, 12], target = 2
+Output: -1
+</code></pre>
+
+<hr/>
+
+<h3>🗺️ 套用模版 / Map to Template</h3>
+
+<p>这就是<strong>模版的原型题</strong> — 直接套用即可！</p>
+<p>This IS the template — apply it directly!</p>
+
+<pre><code>
+def search(nums: list[int], target: int) -&gt; int:
+    left, right = 0, len(nums) - 1
+    
+    while left &lt;= right:
+        mid = (left + right) // 2
+        
+        if nums[mid] == target:
+            return mid
+        elif nums[mid] &lt; target:
+            left = mid + 1   # target must be to the right
+        else:
+            right = mid - 1  # target must be to the left
+    
+    return -1
+</code></pre>
+
+<h3>🔬 执行追踪 / Trace</h3>
+
+<pre><code>
+nums = [-1, 0, 3, 5, 9, 12], target = 9
+
+Iteration 1: left=0, right=5, mid=2 → nums[2]=3 &lt; 9 → left=3
+Iteration 2: left=3, right=5, mid=4 → nums[4]=9 == 9 → return 4 ✅
+
+nums = [-1, 0, 3, 5, 9, 12], target = 2
+
+Iteration 1: left=0, right=5, mid=2 → nums[2]=3 &gt; 2 → right=1
+Iteration 2: left=0, right=1, mid=0 → nums[0]=-1 &lt; 2 → left=1
+Iteration 3: left=1, right=1, mid=1 → nums[1]=0 &lt; 2 → left=2
+left(2) &gt; right(1) → return -1 ✅
+</code></pre>
+
+<hr/>
+
+<h3>⏱️ 复杂度 / Complexity</h3>
+
+<p>| | 时间 Time | 空间 Space |</p>
+<p>|---|---|---|</p>
+<p>| 二分搜索 | O(log n) | O(1) |</p>
+<p>| 暴力 Brute | O(n) | O(1) |</p>
+
+<p><strong>为什么 O(log n)?</strong> 每次循环 n 减半 → log₂(n) 轮后 n=1。</p>
+<p><strong>Why O(log n)?</strong> Each iteration halves n → after log₂(n) steps, n=1.</p>
+
+<hr/>
+
+<h3>🔁 举一反三 / Pattern Variations (本模式7题)</h3>
+
+<p>| 题号 | 变化点 / What Changes |</p>
+<p>|---|---|</p>
+<p>| #74 Search 2D Matrix | 搜索空间变成矩阵，但可以展平为有序数组 |</p>
+<p>| #875 Koko Eating Bananas | 不是搜索&quot;值&quot;，而是搜索&quot;速度&quot;（二分答案） |</p>
+<p>| #153 Find Min Rotated | 数组有旋转，需要判断哪半边是有序的 |</p>
+<p>| #33 Search Rotated | 旋转 + 找特定值，两重判断 |</p>
+<p>| #4 Median Two Arrays | Hard：搜索空间是分割点 |</p>
+
+<p>模版不变，<strong>变化的是&quot;如何判断往哪边走&quot;</strong>。</p>
+<p>Template stays the same — <strong>what changes is &quot;which direction to go&quot;</strong>.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://leetcode.com/problems/binary-search/ — LeetCode #704</p>
+<p>- https://neetcode.io/problems/binary-search — NeetCode video walkthrough</p>
+<p>- https://cp-algorithms.com/num_methods/binary_search.html — Binary search theory</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>猜数字游戏：1到100里猜一个数。你每次猜中间的数（50），我告诉你大了还是小了。你不需要猜100次——最多猜7次就能找到！因为每次都砍掉一半。</p>
+<p>Number guessing game: 1 to 100. You always guess the middle (50), I say higher or lower. You don&#x27;t need 100 guesses — at most 7! Because each guess cuts the possibilities in half.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 32</h2>
+
+<p><strong>问题 / Question:</strong> Describe a time you championed an unpopular technical decision that turned out well</p>
+<p><strong>类别 / Category:</strong> Technical Leadership</p>
+<p><strong>级别 / Level:</strong> Staff</p>
+<p><strong>预计阅读 / Read time:</strong> ~2 分钟</p>
+
+<hr/>
+
+<h2>💡 为什么面试官问这个 / Why Interviewers Ask This</h2>
+
+<p>这道题考察的不只是技术判断力——更重要的是你能否<strong>在不受欢迎的情况下坚持正确的决定</strong>，同时又不变成一个不听劝的固执者。</p>
+<p>This question tests more than technical judgment — it&#x27;s about your ability to <strong>hold a correct position under pressure</strong> without becoming inflexible or dismissive of others.</p>
+
+<p>Staff+ 工程师必须能够：</p>
+<p>Staff+ engineers must be able to:</p>
+<p>- 用数据和推理说服团队，而不是靠权威</p>
+<p>- 区分&quot;被反对&quot;和&quot;观点有误&quot;</p>
+<p>- 在被证明正确后，保持谦逊（不要 &quot;I told you so&quot;）</p>
+
+<hr/>
+
+<h2>⭐ STAR 框架 / STAR Breakdown</h2>
+
+<h3>Situation（情境）</h3>
+<p>&gt; 设定背景：决定是什么？为什么不受欢迎？</p>
+<p>&gt; Set the scene: What was the decision? Why was it unpopular?</p>
+
+<p>示例场景：</p>
+<p><em>&quot;我们团队在做一个新的数据管道，大多数人想继续用 REST API 轮询，因为大家熟悉。我提议改用 event-driven Kafka 架构，当时被认为过度设计。&quot;</em></p>
+
+<h3>Task（任务）</h3>
+<p>&gt; 你的角色是什么？你需要做什么决定？</p>
+<p>&gt; What was your role? What did you need to decide?</p>
+
+<p><em>&quot;作为 tech lead，我需要在短期开发速度和长期可扩展性之间做出推荐，并说服团队和 PM。&quot;</em></p>
+
+<h3>Action（行动）— 重点！</h3>
+<p>&gt; 如何推动？面对阻力怎么做？</p>
+
+<p><strong>不受欢迎时的正确动作：</strong></p>
+
+<p>1. <strong>倾听反对意见，理解真实顾虑</strong> — 是技术顾虑还是进度担心？</p>
+<p><em>Listen to understand the real concern — is it technical or schedule-related?</em></p>
+
+<p>2. <strong>用证据说话，不用权威压人</strong></p>
+<p><em>&quot;我做了一个 POC，在测试环境跑了 1 周，延迟降低 40%，吞吐量提升 3x。&quot;</em></p>
+
+<p>3. <strong>承认代价，提出缓解方案</strong></p>
+<p><em>&quot;是的，Kafka 学习曲线需要 2 周，我来写 runbook 和培训材料。&quot;</em></p>
+
+<p>4. <strong>设置检验点，给反对者一个出口</strong></p>
+<p><em>&quot;我们先 pilot 一个 service，90天后一起 review 效果。&quot;</em></p>
+
+<h3>Result（结果）</h3>
+<p>&gt; 结果是什么？什么数据可以量化？</p>
+
+<p><em>&quot;6 个月后，这个架构处理了 10x 流量增长而无需改动。最初最反对的 senior dev 后来成为了 Kafka 内部培训的讲师。&quot;</em></p>
+
+<hr/>
+
+<h2>❌ vs ✅ 答案对比 / Bad vs Good</h2>
+
+<p><strong>❌ 差答案：</strong></p>
+<p>&gt; &quot;大家都反对，但我知道我是对的，就强推了。后来证明我对了。&quot;</p>
+
+<p><strong>问题：</strong> 没有说明过程，听起来傲慢，没有体现 collaboration。</p>
+
+<hr/>
+
+<p><strong>✅ 好答案（核心结构）：</strong></p>
+<p>&gt; &quot;我先理解了反对意见的根源——不是技术问题，而是对风险的担忧。我用数据和 POC 具体化了收益，同时主动承担了迁移成本（写文档、培训）。我把决定框架化为&#x27;可验证的假设&#x27;而不是&#x27;我的判断&#x27;——这让团队感觉是共同实验，不是被强迫接受。&quot;</p>
+
+<hr/>
+
+<h2>👑 Senior/Staff 加分项 / Senior Tips</h2>
+
+<p>1. <strong>区分&quot;坚持&quot;和&quot;固执&quot;：</strong> 如果在讨论中发现对方有合理顾虑，要展示你如何 <strong>更新了自己的判断</strong>。</p>
+<p><em>Show when you updated your view based on good pushback — it&#x27;s a strength, not weakness.</em></p>
+
+<p>2. <strong>避免&quot;我 vs 团队&quot;叙事：</strong> 用&quot;我们最终达成共识&quot;取代&quot;我最终说服了他们&quot;。</p>
+<p><em>Reframe from &quot;I convinced them&quot; to &quot;we reached a better solution together.&quot;</em></p>
+
+<p>3. <strong>量化成果：</strong> &quot;结果很好&quot;不够有力，用具体数字。</p>
+<p><em>Quantify the outcome — &quot;saved 3 weeks per release&quot; beats &quot;improved velocity.&quot;</em></p>
+
+<p>4. <strong>心理安全建设：</strong> 在技术决策过程中如何让团队不怕发言是 Staff 特质。</p>
+<p><em>How you maintained psychological safety during the disagreement is what separates Staff from Senior.</em></p>
+
+<hr/>
+
+<h2>🎯 Key Takeaways</h2>
+
+<p>- 坚持正确决定需要 <strong>数据 + 谦逊 + 给对方台阶下</strong></p>
+<p><em>Hold correct positions with data + humility + giving others an exit ramp</em></p>
+<p>- 设置可验证的检验点，把争论变成实验</p>
+<p><em>Turn arguments into experiments with verifiable checkpoints</em></p>
+<p>- 被证明正确后，分享功劳</p>
+<p><em>When proven right, share the credit</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://www.staffeng.com/guides/staff-archetypes/ — Staff Engineer archetypes and influence</p>
+<p>- https://lethain.com/staff-engineer-archetypes/ — Will Larson on technical leadership</p>
+<p>- https://www.amazon.com/Dare-Lead-Brave-Conversations-Hearts/dp/0399592520 — Brené Brown: Dare to Lead</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象班上大家都想用彩笔画画，但你觉得铅笔更好改错。大家不同意。你没有生气，而是先用铅笔画了一张很好的画给大家看——&quot;你们看，这样可以擦掉重来！&quot;大家试了觉得确实不错，最后都开始用铅笔了。</p>
+<p>Imagine the class wants crayons but you think pencils are better because you can erase. Instead of arguing, you draw a great picture with a pencil and show everyone — &quot;See, you can fix mistakes!&quot; They try it, like it, and switch. That&#x27;s championing an unpopular idea the right way.</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 32</h2>
+
+<p><strong>主题 / Topic:</strong> Debounce &amp; Throttle — Implement from Scratch</p>
+<p><strong>类别 / Category:</strong> JavaScript Core</p>
+<p><strong>预计阅读 / Read time:</strong> ~2 分钟</p>
+
+<hr/>
+
+<h2>🌍 真实场景 / Real-World Scenario</h2>
+
+<p>你在做一个 dashboard，需要实现一个搜索框。用户每敲一个字母，就会发一次 API 请求。</p>
+<p>You&#x27;re building a dashboard with a search box. Every time the user types a letter, it fires an API request.</p>
+
+<p>如果用户快速输入 &quot;apple&quot;，系统会发送 5 次请求（a, ap, app, appl, apple）。这会浪费服务器资源，甚至导致竞态条件（先发的请求后返回，覆盖了最终结果）。</p>
+<p>If the user types &quot;apple&quot; quickly, it sends 5 requests. This wastes server resources and can cause race conditions (an earlier request returns later and overwrites the final result).</p>
+
+<p><strong>解决方案：防抖 (Debounce) 和 节流 (Throttle)。</strong></p>
+<p><strong>Solution: Debounce and Throttle.</strong></p>
+
+<hr/>
+
+<h2>💻 代码实现 / Code Snippets</h2>
+
+<h3>1. 防抖 (Debounce)</h3>
+<p><strong>概念：</strong> 动作停止后，等待 N 毫秒再执行。如果期间又触发了，重新计时。</p>
+<p><strong>Concept:</strong> Wait N ms after the <em>last</em> action before executing. If triggered again, reset the timer.</p>
+<p><strong>场景：</strong> 搜索框自动补全、窗口 resize。</p>
+<p><strong>Use case:</strong> Search autocomplete, window resize.</p>
+
+<pre><code>
+function debounce&lt;T extends (...args: any[]) =&gt; void&gt;(
+  func: T, 
+  wait: number
+): (...args: Parameters&lt;T&gt;) =&gt; void {
+  let timeoutId: ReturnType&lt;typeof setTimeout&gt; | null = null;
+  
+  return function(this: any, ...args: Parameters&lt;T&gt;) {
+    // 如果已经有定时器，清除它（重新计时）
+    // If there&#x27;s an existing timer, clear it (reset)
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    
+    // 设置新的定时器
+    // Set a new timer
+    timeoutId = setTimeout(() =&gt; {
+      func.apply(this, args);
+    }, wait);
+  };
+}
+
+// 用法 / Usage:
+const search = debounce((query: string) =&gt; fetchAPI(query), 300);
+// 快速输入 &quot;apple&quot; 只会在停顿 300ms 后触发一次 fetchAPI(&quot;apple&quot;)
+</code></pre>
+
+<h3>2. 节流 (Throttle)</h3>
+<p><strong>概念：</strong> 规定时间内，最多只执行一次。不管触发多少次，按固定频率执行。</p>
+<p><strong>Concept:</strong> Execute at most once every N ms, ensuring a steady rate of execution regardless of how many times it&#x27;s triggered.</p>
+<p><strong>场景：</strong> 滚动事件 (scroll) 监听、按钮防连击。</p>
+<p><strong>Use case:</strong> Scroll event listeners, preventing double-clicks on buttons.</p>
+
+<pre><code>
+function throttle&lt;T extends (...args: any[]) =&gt; void&gt;(
+  func: T, 
+  limit: number
+): (...args: Parameters&lt;T&gt;) =&gt; void {
+  let inThrottle: boolean = false;
+  
+  return function(this: any, ...args: Parameters&lt;T&gt;) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      
+      // 限制时间内不允许再次执行
+      // Prevent execution until limit passes
+      setTimeout(() =&gt; {
+        inThrottle = false;
+      }, limit);
+    }
+  };
+}
+
+// 用法 / Usage:
+const handleScroll = throttle(() =&gt; checkScrollPosition(), 100);
+// 疯狂滚动时，每 100ms 最多执行一次 checkScrollPosition
+</code></pre>
+
+<hr/>
+
+<h2>🤔 猜猜这段代码输出什么？ / Quick Quiz</h2>
+
+<pre><code>
+const log = debounce(() =&gt; console.log(&quot;Hello&quot;), 100);
+
+log();
+log();
+setTimeout(log, 50);
+setTimeout(log, 150);
+</code></pre>
+
+<p><strong>选项 / Options:</strong></p>
+<p>A) 打印 4 次 &quot;Hello&quot;</p>
+<p>B) 打印 1 次 &quot;Hello&quot;</p>
+<p>C) 打印 2 次 &quot;Hello&quot;</p>
+<p>D) 打印 3 次 &quot;Hello&quot;</p>
+
+<p>&lt;details&gt;&lt;summary&gt;&lt;b&gt;查看答案 / Show Answer&lt;/b&gt;&lt;/summary&gt;</p>
+<p>&lt;b&gt;正确答案：C&lt;/b&gt;&lt;br&gt;</p>
+<p>解析：&lt;br&gt;</p>
+<p>- 0ms: <code>log()</code> 调用，设置 100ms 定时器。&lt;br&gt;</p>
+<p>- 0ms: <code>log()</code> 再次调用，清除上一个，重新设置 100ms 定时器 (预计 100ms 触发)。&lt;br&gt;</p>
+<p>- 50ms: <code>log()</code> 调用，清除上一个，重新设置 100ms 定时器 (预计 150ms 触发)。&lt;br&gt;</p>
+<p>- 150ms: 50ms 时的定时器到期，&lt;b&gt;打印第 1 次 &quot;Hello&quot;&lt;/b&gt;。&lt;br&gt;</p>
+<p>- 150ms: <code>log()</code> 调用，设置 100ms 定时器 (预计 250ms 触发)。&lt;br&gt;</p>
+<p>- 250ms: 150ms 时的定时器到期，&lt;b&gt;打印第 2 次 &quot;Hello&quot;&lt;/b&gt;。&lt;br&gt;</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>⚖️ 何时使用 / When to use</h2>
+
+<p>- <strong>Debounce:</strong> 当你只关心<strong>最终状态</strong>时（如用户打完字了、窗口拉完了）。</p>
+<p>- <strong>Throttle:</strong> 当你需要<strong>持续的中间状态</strong>时（如页面滚动过程中需要不断更新进度条，但不能太频繁）。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://lodash.com/docs/4.17.15#debounce — Lodash implementation</p>
+<p>- https://css-tricks.com/debouncing-throttling-explained-examples/ — Visual explanation of Debounce vs Throttle</p>
+<p>- https://developer.mozilla.org/en-US/docs/Web/API/setTimeout — MDN setTimeout</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>防抖（Debounce）就像电梯关门：只要有人进电梯，门就会重新等 5 秒才关。如果一直有人进，门就一直不关，直到最后一个人进来后等够 5 秒。</p>
+<p>节流（Throttle）就像水龙头滴水：不管水压多大，它都只能每秒滴一滴水，频率是固定的。</p>
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 32</h2>
+
+<p><strong>主题 / Topic:</strong> Function Calling &amp; Tool Use in LLMs</p>
+<p><strong>类别 / Category:</strong> Practical | <strong>阶段 / Phase:</strong> Mastery</p>
+<p><strong>预计阅读 / Read time:</strong> ~2 分钟</p>
+
+<hr/>
+
+<h2>🧠 直观理解 / Intuitive Explanation</h2>
+
+<p>LLM（大语言模型）就像一个被锁在没有网的房间里的超级大脑。它知道很多东西，但无法知道今天的天气，也无法帮你发邮件。</p>
+<p>An LLM is like a super-brain locked in a room without internet. It knows a lot, but it can&#x27;t check today&#x27;s weather or send an email for you.</p>
+
+<p><strong>Function Calling (函数调用)</strong> 就是给这个大脑递纸条的机制。</p>
+<p><strong>Function Calling</strong> is the mechanism to pass notes to this brain.</p>
+
+<p>你告诉 LLM：&quot;我这里有几个工具（函数），比如 <code>get_weather(city)</code> 和 <code>send_email(to, body)</code>。如果你需要，告诉我你要用哪个工具，以及参数是什么。&quot;</p>
+<p>You tell the LLM: &quot;I have tools like <code>get_weather(city)</code> and <code>send_email(to, body)</code>. If you need them, tell me which one to use and what the arguments are.&quot;</p>
+
+<p>当用户问：&quot;今天西雅图天气如何？&quot;</p>
+<p>When a user asks: &quot;What&#x27;s the weather in Seattle today?&quot;</p>
+
+<p>LLM 不会瞎编，而是返回一个结构化的 JSON：</p>
+<p>The LLM won&#x27;t hallucinate. Instead, it returns structured JSON:</p>
+<p><code>{&quot;name&quot;: &quot;get_weather&quot;, &quot;arguments&quot;: {&quot;city&quot;: &quot;Seattle&quot;}}</code></p>
+
+<p>你的代码拿到这个 JSON，去真正调用天气 API，然后把结果（比如 &quot;15°C, 阴天&quot;）再喂给 LLM。LLM 最后生成人类语言：&quot;今天西雅图是阴天，气温约 15°C。&quot;</p>
+<p>Your code takes this JSON, actually calls the weather API, and feeds the result (&quot;15°C, cloudy&quot;) back to the LLM. The LLM then generates human text: &quot;It&#x27;s cloudy in Seattle today, around 15°C.&quot;</p>
+
+<hr/>
+
+<h2>⚙️ 它是如何工作的 / How it Works</h2>
+
+<p>1. <strong>定义工具 (Define Tools):</strong> 在 API 请求中，用 JSON Schema 描述你的函数。</p>
+<p>2. <strong>模型决定 (Model Decides):</strong> 模型判断是否需要调用工具。如果需要，它会暂停生成文本，转而生成一个函数调用请求（Tool Call）。</p>
+<p>3. <strong>执行函数 (Execute Function):</strong> 你的应用程序（不是模型！）执行实际的代码。</p>
+<p>4. <strong>返回结果 (Return Result):</strong> 将函数执行结果作为 <code>tool_message</code> 追加到对话历史中，再次请求模型。</p>
+<p>5. <strong>最终回答 (Final Answer):</strong> 模型根据函数结果生成最终回答。</p>
+
+<hr/>
+
+<h2>🚀 应用场景 / Applications</h2>
+
+<p>- <strong>联网搜索:</strong> 让模型能搜索最新资讯 (如 Perplexity, ChatGPT 联网版)。</p>
+<p>- <strong>操作数据库:</strong> 将自然语言转换为 SQL 查询并执行。</p>
+<p>- <strong>自动化办公:</strong> 读取日历、发送邮件、创建 Jira ticket。</p>
+<p>- <strong>Agent 核心:</strong> 这是所有 AI Agent（智能体）能&quot;行动&quot;的基础。</p>
+
+<hr/>
+
+<h2>💻 运行示例 / Runnable Python Snippet</h2>
+
+<p>我们需要 <code>openai</code> 库。</p>
+<p>We need the <code>openai</code> library.</p>
+
+<pre><code>
+pip install openai
+</code></pre>
+
+<pre><code>
+import os
+import json
+from openai import OpenAI
+
+# 确保设置了 OPENAI_API_KEY 环境变量
+# Ensure OPENAI_API_KEY is set
+client = OpenAI(api_key=os.environ.get(&quot;OPENAI_API_KEY&quot;))
+
+# 1. 定义我们的工具 (假装这是一个真实的天气 API)
+# Define our tool (pretend this is a real weather API)
+def get_current_weather(location):
+    &quot;&quot;&quot;Get the current weather in a given location&quot;&quot;&quot;
+    if &quot;tokyo&quot; in location.lower():
+        return json.dumps({&quot;location&quot;: &quot;Tokyo&quot;, &quot;temperature&quot;: &quot;10&quot;, &quot;unit&quot;: &quot;celsius&quot;})
+    elif &quot;san francisco&quot; in location.lower():
+        return json.dumps({&quot;location&quot;: &quot;San Francisco&quot;, &quot;temperature&quot;: &quot;72&quot;, &quot;unit&quot;: &quot;fahrenheit&quot;})
+    else:
+        return json.dumps({&quot;location&quot;: location, &quot;temperature&quot;: &quot;unknown&quot;})
+
+# 2. 告诉模型我们有什么工具
+# Tell the model what tools we have
+tools = [
+    {
+        &quot;type&quot;: &quot;function&quot;,
+        &quot;function&quot;: {
+            &quot;name&quot;: &quot;get_current_weather&quot;,
+            &quot;description&quot;: &quot;Get the current weather in a given location&quot;,
+            &quot;parameters&quot;: {
+                &quot;type&quot;: &quot;object&quot;,
+                &quot;properties&quot;: {
+                    &quot;location&quot;: {
+                        &quot;type&quot;: &quot;string&quot;,
+                        &quot;description&quot;: &quot;The city and state, e.g. San Francisco, CA&quot;,
+                    },
+                },
+                &quot;required&quot;: [&quot;location&quot;],
+            },
+        },
+    }
+]
+
+messages = [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What&#x27;s the weather like in San Francisco?&quot;}]
+
+# 3. 第一次请求：模型决定调用工具
+# First request: Model decides to call the tool
+response = client.chat.completions.create(
+    model=&quot;gpt-3.5-turbo&quot;,
+    messages=messages,
+    tools=tools,
+    tool_choice=&quot;auto&quot;,  # auto is default
+)
+response_message = response.choices[0].message
+tool_calls = response_message.tool_calls
+
+if tool_calls:
+    # 4. 执行函数并返回结果
+    # Execute function and return result
+    messages.append(response_message)  # 把模型的调用请求加进去
+    
+    for tool_call in tool_calls:
+        function_name = tool_call.function.name
+        function_args = json.loads(tool_call.function.arguments)
+        
+        if function_name == &quot;get_current_weather&quot;:
+            function_response = get_current_weather(location=function_args.get(&quot;location&quot;))
+            
+            messages.append(
+                {
+                    &quot;tool_call_id&quot;: tool_call.id,
+                    &quot;role&quot;: &quot;tool&quot;,
+                    &quot;name&quot;: function_name,
+                    &quot;content&quot;: function_response,
+                }
+            )
+            
+    # 5. 第二次请求：模型根据结果生成最终回答
+    # Second request: Model generates final answer based on result
+    second_response = client.chat.completions.create(
+        model=&quot;gpt-3.5-turbo&quot;,
+        messages=messages,
+    )
+    print(second_response.choices[0].message.content)
+    # Output: The weather in San Francisco is currently 72 degrees Fahrenheit.
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://platform.openai.com/docs/guides/function-calling — OpenAI Function Calling Guide</p>
+<p>- https://docs.anthropic.com/en/docs/tool-use — Anthropic Tool Use Guide</p>
+<p>- https://www.promptingguide.ai/applications/function_calling — Prompt Engineering Guide: Function Calling</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你是一个被关在房间里的聪明人，有人在门外问你问题。如果问题是&quot;1+1等于几&quot;，你可以直接回答。如果问题是&quot;今天外面下雨了吗&quot;，你不知道。但是，门外的人给了你一个对讲机（Function Calling），你可以用对讲机呼叫&quot;天气预报员&quot;，问他外面的天气，然后再把答案告诉门外的人。模型本身不执行代码，它只是告诉你&quot;请帮我运行这段代码&quot;。</p>]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-26</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
