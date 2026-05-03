@@ -5,8 +5,629 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 27 Apr 2026 15:27:57 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 03 May 2026 08:11:46 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-03</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-03</guid>
+      <pubDate>Sun, 03 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Design Uber / Lyft (Ride Sharing)</h2>
+
+<p>&gt; <strong>Day 33 · Mastery Phase · ~3 min read</strong></p>
+
+<hr/>
+
+<h2>想象你在设计 Uber</h2>
+
+<p>你是 Uber 的架构师。每天有 <strong>2000 万次</strong> 打车请求。你需要：</p>
+<p>- 实时匹配乘客和司机（延迟 &lt; 5 秒）</p>
+<p>- 追踪数百万司机的实时位置</p>
+<p>- 计算动态路线和价格（surge pricing）</p>
+<p>- 保证司机和乘客的消息可靠传递</p>
+
+<p>Imagine you&#x27;re Uber&#x27;s architect. 20M rides/day. You need real-time driver matching, live location tracking, route calculation, and reliable messaging — all at global scale.</p>
+
+<hr/>
+
+<h2>ASCII Architecture Diagram</h2>
+
+<pre><code>
+[Rider App]          [Driver App]
+     |                    |
+     v                    v
+[API Gateway / Load Balancer]
+     |
+     +--------+----------+----------+
+     |        |          |          |
+[Location   [Trip      [Dispatch  [Surge
+ Service]   Service]   Engine]    Pricing]
+     |        |          |          |
+     v        v          v          v
+[Redis      [Postgres  [Kafka     [ML
+ Geo-index]  RDS]      Event Bus] Service]
+                            |
+                       [Notification
+                         Service]
+                       (WebSocket/
+                        Push/SMS)
+</code></pre>
+
+<hr/>
+
+<h2>核心组件 / Core Components</h2>
+
+<h3>1. Location Service — 实时位置更新</h3>
+<p>- 司机 App 每 <strong>4 秒</strong> 发送 GPS 坐标</p>
+<p>- 存储在 <strong>Redis + Geo Index</strong>（<code>GEOADD</code>, <code>GEORADIUS</code>）</p>
+<p>- 支持 <code>GEORADIUS(lat, lng, radius=2km)</code> 快速找附近司机</p>
+
+<h3>2. Dispatch Engine — 匹配算法</h3>
+<pre><code>
+1. 乘客请求 → Location Service 找 nearby drivers (2km)
+2. 按评分、ETA、方向 排序候选司机
+3. 依次发 offer（司机有 15s 接单窗口）
+4. 超时 → 扩大范围到 5km 重试
+</code></pre>
+
+<h3>3. Trip Service — 行程状态机</h3>
+<pre><code>
+REQUESTED → ACCEPTED → DRIVER_ARRIVING 
+         → RIDE_IN_PROGRESS → COMPLETED / CANCELLED
+</code></pre>
+<p>用 <strong>Postgres</strong> 持久化，用 <strong>Kafka</strong> 发布状态变更事件。</p>
+
+<h3>4. Surge Pricing — 动态定价</h3>
+<p>- 每 1 分钟统计：需求量 / 供给量 = 倍率</p>
+<p>- 倍率 &gt; 1.5x → 触发 surge notification</p>
+<p>- 用 ML 模型预测未来 10 分钟需求（防止价格震荡）</p>
+
+<hr/>
+
+<h2>为什么这样设计？ / Key Tradeoffs</h2>
+
+<p>| 选择 | 原因 |</p>
+<p>|------|------|</p>
+<p>| Redis Geo vs PostGIS | Redis 延迟更低（&lt;1ms），适合高频位置更新 |</p>
+<p>| WebSocket vs HTTP polling | 双向实时通信，推送位置更新更高效 |</p>
+<p>| Kafka for events | 解耦各服务，支持重放 + 审计日志 |</p>
+<p>| Separate Dispatch Engine | 匹配逻辑复杂，隔离后可独立扩容/替换算法 |</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>用数据库存储实时位置</strong> — SQL 无法承受每秒数百万次写入</p>
+<p>✅ <strong>用 Redis Geo</strong> + 定期异步持久化到 DB</p>
+
+<p>❌ <strong>单体匹配服务</strong> — 高峰期成为瓶颈</p>
+<p>✅ <strong>Dispatch Engine 水平扩展</strong> + 按城市分片</p>
+
+<p>❌ <strong>乘客 pull 模式查询司机位置</strong> — 轮询浪费带宽</p>
+<p>✅ <strong>WebSocket push</strong> — 只推变化的位置</p>
+
+<p>❌ <strong>忽略 GPS 漂移</strong> — 司机在隧道/地下停车场时位置失真</p>
+<p>✅ <strong>位置置信度评分</strong> + 地图匹配（map-matching）算法</p>
+
+<hr/>
+
+<h2>数据规模估算 / Capacity Estimation</h2>
+
+<p>- 司机: 5M active drivers globally</p>
+<p>- 位置更新: 5M × (1 update/4s) = <strong>1.25M writes/sec</strong> to Redis</p>
+<p>- 行程数据: 20M rides/day × 1KB = ~20GB/day → Postgres + S3 archive</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Uber Engineering — How we built a real-time geospatial platform](https://www.uber.com/blog/engineering/)</p>
+<p>- [Uber H3 Geospatial Indexing](https://eng.uber.com/h3/)</p>
+<p>- [System Design Interview — Uber (ByteByteGo)](https://bytebytego.com/courses/system-design-interview/design-uber)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>把 Uber 想象成一个巨大的 &quot;出租车调度中心&quot;。Redis 就是调度员的白板，实时标注每辆出租车的位置。Kafka 就是电话录音系统，记录每个电话（事件）。Dispatch Engine 就是调度员本人——他拿起白板，找最近的空车，然后打电话问&quot;你愿意接这个单吗？&quot;</p>
+
+<p>Think of Uber as a giant taxi dispatch center. Redis is the dispatcher&#x27;s whiteboard showing all taxi locations. Kafka is the call recording system. The Dispatch Engine is the dispatcher — grabbing the nearest free driver and asking &quot;want this ride?&quot;</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — #74 Search a 2D Matrix (Medium)</h2>
+
+<p>&gt; <strong>Day 33 · Mastery Phase · ~4 min read</strong></p>
+<p>&gt; 🧩 <strong>二分搜索模式 (2/7)</strong> — building on the template from Day 32</p>
+
+<hr/>
+
+<h2>🧩 模式回顾 / Pattern Recap</h2>
+
+<p>上次我们学了 Binary Search 的基础模版（#704）：</p>
+
+<pre><code>
+left, right = 0, len(arr) - 1
+while left &lt;= right:
+    mid = (left + right) // 2
+    if arr[mid] == target: return mid
+    elif arr[mid] &lt; target: left = mid + 1
+    else: right = mid - 1
+</code></pre>
+
+<p>今天的变化：<strong>一维数组 → 二维矩阵</strong>。关键洞察：把 2D 矩阵<strong>展平</strong>成 1D 数组，索引转换即可。</p>
+
+<p>Today&#x27;s variation: apply binary search on a <strong>2D matrix</strong> by treating it as a virtual 1D array.</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 [LeetCode #74 - Search a 2D Matrix](https://leetcode.com/problems/search-a-2d-matrix/) 🟡 Medium</p>
+<p>📹 [NeetCode Video](https://neetcode.io/problems/search-2d-matrix)</p>
+
+<p><strong>条件 / Constraints:</strong></p>
+<p>- 每行从左到右排序</p>
+<p>- 每行第一个元素 &gt; 上一行最后一个元素</p>
+<p>- 也就是说：整个矩阵可以看成一个有序的 1D 数组！</p>
+
+<pre><code>
+Matrix:
+[[ 1,  3,  5,  7],
+ [10, 11, 16, 20],
+ [23, 30, 34, 60]]
+
+Target = 3 → True
+Target = 13 → False
+</code></pre>
+
+<hr/>
+
+<h2>真实类比 / Real-World Analogy</h2>
+
+<p>想象一本英文词典：每页按字母排序，而且每页的第一个单词比前页最后一个单词靠后。你要找 &quot;mango&quot;——你不需要一页一页翻，先用二分找到页数，再在那页里二分找单词。</p>
+
+<p>A dictionary where pages are sorted A-Z AND words within pages are sorted. You binary search the page number first, then binary search within the page. This matrix does both in one pass.</p>
+
+<hr/>
+
+<h2>模版映射 / Map to Template</h2>
+
+<p><strong>核心技巧：把 2D 坐标转换成 1D 索引</strong></p>
+
+<pre><code>
+# m rows, n cols
+# 1D index i → 2D coords: row = i // n, col = i % n
+# Example: matrix[1][2] in a 4-col matrix → 1D index = 1*4 + 2 = 6
+</code></pre>
+
+<pre><code>
+def searchMatrix(matrix: list[list[int]], target: int) -&gt; bool:
+    m, n = len(matrix), len(matrix[0])
+    left, right = 0, m * n - 1  # treat as 1D array
+    
+    while left &lt;= right:
+        mid = (left + right) // 2
+        mid_val = matrix[mid // n][mid % n]  # convert 1D → 2D
+        
+        if mid_val == target:
+            return True
+        elif mid_val &lt; target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    
+    return False
+</code></pre>
+
+<hr/>
+
+<h2>执行追踪 / Trace</h2>
+
+<pre><code>
+matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3
+m=3, n=4 → 1D range [0, 11]
+
+Iter 1: mid=5 → matrix[5//4][5%4] = matrix[1][1] = 11 &gt; 3 → right=4
+Iter 2: mid=2 → matrix[2//4][2%4] = matrix[0][2] = 5 &gt; 3  → right=1
+Iter 3: mid=0 → matrix[0//4][0%4] = matrix[0][0] = 1 &lt; 3  → left=1
+Iter 4: mid=1 → matrix[1//4][1%4] = matrix[0][1] = 3 == 3 → True ✅
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: <strong>O(log(m×n))</strong> — 把 m×n 个元素当成 1D 数组二分</p>
+<p>- Space: <strong>O(1)</strong></p>
+
+<hr/>
+
+<h2>举一反三 / Connect to the Pattern Block</h2>
+
+<p>| 题目 | 核心变化 | 难点 |</p>
+<p>|------|---------|------|</p>
+<p>| #704 Binary Search | 标准 1D 数组 | 基础 |</p>
+<p>| <strong>#74 今天</strong> | 2D → 1D 映射 | 坐标转换 |</p>
+<p>| #875 Koko Eating Bananas | 搜索&quot;最小速度&quot; | 搜索空间是答案，不是数组 |</p>
+<p>| #153 Find Min in Rotated | 数组被旋转过 | 判断哪半边有序 |</p>
+<p>| #4 Median of Two Sorted | 两个数组 | Hard，归并思路 |</p>
+
+<p><strong>核心洞察：</strong> Binary Search 不只能搜索已知数组 — 你可以搜索任何单调的<strong>答案空间</strong>！</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;In a 3x4 matrix, 1D index 9 maps to which 2D coordinate?&quot;,&quot;options&quot;:[&quot;[2][1]&quot;,&quot;[2][2]&quot;,&quot;[3][0]&quot;,&quot;[2][3]&quot;],&quot;correct_index&quot;:0}
+</code></pre>
+
+<p>💡 <code>9 // 4 = 2, 9 % 4 = 1</code> → <code>matrix[2][1]</code></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [LeetCode #74](https://leetcode.com/problems/search-a-2d-matrix/)</p>
+<p>- [NeetCode Solution](https://neetcode.io/problems/search-2d-matrix)</p>
+<p>- [Binary Search Patterns — NeetCode 150](https://neetcode.io/roadmap)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>把一个 3×4 的格子想象成展开的 12 格纸带。你要找第 9 格在哪一行：<code>9 ÷ 4 = 第2行（余1）</code>，所以是第 2 行第 1 列。有了这个魔法公式，二维的东西就变成一维了，然后直接套二分搜索！</p>
+
+<p>Imagine unrolling a 3×4 grid into a 12-slot tape. To find slot 9: <code>9 ÷ 4 = row 2, remainder 1 = col 1</code>. With this magic formula, 2D becomes 1D, and you can binary search it directly!</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Working with a Difficult Colleague</h2>
+
+<p>&gt; <strong>Day 33 · Mastery Phase · ~2 min read</strong></p>
+
+<hr/>
+
+<h2>为什么这个问题很重要 / Why This Matters</h2>
+
+<p>&quot;难相处的同事&quot;问题考察的不是谁对谁错，而是：</p>
+<p>- 你能不能<strong>冷静处理人际冲突</strong>？</p>
+<p>- 你有没有<strong>先从自己身上找原因</strong>的习惯？</p>
+<p>- 你是否能<strong>推动问题解决</strong>而不是抱怨或绕开？</p>
+
+<p>This question tests emotional intelligence, conflict resolution skills, and whether you&#x27;re someone who escalates problems productively — not someone who complains or avoids.</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Framework</h2>
+
+<p><strong>Situation（情境）:</strong> 具体描述这个人的行为如何影响了工作</p>
+<p>- ❌ &quot;他很难相处&quot; （太模糊）</p>
+<p>- ✅ &quot;他在 code review 中经常否定别人的方案，但不给替代意见，导致 PR 积压&quot;</p>
+
+<p><strong>Task（任务）:</strong> 你负责什么，为什么你需要处理这个问题</p>
+<p>- &quot;我们在同一个团队，他的 review 卡住了我负责的项目关键路径&quot;</p>
+
+<p><strong>Action（行动）:</strong> 这是最重要的部分！</p>
+<p>1. <strong>先自我反思</strong> — &quot;我先问自己：是不是我的沟通方式有问题？&quot;</p>
+<p>2. <strong>私下直接沟通</strong> — &quot;我约他单独聊，用&#x27;我感觉...&#x27;而不是&#x27;你总是...&#x27;&quot;</p>
+<p>3. <strong>寻求共同目标</strong> — &quot;我们都希望代码质量高，我问他愿不愿意一起制定 review 标准&quot;</p>
+<p>4. <strong>如果无效 → 升级</strong> — &quot;如果 2 周内没改善，我会告知 manager，但我会先告诉他我要这么做&quot;</p>
+
+<p><strong>Result（结果）:</strong> 量化或具体说明改善情况</p>
+<p>- &quot;我们建立了 review checklist，PR cycle time 从 3 天降到 1 天&quot;</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<p><strong>❌ 雷区回答:</strong></p>
+<p>&gt; &quot;We had this toxic engineer who blocked everyone. I eventually went around him and delivered the project anyway.&quot;</p>
+
+<p>问题：描绘同事为&quot;toxic&quot;、&quot;around him&quot;暗示你在规避而非解决、没有展示协作能力。</p>
+
+<p><strong>✅ 示范回答:</strong></p>
+<p>&gt; &quot;There was a senior engineer who gave a lot of critical feedback in reviews but didn&#x27;t always propose alternatives. At first I found it frustrating, but I realized his intent was high quality — just the delivery was off. I asked to pair on a review together to align on what &#x27;good&#x27; looked like. We ended up creating a shared rubric the whole team adopted. He actually became one of my strongest allies after that.&quot;</p>
+
+<hr/>
+
+<h2>Senior/Staff 额外提示 / Senior/Staff Lens</h2>
+
+<p>在 Staff 级别，面试官期望你能<strong>改变团队规范</strong>，而不只是解决个案：</p>
+<p>- &quot;这次冲突让我意识到团队缺乏 code review 规范，我推动建立了 RFC 流程&quot;</p>
+<p>- &quot;我把这个模式写进了团队 onboarding guide&quot;</p>
+
+<p><strong>System change &gt; one-time fix.</strong></p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>1. <strong>具体化</strong> — 避免形容词，描述行为和影响</p>
+<p>2. <strong>先 own 一部分</strong> — 哪怕只是&quot;沟通方式&quot;，承担一点让你显得成熟</p>
+<p>3. <strong>直接沟通 &gt; 绕开</strong> — 展示你会处理不舒服的对话</p>
+<p>4. <strong>量化结果</strong> — cycle time、团队满意度、项目交付</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Radical Candor — Kim Scott](https://www.radicalcandor.com/)</p>
+<p>- [HBR: How to Handle a Colleague Who Blocks Progress](https://hbr.org/2021/11/how-to-deal-with-a-colleague-who-just-wont-cooperate)</p>
+<p>- [Staff Engineer — Will Larson (Chapter on Influence)](https://staffeng.com/book)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象班里有个同学，每次你画画他都说&quot;这里不好&quot;，但从不说怎么改。你可以跟老师告状，但更聪明的做法是：拉着他一起画一幅，问他&quot;你觉得好看是什么样的？&quot;，然后大家一起定一个标准。这就是处理&quot;难相处的同事&quot;的精髓。</p>
+
+<p>Imagine a classmate who always says &quot;that&#x27;s wrong&quot; on your drawing but never shows how to fix it. You could complain to the teacher, or — smarter — sit down together and ask &quot;what does good look like to you?&quot; Then make a shared standard. That&#x27;s the essence of handling difficult colleagues.</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Deep Clone, Flatten, Curry — Utility Function Patterns</h2>
+
+<p>&gt; <strong>Day 33 · Mastery Phase · ~2 min read</strong></p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个表单状态管理器，需要：</p>
+<p>1. <strong>深拷贝</strong>初始状态（避免突变）</p>
+<p>2. <strong>展平</strong>嵌套配置对象</p>
+<p>3. <strong>柯里化</strong>验证函数（复用参数）</p>
+
+<p>You&#x27;re building a form state manager — deep clone to avoid mutation, flatten nested configs, curry validators for reuse.</p>
+
+<hr/>
+
+<h2>1. Deep Clone — 深拷贝</h2>
+
+<p><strong>❌ 错误做法：浅拷贝</strong></p>
+<pre><code>
+const copy = { ...original };  // nested objects still share reference!
+const copy2 = Object.assign({}, original);  // same problem
+</code></pre>
+
+<p><strong>✅ 生产级实现：</strong></p>
+<pre><code>
+function deepClone&lt;T&gt;(obj: T): T {
+  // Modern: use structuredClone (available in Node 17+, all modern browsers)
+  return structuredClone(obj);
+}
+
+// Manual fallback (interview version)
+function deepCloneManual&lt;T&gt;(obj: T): T {
+  if (obj === null || typeof obj !== &#x27;object&#x27;) return obj;
+  if (obj instanceof Date) return new Date(obj.getTime()) as T;
+  if (Array.isArray(obj)) return obj.map(deepCloneManual) as T;
+  
+  const clone = {} as T;
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      clone[key] = deepCloneManual(obj[key]);
+    }
+  }
+  return clone;
+}
+</code></pre>
+
+<p><strong>What <code>structuredClone</code> handles:</strong> Arrays, Dates, Maps, Sets, RegExp, nested objects ✅</p>
+<p><strong>What it doesn&#x27;t handle:</strong> Functions, DOM nodes, class instances with methods ❌</p>
+
+<hr/>
+
+<h2>2. Flatten — 展平嵌套对象</h2>
+
+<p><strong>场景:</strong> API 返回嵌套配置，你需要展平成点分路径</p>
+
+<pre><code>
+const input = {
+  user: {
+    name: &quot;Alice&quot;,
+    address: { city: &quot;SF&quot;, zip: &quot;94102&quot; }
+  }
+};
+
+// Expected output:
+// { &quot;user.name&quot;: &quot;Alice&quot;, &quot;user.address.city&quot;: &quot;SF&quot;, &quot;user.address.zip&quot;: &quot;94102&quot; }
+
+function flattenObject(
+  obj: Record&lt;string, unknown&gt;,
+  prefix = &quot;&quot;
+): Record&lt;string, unknown&gt; {
+  return Object.entries(obj).reduce((acc, [key, val]) =&gt; {
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+    
+    if (val !== null &amp;&amp; typeof val === &#x27;object&#x27; &amp;&amp; !Array.isArray(val)) {
+      // Recurse into nested objects
+      Object.assign(acc, flattenObject(val as Record&lt;string, unknown&gt;, fullKey));
+    } else {
+      acc[fullKey] = val;
+    }
+    return acc;
+  }, {} as Record&lt;string, unknown&gt;);
+}
+</code></pre>
+
+<hr/>
+
+<h2>3. Curry — 柯里化</h2>
+
+<p><strong>场景:</strong> 验证函数，参数复用</p>
+
+<pre><code>
+// Without curry: repeat min/max every time
+const validate = (min: number, max: number, value: number) =&gt; 
+  value &gt;= min &amp;&amp; value &lt;= max;
+
+// With curry: create reusable validators
+function curry&lt;T extends unknown[], R&gt;(
+  fn: (...args: T) =&gt; R
+): (...args: Partial&lt;T&gt;) =&gt; unknown {
+  return function curried(...args: unknown[]) {
+    if (args.length &gt;= fn.length) {
+      return fn(...args as T);
+    }
+    return (...moreArgs: unknown[]) =&gt; curried(...args, ...moreArgs);
+  };
+}
+
+const curriedValidate = curry(validate);
+const isValidAge = curriedValidate(0)(120);    // min=0, max=120
+const isValidScore = curriedValidate(0)(100);  // min=0, max=100
+
+console.log(isValidAge(25));    // true
+console.log(isValidScore(150)); // false
+</code></pre>
+
+<hr/>
+
+<h2>猜猜输出 / Quiz</h2>
+
+<pre><code>
+const obj = { a: 1 };
+const clone = { ...obj };
+clone.a = 99;
+console.log(obj.a);  // ???
+
+const nested = { a: { b: 1 } };
+const shallowCopy = { ...nested };
+shallowCopy.a.b = 99;
+console.log(nested.a.b);  // ???
+</code></pre>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><code>obj.a = 1</code> — primitive values ARE copied by value ✅</p>
+<p><code>nested.a.b = 99</code> — nested objects are still shared references ❌</p>
+
+<p>This is WHY deep clone matters for nested state!</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>When to Use / When NOT to Use</h2>
+
+<p>| 情况 | 选择 |</p>
+<p>|------|------|</p>
+<p>| 深拷贝简单对象 | <code>structuredClone(obj)</code> |</p>
+<p>| 深拷贝含函数的类实例 | 自己实现 or 用 lodash <code>_.cloneDeep</code> |</p>
+<p>| 展平 API 响应 | <code>flattenObject()</code> |</p>
+<p>| 展平 + 还原 | 用 <code>flat-unflatten</code> npm package |</p>
+<p>| 柯里化工具函数 | <code>curry()</code> or Ramda/lodash <code>_.curry</code> |</p>
+<p>| 柯里化 React 事件处理 | 直接用箭头函数，别过度抽象 |</p>
+
+<hr/>
+
+<h2>📝 Quiz JSON</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;What does `structuredClone()` NOT support?&quot;,&quot;options&quot;:[&quot;Arrays&quot;,&quot;Date objects&quot;,&quot;Functions&quot;,&quot;Nested objects&quot;],&quot;correct_index&quot;:2}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [MDN: structuredClone()](https://developer.mozilla.org/en-US/docs/Web/API/structuredClone)</p>
+<p>- [JavaScript Currying — MDN Closures](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures)</p>
+<p>- [Lodash source — cloneDeep](https://github.com/lodash/lodash/blob/main/src/cloneDeep.ts)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p><strong>深拷贝</strong>就像用复印机复印一份文件，改副本不影响原件。浅拷贝只复印了封面，里面的内容还是共享的。</p>
+
+<p><strong>展平</strong>就像把一个嵌套的文件夹结构变成一个清单，用点号表示层级：<code>用户/地址/城市</code> → <code>user.address.city</code>。</p>
+
+<p><strong>柯里化</strong>就像预填表单。你先填好&quot;最小值=0&quot;，保存这个半成品，以后每次只需要填&quot;最大值&quot;就行了。</p>
+
+<p>Deep clone = full photocopy, not just the cover. Flatten = turn nested folders into a dot-path list. Curry = pre-fill a form&#x27;s first field and save it for later reuse.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI 新闻速递 / AI News Roundup</h2>
+
+<p>&gt; <strong>Day 33 · Mastery Phase · ~2 min read</strong></p>
+<p>&gt; 📅 Week of May 1, 2026</p>
+
+<hr/>
+
+<h2>🗞️ 本周三大故事 / This Week&#x27;s Top 3</h2>
+
+<hr/>
+
+<h3>1. 🤝 Microsoft-OpenAI 协议大变：独家终结</h3>
+
+<p>据报道，微软与 OpenAI 修订了合作协议，<strong>终止了云端独家性</strong>。这意味着 OpenAI 现在可以通过亚马逊（AWS）和谷歌（GCP）分发其模型，而不再只绑定 Azure。</p>
+
+<p>Microsoft and OpenAI have reportedly revised their partnership to <strong>end exclusivity</strong>, allowing OpenAI to distribute models through AWS and Google Cloud — not just Azure.</p>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<p>- OpenAI 从&quot;微软的 AI 部门&quot;变成了真正独立的平台公司</p>
+<p>- 对 Azure 短期有影响，但微软仍持有 OpenAI 大量股份</p>
+<p>- 对开发者：OpenAI API 可能出现在更多云平台的 marketplace</p>
+
+<p>📎 Source: [AI Update May 1, 2026 — MarketingProfs](https://www.marketingprofs.com/opinions/2026/54640/ai-update-may-1-2026-ai-news-and-views-from-the-past-week)</p>
+
+<hr/>
+
+<h3>2. 🤖 AI Agent 基础设施爆发：Stripe + Cloudflare 给 AI 刷卡</h3>
+
+<p>Stripe 推出了 <strong>Link — AI Agent 数字钱包</strong>，让 AI agent 可以自主完成支付。Cloudflare 和 Stripe 还联手推出了一个协议，据报道可以让 AI agent <strong>自主部署应用、创建账户、购买域名</strong>。</p>
+
+<p>Stripe launched <strong>Link for AI agents</strong> — a digital wallet letting agents transact autonomously. Cloudflare + Stripe also launched a protocol reportedly enabling agents to deploy apps, create accounts, and purchase domains without human approval.</p>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<p>- AI agent 从&quot;能思考&quot;进化到&quot;能花钱办事&quot;</p>
+<p>- Agentic Commerce（AI 自主商务）从概念变成基础设施</p>
+<p>- 对工程师：agent 授权和资金限制成为新的安全课题</p>
+
+<p>📎 Source: [AI Magazine Top 5 Stories May 2, 2026](https://aimagazine.com/news/top-five-stories-in-ai-may-2-2026)</p>
+
+<hr/>
+
+<h3>3. 📉 &quot;SaaS 末日&quot;是虚惊一场？Goldman Sachs 说别慌</h3>
+
+<p>高盛 CEO David Solomon 表示：市场对&quot;AI 将摧毁 SaaS&quot;的担忧<strong>过度悲观</strong>。Figma、Atlassian 等公司数据显示，AI 正在被<strong>集成进</strong>产品，用户量并没有因 AI 替代而下降。</p>
+
+<p>Goldman Sachs CEO David Solomon says the &quot;Saaspocalypse&quot; fear — that AI would wipe out SaaS — was reportedly overdone. Companies like Figma and Atlassian show continued growth, suggesting AI is being integrated into tools, not replacing them.</p>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<p>- SaaS 公司不是被 AI 取代，而是被迫成为&quot;AI-native&quot;平台</p>
+<p>- 工程师价值在于构建 AI 集成能力，而非被替代</p>
+<p>- 对求职者：展示你懂 AI 集成 &gt; 担心 AI 抢工作</p>
+
+<p>📎 Source: [Motley Fool — Goldman Sachs on AI SaaS, May 3, 2026](https://www.fool.com/investing/2026/05/03/goldman-sachs-says-the-artificial-intelligence-ai/)</p>
+
+<hr/>
+
+<h2>💡 本周一句话总结 / TL;DR</h2>
+
+<p>&gt; AI 不只是&quot;大脑&quot;了——它现在有了<strong>钱包、身份、合同</strong>。Agent-native 基础设施（支付、部署、授权）正在2026年快速落地。</p>
+<p>&gt;</p>
+<p>&gt; AI isn&#x27;t just a brain anymore — it&#x27;s getting a <strong>wallet, identity, and contracts</strong>. Agent-native infrastructure is the hot layer in 2026.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [MarketingProfs AI Update May 1, 2026](https://www.marketingprofs.com/opinions/2026/54640/ai-update-may-1-2026-ai-news-and-views-from-the-past-week)</p>
+<p>- [AI Magazine Top 5 May 2, 2026](https://aimagazine.com/news/top-five-stories-in-ai-may-2-2026)</p>
+<p>- [Goldman Sachs on SaaS — Motley Fool](https://www.fool.com/investing/2026/05/03/goldman-sachs-says-the-artificial-intelligence-ai/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>以前的 AI 就像一个超聪明的顾问——给建议，但不能自己动手。现在的 AI agent 不只是给建议，还能自己开账户、买东西、部署代码。就像从&quot;有个天才朋友&quot;升级到&quot;有个天才朋友，而且他有你的信用卡&quot;。</p>
+
+<p>Before, AI was like a super-smart advisor — gives advice, can&#x27;t act. Now AI agents can open accounts, make purchases, and deploy code. It&#x27;s like upgrading from &quot;brilliant advisor&quot; to &quot;brilliant advisor who also has your credit card.&quot;</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-04-27</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
