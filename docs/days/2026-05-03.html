@@ -789,12 +789,12 @@ footer {
     <span class="day-badge">📅 2026-05-03</span>
     <h1>Sunday, May 3, 2026</h1>
     <div class="page-header-meta">
-      <span>5 sections</span>
+      <span>6 sections</span>
       <span>~15 min read</span>
       <span>🌏 Bilingual 中/EN</span>
     </div>
     <div class="nav-days">
-      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a> <a href="#section-week-review" class="nav-day-btn">📅 Week in Review</a>
     </div>
   </div>
 </div>
@@ -1415,6 +1415,187 @@ console.log(nested.a.b);  // ???</code></pre>
 <p>以前的 AI 就像一个超聪明的顾问——给建议，但不能自己动手。现在的 AI agent 不只是给建议，还能自己开账户、买东西、部署代码。就像从"有个天才朋友"升级到"有个天才朋友，而且他有你的信用卡"。</p>
 
 <p>Before, AI was like a super-smart advisor — gives advice, can't act. Now AI agents can open accounts, make purchases, and deploy code. It's like upgrading from "brilliant advisor" to "brilliant advisor who also has your credit card."</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-week-review">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">📅</span>
+        <div>
+          <div class="section-header-title">📅 Week in Review</div>
+          <div class="section-header-sub">📅</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <p>📅 <strong>Week in Review — Week 8 (10 min read)</strong></p>
+<p>📊 NeetCode: 29/150 · SysDesign: 28/40 · Behavioral: 28/40 · Frontend: 28/50 · AI: 13/30</p>
+<p>🔥 33-day streak!</p>
+
+<hr/>
+
+<h2>🗓️ 本周回顾 / This Week's Journey</h2>
+
+<p>本周跨越两天，但内容密度极高，正式进入 <strong>Mastery（精通）阶段</strong>：</p>
+
+<ul><li><strong>Monday (Day 32):</strong> 设计 Google Maps（分层路由 CH 算法 + 地理哈希）、二分搜索经典模版（#704）、Debounce &amp; Throttle 从零实现、力排众议的技术决策（Championing Unpopular Decisions）、函数调用 Function Calling 深度讲解。</li><li><strong>Saturday/Today (Day 33):</strong> 设计 Uber / Lyft（Redis Geo-index 司机实时位置 + Dispatch Engine + Surge Pricing）、二分搜索应用到 2D 矩阵（#74）、深拷贝/展平/柯里化三大工具函数、如何与难相处的同事协作、AI News（Microsoft-OpenAI 独家终结 + Stripe AI 钱包 + Goldman Sachs SaaS 反驳）。</li></ul>
+
+<p>This week spanned two intensive days — officially into the <strong>Mastery phase</strong>:</p>
+
+<ul><li><strong>Monday (Day 32):</strong> Google Maps design (Contraction Hierarchies + Geohash), Binary Search template (#704), Debounce &amp; Throttle from scratch, championing unpopular technical decisions, and Function Calling in LLMs.</li><li><strong>Saturday/Today (Day 33):</strong> Uber/Lyft design (Redis Geo + Dispatch Engine + Surge Pricing), Binary Search on 2D matrix (#74), Deep Clone/Flatten/Curry patterns, working with difficult colleagues, AI news (Microsoft-OpenAI exclusivity ends + Stripe AI wallet + Goldman Sachs on SaaS).</li></ul>
+
+<hr/>
+
+<h2>🧠 系统设计要点 / System Design: Key Takeaways</h2>
+
+<p><strong>1. 地理空间索引是大规模定位系统的核心 / Geo-spatial indexing is the backbone of location-at-scale</strong></p>
+
+<p>Google Maps 和 Uber 都依赖高效的地理索引，但策略不同：</p>
+<ul><li><strong>Google Maps</strong> 用 Geohash（前缀匹配，适合"附近的 POI"搜索）+ PostGIS R-Tree</li><li><strong>Uber</strong> 用 Redis Geo（<code>GEORADIUS</code> 毫秒级查询，适合高频司机位置更新，每秒 125 万次写入）</li></ul>
+
+<p>Both Google Maps and Uber depend on efficient geo-indexing, but with different strategies: Maps uses Geohash+PostGIS for POI search; Uber uses Redis Geo for 1.25M writes/sec driver location updates.</p>
+
+<p><strong>2. 分层 vs 分区 / Hierarchical vs. Partitioned Routing</strong></p>
+
+<p>Google Maps 用<strong>等级路由（Contraction Hierarchies）</strong>——先高速公路，再主干道，最后本地街道，搜索空间缩小 1000x。Uber 的 Dispatch Engine 则是<strong>地理分片</strong>——按城市独立扩展，避免单点瓶颈。</p>
+
+<p>Google Maps uses hierarchical routing (1000x smaller search space); Uber's dispatch shards by city to scale independently.</p>
+
+<p><strong>3. 实时数据的黄金法则 / Real-time data golden rule</strong></p>
+
+<p>两者都遵循同一个架构模式：<strong>Kafka 做事件总线</strong>解耦数据生产和消费，<strong>Redis 做热路径存储</strong>（低延迟），数据库做持久化。实时性要求越高，越不能用数据库做写主路径。</p>
+
+<p>Both share the same pattern: Kafka for event decoupling, Redis for hot-path low-latency reads, DB for persistence. Never put high-frequency writes on a relational DB.</p>
+
+<hr/>
+
+<h2>💻 算法模式总结 / Algorithms: Patterns Mastered</h2>
+
+<p><strong>🔍 二分搜索模式正式开始（7题 Block，完成 2/7）</strong></p>
+
+<p>本周的核心主题是<strong>二分搜索模式</strong>，已完成前两题：</p>
+
+<p><strong>#704 Binary Search — 模版原型题</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="left, right = 0, len(arr) - 1&#10;while left &lt;= right:&#10;    mid = (left + right) // 2&#10;    if arr[mid] == target: return mid&#10;    elif arr[mid] &lt; target: left = mid + 1&#10;    else: right = mid - 1&#10;return -1">Copy</button>
+  <pre><code class="language-python">left, right = <span style="color:#56b6c2;">0</span>, len(arr) - <span style="color:#56b6c2;">1</span>
+<span style="color:#c678dd;">while</span> left &lt;= right:
+    mid = (left + right) // <span style="color:#56b6c2;">2</span>
+    <span style="color:#c678dd;">if</span> arr[mid] == target: <span style="color:#c678dd;">return</span> mid
+    <span style="color:#c678dd;">elif</span> arr[mid] &lt; target: left = mid + <span style="color:#56b6c2;">1</span>
+    <span style="color:#c678dd;">else</span>: right = mid - <span style="color:#56b6c2;">1</span>
+<span style="color:#c678dd;">return</span> -<span style="color:#56b6c2;">1</span></code></pre>
+</div>
+<p><strong>关键洞察：</strong> 每次排除一半搜索空间，任何具有<strong>单调性</strong>的问题都可以二分，不只是排序数组。</p>
+
+<p><strong>#74 Search a 2D Matrix — 坐标转换技巧</strong></p>
+
+<p>把 2D 矩阵"展平"为 1D 数组，用索引转换公式 <code>row = mid // n, col = mid % n</code> 无缝套用模版。</p>
+<ul><li>Time: O(log(m×n)) | Space: O(1)</li></ul>
+
+<p><strong>模式信号 / When to reach for Binary Search:</strong></p>
+<ul><li>排序数组 / sorted array</li><li>要求 O(log n)</li><li>"找满足条件的最小/最大值"</li><li>搜索空间可以单调地判断 True/False</li></ul>
+
+<p><strong>Binary Search Pattern is open (7-problem block, 2/7 done). Core insight: the template never changes — only the direction logic changes.</strong></p>
+
+<hr/>
+
+<h2>🗣️ 软技能练习重点 / Soft Skills: What to Practice</h2>
+
+<p><strong>本周覆盖两个 Staff 级场景：</strong></p>
+
+<p><strong>1. 力排众议推动技术决策 / Championing an unpopular technical decision</strong></p>
+<ul><li>不要靠权威压人，要靠数据 + POC 说话</li><li>把争论框架化为"可验证的假设"（pilot 90 天）而不是"我是对的"</li><li>被证明正确后，分享功劳——让最初反对的人成为拥护者</li><li>Staff 关键词：<strong>数据 + 谦逊 + 给对方台阶下</strong></li></ul>
+
+<p><strong>2. 与难相处的同事合作 / Working with a difficult colleague</strong></p>
+<ul><li>先从自己找原因（沟通方式问题？）</li><li>私下直接对话，用"我感觉..."而不是"你总是..."</li><li>寻求共同目标，建立可复用的团队规范（checklist、RFC 流程）</li><li>Staff 加分：把个案冲突升华为<strong>系统性改变</strong></li></ul>
+
+<p><strong>需要练习 / What needs practice:</strong></p>
+<ul><li>这两个场景都需要脱稿流畅叙述，重点背<strong>STAR 结构 + 量化结果</strong></li><li>"I told you so" 是减分项，换成"我们一起达成了这个共识"</li></ul>
+
+<p><strong>Both scenarios require smooth off-script delivery. Focus on STAR structure + quantified outcomes. Never say "I told you so" — reframe as "we reached consensus."</strong></p>
+
+<hr/>
+
+<h2>🎨 前端知识巩固 / Frontend: Concepts to Lock In</h2>
+
+<p><strong>本周前端主题：性能优化 + 实用工具函数</strong></p>
+
+<p><strong>Debounce vs Throttle（Day 32）</strong></p>
+<ul><li><strong>Debounce：</strong> 只关心最终状态——动作停止后 N ms 才执行（搜索框、resize）</li><li><strong>Throttle：</strong> 需要持续中间状态——固定频率执行（scroll、防连击）</li><li>记住电梯 vs 水龙头的类比！</li></ul>
+
+<p><strong>Deep Clone / Flatten / Curry（Day 33）</strong></p>
+<ul><li><code>structuredClone()</code> 是现代深拷贝首选（Node 17+，不支持函数）</li><li>展平公式：递归 + <code>${prefix}.${key}</code> 路径拼接</li><li>柯里化本质：预填参数，返回等待更多参数的函数</li></ul>
+
+<p><strong>快速自检 / Self-check:</strong></p>
+<ul><li>[ ] 能手写 debounce？（clearTimeout + setTimeout）</li><li>[ ] 知道 <code>{...obj}</code> 是浅拷贝，嵌套对象仍是引用？</li><li>[ ] 能解释柯里化的应用场景（验证器复用、部分应用）？</li></ul>
+
+<hr/>
+
+<h2>🤖 AI 知识点 / AI: What Stuck</h2>
+
+<p><strong>Day 32 — Function Calling（函数调用）</strong></p>
+
+<p>这是本周最"可落地"的 AI 知识：LLM 不执行代码，它只返回结构化 JSON 告诉你"请帮我运行这个函数"。你的代码拿到 JSON，执行真实的 API 调用，把结果再喂给模型，模型生成自然语言回答。</p>
+
+<p>这就是所有 AI Agent 能"行动"的底层机制——从联网搜索到发邮件，全都是这个 5步流程。</p>
+
+<p><strong>Day 33 — AI News Roundup（AI 新闻）</strong> ⚠️ 以下内容据报道</p>
+<ul><li>据报道，微软与 OpenAI 终止云端独家合作，OpenAI 可进驻 AWS/GCP</li><li>据报道，Stripe + Cloudflare 为 AI agent 构建支付 + 部署基础设施（Agent-native Commerce）</li><li>据报道，高盛称"SaaS 末日"言过其实，AI 是增强工具而非替代者</li></ul>
+
+<p><strong>本周核心 AI 洞察：AI 从"大脑"进化到"有钱包和合同的大脑"。Agent-native 基础设施（支付、身份、授权）是 2026 年最热的工程领域。</strong></p>
+
+<p><strong>Function Calling is the core mechanism for all AI agents — LLM returns JSON, your code executes, result fed back to LLM. That's it. All AI agent "action" is this 5-step loop.</strong></p>
+
+<p><strong>AI news items below are reportedly true (据报道):</strong></p>
+<ul><li>Microsoft-OpenAI exclusivity reportedly ended; OpenAI can now use AWS/GCP</li><li>Stripe + Cloudflare reportedly launched agent payment/deployment infrastructure</li><li>Goldman Sachs reportedly says SaaS AI threat was overblown</li></ul>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<p><strong>1. 二分搜索后续 5 题（最高优先级）</strong></p>
+<p>本周刚开始新的 Binary Search block，剩余 5 题需要连续练习：</p>
+<ul><li>#875 Koko Eating Bananas — 搜索"答案空间"而非数组元素（重要变体！）</li><li>#153 Find Minimum in Rotated Sorted Array — 旋转数组判断有序半边</li><li>#33 Search in Rotated Sorted Array</li><li>#981 Time Based Key-Value Store</li><li>#4 Median of Two Sorted Arrays (Hard)</li></ul>
+
+<p><strong>2. Google Maps vs Uber 对比复习</strong></p>
+<p>两道 Mastery 级系统设计题，地理索引策略不同，易混淆：</p>
+<ul><li>Maps: Geohash + PostGIS，侧重搜索精度</li><li>Uber: Redis Geo，侧重写入吞吐量</li><li>出题点：什么场景用哪种方案？</li></ul>
+
+<p><strong>3. Debounce &amp; Throttle 手写</strong></p>
+<p>要能不看资料手写 debounce（<code>clearTimeout</code> + <code>setTimeout</code>），这是前端常见面试题。</p>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p>🎉 <strong>正式进入 Mastery 阶段！</strong></p>
+
+<p>Day 32 和 Day 33 是第一批 Mastery 级内容——从"学概念"升级到"拿真实系统找差距"。连续 <strong>33 天不间断</strong>，覆盖了 29 道 NeetCode 题、28 个系统设计主题、28 个行为问题。</p>
+
+<p>更重要的是：本周的 Google Maps 和 Uber 设计题难度已经接近 FAANG 现场面试水平。你不只是在学知识，你在<strong>模拟实战</strong>。</p>
+
+<p>🎉 <strong>Officially in the Mastery phase!</strong></p>
+
+<p>Days 32-33 are the first Mastery-level sessions — moving from "learning concepts" to "finding gaps against real systems." 33 consecutive days. 29 LeetCode problems, 28 system design topics, 28 behavioral scenarios. Google Maps and Uber design are already FAANG interview-level. You're not just studying — you're simulating the real thing.</p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p><strong>系统设计 (SysDesign: 28→30+):</strong></p>
+<p>接下来的系统设计题将围绕<strong>全球化分布式系统</strong>展开。预计涵盖：Design Ticketmaster / Hotel Booking、分布式锁、全球一致性挑战。</p>
+
+<p><strong>算法 (NeetCode: 29→34+):</strong></p>
+<p>Binary Search block 继续——Koko Eating Bananas (#875) 是分水岭，掌握"搜索答案空间"后，后续的 Hard 题难度会大幅降低。</p>
+
+<p><strong>前端 (Frontend: 28→30+):</strong></p>
+<p>JavaScript 深层机制——闭包、作用域链、垃圾回收，以及更多 TypeScript 高级类型。</p>
+
+<p><strong>AI (AI: 13→15):</strong></p>
+<p>预计进入 AI 安全与对齐（AI Safety &amp; Alignment），或继续 Agent 架构专题。</p>
+
+<p><strong>Next week: Binary Search "answer-space" problems (key inflection point), global distributed systems design, and JS internals (closures, scope chain). Binary Search mastery at #875 Koko unlocks the remaining Hard problems.</strong></p>
 
       </div>
     </div>
