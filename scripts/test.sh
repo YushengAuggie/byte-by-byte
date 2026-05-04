@@ -491,8 +491,10 @@ if $CREATED_EXHAUST_CONFIG; then rm -f "$REPO_DIR/config.env"; fi
 # --- 15. URL validation (optional — network may be unavailable) ---
 echo ""
 echo "📋 URL validation (optional):"
-if python3 scripts/validate-urls.py > /tmp/bbb-url-check.txt 2>&1; then
+if timeout 30 python3 scripts/validate-urls.py > /tmp/bbb-url-check.txt 2>&1; then
   pass "All archive URLs reachable"
+elif [ $? -eq 124 ]; then
+  warn "URL check timed out after 30s — skipped"
 else
   BROKEN_COUNT=$(grep -c '❌' /tmp/bbb-url-check.txt 2>/dev/null || echo "?")
   warn "URL check found broken/unreachable links (broken=$BROKEN_COUNT) — network may be unavailable"

@@ -645,6 +645,8 @@ def main():
         </div>
         '''.format(fid, html)
 
+    web_url = 'https://yushengauggie.github.io/byte-by-byte/days/{}.html'.format(today)
+
     full_html = '''<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">{css}</head>
@@ -654,22 +656,26 @@ def main():
         <h1>🧠 byte-by-byte</h1>
         <div class="day">{today}</div>
         <div class="tagline">A little bit every day. A lot over time. / 每天一点，积少成多</div>
+        <div style="margin-top:10px;"><a href="{web_url}" style="color:#fff; opacity:0.9; font-size:13px; text-decoration:underline;">📖 View in browser / 浏览器中查看</a></div>
     </div>
     <div class="toc">{toc}</div>
     {sections}
     <div class="footer">
-        <p>🧠 <a href="https://yushengauggie.github.io/byte-by-byte">byte-by-byte</a> — open source daily learning</p>
+        <p><a href="{web_url}" style="color:#667eea; font-weight:500;">📖 View in browser</a> &nbsp;|&nbsp; <a href="https://yushengauggie.github.io/byte-by-byte/archive.html" style="color:#667eea;">📚 Full archive</a></p>
+        <p style="margin-top:6px;">🧠 <a href="https://yushengauggie.github.io/byte-by-byte">byte-by-byte</a> — open source daily learning</p>
         <p style="margin-top:8px;"><small><a href="{unsub_url}">Unsubscribe</a> from byte-by-byte</small></p>
     </div>
 </div>
 </body>
 </html>'''.format(css=CSS, today=today, toc=toc_links, sections=section_blocks,
-            unsub_url=config.get('UNSUBSCRIBE_FORM_URL', '#'))
+            web_url=web_url, unsub_url=config.get('UNSUBSCRIBE_FORM_URL', '#'))
 
     # Build plain text fallback
     plain_text = 'byte-by-byte - {}\n\n'.format(today)
+    plain_text += 'View in browser: {}\n\n'.format(web_url)
     plain_text += '\n\n---\n\n'.join(plain_parts)
     plain_text += '\n\n---\nA little bit every day. A lot over time.'
+    plain_text += '\nFull archive: https://yushengauggie.github.io/byte-by-byte/archive.html'
     unsub_url = config.get('UNSUBSCRIBE_FORM_URL', '')
     if unsub_url:
         plain_text += '\n\nUnsubscribe: {}'.format(unsub_url)

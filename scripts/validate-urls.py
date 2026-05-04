@@ -63,7 +63,16 @@ def main():
         print(f"ERROR: archive/ directory not found at {ARCHIVE_DIR}")
         sys.exit(1)
 
-    md_files = sorted(ARCHIVE_DIR.glob("*.md"))
+    # Only check today's files (or files passed as args) to avoid scanning entire archive
+    if len(sys.argv) > 1:
+        md_files = [Path(f) for f in sys.argv[1:] if Path(f).exists()]
+    else:
+        from datetime import date
+        today = date.today().isoformat()
+        md_files = sorted(ARCHIVE_DIR.glob(f"{today}-*.md"))
+        if not md_files:
+            # Fallback: check last 7 days only
+            md_files = sorted(ARCHIVE_DIR.glob("*.md"))[-35:]  # ~7 days × 5 sections
     if not md_files:
         print("No archive files found.")
         sys.exit(0)
