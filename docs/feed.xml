@@ -5,8 +5,745 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 03 May 2026 17:49:58 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 04 May 2026 17:24:57 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-04</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-04</guid>
+      <pubDate>Mon, 04 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 29: Design a File Storage System (Google Drive/Dropbox)</h2>
+
+<p>&gt; <strong>难度 / Difficulty:</strong> Advanced · <strong>阶段 / Phase:</strong> Mastery · <strong>预计阅读时间 / Read time:</strong> ~3 min</p>
+
+<hr/>
+
+<h2>想象这个场景 / Imagine This</h2>
+
+<p>你在设计 Google Drive —— 全球 10 亿用户存储文件、照片、视频，随时随地同步，多设备实时协作编辑。</p>
+
+<p>You&#x27;re designing Google Drive — 1B users storing files, photos, videos; syncing across devices; real-time collaborative editing.</p>
+
+<p>核心挑战：<strong>任意大小的文件、版本管理、冲突解决、大规模扩展</strong>。</p>
+
+<p>Core challenges: <strong>arbitrary file sizes, version control, conflict resolution, massive scale</strong>.</p>
+
+<hr/>
+
+<h2>核心需求 / Requirements</h2>
+
+<p><strong>功能性需求 / Functional:</strong></p>
+<p>- 上传、下载、删除文件 / Upload, download, delete files</p>
+<p>- 文件夹层级结构 / Folder hierarchy</p>
+<p>- 文件共享与权限管理 / Sharing &amp; permissions</p>
+<p>- 版本历史 / Version history (last N versions)</p>
+<p>- 增量同步（只传改变的部分）/ Delta sync (only changed chunks)</p>
+
+<p><strong>非功能性需求 / Non-functional:</strong></p>
+<p>- 可用性 99.999% / 99.999% availability</p>
+<p>- 文件一致性（跨设备）/ Cross-device consistency</p>
+<p>- 存储 PB 级数据 / PB-scale storage</p>
+
+<hr/>
+
+<h2>架构图 / Architecture</h2>
+
+<pre><code>
+┌─────────────────────────────────────────────────────────────┐
+│                        Clients                              │
+│         Web / Desktop App / Mobile App                      │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ HTTPS
+              ┌────────▼────────┐
+              │   API Gateway   │
+              │  (Rate Limit,   │
+              │   Auth, Route)  │
+              └──┬──────────┬───┘
+                 │          │
+        ┌────────▼──┐  ┌────▼───────────┐
+        │  Metadata  │  │  Upload Service │
+        │  Service   │  │  (Chunking)     │
+        │ (Files DB) │  └────┬────────────┘
+        └────────────┘       │ chunks
+                       ┌─────▼──────────┐
+                       │  Chunk Store   │
+                       │  (Object Store │
+                       │   e.g. S3)     │
+                       └────────────────┘
+                              │
+              ┌───────────────▼──────────────┐
+              │       Sync Service           │
+              │  (Delta detection, Notify)   │
+              │  WebSocket / SSE to clients  │
+              └──────────────────────────────┘
+
+ Metadata DB: PostgreSQL (file tree, versions, chunks list)
+ Object Store: S3 / GCS (immutable chunk blobs, content-addressed)
+ Cache: Redis (session, file metadata hot path)
+ Queue: Kafka (async chunk processing, notifications)
+</code></pre>
+
+<hr/>
+
+<h2>关键设计决策 / Key Design Decisions</h2>
+
+<h3>1. 分块上传 / Chunked Upload</h3>
+<p>把大文件切成 <strong>4–8MB 的块（chunk）</strong>，每块独立上传。</p>
+
+<p>Split files into <strong>4–8MB chunks</strong>; upload each independently.</p>
+
+<p>- <strong>Why:</strong> 断点续传、重传只补缺块、去重（相同内容不重复存储）</p>
+<p>- <strong>Why:</strong> Resume on failure, only retry failed chunks, deduplication across users</p>
+
+<pre><code>
+文件 → 计算每块 SHA-256 → 查询哪些块已存在 → 只上传缺失块
+File → compute SHA-256 per chunk → query which exist → upload only missing
+</code></pre>
+
+<h3>2. 内容寻址存储 / Content-Addressed Storage</h3>
+<p>块用 SHA-256 命名，相同内容 = 相同 key。</p>
+
+<p>Chunks keyed by SHA-256 — identical content → same key.</p>
+
+<p>- 自动去重：如果你和同事上传同一个 PDF，只存一份</p>
+<p>- Auto-dedup: if you and a colleague upload the same PDF, stored once</p>
+
+<h3>3. 元数据与数据分离 / Metadata vs. Data Separation</h3>
+<pre><code>
+Metadata DB stores:
+  - file_id, name, parent_folder_id, owner_id
+  - version_id, chunk_list (ordered SHA-256s)
+  - created_at, modified_at, permissions
+
+Chunk Store: immutable blobs in S3
+</code></pre>
+
+<h3>4. 冲突解决 / Conflict Resolution</h3>
+<p>- 乐观锁：版本号 CAS（Compare-And-Swap）</p>
+<p>- Optimistic locking: version CAS</p>
+<p>- 冲突时：创建&quot;副本（conflict copy）&quot;，用户手动合并</p>
+<p>- On conflict: create a &quot;conflict copy&quot;, let user merge</p>
+<p>- Google Docs 用 OT（Operational Transform）实现实时协作</p>
+<p>- Google Docs uses OT for real-time co-editing</p>
+
+<hr/>
+
+<h2>增量同步 / Delta Sync</h2>
+
+<pre><code>
+Client sends: {file_id, chunks_hash_list}
+Server responds: {missing_chunks: [...], obsolete_chunks: [...]}
+Client uploads only missing chunks → Server assembles new version
+</code></pre>
+
+<p>客户端只传改变的块 → 大文件小改动 = 极少流量。</p>
+
+<p>Client only sends changed chunks → small changes to big files = tiny bandwidth.</p>
+
+<hr/>
+
+<h2>⚠️ 别踩这个坑 / Common Mistakes</h2>
+
+<p>| 错误 / Mistake | 正确做法 / Correct |</p>
+<p>|---|---|</p>
+<p>| 整个文件一次传 / Upload whole file | 分块 + 断点续传 / Chunked + resumable |</p>
+<p>| 用 DB 存文件内容 / Store file blobs in DB | 只存元数据，文件放对象存储 / Metadata in DB, blobs in object store |</p>
+<p>| 同步操作堵塞请求 / Sync ops blocking requests | Kafka 队列异步处理 / Async via Kafka |</p>
+<p>| 每次修改整个文件重传 / Re-upload whole file on change | Delta sync，只传改变块 / Delta sync, send only changed chunks |</p>
+<p>| 权限检查在客户端 / Client-side permission checks | 永远在服务端验证 / Always server-side |</p>
+
+<hr/>
+
+<h2>容量估算 / Capacity Estimation</h2>
+
+<pre><code>
+1B users × avg 10GB storage = 10 EB total
+Daily uploads: 100M files/day × avg 1MB = 100TB/day
+Chunk size: 4MB → 25 chunks per 100MB file
+Dedup ratio: ~20% storage saved across users
+</code></pre>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [System Design Interview – Alex Xu: Google Drive](https://bytebytego.com/courses/system-design-interview/design-google-drive)(https://bytebytego.com/courses/system-design-interview/design-google-drive)</p>
+<p>- [Dropbox Tech Blog – How we optimized our sync algorithm](https://dropbox.tech/infrastructure/streaming-file-synchronization)(https://dropbox.tech/infrastructure/how-we-optimized-magic-pocket-for-performance)</p>
+<p>- [Google Drive API Documentation](https://developers.google.com/drive/api/guides/manage-uploads)(https://developers.google.com/drive/api/guides/about-files)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你要邮寄一本很厚的书给朋友。你不是把整本书一起寄，而是把每一页撕下来，分别用不同的信封寄（分块）。如果某封信丢了，只重寄那一页（断点续传）。而且如果两本书有相同的几页，只需要寄一次（去重）。</p>
+
+<p><em>Imagine mailing a thick book to a friend. Instead of mailing the whole book at once, you tear out each page and mail them in separate envelopes (chunking). If one gets lost, you only resend that page (resume). And if two books share identical pages, you only mail them once (dedup).</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 30: #875 Koko Eating Bananas (Medium)</h2>
+
+<p>&gt; <strong>模式 / Pattern:</strong> Binary Search · <strong>阶段 / Phase:</strong> Mastery · <strong>预计阅读时间 / Read time:</strong> ~4 min</p>
+
+<hr/>
+
+<p>🧩 <strong>二分搜索模式 (3/7)</strong> — building on the template from Day 28 &amp; 29</p>
+
+<p>今天的题目是该模式的一个<strong>经典变体</strong>：搜索空间不是数组索引，而是<strong>答案本身</strong>。</p>
+
+<p>Today&#x27;s problem is a classic variation: the search space is the <strong>answer itself</strong>, not an array index.</p>
+
+<p>📌 <strong>模式系列进度 / Pattern Progress:</strong></p>
+<p>1. ✅ #704 Binary Search (基础 / Basic)</p>
+<p>2. ✅ #74 Search a 2D Matrix (2D变体 / 2D variant)</p>
+<p>3. 👉 <strong>#875 Koko Eating Bananas</strong> (今天 / Today — 答案空间二分 / Binary search on answer)</p>
+<p>4. ⬜ #153 Find Minimum in Rotated Sorted Array</p>
+<p>5. ⬜ #33 Search in Rotated Sorted Array</p>
+<p>6. ⬜ #981 Time Based Key-Value Store</p>
+<p>7. ⬜ #4 Median of Two Sorted Arrays</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 [LeetCode #875 – Koko Eating Bananas](https://leetcode.com/problems/koko-eating-bananas/) 🟡 Medium</p>
+<p>📹 [NeetCode Solution](https://neetcode.io/problems/eating-bananas)</p>
+
+<p><strong>题意：</strong> Koko 有 <code>piles</code> 堆香蕉，守卫 <code>h</code> 小时后回来。她每小时吃 <code>k</code> 根，每次只能吃一堆（吃完这堆，剩余时间不能吃别的堆）。求最小的 <code>k</code> 使她在 <code>h</code> 小时内吃完。</p>
+
+<p>Koko has <code>piles</code> of bananas, guards return in <code>h</code> hours. She eats <code>k</code> bananas/hour, one pile at a time. Find <strong>minimum k</strong> so she finishes in <code>h</code> hours.</p>
+
+<pre><code>
+Input: piles = [3, 6, 7, 11], h = 8
+Output: 4
+
+At k=4: ceil(3/4)+ceil(6/4)+ceil(7/4)+ceil(11/4) = 1+2+2+3 = 8 hours ✓
+At k=3: 1+2+3+4 = 10 hours ✗
+</code></pre>
+
+<hr/>
+
+<h2>🧩 从模版到题目 / Mapping to the Template</h2>
+
+<p><strong>标准模版：</strong> 在数组上搜索 target 的位置</p>
+<p><strong>Standard template:</strong> Search for target position in array</p>
+
+<p><strong>今天的变体：</strong> 在 <code>[1, max(piles)]</code> 上搜索<strong>最小合法答案</strong></p>
+<p><strong>Today&#x27;s variation:</strong> Search for the <strong>minimum valid answer</strong> in range <code>[1, max(piles)]</code></p>
+
+<pre><code>
+模版变化 / Template adaptation:
+- 搜索空间: left=1, right=max(piles)  ← 不是数组索引！
+- 判断条件: can_finish(k, h) 替代 arr[mid] == target
+- 方向: 如果可以完成，记录答案，继续往左找更小的 k
+</code></pre>
+
+<p><strong>关键洞察 / Key Insight:</strong> 这是&quot;<strong>在答案空间二分</strong>&quot;的模式。当题目问&quot;找最小的 X 使得条件成立&quot;时，且 X 具有单调性（X越大越容易满足），就用这个模式。</p>
+
+<p><em>This is &quot;binary search on answer&quot; pattern. Whenever a problem asks for &quot;minimum X such that condition holds&quot; and the condition is monotone (larger X = easier to satisfy), use this.</em></p>
+
+<hr/>
+
+<h2>Python 解法 / Solution</h2>
+
+<pre><code>
+from math import ceil
+from typing import List
+
+def minEatingSpeed(piles: List[int], h: int) -&gt; int:
+    # Search space: [1, max(piles)]
+    # If k = max(piles), she can always finish in len(piles) &lt;= h hours
+    left, right = 1, max(piles)
+    
+    def can_finish(k: int) -&gt; bool:
+        # Hours needed = sum of ceil(pile / k) for each pile
+        return sum(ceil(pile / k) for pile in piles) &lt;= h
+    
+    result = right  # worst case: eat max pile per hour
+    
+    while left &lt;= right:
+        mid = (left + right) // 2
+        if can_finish(mid):
+            result = mid     # valid answer, try smaller
+            right = mid - 1  # ← go LEFT to find minimum
+        else:
+            left = mid + 1   # too slow, need to go faster
+    
+    return result
+
+# Trace for piles=[3,6,7,11], h=8:
+# left=1, right=11, mid=6 → can_finish(6): 1+1+2+2=6 ≤ 8 ✓ → result=6, right=5
+# left=1, right=5, mid=3  → can_finish(3): 1+2+3+4=10 &gt; 8 ✗ → left=4
+# left=4, right=5, mid=4  → can_finish(4): 1+2+2+3=8 ≤ 8 ✓ → result=4, right=3
+# left=4 &gt; right=3 → return 4 ✓
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(n log m) — n piles, m = max(piles)</p>
+<p>- Space: O(1)</p>
+
+<hr/>
+
+<h2>与模版的对比 / vs. Standard Template</h2>
+
+<p>| | 基础二分 / Basic | Koko 变体 / Koko Variant |</p>
+<p>|---|---|---|</p>
+<p>| 搜索空间 | 数组索引 [0, n-1] | 答案范围 [1, max(piles)] |</p>
+<p>| mid 含义 | 数组位置 | 候选答案 (eating speed) |</p>
+<p>| 判断 | <code>arr[mid] == target</code> | <code>can_finish(mid)</code> |</p>
+<p>| 找到时 | return mid | record result, search left |</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p>同模式的题 / Same pattern:</p>
+<p>- <strong>#1011 Capacity to Ship Packages</strong> — 找最小船容量，<code>can_ship(capacity)</code> 替代 <code>can_finish(k)</code></p>
+<p>- <strong>#410 Split Array Largest Sum</strong> — 找最小的最大子数组和</p>
+<p>- <strong>#1482 Minimum Number of Days to Make m Bouquets</strong> — 同样是&quot;最小X满足条件&quot;</p>
+
+<p>口诀：<strong>&quot;最小化最大值 / 最大化最小值&quot;</strong> → 先想二分答案空间。</p>
+
+<p><em>Mantra: &quot;minimize the maximum / maximize the minimum&quot; → think binary search on answer.</em></p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [LeetCode #875 – Koko Eating Bananas](https://leetcode.com/problems/koko-eating-bananas/)(https://leetcode.com/problems/koko-eating-bananas/)</p>
+<p>- [NeetCode Video Explanation](https://www.youtube.com/watch?v=U2SozAs9RzA)(https://neetcode.io/problems/eating-bananas)</p>
+<p>- [Binary Search on Answer – Patterns](https://leetcode.com/discuss/study-guide/786126/Python-Powerful-Ultimate-Binary-Search-Template.-Solved-many-problems)(https://cp-algorithms.com/binary_search.html)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>Koko 要在 8 小时内吃完所有香蕉。她应该每小时吃多少根？我们不需要一个个试 1, 2, 3...，而是用&quot;猜数字&quot;游戏：先猜中间值，如果太慢就往大猜，如果可以就往小猜，每次排除一半的可能性，很快就找到答案！</p>
+
+<p><em>Koko needs to finish bananas in 8 hours. Instead of trying speeds 1, 2, 3... one by one, we play a guessing game: guess the middle speed, if too slow guess higher, if fast enough guess lower. Each guess eliminates half the possibilities — that&#x27;s binary search on the answer space!</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 29: How Do You Keep Your Technical Skills Current?</h2>
+
+<p>&gt; <strong>类别 / Category:</strong> Growth Mindset · <strong>级别 / Level:</strong> Senior/Staff · <strong>预计阅读时间 / Read time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>为什么面试官问这个 / Why Interviewers Ask This</h2>
+
+<p>这个问题不是在问你刷了多少书。它在测试你是否有<strong>自驱的学习系统</strong>，而不是等公司培训你。Senior/Staff 工程师应该是团队里技术趋势的雷达，而不是追赶者。</p>
+
+<p>This isn&#x27;t about how many books you&#x27;ve read. It tests whether you have a <strong>self-driven learning system</strong> rather than waiting to be trained. Senior/Staff engineers should be the team&#x27;s radar for tech trends, not the ones catching up.</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<p><strong>Situation（背景）:</strong> 技术栈快速演进，AI、云原生、新框架不断涌现，很难跟上所有变化。</p>
+
+<p><strong>Task（任务）:</strong> 在全职工作的同时，保持技术前沿认知，并能将新知识落地到工作中。</p>
+
+<p><strong>Action（行动）—— 这是核心：</strong></p>
+
+<p>一个好的答案会提到<strong>系统化的学习策略</strong>，而不只是&quot;我读了很多书&quot;：</p>
+
+<p>A strong answer mentions a <strong>systematic learning strategy</strong>, not just &quot;I read a lot&quot;:</p>
+
+<p>1. <strong>过滤信号 / Signal filtering</strong> — 订阅高质量来源（TLDR Tech、Hacker News、特定作者的博客），而不是刷推特刷到焦虑</p>
+<p><em>Subscribe to high-SNR sources; don&#x27;t doom-scroll Twitter</em></p>
+
+<p>2. <strong>学了就用 / Apply immediately</strong> — 学新技术时，做一个小 side project 或在工作中找机会实践</p>
+<p><em>When learning something new, build a small project or find a work opportunity to apply it</em></p>
+
+<p>3. <strong>输出倒逼输入 / Teach to learn</strong> — 写技术博客、在组内做分享——教别人是最好的学习方式</p>
+<p><em>Blog, give team talks — teaching others forces you to understand deeply</em></p>
+
+<p>4. <strong>深度 vs. 广度 / Depth vs. breadth</strong> — 对核心领域深入，对周边领域保持足够认知来做决策</p>
+<p><em>Go deep on your core domain; stay &quot;enough aware&quot; of adjacent areas to make good decisions</em></p>
+
+<p><strong>Result（结果）:</strong> 举一个具体例子：因为提前关注了某技术趋势，在团队做技术选型时提出了关键建议。</p>
+
+<hr/>
+
+<h2>❌ 差的回答 vs. ✅ 好的回答</h2>
+
+<p><strong>❌ Bad:</strong></p>
+<p>&gt; &quot;I read tech blogs and take online courses when I have time.&quot;</p>
+
+<p>太模糊，没有系统，没有影响力。</p>
+
+<p><strong>✅ Good:</strong></p>
+<p>&gt; &quot;I have a weekly system: Monday I scan my RSS feeds and TLDR newsletter (30 min), flag anything relevant. Quarterly I pick one thing to go deep on — this quarter it was database internals. Last year, I noticed LLM function-calling was gaining traction, put together a proof-of-concept, and that became the foundation of our AI search feature which now serves 2M queries/day.&quot;</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分项 / Senior/Staff Level Tips</h2>
+
+<p>- 提到<strong>帮助团队成长</strong>，而不只是自己学习</p>
+<p><em>Mention lifting the team&#x27;s skills, not just your own</em></p>
+<p>- 说明你如何<strong>决定什么值得深入学习</strong>（信号过滤）</p>
+<p><em>Show how you decide what&#x27;s worth deep-diving (signal filtering)</em></p>
+<p>- 用具体数字或业务结果证明学习的价值</p>
+<p><em>Use concrete outcomes to show the value of continuous learning</em></p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>- 有系统 &gt; 有热情：系统化学习 &gt; 偶尔读读书</p>
+<p>- 学了要用：能举出学以致用的具体例子</p>
+<p>- 影响团队：Senior 级别要体现对团队的传导</p>
+
+<p><em>System &gt; passion: systematic learning beats occasional reading</em></p>
+<p><em>Apply it: have concrete examples of learning → impact</em></p>
+<p><em>Multiply impact: at Senior level, show how you elevate the team</em></p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [Staff Engineer by Will Larson — Chapter: Staying Technical](https://staffeng.com/guides/staying-technical)(https://staffeng.com/book)</p>
+<p>- [How to Stay Current as a Software Engineer – David Heinemeier Hansson](https://world.hey.com/dhh/how-to-stay-current-as-a-software-engineer-1c8f8b89)(https://world.hey.com/dhh)</p>
+<p>- [The STAR Method for Behavioral Interviews – Indeed](https://www.indeed.com/career-advice/interviewing/how-to-use-the-star-interview-response-technique)(https://www.indeed.com/career-advice/interviewing/how-to-use-the-star-interview-response-technique)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>就像医生要持续学习新的治疗方法一样，工程师也要持续学习新技术。最好的工程师不是等别人教他们，而是有自己的&quot;学习机器&quot;——定期看资讯、动手实践、然后教给别人。</p>
+
+<p><em>Just like doctors must keep learning new treatments, engineers must keep learning new tech. The best engineers don&#x27;t wait to be taught — they have their own &quot;learning machine&quot;: regularly reading, building, then teaching others.</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 29: React Performance — Why Re-renders Happen</h2>
+
+<p>&gt; <strong>类别 / Category:</strong> Performance · <strong>周 / Week:</strong> 6 · <strong>阶段 / Phase:</strong> Mastery · <strong>预计阅读时间 / Read time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个 dashboard，用户每次点击侧边栏的某个菜单项，整个页面都会重新渲染，包括那些数据根本没变的图表组件，导致明显卡顿。你需要搞清楚 React 为什么触发了这些多余的 re-render，以及怎么阻止它。</p>
+
+<p><em>You&#x27;re building a dashboard. Every time the user clicks a sidebar item, the entire page re-renders — including chart components whose data hasn&#x27;t changed — causing noticeable jank. You need to understand why React is triggering these extra re-renders and how to stop them.</em></p>
+
+<hr/>
+
+<h2>React Re-render 的三个触发条件 / 3 Triggers for Re-render</h2>
+
+<pre><code>
+1. State changes     → useState / useReducer setter called
+2. Props change      → parent re-renders and passes new value (even same shape!)
+3. Context changes   → any consumer of a context that updated
+</code></pre>
+
+<p>⚠️ <strong>关键误解 / Common misconception:</strong> &quot;Props 没变就不会 re-render&quot; — <strong>错！</strong> 只要父组件 re-render，子组件默认也会 re-render，哪怕 props 内容完全相同。</p>
+
+<p><em>&quot;If props don&#x27;t change, the child won&#x27;t re-render&quot; — <strong>WRONG!</strong> By default, when a parent re-renders, ALL its children re-render too, even if props look identical.</em></p>
+
+<hr/>
+
+<h2>代码示例 / Code Example</h2>
+
+<pre><code>
+// ❌ 问题：每次 Dashboard re-render，Chart 都跟着 re-render
+// ❌ Problem: Every Dashboard re-render causes Chart to re-render
+function Dashboard() {
+  const [selectedMenu, setSelectedMenu] = useState(&#x27;overview&#x27;);
+  const salesData = useSalesData(); // expensive fetch
+
+  return (
+    &lt;div&gt;
+      &lt;Sidebar onSelect={setSelectedMenu} /&gt;
+      {/* Chart re-renders even when salesData hasn&#x27;t changed! */}
+      &lt;Chart data={salesData} /&gt;
+    &lt;/div&gt;
+  );
+}
+
+// ✅ 解决：React.memo 跳过不必要的 re-render
+// ✅ Fix: React.memo skips re-render when props are shallowly equal
+const Chart = React.memo(function Chart({ data }: { data: SalesData[] }) {
+  return &lt;ExpensiveVisualization data={data} /&gt;;
+});
+
+// ⚠️ 但如果 onSelect 每次都是新函数，memo 会失效！
+// ⚠️ But if onSelect is a new function reference each render, memo breaks!
+function Dashboard() {
+  const [selectedMenu, setSelectedMenu] = useState(&#x27;overview&#x27;);
+  const salesData = useSalesData();
+
+  // ✅ useCallback 稳定函数引用
+  // ✅ useCallback stabilizes the function reference
+  const handleSelect = useCallback((menu: string) =&gt; {
+    setSelectedMenu(menu);
+  }, []); // stable: no deps
+
+  return (
+    &lt;div&gt;
+      &lt;Sidebar onSelect={handleSelect} /&gt;
+      &lt;Chart data={salesData} /&gt; {/* now only re-renders when salesData changes */}
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+
+<hr/>
+
+<h2>猜猜输出什么？/ What Does This Log?</h2>
+
+<pre><code>
+const Child = React.memo(({ onClick }: { onClick: () =&gt; void }) =&gt; {
+  console.log(&#x27;Child rendered&#x27;);
+  return &lt;button onClick={onClick}&gt;Click&lt;/button&gt;;
+});
+
+function Parent() {
+  const [count, setCount] = useState(0);
+  const handleClick = () =&gt; console.log(&#x27;clicked&#x27;); // new function each render!
+
+  return (
+    &lt;&gt;
+      &lt;button onClick={() =&gt; setCount(c =&gt; c + 1)}&gt;+&lt;/button&gt;
+      &lt;Child onClick={handleClick} /&gt;
+    &lt;/&gt;
+  );
+}
+</code></pre>
+
+<p><strong>A)</strong> <code>Child rendered</code> once (on mount), never again</p>
+<p><strong>B)</strong> <code>Child rendered</code> every time you click <code>+</code></p>
+<p><strong>C)</strong> <code>Child rendered</code> never (memo blocks it)</p>
+<p><strong>D)</strong> Error: memo requires useCallback</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>答案: B</strong> — <code>Child rendered</code> every time you click <code>+</code></p>
+
+<p><code>React.memo</code> 做浅比较（shallow compare）。<code>handleClick</code> 每次 Parent re-render 都是<strong>新的函数引用</strong>，所以 memo 认为 props 变了，依然 re-render。</p>
+
+<p><em><code>React.memo</code> does a shallow comparison. <code>handleClick</code> is a <strong>new function reference</strong> on every Parent render, so memo sees &quot;props changed&quot; and re-renders anyway.</em></p>
+
+<p><strong>修复：</strong> 用 <code>useCallback(() =&gt; console.log(&#x27;clicked&#x27;), [])</code> 稳定引用。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>❌ vs. ✅ 对比 / Pattern Comparison</h2>
+
+<p>| 场景 / Scenario | ❌ 问题 / Problem | ✅ 修复 / Fix |</p>
+<p>|---|---|---|</p>
+<p>| 子组件接收函数 prop | 每次渲染新函数 | <code>useCallback</code> |</p>
+<p>| 子组件接收对象/数组 prop | 每次渲染新引用 | <code>useMemo</code> |</p>
+<p>| 阻止子组件 re-render | 默认都会 re-render | <code>React.memo</code> |</p>
+<p>| Context 频繁变化 | 所有消费者都 re-render | 拆分 Context |</p>
+
+<hr/>
+
+<h2>什么时候用 / 什么时候不用 / When to Use vs. Not</h2>
+
+<p><strong>✅ 用 <code>React.memo</code> 当：</strong></p>
+<p>- 组件渲染代价高（大列表项、图表、复杂计算）</p>
+<p>- 父组件频繁 re-render 但子组件 props 很少变</p>
+
+<p><strong>❌ 不用 <code>React.memo</code> 当：</strong></p>
+<p>- 组件很简单（div + text），memo 的检查开销比 re-render 还贵</p>
+<p>- props 每次都变（memo 没有意义）</p>
+<p>- 过早优化 — 先测量，再优化</p>
+
+<p><em>Don&#x27;t reach for memo by default. Profile first with React DevTools, optimize second.</em></p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [React Docs – Skipping expensive recalculations with useMemo](https://react.dev/reference/react/useMemo)(https://react.dev/reference/react/useMemo)</p>
+<p>- [React Docs – React.memo](https://react.dev/reference/react/memo)(https://react.dev/reference/react/memo)</p>
+<p>- [Before You memo() – Dan Abramov](https://overreacted.io/before-you-memo/)(https://overreacted.io/before-you-memo/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>React 就像一个老师，每次状态变了就会叫整个班的同学重新&quot;背课文&quot;（重新渲染）。<code>React.memo</code> 就是告诉 React：&quot;如果这个同学的作业没变，就不用叫他重背了。&quot;但如果老师每次给他的&quot;作业题目&quot;都是新打印的一张纸（新函数引用），React 就不知道内容其实一样，还是会叫他重背。</p>
+
+<p><em>React is like a teacher who makes the whole class recite their lessons whenever anything changes. <code>React.memo</code> tells React: &quot;If this student&#x27;s homework hasn&#x27;t changed, skip them.&quot; But if the teacher hands them a freshly printed copy of the same homework (new function reference) each time, React can&#x27;t tell it&#x27;s identical and makes them recite anyway.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 34: Context Windows — Size, Cost, and Strategies</h2>
+
+<p>&gt; <strong>类别 / Category:</strong> Practical · <strong>阶段 / Phase:</strong> Mastery · <strong>预计阅读时间 / Read time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>什么是上下文窗口 / What Is a Context Window?</h2>
+
+<p>上下文窗口是 LLM 的&quot;工作记忆&quot;——它能同时&quot;看到&quot;多少 token（大概一个英文单词 ≈ 1.3 tokens）。</p>
+
+<p>A context window is the LLM&#x27;s &quot;working memory&quot; — how many tokens it can &quot;see&quot; at once (roughly 1.3 tokens per English word).</p>
+
+<pre><code>
+2023 早期 / Early 2023:   GPT-3.5 = 4K tokens  (~3,000 words)
+2024:                     GPT-4o  = 128K tokens (~96,000 words)
+2025:                     Claude 3 Opus/Sonnet = 200K tokens
+                          Gemini 1.5 Pro = 1M tokens (~750,000 words)
+</code></pre>
+
+<p>1M tokens ≈ 整本《哈利·波特》全集 × 2 — 几乎可以把整个代码库喂给模型。</p>
+
+<p><em>1M tokens ≈ 2x the entire Harry Potter series — you can feed an entire codebase to the model.</em></p>
+
+<hr/>
+
+<h2>为什么&quot;更大的上下文&quot;不是万能药 / Why Bigger Isn&#x27;t Always Better</h2>
+
+<h3>1. 成本与速度 / Cost &amp; Speed</h3>
+
+<p>输入 token 的数量直接影响推理成本（按 token 计费）：</p>
+
+<p>Input token count directly drives inference cost (pay per token):</p>
+
+<pre><code>
+GPT-4o: ~$2.50 per 1M input tokens
+Claude Sonnet: ~$3 per 1M input tokens
+
+1M token prompt × 每天100次请求 = $250/day just for inputs
+</code></pre>
+
+<h3>2. &quot;迷失在中间&quot;问题 / &quot;Lost in the Middle&quot; Problem</h3>
+
+<p>研究发现，LLM 对<strong>开头和结尾</strong>的内容注意力最高，对<strong>中间</strong>的内容容易遗漏。</p>
+
+<p>Research shows LLMs pay the most attention to the <strong>beginning and end</strong> of context; content in the <strong>middle</strong> is often missed.</p>
+
+<pre><code>
+Attention weight distribution (approximate):
+████████░░░░░░░░░░░░░░░░████████
+^start high^   ^middle low^  ^end high^
+</code></pre>
+
+<h3>3. 延迟 / Latency</h3>
+
+<p>即使有 1M token 的上下文，处理全部内容的延迟比处理 10K token 的上下文高几十倍。</p>
+
+<p>Even with 1M token context, processing it all takes 10-50x longer than a 10K context.</p>
+
+<hr/>
+
+<h2>实用策略 / Practical Strategies</h2>
+
+<h3>策略 1：RAG（检索增强生成）</h3>
+<p>不把所有文档塞进上下文，而是先检索最相关的段落。</p>
+
+<p>Instead of stuffing all docs into context, retrieve only the most relevant chunks.</p>
+
+<pre><code>
+Query → Embedding → Vector Search → Top-K chunks → LLM
+                                     (只传最相关的部分)
+</code></pre>
+
+<p><strong>适合 / Good for:</strong> 大型私有知识库、文档问答、企业 AI</p>
+
+<h3>策略 2：分块 + 重排 / Chunking + Reranking</h3>
+
+<pre><code>
+# RAG pipeline sketch
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=200,  # 20% overlap prevents boundary cutoffs
+)
+chunks = splitter.split_text(document)
+
+# embed chunks → store in vector DB
+# at query time: retrieve top-K → rerank → pass to LLM
+</code></pre>
+
+<p>最佳实践：重叠率 10-20%，避免在语义边界切断内容。</p>
+
+<p><em>Best practice: 10-20% overlap prevents cutting off context at boundaries.</em></p>
+
+<h3>策略 3：提示压缩 / Prompt Compression</h3>
+
+<p>用更小的模型先压缩输入，再传给大模型（LLMLingua 等技术）。</p>
+
+<p>Use a smaller model to compress the input first before sending to the big model.</p>
+
+<pre><code>
+Long doc (10K tokens) → Compressor → Key sentences (2K tokens) → LLM
+                                      (80% cost reduction!)
+</code></pre>
+
+<h3>策略 4：放置顺序很重要 / Position Matters</h3>
+
+<p>由于&quot;迷失在中间&quot;效应，把最重要的内容放在<strong>开头或结尾</strong>：</p>
+
+<p>Due to lost-in-the-middle, put the most critical content at the <strong>beginning or end</strong>:</p>
+
+<pre><code>
+✅ Good: [System prompt] + [Retrieved context] + [User query]
+❌ Bad:  [Long doc start] + [Critical instruction buried in middle] + [Long doc end]
+</code></pre>
+
+<hr/>
+
+<h2>什么时候用长上下文 vs. RAG / Long Context vs. RAG</h2>
+
+<p>| 场景 / Scenario | 推荐 / Recommendation |</p>
+<p>|---|---|</p>
+<p>| 小文档，需要整体理解 | 直接传入上下文 |</p>
+<p>| 大型私有知识库 | RAG |</p>
+<p>| 代码库分析 | 长上下文（如 Gemini 1M）|</p>
+<p>| 实时低延迟应用 | RAG + 小上下文 |</p>
+<p>| 成本敏感场景 | RAG 压缩输入 |</p>
+
+<hr/>
+
+<h2>可运行代码 / Runnable Python</h2>
+
+<pre><code>
+# pip install tiktoken
+import tiktoken
+
+def count_tokens(text: str, model: str = &quot;gpt-4o&quot;) -&gt; int:
+    &quot;&quot;&quot;Count tokens for a given text and model.&quot;&quot;&quot;
+    enc = tiktoken.encoding_for_model(model)
+    return len(enc.encode(text))
+
+def estimate_cost(text: str, price_per_million: float = 2.50) -&gt; float:
+    &quot;&quot;&quot;Estimate input cost in USD.&quot;&quot;&quot;
+    tokens = count_tokens(text)
+    return tokens / 1_000_000 * price_per_million
+
+sample = &quot;The quick brown fox jumps over the lazy dog. &quot; * 1000
+print(f&quot;Tokens: {count_tokens(sample):,}&quot;)
+print(f&quot;Estimated cost: ${estimate_cost(sample):.4f}&quot;)
+# Output: Tokens: 9,000  |  Estimated cost: $0.0225
+</code></pre>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [Lost in the Middle: How LLMs Process Long Contexts (Stanford)](https://arxiv.org/abs/2307.03172)(https://arxiv.org/abs/2307.03172)</p>
+<p>- [LangChain Text Splitters Docs](https://python.langchain.com/docs/modules/data_connection/document_transformers/)(https://python.langchain.com/docs/modules/data_connection/document_transformers/)</p>
+<p>- [Context Length Optimization Guide 2025](https://www.anthropic.com/news/context-windows)(https://local-ai-zone.github.io/guides/context-length-optimization-ultimate-guide-2025.html)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>上下文窗口就像你的桌子——桌子越大，能放的书越多。现在 AI 的桌子已经大到可以放整个图书馆了。但问题是：桌子越大越贵，而且东西太多你也容易忽略中间的那本书。所以聪明的做法是：先用&quot;图书管理员&quot;（RAG）帮你找到最相关的几本书，再放到桌子上，又快又省钱。</p>
+
+<p><em>A context window is like your desk — the bigger it is, the more books you can put on it. Today&#x27;s AI desks can fit an entire library! But bigger desks cost more, and you&#x27;re likely to miss the book in the middle of a huge pile. The smart move: use a &quot;librarian&quot; (RAG) to fetch only the relevant books first, then put just those on your desk. Faster and cheaper.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-03</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
