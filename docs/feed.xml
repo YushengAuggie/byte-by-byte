@@ -5,8 +5,594 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 05 May 2026 15:07:06 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 06 May 2026 15:17:34 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-06</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-06</guid>
+      <pubDate>Wed, 06 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 30</h2>
+<h2>Design an E-Commerce Platform (Advanced · Mastery Phase)</h2>
+
+<hr/>
+
+<h3>场景 / Scenario</h3>
+
+<p>想象你在设计一个像 Amazon 一样的电商平台。每天有数百万用户浏览商品、下订单、支付、等待发货。你的系统需要处理秒杀活动（100万人同时抢同一件商品）、保证库存准确性、同时支持搜索、推荐、履约（fulfillment）全流程。</p>
+
+<p><em>Imagine you&#x27;re designing an e-commerce platform like Amazon. Millions of users daily browse products, place orders, pay, and wait for delivery. Your system must handle flash sales (1M concurrent users on one product), guarantee inventory accuracy, and support search, recommendations, and fulfillment end-to-end.</em></p>
+
+<hr/>
+
+<h3>架构图 / Architecture Diagram</h3>
+
+<pre><code>
+                        ┌─────────────────────────────┐
+  Users ──────▶ CDN ──▶ │      API Gateway / BFF      │
+                        └──────────┬──────────────────┘
+                                   │
+         ┌─────────────────────────┼───────────────────────────┐
+         ▼                         ▼                           ▼
+  ┌─────────────┐       ┌─────────────────┐        ┌────────────────────┐
+  │ Product     │       │  Order Service  │        │  Inventory Service │
+  │ Service     │       │                 │        │  (Redis + DB)      │
+  │ (Elastic    │       │  ┌───────────┐  │        │                    │
+  │  Search +   │       │  │ Payment   │  │        │  Pessimistic Lock  │
+  │  PostgreSQL)│       │  │ Service   │  │        │  for Flash Sales   │
+  └─────────────┘       │  └───────────┘  │        └────────────────────┘
+                        │  ┌───────────┐  │
+  ┌─────────────┐       │  │ Fulfillmt │  │        ┌────────────────────┐
+  │ Search &amp;    │       │  │ Service   │  │        │  Notification      │
+  │ Recommend   │       │  └───────────┘  │        │  Service (Kafka)   │
+  │ (Kafka      │       └────────┬────────┘        └────────────────────┘
+  │  + ML)      │                │
+  └─────────────┘        ┌───────▼────────┐
+                         │  Message Queue │
+                         │  (Kafka / SQS) │
+                         └────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>关键设计决策 / Key Design Decisions</h3>
+
+<p>#### 1. 库存扣减 (Inventory Deduction)</p>
+<p>这是电商最难的问题。两种策略：</p>
+
+<p><strong>悲观锁（秒杀场景）：</strong> <code>SELECT ... FOR UPDATE</code> + Redis atomic decrement</p>
+<p><strong>乐观锁（普通场景）：</strong> <code>UPDATE SET stock=stock-1 WHERE stock &gt; 0 AND version=N</code></p>
+
+<p><em>Inventory deduction is the hardest e-commerce problem. Use pessimistic locking (SELECT FOR UPDATE + Redis) for flash sales, optimistic locking (version-based) for normal traffic.</em></p>
+
+<p>#### 2. 订单状态机 (Order State Machine)</p>
+<pre><code>
+PENDING → PAID → PROCESSING → SHIPPED → DELIVERED
+       ↘ CANCELLED ↗
+</code></pre>
+<p>使用 Kafka 驱动状态转换，保证最终一致性，避免分布式事务。</p>
+
+<p><em>Use Kafka to drive state transitions. Avoid distributed transactions — embrace eventual consistency.</em></p>
+
+<p>#### 3. 搜索 vs 查询 (Search vs Query)</p>
+<p>- 产品查询 → PostgreSQL (精确，ACID)</p>
+<p>- 商品搜索 → Elasticsearch (全文，相关性)</p>
+<p>- 推荐 → Feature store + ML model</p>
+
+<hr/>
+
+<h3>为什么这样设计？/ Tradeoffs</h3>
+
+<p>| 选择 | 优点 | 缺点 |</p>
+<p>|------|------|------|</p>
+<p>| Redis 库存 | 原子操作，毫秒级 | 需要异步同步到DB |</p>
+<p>| Kafka 异步解耦 | 峰值削平，容错 | 最终一致性，更复杂 |</p>
+<p>| Elasticsearch | 全文搜索快 | 数据同步延迟，运维复杂 |</p>
+<p>| 微服务拆分 | 独立扩展，隔离故障 | 分布式一致性难，延迟高 |</p>
+
+<hr/>
+
+<h3>⚠️ 别踩这个坑 / Common Mistakes</h3>
+
+<p>1. <strong>超卖（oversell）</strong>：不加锁直接 <code>stock -= 1</code> → 用 Redis <code>DECR</code> + Lua 脚本做原子操作</p>
+<p>2. <strong>支付超时</strong>：用户支付中，库存一直占用 → 订单设 TTL（如15分钟），超时自动释放库存</p>
+<p>3. <strong>价格竞态</strong>：促销时价格变化，但已在购物车里的旧价格 → 下单时重新验证价格</p>
+<p>4. <strong>履约幂等</strong>：重复发货通知 → 每个消息带幂等键，消费者做去重</p>
+
+<p><em>Oversell prevention, payment timeout TTL (15min hold), price re-validation at checkout, and idempotent fulfillment are the four most commonly missed details.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [System Design: E-Commerce — ByteByteGo Newsletter](https://blog.bytebytego.com/p/design-an-e-commerce-website)</p>
+<p>- [Amazon&#x27;s Approach to Inventory Management](https://aws.amazon.com/solutions/case-studies/amazon-inventory/)</p>
+<p>- [Distributed Transactions in Microservices — Martin Fowler](https://martinfowler.com/articles/microservices.html)</p>
+
+<h3>🧒 ELI5</h3>
+<p>电商就像一个超级大超市。搜索是导购员（Elasticsearch），库存是收银机（Redis原子操作），支付是结账台，发货是后仓。秒杀就像限量版球鞋发售，要排队领号，不然大家都抢同一双。</p>
+
+<p><em>An e-commerce system is like a giant supermarket. Search is the directory board, inventory is the checkout counter, payment is the cashier, and fulfillment is the warehouse. A flash sale is like limited sneaker drops — you need a queue system or everyone fights for the same pair.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 31</h2>
+<h2>#153 Find Minimum in Rotated Sorted Array 🟡 Medium</h2>
+<h3>🧩 二分搜索模式 (4/7) — 旋转数组变体</h3>
+
+<p>🧩 <strong>二分搜索 (4/7)</strong> — building on the template from Day 28-30</p>
+
+<p>这道题是二分搜索模式的<strong>旋转变体</strong>——数组不再完全有序，但仍保留关键单调性。</p>
+
+<p><em>This is the <strong>rotation variant</strong> of binary search — the array isn&#x27;t fully sorted, but key monotonicity is preserved.</em></p>
+
+<hr/>
+
+<h3>链接 / Links</h3>
+<p>- 🔗 [LeetCode #153](https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/) 🟡</p>
+<p>- 📹 [NeetCode Video Solution](https://neetcode.io/problems/find-minimum-in-rotated-sorted-array)</p>
+
+<hr/>
+
+<h3>现实类比 / Real-World Analogy</h3>
+
+<p>你有一副扑克牌，原本按 1-52 排好序，但有人从中间切了一刀——比如从第30张切开，变成了 [31,32,...,52,1,2,...,30]。你要找最小值（也就是&quot;切口&quot;在哪里），但你不能逐张翻——只能用&quot;二分猜&quot;。</p>
+
+<p><em>You have a deck of cards originally sorted 1-52, but someone cut the deck — e.g., [31,32,...,52,1,2,...,30]. Find the &quot;cut point&quot; (minimum) using binary search, not linear scan.</em></p>
+
+<hr/>
+
+<h3>与模板的映射 / Mapping to Template</h3>
+
+<p>回顾模板：</p>
+<pre><code>
+# Standard template: find target in sorted array
+left, right = 0, len(arr) - 1
+while left &lt;= right:
+    mid = (left + right) // 2
+    if arr[mid] == target: return mid
+    elif arr[mid] &lt; target: left = mid + 1
+    else: right = mid - 1
+</code></pre>
+
+<p><strong>旋转数组的变化：</strong> 我们没有 target，只有一个性质：<strong>最小值右边的所有元素 &lt; arr[right]</strong>，左边的所有元素 &gt; arr[right]（如果被旋转了）。</p>
+
+<p>用 <code>arr[mid]</code> vs <code>arr[right]</code> 来决定收缩哪一半：</p>
+<p>- <code>arr[mid] &gt; arr[right]</code>：mid 在左段（较大的一段），最小值在右边 → <code>left = mid + 1</code></p>
+<p>- <code>arr[mid] &lt; arr[right]</code>：mid 在右段（较小的一段），最小值在左边（含mid） → <code>right = mid</code></p>
+
+<p><em>The twist: instead of comparing to a target, compare <code>arr[mid]</code> to <code>arr[right]</code> to determine which half the minimum lives in.</em></p>
+
+<hr/>
+
+<h3>Python 解法 + 追踪 / Solution with Trace</h3>
+
+<pre><code>
+def findMin(nums: list[int]) -&gt; int:
+    left, right = 0, len(nums) - 1
+    
+    while left &lt; right:  # Note: &lt; not &lt;=
+        mid = (left + right) // 2
+        
+        if nums[mid] &gt; nums[right]:
+            # mid is in the larger left portion
+            # minimum must be to the right of mid
+            left = mid + 1
+        else:
+            # mid is in the smaller right portion
+            # minimum could be mid itself
+            right = mid
+    
+    return nums[left]  # left == right == answer
+
+# Trace: [3,4,5,1,2]
+# left=0, right=4, mid=2 → nums[2]=5 &gt; nums[4]=2 → left=3
+# left=3, right=4, mid=3 → nums[3]=1 &lt;= nums[4]=2 → right=3
+# left=3, right=3 → return nums[3] = 1 ✓
+</code></pre>
+
+<p><strong>为什么用 <code>left &lt; right</code> 而不是 <code>left &lt;= right</code>？</strong></p>
+<p>因为 <code>right = mid</code>（不是 <code>mid - 1</code>），所以收敛时 left==right，不用额外检查。</p>
+
+<p><em>Why <code>left &lt; right</code>? Because we use <code>right = mid</code> (not <code>mid - 1</code>), convergence happens at <code>left == right</code> — no off-by-one.</em></p>
+
+<p><strong>时间复杂度：</strong> O(log n)  <strong>空间复杂度：</strong> O(1)</p>
+
+<hr/>
+
+<h3>举一反三 / Connect to the Block</h3>
+
+<p>这道题在 Binary Search 模式块的位置：</p>
+
+<p>| 题号 | 题目 | 关键变化 |</p>
+<p>|------|------|---------|</p>
+<p>| #704 | Binary Search | 纯模板 |</p>
+<p>| #74 | Search a 2D Matrix | 2D → 1D 映射 |</p>
+<p>| #875 | Koko Eating Bananas | 搜索答案空间 |</p>
+<p>| <strong>#153</strong> | <strong>Find Min in Rotated</strong> | <strong>旋转数组 → 比 right</strong> |</p>
+<p>| #33 | Search in Rotated | 找 target（下一题！） |</p>
+<p>| #981 | Time Based KV | 搜索时间戳 |</p>
+<p>| #4 | Median of Two Arrays | Hard，合并两段 |</p>
+
+<p><strong>规律：</strong> #153 和 #33 是姐妹题——先找最小值，再在两段有序数组中找 target。</p>
+
+<p><em>#153 and #33 are sibling problems — find the pivot first, then binary search in the correct half.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [LeetCode #153](https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/)</p>
+<p>- [NeetCode Explanation](https://neetcode.io/problems/find-minimum-in-rotated-sorted-array)</p>
+<p>- [Binary Search on Rotated Arrays — cp-algorithms](https://cp-algorithms.com/algebra/binary-search.html)</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象把一条直线从中间折了一下。折点是最低点。每次猜中间，如果中间比右边高，说明折点在右边；如果中间比右边低，说明折点在左边（或者就是中间自己）。每次都砍掉一半，很快就找到了！</p>
+
+<p><em>Imagine folding a line in the middle — the fold is the lowest point. Each guess, if the middle is higher than the right end, the fold is to the right; otherwise it&#x27;s to the left. Halve the search space each time!</em></p>
+
+<hr/>
+
+<h3>Quiz</h3>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 30</h2>
+<h2>Technical Vision — Staff Level</h2>
+<h3>Q: Describe how you&#x27;ve set technical direction for a team or organization</h3>
+
+<hr/>
+
+<h3>为什么这个问题重要 / Why This Matters</h3>
+
+<p>Staff+ 工程师区别于 Senior 工程师的核心：不只是解决眼前的技术问题，而是<strong>定义哪些问题值得解决</strong>、<strong>如何构建能让整个团队更快的系统</strong>。这道题考察的是 technical leadership，而不只是技术能力。</p>
+
+<p><em>The Staff+ differentiator: not just solving technical problems, but defining which problems matter and building systems that multiply team velocity. This question probes technical leadership, not just technical ability.</em></p>
+
+<hr/>
+
+<h3>STAR 框架 / STAR Breakdown</h3>
+
+<p><strong>Situation（背景）：</strong> 描述当时的技术现状和痛点——团队在哪里卡住了？为什么现有方向不够？</p>
+<p><em>Describe the technical status quo and pain point — where was the team stuck, and why was the current direction insufficient?</em></p>
+
+<p><strong>Task（任务）：</strong> 你的角色是什么？是被指派的还是主动发现的问题？</p>
+<p><em>What was your role? Did you identify the gap proactively, or were you assigned to it?</em></p>
+
+<p><strong>Action（行动）：</strong> 这是重点。要包含：</p>
+<p>- 你如何<strong>诊断</strong>问题（数据、用户访谈、系统深入分析）</p>
+<p>- 你如何<strong>构建共识</strong>（1:1 对话、RFC 文档、原型 demo）</p>
+<p>- 你如何<strong>处理反对意见</strong>（谁不同意，为什么，如何化解）</p>
+<p>- 你如何<strong>分解执行</strong>（roadmap、里程碑、accountability）</p>
+
+<p><em>The action is the crux. Include: diagnosis (data/interviews/deep dives), building consensus (1:1s, RFC docs, prototypes), handling dissent, and breaking down execution into milestones.</em></p>
+
+<p><strong>Result（结果）：</strong> 量化影响。工程效率提升多少？系统可靠性如何改变？团队文化有什么变化？</p>
+<p><em>Quantify the impact: engineering efficiency gains, reliability improvements, cultural shifts.</em></p>
+
+<hr/>
+
+<h3>❌ 弱回答 vs ✅ 强回答 / Bad vs Good</h3>
+
+<p><strong>❌ 弱回答：</strong></p>
+<p>&gt; &quot;我提出了迁移到微服务的想法，大家都同意了，然后我们执行了。&quot;</p>
+
+<p>这个答案缺乏：诊断过程、如何说服别人、遇到了什么阻力、结果的量化。</p>
+
+<p><strong>✅ 强回答：</strong></p>
+<p>&gt; &quot;2022年我们的 monolith 部署时间从45分钟增长到90分钟，每次有人合并代码都要等2小时才能验证。我通过分析 CI 日志发现瓶颈在3个重度耦合的模块。我写了一个 RFC 提议提取这3个服务，但有2个 senior engineer 反对（担心分布式复杂性增加）。我做了一个小型 PoC 用 2 周时间证明通信开销可控，并邀请反对者一起 review 结果。最终我们用6个月完成迁移，部署时间降到8分钟，团队可以独立发布，季度 feature velocity 提升了40%。&quot;</p>
+
+<p><em>Weak: &quot;I proposed microservices and everyone agreed.&quot; Strong: Specific pain point data, RFC with dissent, PoC to build trust, measurable outcome.</em></p>
+
+<hr/>
+
+<h3>📈 Senior vs Staff 级别差异 / Senior vs Staff Differentiation</h3>
+
+<p>| 维度 | Senior Engineer | Staff Engineer |</p>
+<p>|------|----------------|----------------|</p>
+<p>| 范围 | 单个系统/服务 | 跨团队/多系统 |</p>
+<p>| 时间 | 季度内 | 1-2年愿景 |</p>
+<p>| 共识 | 说服自己团队 | 影响多个团队 |</p>
+<p>| 指标 | 系统指标（latency） | 组织指标（velocity, reliability SLA） |</p>
+
+<p>Staff 答案要展示 <strong>跨组织的影响力</strong> 和 <strong>multi-quarter 的时间视角</strong>。</p>
+
+<p><em>Staff answers must show cross-organizational impact and multi-quarter time horizons.</em></p>
+
+<hr/>
+
+<h3>关键要点 / Key Takeaways</h3>
+
+<p>1. <strong>数据先行</strong>：技术方向必须基于实测数据，不是直觉 / <em>Lead with data, not intuition</em></p>
+<p>2. <strong>异见是礼物</strong>：最强的反对意见往往暴露了你没想到的风险 / <em>Dissent reveals blind spots — embrace it</em></p>
+<p>3. <strong>写下来</strong>：RFC/ADR 文档是建立共识的最有效工具 / <em>Written proposals build consensus at scale</em></p>
+<p>4. <strong>度量变化</strong>：没有量化结果，就没有证明 / <em>No measurement = no proof</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Staff Engineer: Leadership Beyond the Management Track — Will Larson](https://staffeng.com/book)</p>
+<p>- [RFC Culture at Engineering Companies — Gergely Orosz](https://newsletter.pragmaticengineer.com/p/software-architecture-document)</p>
+<p>- [How to Write an Architectural Decision Record (ADR)](https://adr.github.io/)</p>
+
+<h3>🧒 ELI5</h3>
+<p>设技术方向就像给登山队选路线。Senior 工程师会爬好自己的那段路。Staff 工程师需要看完整的山，决定哪条路对整个队伍最安全、最快，还要说服所有人这条路才是对的——即使有人喜欢走另一条。</p>
+
+<p><em>Setting technical direction is like choosing a route for a climbing team. Senior engineers climb their own section well. Staff engineers survey the whole mountain, pick the best route for the entire team, and convince everyone it&#x27;s right — even when some prefer a different path.</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 30</h2>
+<h2>React.memo, useMemo, useCallback — The Memoization Triangle</h2>
+
+<hr/>
+
+<h3>真实场景 / Real Scenario</h3>
+
+<p>你在做一个数据 dashboard，有一个 <code>&lt;DataTable&gt;</code> 组件显示 1000 行数据，还有一个搜索框。每次用户输入一个字，父组件 re-render，<code>DataTable</code> 也跟着重新渲染——即使数据根本没变，页面开始卡顿。</p>
+
+<p><em>You&#x27;re building a data dashboard. A <code>&lt;DataTable&gt;</code> shows 1000 rows. A search input causes the parent to re-render on every keystroke, dragging <code>DataTable</code> along for the ride — even though its data didn&#x27;t change. The UI starts stuttering.</em></p>
+
+<hr/>
+
+<h3>三者关系 / The Triangle</h3>
+
+<pre><code>
+React.memo  ──── wraps ──────▶  Component
+                                    │
+                                 receives
+                                    │
+              ┌─────────────────────┴──────────────────────┐
+              ▼                                             ▼
+         useMemo                                      useCallback
+    (memoize a value)                           (memoize a function)
+
+问题: React.memo 只对 props shallow-equal 检查。
+如果 prop 是 object/function，每次 render 都是新引用 → memo 失效！
+useMemo/useCallback 解决的就是这个&quot;引用稳定性&quot;问题。
+</code></pre>
+
+<hr/>
+
+<h3>代码示例 / Code Snippet</h3>
+
+<pre><code>
+// ❌ 问题：每次父组件 render，handleSort 和 config 都是新引用
+// DataTable 的 React.memo 完全没用
+function Dashboard() {
+  const [query, setQuery] = useState(&#x27;&#x27;);
+  const [data] = useState(largeDataset);
+
+  const handleSort = (key: string) =&gt; {   // new ref every render!
+    console.log(&#x27;sort by&#x27;, key);
+  };
+  
+  const config = { pageSize: 50 };         // new ref every render!
+  
+  return (
+    &lt;&gt;
+      &lt;input onChange={e =&gt; setQuery(e.target.value)} /&gt;
+      &lt;DataTable data={data} onSort={handleSort} config={config} /&gt;
+    &lt;/&gt;
+  );
+}
+
+// ✅ 修复：稳定引用，让 React.memo 真正生效
+function Dashboard() {
+  const [query, setQuery] = useState(&#x27;&#x27;);
+  const [data] = useState(largeDataset);
+
+  const handleSort = useCallback((key: string) =&gt; {
+    console.log(&#x27;sort by&#x27;, key);
+  }, []);                                  // stable ref ✓
+  
+  const config = useMemo(() =&gt; ({
+    pageSize: 50
+  }), []);                                 // stable ref ✓
+  
+  return (
+    &lt;&gt;
+      &lt;input onChange={e =&gt; setQuery(e.target.value)} /&gt;
+      &lt;DataTable data={data} onSort={handleSort} config={config} /&gt;
+    &lt;/&gt;
+  );
+}
+
+const DataTable = React.memo(({ data, onSort, config }) =&gt; {
+  // Now only re-renders when data/onSort/config actually change
+  return &lt;table&gt;...&lt;/table&gt;;
+});
+</code></pre>
+
+<hr/>
+
+<h3>猜猜输出？/ Quiz</h3>
+
+<pre><code>
+const fn1 = useCallback(() =&gt; console.log(&#x27;hello&#x27;), []);
+const fn2 = useCallback(() =&gt; console.log(&#x27;hello&#x27;), []);
+
+console.log(fn1 === fn2);
+</code></pre>
+
+<p><strong>A)</strong> <code>true</code></p>
+<p><strong>B)</strong> <code>false</code></p>
+<p><strong>C)</strong> Depends on render count</p>
+<p><strong>D)</strong> TypeError</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>B) false</strong></p>
+
+<p><code>useCallback</code> 返回的是 <strong>同一个组件实例中跨 render 稳定的引用</strong>，但 <code>fn1</code> 和 <code>fn2</code> 是两个独立的 <code>useCallback</code> 调用，是两个不同的函数对象。同一个 <code>useCallback</code>（依赖不变时）跨 render 返回相同引用，所以 <code>fn1 === fn1</code>（跨两次 render）会是 <code>true</code>，但 <code>fn1 === fn2</code> 永远是 <code>false</code>。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>❌ 常见错误 vs ✅ 正确做法</h3>
+
+<p>| 情形 | ❌ 错误 | ✅ 正确 |</p>
+<p>|------|--------|---------|</p>
+<p>| 组件接收 object prop | <code>&lt;C config={{size:50}} /&gt;</code> | <code>useMemo(() =&gt; ({size:50}), [])</code> |</p>
+<p>| 组件接收 callback | <code>&lt;C onClick={() =&gt; fn(x)} /&gt;</code> | <code>useCallback(() =&gt; fn(x), [x])</code> |</p>
+<p>| 忘记依赖 | <code>useMemo(() =&gt; compute(a), [])</code> 当 a 变化时 | <code>useMemo(() =&gt; compute(a), [a])</code> |</p>
+<p>| 过度使用 | 对简单 string/number prop 用 useMemo | 直接传值，原始类型自动 compare by value |</p>
+
+<hr/>
+
+<h3>何时用 / 何时不用 / When to Use vs Not</h3>
+
+<p><strong>✅ 该用：</strong></p>
+<p>- 子组件有 <code>React.memo</code> 包裹 + prop 是 object/function</p>
+<p>- 计算量大的派生数据（如排序/过滤大数组）</p>
+<p>- 传给 <code>useEffect</code> 依赖数组的函数引用</p>
+
+<p><strong>❌ 不该用：</strong></p>
+<p>- prop 是 string/number/boolean（原始类型，自动 value compare）</p>
+<p>- 组件渲染本来就很轻（memo 本身有成本！）</p>
+<p>- 没有实际性能问题时（premature optimization）</p>
+
+<p><em>Rule of thumb: profile first, memoize second. React DevTools Profiler shows which components re-render unnecessarily.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [React.memo — React Docs](https://react.dev/reference/react/memo)</p>
+<p>- [useMemo — React Docs](https://react.dev/reference/react/useMemo)</p>
+<p>- [useCallback — React Docs](https://react.dev/reference/react/useCallback)</p>
+<p>- [Before You memo() — Dan Abramov](https://overreacted.io/before-you-memo/)</p>
+
+<h3>🧒 ELI5</h3>
+<p><code>React.memo</code> 像保安，拒绝没变化的 props 进门。但如果你每次都带着&quot;新袋子&quot;（新的 object/function 引用），保安认不出你，还是放你进去了。<code>useMemo</code> 和 <code>useCallback</code> 是让你每次带<strong>同一个袋子</strong>——这样保安才真的能拦住重复进入。</p>
+
+<p><em>React.memo is a bouncer that blocks unchanged props. But if you bring a &quot;new bag&quot; (new object/function reference) every time, the bouncer doesn&#x27;t recognize you and lets you in anyway. useMemo/useCallback ensure you always bring the SAME bag — so the bouncer actually works.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 36</h2>
+<h2>Multimodal AI — Vision, Audio, and Beyond</h2>
+
+<hr/>
+
+<h3>什么是多模态 AI？/ What is Multimodal AI?</h3>
+
+<p>早期 AI 是&quot;盲聋&quot;的——只能处理文字。多模态 AI 打破了这个限制：同一个模型可以同时理解图片、音频、视频和文字，就像人类用眼睛、耳朵、嘴巴感知世界一样。</p>
+
+<p><em>Early AI was &quot;blind and deaf&quot; — text only. Multimodal AI breaks this barrier: one model that simultaneously understands images, audio, video, and text, like humans perceiving the world through eyes, ears, and language.</em></p>
+
+<hr/>
+
+<h3>直觉解释 / Intuitive Explanation</h3>
+
+<p>核心思想：<strong>把不同模态转换成同一种&quot;语言&quot;——向量</strong>。</p>
+
+<pre><code>
+Text  ──▶ Text Encoder  ──▶ [0.2, 0.8, -0.3, ...]
+Image ──▶ Vision Encoder──▶ [0.2, 0.7, -0.4, ...]  ← 语义相近!
+Audio ──▶ Audio Encoder ──▶ embedding space
+                               │
+                          Shared Transformer
+                          (cross-attention)
+                               │
+                          Text / Image Output
+</code></pre>
+
+<p><strong>CLIP（Contrastive Language-Image Pre-training）</strong>是多模态的奠基之作。它训练时用对比学习：把&quot;一只猫的照片&quot;和&quot;a photo of a cat&quot;拉近，和不相关的文字/图片推远。训练后，文字和图片在同一个向量空间里——这让零样本图像分类成为可能。</p>
+
+<p><em>The core insight: convert different modalities into the same &quot;language&quot; — vectors. CLIP pioneered this with contrastive learning: pull matching image-text pairs together, push non-matching pairs apart. After training, images and text live in the same embedding space.</em></p>
+
+<hr/>
+
+<h3>主要架构类型 / Architecture Types</h3>
+
+<p>| 类型 | 代表模型 | 做法 |</p>
+<p>|------|---------|------|</p>
+<p>| 对比学习 | CLIP, ALIGN | 图文对齐到同一空间 |</p>
+<p>| 生成式多模态 | GPT-4V, Gemini | Vision encoder + LLM decoder |</p>
+<p>| 扩散多模态 | DALL·E, Stable Diffusion | 文字 → 图片生成 |</p>
+<p>| 统一模态 | Gemini 1.5, GPT-4o | 原生多模态，端到端 |</p>
+
+<p><strong>GPT-4o 的突破：</strong> 不再是&quot;视觉插件&quot;，而是在预训练阶段就原生处理图片和音频，延迟更低，理解更深。</p>
+
+<p><em>GPT-4o&#x27;s breakthrough: vision isn&#x27;t a plugin — it&#x27;s natively pretrained with images and audio, giving lower latency and deeper understanding.</em></p>
+
+<hr/>
+
+<h3>应用场景 / Applications</h3>
+
+<p>1. <strong>视觉问答（VQA）：</strong> 上传发票截图，自动提取金额、日期、供应商</p>
+<p>2. <strong>医疗影像：</strong> X光、MRI 自动初筛异常</p>
+<p>3. <strong>代码截图 → 代码：</strong> 截图变成可运行代码（GPT-4V / Claude 3）</p>
+<p>4. <strong>实时语音对话：</strong> GPT-4o 实时音频对话，延迟 ~300ms</p>
+<p>5. <strong>视频理解：</strong> Gemini 1.5 Pro 可以处理整部电影（~1小时视频 = ~750K tokens）</p>
+
+<hr/>
+
+<h3>可运行代码 / Runnable Code</h3>
+
+<pre><code>
+# pip install openai Pillow requests
+import base64
+from openai import OpenAI
+
+client = OpenAI()
+
+def analyze_image(image_path: str, question: str) -&gt; str:
+    &quot;&quot;&quot;Ask GPT-4o a question about a local image.&quot;&quot;&quot;
+    with open(image_path, &quot;rb&quot;) as f:
+        image_data = base64.b64encode(f.read()).decode(&quot;utf-8&quot;)
+    
+    response = client.chat.completions.create(
+        model=&quot;gpt-4o&quot;,
+        messages=[{
+            &quot;role&quot;: &quot;user&quot;,
+            &quot;content&quot;: [
+                {
+                    &quot;type&quot;: &quot;image_url&quot;,
+                    &quot;image_url&quot;: {
+                        &quot;url&quot;: f&quot;data:image/jpeg;base64,{image_data}&quot;
+                    }
+                },
+                {
+                    &quot;type&quot;: &quot;text&quot;,
+                    &quot;text&quot;: question
+                }
+            ]
+        }]
+    )
+    return response.choices[0].message.content
+
+# Example
+result = analyze_image(&quot;receipt.jpg&quot;, &quot;What is the total amount and date?&quot;)
+print(result)
+# → &quot;Total: $47.32, Date: May 6, 2026&quot;
+</code></pre>
+
+<hr/>
+
+<h3>关键挑战 / Key Challenges</h3>
+
+<p>1. <strong>幻觉在图片上更严重：</strong> 模型会&quot;看到&quot;图片里没有的东西（特别是小字、数字）</p>
+<p>2. <strong>对齐代价高：</strong> 图片 patch 数量远多于文字 token，序列长度爆炸（1024x1024 图 = ~1000 patches）</p>
+<p>3. <strong>评估困难：</strong> 文字对错好判断；图片理解的&quot;对&quot;很主观</p>
+<p>4. <strong>数据集偏差：</strong> LAION 等训练数据包含大量西方文化图片，非英语/非西方场景表现差</p>
+
+<p><em>Hallucinations are worse on images, alignment is compute-expensive (1M pixel image ≈ 1000 tokens), evaluation is subjective, and training data skews heavily Western.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [CLIP Paper — OpenAI (2021)](https://openai.com/research/clip)</p>
+<p>- [GPT-4V System Card](https://openai.com/research/gpt-4v-system-card)</p>
+<p>- [Gemini Technical Report — Google DeepMind](https://deepmind.google/technologies/gemini/)</p>
+<p>- [Multimodal AI Survey — arXiv 2023](https://arxiv.org/abs/2306.13549)</p>
+
+<h3>🧒 ELI5</h3>
+<p>以前 AI 就像只会读书的瞎子——只能处理文字。现在多模态 AI 像有了眼睛和耳朵：它先把图片&quot;翻译&quot;成一种特殊的数字语言，再和文字一起理解。就像你看到一张猫的照片，大脑里自动想到&quot;猫&quot;这个词——AI 现在也能做到这件事了。</p>
+
+<p><em>Before, AI was like a blind person who could only read — text only. Now multimodal AI has eyes and ears: it &quot;translates&quot; images into a special numeric language, then understands them together with text. Like how you see a cat photo and your brain instantly thinks &quot;cat&quot; — AI can do that now too.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-05</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
