@@ -5,8 +5,677 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 06 May 2026 15:17:34 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 07 May 2026 15:12:23 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-07</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-07</guid>
+      <pubDate>Thu, 07 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 37</h2>
+<p><strong>主题 / Topic:</strong> Design a Ticket Booking System (Ticketmaster)</p>
+<p><strong>难度 / Difficulty:</strong> Advanced | <strong>阶段 / Phase:</strong> Mastery</p>
+
+<hr/>
+
+<h2>想象你在设计... / Imagine You&#x27;re Designing...</h2>
+
+<p>你在设计一个像 Ticketmaster 的票务平台。Taylor Swift 巡演票刚开放预售，<strong>10 万人同时抢票</strong>，每张票库存只有一张。系统必须保证：不能超卖、不能同一张票卖给两个人、同时支撑几十万并发请求。</p>
+
+<p>You&#x27;re building a ticket booking platform like Ticketmaster. Taylor Swift presale just dropped — <strong>100K users rushing simultaneously</strong>, and each seat has exactly one ticket. The system must guarantee: no overselling, no double-booking, while handling massive concurrent load.</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+                        ┌─────────────┐
+                        │  CDN / WAF  │  (static assets, DDoS protection)
+                        └──────┬──────┘
+                               │
+                     ┌─────────▼──────────┐
+                     │    API Gateway      │
+                     │  (rate limiting,    │
+                     │   auth, routing)    │
+                     └────┬──────────┬────┘
+                          │          │
+              ┌───────────▼──┐  ┌────▼──────────────┐
+              │ Queue Service │  │  Booking Service  │
+              │  (virtual     │  │  (stateless,      │
+              │   waiting     │  │   horizontally    │
+              │   room)       │  │   scaled)         │
+              └───────────────┘  └────┬──────────────┘
+                                      │
+              ┌───────────────────────▼────────────────────┐
+              │              Redis Cluster                  │
+              │  (seat locks: SETNX, TTL=10min,            │
+              │   available seat inventory)                 │
+              └───────────────────────┬────────────────────┘
+                                      │
+              ┌───────────────────────▼────────────────────┐
+              │           PostgreSQL (Primary)              │
+              │  tickets table: seat_id, status, user_id   │
+              │  orders table: order_id, payment_status     │
+              │  SELECT FOR UPDATE → serialized writes      │
+              └────────────────────────────────────────────┘
+                          │
+              ┌───────────▼──────────┐
+              │   Payment Service    │
+              │  (Stripe/PayPal,     │
+              │   async webhook)     │
+              └──────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>核心设计决策 / Key Design Decisions</h2>
+
+<h3>1. 座位锁定 (Seat Locking) — 乐观锁 vs 悲观锁</h3>
+
+<p><strong>两阶段流程 / Two-phase flow:</strong></p>
+<pre><code>
+Phase 1: Soft Lock (用户选座时)
+  Redis SETNX seat:{id}:lock {user_id} EX 600
+  → 成功：进入支付流程
+  → 失败：座位已被锁，提示用户选其他位置
+
+Phase 2: Hard Commit (支付成功后)
+  BEGIN TRANSACTION
+    SELECT * FROM tickets WHERE seat_id = ? AND status = &#x27;available&#x27; FOR UPDATE
+    UPDATE tickets SET status = &#x27;sold&#x27;, user_id = ? WHERE seat_id = ?
+    INSERT INTO orders (...)
+  COMMIT
+  → 同时 DEL Redis lock
+</code></pre>
+
+<p><strong>为什么用两阶段？</strong> 纯 DB 锁撑不住 10 万并发；纯 Redis 锁在支付成功后还需要 DB 原子提交。两阶段各司其职。</p>
+
+<h3>2. 虚拟等候室 (Virtual Waiting Room)</h3>
+
+<p>高热度演唱会开售前，用户先进等候室队列（SQS/Kafka），按 FIFO 逐批放入系统，避免瞬间流量将数据库打垮。这是 Ticketmaster、12306 都在用的方案。</p>
+
+<h3>3. 防超卖 (Oversell Prevention)</h3>
+
+<pre><code>
+-- DB level constraint
+ALTER TABLE tickets ADD CONSTRAINT unique_seat UNIQUE (event_id, seat_id);
+-- + Redis atomic decrement for inventory
+WATCH inventory:{event_id}
+MULTI
+  DECR inventory:{event_id}  -- atomic, fails if 0
+EXEC
+</code></pre>
+
+<hr/>
+
+<h2>为什么这样设计？/ Why This Design?</h2>
+
+<p>| 方案 | 优点 | 缺点 |</p>
+<p>|------|------|------|</p>
+<p>| 纯 DB 行锁 | 强一致性 | 10万并发把 DB 打死 |</p>
+<p>| 纯 Redis | 高性能 | 宕机丢数据，支付后仍需 DB |</p>
+<p>| <strong>Redis + DB 两阶段</strong> | 性能 + 一致性 | 复杂度高，需处理锁过期 |</p>
+
+<hr/>
+
+<h2>❌ 别踩这个坑 / Common Mistakes</h2>
+
+<p>1. <strong>忘记锁过期处理</strong> — 用户选了座位但放弃支付，10分钟后 Redis TTL 到期，座位自动释放。必须用 expiry + cleanup job 双保险。</p>
+<p>2. <strong>在 Redis 里扣库存但不做 DB 回写</strong> — Redis 挂了库存就没了，一定要 DB 是最终 source of truth。</p>
+<p>3. <strong>不做幂等</strong> — 支付回调可能重复触发，order_id 要做唯一性校验，防止重复出票。</p>
+<p>4. <strong>没有 Circuit Breaker</strong> — 支付服务超时时要快速失败，释放座位锁，别让用户无限等待。</p>
+
+<hr/>
+
+<h2>📐 规模估算 / Scale Estimation</h2>
+
+<pre><code>
+Peak: 100K concurrent users
+Seat lock ops: ~100K/s (Redis handles this easily)
+DB writes (final purchase): ~1K-5K/s (much lower, filtered by Redis)
+Read throughput: CDN + Redis cache handles 95% of seat map reads
+Storage: 1M events × 50K seats = 50B rows (partitioned by event_id)
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [System Design Interview — Ticket Master](https://bytebytego.com/courses/system-design-interview/design-a-ticketing-system) — ByteByteGo</p>
+<p>- [Redis SETNX docs](https://redis.io/commands/setnx/)</p>
+<p>- [PostgreSQL SELECT FOR UPDATE](https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE)</p>
+
+<h2>🧒 ELI5</h2>
+<p>就像抢限量球鞋：你先抢到一张&quot;号码牌&quot;（Redis 锁），然后拿着号码牌去收银台付钱（DB 写入），付完才算真的买到。号码牌有过期时间，10 分钟不来就还给别人。</p>
+
+<p>Like getting a numbered ticket at the deli counter. You grab a ticket (Redis lock), then bring it to the cashier (DB write) to actually complete the purchase. If you don&#x27;t show up in 10 minutes, your number expires and goes back in the pool.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 37</h2>
+<p><strong>题目 / Problem:</strong> #33 Search in Rotated Sorted Array 🟡 Medium</p>
+<p><strong>模式 / Pattern:</strong> 二分搜索 Binary Search (5/7)</p>
+<p><strong>LeetCode:</strong> https://leetcode.com/problems/search-in-rotated-sorted-array/</p>
+<p><strong>NeetCode:</strong> https://neetcode.io/problems/find-target-in-rotated-sorted-array</p>
+
+<hr/>
+
+<h2>🧩 Binary Search (5/7) — 在模板基础上变化</h2>
+
+<p>Building on the template from Day 32 (Binary Search block, problem 1: #704).</p>
+
+<p><strong>回顾模板 / Template Recap:</strong></p>
+<pre><code>
+left, right = 0, len(arr) - 1
+while left &lt;= right:
+    mid = (left + right) // 2
+    if arr[mid] == target: return mid
+    elif arr[mid] &lt; target: left = mid + 1
+    else: right = mid - 1
+</code></pre>
+
+<p><strong>今天的变化 / Today&#x27;s twist:</strong> 数组是&quot;旋转&quot;过的排序数组 — 标准二分不能直接用，因为整体不再单调递增。需要<strong>先判断哪半边是有序的</strong>，再决定往哪边搜。</p>
+
+<p>The array is a rotated sorted array — standard binary search breaks because the array isn&#x27;t fully monotonic. Key insight: <strong>even in a rotated array, at least one half is always sorted</strong>.</p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象一叠按年份排好的文件，有人把后半段搬到了前面。比如原来是 <code>[1,2,3,4,5,6,7]</code>，变成了 <code>[4,5,6,7,1,2,3]</code>。虽然整体乱了，但每次切开，<strong>至少一边是连续有序的</strong>。你用这个性质来决定往哪边找。</p>
+
+<p>Like a sorted stack of papers where someone moved the back half to the front. Though the whole stack is &quot;rotated&quot;, when you split it in half, <strong>at least one side is always in order</strong>. Use that to decide which direction to search.</p>
+
+<hr/>
+
+<h2>问题分析 / Problem Breakdown</h2>
+
+<pre><code>
+Input: nums = [4,5,6,7,0,1,2], target = 0
+Output: 4 (index of 0)
+
+Input: nums = [4,5,6,7,0,1,2], target = 3
+Output: -1
+
+Constraints:
+- All values unique
+- Time: O(log n)
+</code></pre>
+
+<hr/>
+
+<h2>映射到模板 / Mapping to Template</h2>
+
+<p>标准二分用 <code>arr[mid] vs target</code> 决定方向。旋转数组要<strong>先确认有序半边</strong>，再用范围检查决定方向。</p>
+
+<pre><code>
+Standard:  is target LEFT or RIGHT of mid?
+Rotated:   WHICH HALF is sorted? Is target IN that sorted half?
+</code></pre>
+
+<p><strong>两个判断 / Two checks:</strong></p>
+<p>1. 左半边有序？<code>nums[left] &lt;= nums[mid]</code></p>
+<p>2. Target 在左半边范围内？<code>nums[left] &lt;= target &lt; nums[mid]</code></p>
+
+<hr/>
+
+<h2>Python 解法 + Trace / Solution with Trace</h2>
+
+<pre><code>
+def search(nums: list[int], target: int) -&gt; int:
+    left, right = 0, len(nums) - 1
+    
+    while left &lt;= right:
+        mid = (left + right) // 2
+        
+        if nums[mid] == target:
+            return mid
+        
+        # Check if LEFT half is sorted
+        if nums[left] &lt;= nums[mid]:
+            # target in left sorted range?
+            if nums[left] &lt;= target &lt; nums[mid]:
+                right = mid - 1  # go left
+            else:
+                left = mid + 1   # go right
+        else:
+            # RIGHT half must be sorted
+            # target in right sorted range?
+            if nums[mid] &lt; target &lt;= nums[right]:
+                left = mid + 1   # go right
+            else:
+                right = mid - 1  # go left
+    
+    return -1
+
+# Trace: nums=[4,5,6,7,0,1,2], target=0
+# Iteration 1: left=0, right=6, mid=3 → nums[3]=7, not target
+#   Left sorted? nums[0]=4 &lt;= nums[3]=7 ✅
+#   target=0 in [4,7)? NO → left = mid+1 = 4
+# Iteration 2: left=4, right=6, mid=5 → nums[5]=1, not target
+#   Left sorted? nums[4]=0 &lt;= nums[5]=1 ✅
+#   target=0 in [0,1)? YES → right = mid-1 = 4
+# Iteration 3: left=4, right=4, mid=4 → nums[4]=0 == target ✅
+# Return 4
+</code></pre>
+
+<p><strong>时间复杂度 / Complexity:</strong></p>
+<p>- Time: O(log n) — 每次排除一半</p>
+<p>- Space: O(1) — 原地操作</p>
+
+<hr/>
+
+<h2>与同模式题目对比 / Pattern Comparison</h2>
+
+<p>| 题目 | 变化点 | 关键差异 |</p>
+<p>|------|--------|---------|</p>
+<p>| #704 Binary Search | 标准排序数组 | 直接比较 |</p>
+<p>| #153 Find Minimum in Rotated | 找旋转点 | 不需要 target，只找最小值 |</p>
+<p>| <strong>#33 Search in Rotated</strong> | 找 target | 先判断有序半边 |</p>
+<p>| #981 Time Based KV (下一题) | 时间戳 + 字符串 | 二分 + 条件判断 |</p>
+
+<p><strong>核心洞察：</strong> #153 找的是旋转点（pivot），#33 在知道有旋转的情况下找 target。两题都利用了&quot;至少一边有序&quot;这个性质。</p>
+
+<hr/>
+
+<h2>举一反三 / Generalization</h2>
+
+<p><strong>同类变形：</strong></p>
+<p>- 数组有重复元素时 → <code>nums[left] == nums[mid]</code> 时无法判断哪边有序，需要 <code>left++</code> 跳过 (LeetCode #81)</p>
+<p>- 旋转后找最小值 → 不用 target，只看旋转点 (#153)</p>
+<p>- 2D Matrix 搜索 → 先二分找行，再二分找列 (#74)</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+
+<p><strong>问题:</strong> 对于旋转数组 <code>[6,7,1,2,3,4,5]</code>，<code>mid=3</code>（值为2），<code>target=7</code>，下一步应该：</p>
+<p>A) right = mid - 1</p>
+<p>B) left = mid + 1</p>
+<p>C) return mid</p>
+<p>D) return -1</p>
+
+<p>&lt;details&gt;&lt;summary&gt;答案 / Answer&lt;/summary&gt;</p>
+<p><strong>A) right = mid - 1</strong></p>
+
+<p>Left half: <code>[6,7,1,2]</code> — nums[left]=6 &gt; nums[mid]=2，左半边<strong>不</strong>是有序的。</p>
+<p>Right half: <code>[2,3,4,5]</code> — 右半边有序。</p>
+<p>target=7 在右半边范围 (2,5] 内吗？不在。</p>
+<p>所以 target 在左半边 → right = mid - 1，往左搜。</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [NeetCode Video — Search in Rotated Sorted Array](https://www.youtube.com/watch?v=U8XENwh8Oy8)</p>
+<p>- [LeetCode #33 Editorial](https://leetcode.com/problems/search-in-rotated-sorted-array/editorial/)</p>
+<p>- [Binary Search Patterns — LeetCode Explore](https://leetcode.com/explore/learn/card/binary-search/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>把书架上的书按字母排好，然后把后半段搬到前面。要找某本书：先看中间那本，判断左边还是右边是&quot;整齐的&quot;，再判断要找的书在不在那个整齐的那半里，决定往哪边找。每次排除一半，找到为止。</p>
+
+<p>Like a shelf of books sorted A-Z, then someone moved the Z-M books to the front. To find a book: look at the middle, figure out which half is &quot;in order&quot;, check if your book would be in that ordered half, then search there. Eliminate half each time.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 37</h2>
+<p><strong>题目 / Question:</strong> Tell me about a time you over-engineered something. What did you learn?</p>
+<p><strong>类别 / Category:</strong> Failure &amp; Growth | <strong>级别 / Level:</strong> Senior/Staff</p>
+
+<hr/>
+
+<h2>为什么面试官问这个 / Why Interviewers Ask This</h2>
+
+<p>这题考察的不是失败本身，而是你的<strong>工程判断力</strong>和<strong>自我认知</strong>。Senior 工程师必须知道：简单够用的方案 &gt; 技术上完美的方案。能坦诚承认过度设计，说明你对&quot;工程权衡&quot;有成熟的理解。</p>
+
+<p>This question isn&#x27;t about failure — it&#x27;s about <strong>engineering judgment</strong> and <strong>self-awareness</strong>. Senior engineers must internalize: simple and sufficient &gt; technically perfect. Honestly acknowledging over-engineering shows maturity in understanding tradeoffs.</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<h3>Situation（情境）</h3>
+<p>&gt; &quot;In my previous role, we were building an internal analytics dashboard used by ~20 people. I proposed — and built — a full event-sourcing + CQRS architecture with Kafka, separate read/write models, and eventual consistency.&quot;</p>
+
+<h3>Task（任务）</h3>
+<p>&gt; &quot;My goal was to make the system &#x27;future-proof&#x27; for scale. I estimated we might grow to 10K users eventually.&quot;</p>
+
+<h3>Action（行动）</h3>
+<p>&gt; &quot;I spent 6 weeks building the infrastructure: Kafka topics, event store, two separate databases, replay logic. The actual feature work took another 4 weeks on top of that.&quot;</p>
+
+<h3>Result（结果）</h3>
+<p>&gt; &quot;We shipped 10 weeks late. The team struggled to understand the codebase. Two engineers needed me to explain the system before any change. Three months later, the dashboard was deprecated because the product direction changed. The actual peak load was 20 concurrent users — a SQLite database would have been fine.&quot;</p>
+
+<hr/>
+
+<h2>❌ Bad Answer vs ✅ Good Answer</h2>
+
+<p><strong>❌ 避免 / Avoid:</strong></p>
+<p>- &quot;I once wrote very detailed documentation&quot; ← 这不是过度设计</p>
+<p>- &quot;Everything turned out fine&quot; ← 没有 growth</p>
+<p>- Making it sound like a humble-brag (&quot;I was TOO thorough&quot;)</p>
+
+<p><strong>✅ 好的回答要包含 / Good answer includes:</strong></p>
+<p>1. <strong>具体技术细节</strong> — 说清楚用了什么技术，为什么是 overkill</p>
+<p>2. <strong>业务代价</strong> — 延期、复杂度、维护成本</p>
+<p>3. <strong>根因分析</strong> — &quot;我当时的假设是...但实际是...&quot;</p>
+<p>4. <strong>改变了什么</strong> — 之后如何做决策不同了</p>
+
+<hr/>
+
+<h2>根因 &amp; 教训 / Root Cause &amp; Lessons</h2>
+
+<p>过度设计往往源于：</p>
+<p>- <strong>担心被批评不够&quot;高级&quot;</strong> — 想证明自己懂分布式系统</p>
+<p>- <strong>为假设的未来优化</strong> — YAGNI (You Aren&#x27;t Gonna Need It)</p>
+<p>- <strong>缺乏问题约束条件</strong> — 没有先问&quot;这个系统的 SLO 是什么？用户规模多大？&quot;</p>
+
+<p><strong>改变后的决策框架 / Post-lesson decision framework:</strong></p>
+<pre><code>
+Before architecting, ask:
+1. What&#x27;s the actual current load? (not hoped-for future load)
+2. What&#x27;s the maintenance cost if I leave?
+3. Can we start simple and migrate later?
+4. What&#x27;s the cost of being wrong?
+</code></pre>
+
+<hr/>
+
+<h2>Senior/Staff 加分 / Senior/Staff Tips</h2>
+
+<p><strong>加分回答：</strong> 聊到你如何把这个教训传递给团队。</p>
+
+<p>&gt; &quot;After this, I started running &#x27;complexity audits&#x27; before kick-off: we write down our load assumptions, then ask &#x27;what&#x27;s the simplest thing that could work?&#x27; We only add complexity when we&#x27;ve hit a measurable constraint.&quot;</p>
+
+<p><strong>Staff 级别加分：</strong> 谈 organizational impact — 过度设计不只是你的问题，它是 team velocity 的杀手。</p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>1. <strong>YAGNI 原则</strong> — 不需要的功能就不要设计，即使你觉得&quot;以后会用到&quot;</p>
+<p>2. <strong>复杂度是负债</strong> — 每个系统决策都有维护成本，要收益 &gt; 成本</p>
+<p>3. <strong>先问约束条件</strong> — 用户规模、SLO、团队规模、系统寿命</p>
+<p>4. <strong>成熟 = 选简单</strong> — 能用简单方案解决问题，才是真正的技术能力</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [The Wrong Abstraction — Sandi Metz](https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction)</p>
+<p>- [YAGNI — Martin Fowler](https://martinfowler.com/bliki/Yagni.html)</p>
+<p>- [Simple Made Easy — Rich Hickey (Strange Loop Talk)](https://www.youtube.com/watch?v=SxdOUGdseq4)</p>
+
+<h2>🧒 ELI5</h2>
+<p>就像你要烤一个生日蛋糕，结果造了一个商业烘焙工厂。工厂确实可以做蛋糕，但造工厂花了3个月、花了100万，蛋糕的生日早过了。</p>
+
+<p>Like building a commercial bakery when someone asked for a birthday cake. The bakery can definitely make cakes — but it took 3 months and a million dollars, and the birthday was last week.</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 37</h2>
+<p><strong>主题 / Topic:</strong> Virtualization — Rendering 10K Items Without Dying</p>
+<p><strong>类别 / Category:</strong> Performance | <strong>阶段 / Phase:</strong> Mastery</p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个后台 dashboard，需要展示一个有 <strong>10,000 条记录</strong>的交易列表。产品说&quot;不要分页，用户要能滚动看所有数据&quot;。你直接 <code>items.map(item =&gt; &lt;Row /&gt;)</code> 之后，浏览器直接卡死……</p>
+
+<p>You&#x27;re building an admin dashboard that needs to show <strong>10,000 transaction rows</strong>. Product says &quot;no pagination — users should scroll through everything.&quot; You naively <code>items.map(item =&gt; &lt;Row /&gt;)</code> and the browser hangs.</p>
+
+<p><strong>问题根源:</strong> DOM 中存在 10,000 个节点，即使大多数在视口外，浏览器仍然需要布局、样式计算、内存分配全部节点。</p>
+
+<hr/>
+
+<h2>什么是虚拟化 / What is Virtualization?</h2>
+
+<p><strong>核心思路：</strong> 只渲染视口内（及附近缓冲区）的节点，其余用占位符撑满滚动高度。</p>
+
+<pre><code>
+Without virtualization:
+┌─────────────────┐ ← viewport (visible)
+│ Row 1 (DOM)     │
+│ Row 2 (DOM)     │
+│ Row 3 (DOM)     │
+└─────────────────┘
+│ Row 4 (DOM)     │ ← not visible, but still in DOM!
+│ ...             │
+│ Row 10000 (DOM) │ ← all 10K nodes exist
+
+With virtualization:
+┌─────────────────┐ ← viewport
+│ Row 47 (DOM)    │ ← only ~20 rows in DOM
+│ Row 48 (DOM)    │
+│ Row 49 (DOM)    │
+└─────────────────┘
+  (spacer div)      ← fakes scroll height for all 10K rows
+</code></pre>
+
+<hr/>
+
+<h2>代码示例 / Code Example</h2>
+
+<h3>使用 react-window (推荐 / Recommended)</h3>
+
+<pre><code>
+import { FixedSizeList } from &#x27;react-window&#x27;;
+
+interface Transaction {
+  id: string;
+  amount: number;
+  date: string;
+}
+
+const Row = ({ index, style, data }: {
+  index: number;
+  style: React.CSSProperties;
+  data: Transaction[];
+}) =&gt; (
+  // Must apply style prop! It positions the row absolutely
+  &lt;div style={style} className=&quot;flex px-4 items-center border-b&quot;&gt;
+    &lt;span&gt;{data[index].date}&lt;/span&gt;
+    &lt;span className=&quot;ml-auto&quot;&gt;${data[index].amount}&lt;/span&gt;
+  &lt;/div&gt;
+);
+
+export function TransactionList({ transactions }: { transactions: Transaction[] }) {
+  return (
+    &lt;FixedSizeList
+      height={600}        // viewport height
+      itemCount={transactions.length}
+      itemSize={48}       // row height in px (must be fixed for FixedSizeList)
+      width=&quot;100%&quot;
+      itemData={transactions}
+    &gt;
+      {Row}
+    &lt;/FixedSizeList&gt;
+  );
+}
+</code></pre>
+
+<h3>变高行 / Variable Height Rows → 用 react-virtual</h3>
+
+<pre><code>
+import { useVirtualizer } from &#x27;@tanstack/react-virtual&#x27;;
+
+function VariableList({ items }: { items: string[] }) {
+  const parentRef = useRef&lt;HTMLDivElement&gt;(null);
+  
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () =&gt; parentRef.current,
+    estimateSize: () =&gt; 48,  // initial estimate, measured after render
+    overscan: 5,             // extra rows above/below viewport
+  });
+
+  return (
+    &lt;div ref={parentRef} style={{ height: &#x27;600px&#x27;, overflow: &#x27;auto&#x27; }}&gt;
+      {/* Total height spacer */}
+      &lt;div style={{ height: virtualizer.getTotalSize(), position: &#x27;relative&#x27; }}&gt;
+        {virtualizer.getVirtualItems().map((virtualItem) =&gt; (
+          &lt;div
+            key={virtualItem.key}
+            style={{
+              position: &#x27;absolute&#x27;,
+              top: virtualItem.start,
+              width: &#x27;100%&#x27;,
+            }}
+          &gt;
+            {items[virtualItem.index]}
+          &lt;/div&gt;
+        ))}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+
+<hr/>
+
+<h2>猜猜输出 / What Does This Code Do?</h2>
+
+<pre><code>
+// Without style prop:
+const Row = ({ index }: { index: number }) =&gt; (
+  &lt;div className=&quot;row&quot;&gt;{index}&lt;/div&gt;  // ← missing style prop!
+);
+</code></pre>
+
+<p>A) 正常渲染，只是没有虚拟化</p>
+<p>B) 所有行重叠在 top:0 的位置</p>
+<p>C) 什么都不显示</p>
+<p>D) 报错 TypeError</p>
+
+<p>&lt;details&gt;&lt;summary&gt;答案 / Answer&lt;/summary&gt;</p>
+<p><strong>B) 所有行重叠在 top: 0</strong></p>
+
+<p>react-window 通过 <code>style</code> prop 给每行设置 <code>position: absolute; top: Npx; height: 48px</code>。不传 style 的话所有行都默认 <code>top: 0</code>，全部堆叠在列表顶部。这是使用 react-window 最常见的 bug。</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>❌ vs ✅ 对比 / Common Mistakes</h2>
+
+<pre><code>
+// ❌ Forgetting the style prop
+const Row = ({ index, data }) =&gt; (
+  &lt;div&gt;{data[index].name}&lt;/div&gt;  // rows pile up at top!
+);
+
+// ✅ Always apply the style prop
+const Row = ({ index, style, data }) =&gt; (
+  &lt;div style={style}&gt;{data[index].name}&lt;/div&gt;
+);
+
+// ❌ Inline function as children (re-creates on every render)
+&lt;FixedSizeList&gt;
+  {({ index, style }) =&gt; &lt;Row ... /&gt;}
+&lt;/FixedSizeList&gt;
+
+// ✅ Define Row component outside (stable reference)
+const Row = ({ index, style, data }) =&gt; ...;
+&lt;FixedSizeList itemData={items}&gt;{Row}&lt;/FixedSizeList&gt;
+
+// ❌ Using index as key when list can reorder
+{items.map((item, i) =&gt; &lt;Row key={i} /&gt;)}
+
+// ✅ Use stable unique id
+{items.map((item) =&gt; &lt;Row key={item.id} /&gt;)}
+</code></pre>
+
+<hr/>
+
+<h2>何时用 / 何时不用 / When to Use / Not Use</h2>
+
+<p>| ✅ 用虚拟化 / Use | ❌ 不用 / Skip |</p>
+<p>|------------------|---------------|</p>
+<p>| 列表 &gt; 200 条 | 列表 &lt; 100 条 |</p>
+<p>| 每行有复杂 DOM | 静态表格，服务端渲染 |</p>
+<p>| 移动端性能敏感 | 需要 ctrl+F 搜索页面内容 |</p>
+<p>| 无限滚动 | 行高非常不规则且无法估算 |</p>
+
+<p><strong>注意:</strong> 虚拟化使 Ctrl+F（浏览器查找）无法搜索未渲染的行，SEO 也会受影响。</p>
+
+<hr/>
+
+<h2>库对比 / Library Comparison</h2>
+
+<p>| 库 | 特点 | 适用场景 |</p>
+<p>|----|------|---------|</p>
+<p>| <code>react-window</code> | 轻量, 固定/变高行 | 大多数列表场景 |</p>
+<p>| <code>@tanstack/react-virtual</code> | 最灵活, 支持 Grid | 复杂布局 |</p>
+<p>| <code>react-virtuoso</code> | 自动测量高度 | 社交 feed、聊天 |</p>
+<p>| AG Grid | 企业级数据表格 | 复杂 spreadsheet |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [react-window — bvaughn (Brian Vaughn)](https://react-window.vercel.app/)</p>
+<p>- [TanStack Virtual Docs](https://tanstack.com/virtual/latest)</p>
+<p>- [Web.dev — Virtualize large lists with react-window](https://web.dev/articles/virtualize-long-lists-react-window)</p>
+
+<h2>🧒 ELI5</h2>
+<p>你在看一本 1000 页的书，但你只能看到当前打开的那两页。聪明的电脑只&quot;印刷&quot;你正在看的那两页，其余的页只是撑着书的厚度。你翻页时，它才印下一页，同时把之前的页&quot;回收&quot;。这就是虚拟化。</p>
+
+<p>Like reading a 1000-page book, but only the open pages exist in your hands. The smart printer only prints the 2 pages you&#x27;re reading, using blank fillers for thickness. When you turn a page, it prints the next one and &quot;recycles&quot; the previous. That&#x27;s virtualization.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI 新闻 / AI News — Day 37</h2>
+<p><strong>日期 / Date:</strong> 2026-05-07 | <strong>模式 / Mode:</strong> NEWS</p>
+
+<hr/>
+
+<h2>今日 AI 速递 / Today&#x27;s AI Digest</h2>
+
+<h3>📰 Story 1: 中国 Moonshot AI 完成 20 亿美元融资</h3>
+<p><strong>来源:</strong> [TechCrunch — May 7, 2026](https://techcrunch.com/2026/05/07/chinas-moonshot-ai-raises-2b-at-20b-valuation-as-demand-for-open-source-ai-skyrockets/)</p>
+
+<p>中国 AI 公司 Moonshot AI（旗下有 Kimi 大模型）据报道完成了 20 亿美元融资，估值达 200 亿美元。此轮融资背后，是全球对开源 AI 需求的快速增长，以及中国 AI 生态系统在与美国模型竞争中持续发力。</p>
+
+<p>Chinese AI startup Moonshot AI, maker of the Kimi large language model, reportedly closed a $2B fundraising round at a $20B valuation. The round is said to be driven by skyrocketing demand for open-source AI, and underscores the growing competitiveness of China&#x27;s AI ecosystem against US models.</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> 开源 AI 的货币化路径越来越清晰——API 收入 + 订阅双轮驱动。Moonshot 的崛起也是&quot;去中心化 AI&quot;趋势的缩影：世界不再只有一两个 AI 提供商。</p>
+
+<hr/>
+
+<h3>📰 Story 2: Spotify 押注 AI 个人化音频</h3>
+<p><strong>来源:</strong> [TechCrunch — May 7, 2026](https://techcrunch.com/2026/05/07/spotify-wants-to-become-the-home-for-ai-generated-personal-audio/)</p>
+
+<p>Spotify 宣布希望成为 AI 生成个人化音频内容的&quot;大本营&quot;。用户据报道将能够导入由 AI 工具（如 Codex 或 Claude）生成的播客内容并在 Spotify 上播放，平台也在加大对 AI DJ 功能的投入，已扩展到法语、德语、意大利语和葡萄牙语。</p>
+
+<p>Spotify announced ambitions to become the home for AI-generated personal audio. Users will reportedly be able to import AI-generated podcast content (created with tools like Codex or Claude) into Spotify. The platform is also expanding its AI DJ feature to French, German, Italian, and Brazilian Portuguese.</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> 内容创作的 AI 化正在加速。当 AI 可以生成播客、配音、音乐，传统内容平台的护城河从&quot;内容独家&quot;转向&quot;分发渠道&quot;。Spotify 在提前布局。</p>
+
+<hr/>
+
+<h3>📰 Story 3: xAI 变身&quot;新云&quot;公司？</h3>
+<p><strong>来源:</strong> [TechCrunch — May 6, 2026](https://techcrunch.com/2026/05/06/is-xai-a-neocloud-now/)</p>
+
+<p>Elon Musk 的 xAI 据分析正在向&quot;neocloud&quot;（新型 AI 云服务商）转型。其真正的商业模式可能不只是训练 Grok 大模型，而是通过数据中心基础设施向外部客户提供 GPU 算力租赁。这与 CoreWeave、Lambda Labs 等 AI 云的模式类似。</p>
+
+<p>Elon Musk&#x27;s xAI appears to be pivoting toward a &quot;neocloud&quot; model — its real business may be less about training Grok and more about leasing GPU compute capacity from its massive data centers to external clients, similar to CoreWeave and Lambda Labs.</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> AI 基础设施即服务（AIaaS）正成为巨大商机。算力稀缺时代，&quot;卖铲子&quot;（卖 GPU 算力）有时比&quot;淘金&quot;（训练模型）更稳。这也说明 AI 竞争已经从模型层下沉到算力层。</p>
+
+<hr/>
+
+<h2>🔗 本周 AI 趋势总结 / Weekly Trends</h2>
+
+<p>1. <strong>开源 AI 融资热</strong> — 资本押注非 OpenAI 玩家，生态多元化</p>
+<p>2. <strong>AI × 内容平台</strong> — 传统平台开始拥抱 AI 生成内容，抢占分发渠道</p>
+<p>3. <strong>算力经济</strong> — GPU 云和 AI 基础设施成为新的&quot;石油&quot;生意</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>AI 今天像三件事：一家中国 AI 公司拿到了很多钱继续做他们的智能助手；Spotify 想让你可以听 AI 帮你做的播客；马斯克的 AI 公司可能主要是在&quot;租电脑&quot;给别人用，不只是做自己的 AI。</p>
+
+<p>Today in AI: a Chinese AI company raised a lot of money to keep building their assistant; Spotify wants you to listen to AI-made podcasts; and Musk&#x27;s AI company might mostly be in the business of renting out computers, not just building AI.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-06</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
