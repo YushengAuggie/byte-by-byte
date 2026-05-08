@@ -274,3 +274,51 @@
 1. **P1 — send-email.py section drop**: Investigate section assembly in `scripts/send-email.py`. Likely off-by-one or file glob issue that intermittently skips a section.
 2. **P1 — Weekend history gaps**: `scripts/advance-state.sh` may not handle Saturday/Sunday content types. Check if it expects weekday-only section format.
 3. **P2 — Remove bash cron parsing**: Replace the `openclaw cron list --json | python3` block in the optimizer with native cron API call (already working).
+
+---
+
+## 2026-05-07 Optimization Run
+
+### Issues Found
+
+**P0 Critical:**
+1. **5-day delivery gap (Apr 28 – May 2)** — No emails sent for 5 consecutive days. Email log has no entries for Apr 28–May 2. State history confirms: jumps from Day 32 (Apr 27) straight to Day 33 (May 3). Pipeline was completely down for nearly a week. Cause unknown from available data — likely a gateway outage or cron scheduler issue. Content generation and email sending both stopped. Recovery happened May 3 and has been stable since (5/5 days).
+2. **Saturday cron in error state** — `byte-by-byte saturday` job last ran May 2 and failed: `"cron: job interrupted by gateway restart"`. 1 consecutive error. Next run scheduled May 9. This may self-heal on next trigger, but the May 2 Saturday deep-dive was never delivered.
+
+**P1 Quality:**
+- None detected in current window. Recent 5-day streak (May 3–7) all show 2 recipients, successful delivery.
+
+**P2 Maintenance:**
+1. **`openclaw cron list --json` bash parsing still broken** — Config warning lines before JSON cause JSONDecodeError. Known issue since Apr 13. Non-blocking (raw grep works).
+2. **State history missing `status` field** — All history entries show `status=?`. Cosmetic but limits automated auditing.
+3. **No `days/` directory** — Generated content not persisted in per-day folders (may have been removed or never created for this phase).
+
+### Metrics
+- Delivery rate (7d): **5/7** ❌ (missed May 1–2)
+- Delivery rate (14d): **9/14** ❌ (missed Apr 28 – May 2, 5 straight days)
+- Recovery streak: **5 days** (May 3–7, all ✅)
+- Cron errors: **1** — `saturday` job (gateway restart interruption)
+- State: Day 37, all indices advancing (LC=32, SD=31, behavioral=31, frontend=31, AI=15)
+- Recipients per send: 2 (stable)
+
+### Cron Health
+| Job | Last Status | Last Error |
+|-----|-------------|------------|
+| weekday | ok | — |
+| saturday | **error** | gateway restart interruption |
+| sunday | ok | — |
+| review-and-send | ok | — |
+| backup-send | ok | — |
+| optimizer | running | — |
+
+### Trend vs Last Run (Apr 25)
+- Delivery rate: **degraded** (7/7 → 5/7) ⚠️ — 5-day outage is the worst gap to date
+- Recovery: strong, 5 consecutive days since May 3
+- Saturday cron: **new error** from gateway restart
+- Day count: 31 → 37 (+6 in ~12 calendar days, should be ~8 weekdays — 2 lost to outage)
+- Previously flagged P1s (section drops, QA gaps): not observed in current window
+
+### Recommendations (manual action needed)
+1. **P0 — Investigate 5-day outage root cause**: Check gateway logs for Apr 28 – May 2 period. Was the gateway down? Were crons disabled? Understanding the cause prevents recurrence.
+2. **P0 — Saturday cron**: Monitor May 9 run. If it errors again, may need manual re-trigger or cron recreation.
+3. **P2 — Cron JSON parsing**: Strip config warning lines before JSON parse, or switch to `grep -A999 '{'` approach.

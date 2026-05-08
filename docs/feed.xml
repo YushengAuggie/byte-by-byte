@@ -5,8 +5,673 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 07 May 2026 15:12:23 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 08 May 2026 15:09:53 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-08</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-08</guid>
+      <pubDate>Fri, 08 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Design a Payment System (Stripe)</h2>
+
+<p>&gt; Day 38 · Mastery Phase · ~3 min read</p>
+
+<hr/>
+
+<h2>想象你在设计...</h2>
+
+<p>你被要求为一个电商平台设计支付系统，类似 Stripe。每天需要处理数百万笔交易，支持信用卡、数字钱包等多种支付方式，同时保证资金安全和高可用性。</p>
+
+<p><em>Imagine you&#x27;re designing a payment system for an e-commerce platform like Stripe. You need to handle millions of transactions daily, support credit cards and digital wallets, and guarantee both fund security and high availability.</em></p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+Client (Browser/App)
+       │
+       ▼
+  [API Gateway]
+  (TLS, auth, rate limit)
+       │
+  ┌────┴────┐
+  │         │
+  ▼         ▼
+[Payment   [Fraud
+ Service]   Detection]
+  │              │
+  │◄─────────────┘
+  │         (async scoring)
+  ▼
+[Payment Processor]
+(Stripe, Adyen, Braintree)
+       │
+  ┌────┴────────────┐
+  │                 │
+  ▼                 ▼
+[Ledger DB]    [Event Bus]
+(PostgreSQL     (Kafka)
+ + double-entry)    │
+                    ├──► [Notification Service]
+                    ├──► [Analytics Pipeline]
+                    └──► [Reconciliation Service]
+
+[Idempotency Store]  ←── All write requests keyed here
+(Redis)
+</code></pre>
+
+<hr/>
+
+<h2>核心设计决策 / Key Design Decisions</h2>
+
+<h3>1. 幂等性 (Idempotency) — 最关键</h3>
+<p>支付最怕的是<strong>重复扣款</strong>。每个支付请求必须携带唯一 <code>idempotency_key</code>，服务端在 Redis 中记录已处理的请求。</p>
+
+<p><em>The biggest fear in payments is double-charging. Every payment request carries a unique <code>idempotency_key</code>. The service stores processed requests in Redis — if the same key comes again, return the cached result.</em></p>
+
+<pre><code>
+POST /v1/charges
+Idempotency-Key: user-123-order-456-attempt-1
+</code></pre>
+
+<h3>2. 双重记账 (Double-Entry Ledger)</h3>
+<p>银行用了几百年的方法。每笔交易产生两条记录：借方 + 贷方，总和必须为 0。这样账目永远对得上。</p>
+
+<p><em>Banks have used this for centuries. Every transaction creates two entries: debit + credit, always summing to zero. This makes reconciliation trivial and catches bugs immediately.</em></p>
+
+<h3>3. 状态机 (State Machine)</h3>
+<p>支付状态：<code>PENDING → PROCESSING → AUTHORIZED → CAPTURED → SETTLED</code> (or <code>FAILED</code>, <code>REFUNDED</code>)</p>
+
+<p>每个状态转移必须是原子的，使用数据库事务 + 乐观锁防止并发问题。</p>
+
+<p><em>Each state transition must be atomic, using DB transactions + optimistic locking to prevent race conditions.</em></p>
+
+<h3>4. 异步欺诈检测 (Async Fraud Detection)</h3>
+<p>欺诈检测不能阻塞支付流程（延迟太高）。用 Kafka 异步处理：先放行，发现欺诈后退款，同时标记账户。</p>
+
+<p><em>Fraud detection can&#x27;t block the payment flow (too slow). Use Kafka for async processing: approve first, refund + flag if fraud detected. This is the industry standard — 100% fraud prevention is impossible anyway.</em></p>
+
+<hr/>
+
+<h2>为什么这样设计？ / Why These Choices?</h2>
+
+<p>| 决策 | 原因 |</p>
+<p>|------|------|</p>
+<p>| Redis 幂等存储 | 快速 O(1) 查找，支付窗口内有效即可 |</p>
+<p>| PostgreSQL 账本 | ACID 事务、强一致性，资金不能用最终一致 |</p>
+<p>| Kafka 事件流 | 解耦下游服务，支持重放审计 |</p>
+<p>| 状态机 | 防止非法状态转移（不能从 FAILED 直接变 CAPTURED）|</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>直接调用支付网关不处理超时</strong> — 网络超时后你不知道是否扣款成功，必须轮询查询最终状态</p>
+
+<p>❌ <strong>数据库金额用 float</strong> — 浮点数精度问题会导致 $0.01 的差异。<strong>永远用整数存分 (cents)</strong></p>
+
+<p>❌ <strong>忽略退款流程</strong> — 退款和收款一样复杂，需要独立设计</p>
+
+<p>❌ <strong>单点支付网关</strong> — Stripe 也会宕机，需要备用支付通道 (Adyen, Braintree)</p>
+
+<p>✅ <strong>正确做法：</strong> 幂等键 + 整数金额 + 状态机 + 多通道降级</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [Stripe API Idempotent Requests](https://stripe.com/docs/api/idempotent_requests)</p>
+<p>- [Ledger — How Stripe&#x27;s ledger works](https://stripe.com/blog/ledger-stripe-system-for-tracking-and-validating-money-movement)</p>
+<p>- [System Design: Payment System (ByteByteGo)](https://blog.bytebytego.com/p/design-a-payment-system)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你去超市买东西，把购物清单给收银员（支付请求）。收银员把你的名字写在小本本上（幂等键），这样就算你说了两遍&quot;我要结账&quot;，也只收你一次钱。收银员在账本上写&quot;顾客减少 $50，超市增加 $50&quot;（双重记账）。如果你的信用卡被盗，超市会事后发现然后退款——不会为了检查每张卡把所有人都堵在收银台前（异步欺诈检测）。</p>
+
+<p><em>Imagine buying groceries. The cashier writes your name in a notebook (idempotency key) so even if you say &quot;charge me&quot; twice, you only pay once. They record &quot;customer -$50, store +$50&quot; in the ledger (double-entry). If your card was stolen, the store discovers it later and refunds — they don&#x27;t block the checkout line to verify every card (async fraud detection).</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — #981 Time Based Key-Value Store (Medium)</h2>
+
+<p>&gt; Day 38 · Mastery Phase · ~4 min read</p>
+<p>&gt; 🧩 <strong>二分搜索模式 (6/7)</strong> — 在上一题 Search in Rotated Sorted Array 基础上进阶</p>
+
+<hr/>
+
+<h2>🧩 模式回顾 / Pattern Recap (6/7)</h2>
+
+<p>Building on the template from earlier in this block:</p>
+
+<pre><code>
+# 通用二分模板 / Universal Binary Search Template
+left, right = 0, len(arr) - 1
+while left &lt;= right:
+    mid = (left + right) // 2
+    if arr[mid] == target: return mid
+    elif arr[mid] &lt; target: left = mid + 1
+    else: right = mid - 1
+</code></pre>
+
+<p><strong>今天的变体 / Today&#x27;s Variation:</strong> 不是在连续数组中搜索，而是在<strong>时间戳列表</strong>中找&quot;最大的 ≤ target 的值&quot;（upper bound 变体）。核心洞察不变：排除一半搜索空间。</p>
+
+<p><em>Not searching a plain array — searching a list of timestamps for the largest value ≤ target. Same core insight: eliminate half the search space each time.</em></p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 [LeetCode #981](https://leetcode.com/problems/time-based-key-value-store/) 🟡 Medium · 📹 [NeetCode](https://neetcode.io/problems/time-based-key-value-store)</p>
+
+<p>设计一个时间版本的 key-value 存储，支持：</p>
+<p>- <code>set(key, value, timestamp)</code> — 存储 key 在某时间戳的值</p>
+<p>- <code>get(key, timestamp)</code> — 获取 key 在 ≤ timestamp 的<strong>最新</strong>值</p>
+
+<p><em>Design a time-versioned key-value store supporting <code>set(key, value, timestamp)</code> and <code>get(key, timestamp)</code> which returns the value at the largest timestamp ≤ the given timestamp.</em></p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>Git 的版本历史！<code>git log</code> 给你所有提交（按时间排序），<code>git checkout</code> 让你回到&quot;某时间点之前最新的&quot;那次提交。这道题就是实现这个机制。</p>
+
+<p><em>Git version history! <code>git log</code> gives you all commits (sorted by time), and <code>git checkout</code> lets you restore the most recent commit before a given time. This problem implements exactly that.</em></p>
+
+<hr/>
+
+<h2>解题思路 / Approach</h2>
+
+<p>1. 用 <code>defaultdict(list)</code> 存储每个 key 的 <code>(timestamp, value)</code> 列表</p>
+<p>2. <code>set</code> 时直接 append（题目保证时间戳递增，所以自然有序）</p>
+<p>3. <code>get</code> 时对时间戳列表做<strong>二分搜索</strong>，找最大的 ≤ target 的时间戳</p>
+
+<p><em>Use <code>defaultdict(list)</code> to store <code>(timestamp, value)</code> pairs per key. <code>set</code> simply appends (timestamps are guaranteed increasing = naturally sorted). <code>get</code> binary searches the timestamp list for the largest timestamp ≤ target.</em></p>
+
+<hr/>
+
+<h2>Python 解法 / Solution</h2>
+
+<pre><code>
+from collections import defaultdict
+import bisect
+
+class TimeMap:
+    def __init__(self):
+        # key -&gt; list of (timestamp, value), sorted by timestamp
+        self.store = defaultdict(list)
+    
+    def set(self, key: str, value: str, timestamp: int) -&gt; None:
+        self.store[key].append((timestamp, value))
+    
+    def get(self, key: str, timestamp: int) -&gt; str:
+        if key not in self.store:
+            return &quot;&quot;
+        
+        values = self.store[key]  # [(ts1, val1), (ts2, val2), ...]
+        
+        # Binary search: find rightmost timestamp &lt;= target
+        # bisect_right on timestamps
+        left, right = 0, len(values) - 1
+        result = &quot;&quot;
+        
+        while left &lt;= right:
+            mid = (left + right) // 2
+            if values[mid][0] &lt;= timestamp:
+                result = values[mid][1]  # candidate — try to find closer
+                left = mid + 1           # go right (want larger timestamp ≤ target)
+            else:
+                right = mid - 1          # too large, go left
+        
+        return result
+
+# Trace example:
+# set(&quot;foo&quot;, &quot;bar&quot;, 1)  → store[&quot;foo&quot;] = [(1, &quot;bar&quot;)]
+# set(&quot;foo&quot;, &quot;bar2&quot;, 4) → store[&quot;foo&quot;] = [(1, &quot;bar&quot;), (4, &quot;bar2&quot;)]
+# get(&quot;foo&quot;, 4) → binary search [1,4] for ≤4 → ts=4 ✓ → &quot;bar2&quot;
+# get(&quot;foo&quot;, 3) → binary search [1,4] for ≤3 → ts=1 ✓ → &quot;bar&quot;
+# get(&quot;foo&quot;, 0) → ts=1 &gt; 0, right=-1 → result stays &quot;&quot; → &quot;&quot;
+</code></pre>
+
+<p><strong>时间/空间复杂度：</strong></p>
+<p>- <code>set</code>: O(1) 均摊</p>
+<p>- <code>get</code>: O(log n) — n 为该 key 的版本数</p>
+<p>- Space: O(n) — n 为总 set 调用次数</p>
+
+<hr/>
+
+<h2>模板映射 / Template Mapping</h2>
+
+<pre><code>
+标准模板中:            这道题中:
+arr[mid] == target  →  values[mid][0] == timestamp (exact match)
+arr[mid] &lt; target   →  values[mid][0] &lt;= timestamp → result = value; left = mid + 1
+arr[mid] &gt; target   →  values[mid][0] &gt; timestamp  → right = mid - 1
+</code></pre>
+
+<p><strong>关键变化：</strong> 不是找精确值，而是找&quot;最右边满足条件的&quot;。用 <code>result</code> 变量记录候选答案，继续向右搜索。</p>
+
+<p><em>Key difference: not finding exact match but the rightmost satisfying condition. Use a <code>result</code> variable to track the best candidate, keep searching right.</em></p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connection</h2>
+
+<p>这个 block 中的 6 道题都是二分的不同变体：</p>
+
+<p>| 题目 | 变体 |</p>
+<p>|------|------|</p>
+<p>| #704 Binary Search | 基础：精确查找 |</p>
+<p>| #74 Search a 2D Matrix | 把矩阵当 1D 数组 |</p>
+<p>| #875 Koko Eating Bananas | 二分答案（不是数组） |</p>
+<p>| #153 Find Min in Rotated | 找边界点 |</p>
+<p>| #33 Search in Rotated | 判断哪半段有序 |</p>
+<p>| <strong>#981 Time Based KV</strong> | <strong>找最右满足条件的值</strong> |</p>
+<p>| #4 Median of Two Sorted | 下次见 😈 |</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [LeetCode #981](https://leetcode.com/problems/time-based-key-value-store/)</p>
+<p>- [NeetCode Video Solution](https://neetcode.io/problems/time-based-key-value-store)</p>
+<p>- [Python bisect module docs](https://docs.python.org/3/library/bisect.html)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象一本日记本，每页都有日期和内容。你想找&quot;4月3日或之前最新的那页日记&quot;。笨方法是从头翻到第4月3日。聪明方法是先翻到中间——如果中间那页是4月10日，说明太新了，往前翻；如果是3月20日，可以用它但继续往后翻找更新的。每次都排除一半，很快就找到了！</p>
+
+<p><em>Imagine a diary with dated pages. You want &quot;the most recent entry on or before April 3rd.&quot; Dumb way: read every page. Smart way: open to the middle — if it&#x27;s April 10th, it&#x27;s too new so go earlier; if it&#x27;s March 20th, it&#x27;s a candidate but keep looking later. Eliminate half each time — that&#x27;s binary search!</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — How Do You Approach System Design Trade-offs?</h2>
+
+<p>&gt; Day 38 · Mastery Phase · ~2 min read</p>
+
+<hr/>
+
+<h2>为什么这很重要 / Why This Matters</h2>
+
+<p>系统设计面试从来没有&quot;标准答案&quot;。面试官真正在评估的是：<strong>你怎么思考，不是你背了多少</strong>。能清晰表达权衡（trade-off）的工程师，才是 Senior/Staff 工程师的思维模式。</p>
+
+<p><em>System design interviews never have &quot;correct&quot; answers. Interviewers assess how you think, not what you&#x27;ve memorized. Engineers who can articulate trade-offs clearly demonstrate Senior/Staff-level thinking.</em></p>
+
+<hr/>
+
+<h2>核心框架 / Core Framework</h2>
+
+<p>用 <strong>PAST 框架</strong> 组织你的权衡讨论：</p>
+
+<p>- <strong>P</strong>roblem: 先明确核心约束（读多写少？强一致性必须？延迟 vs 吞吐？）</p>
+<p>- <strong>A</strong>lternatives: 列出 2-3 个方案，不要直接跳到答案</p>
+<p>- <strong>S</strong>election: 说明为什么选这个方案（基于约束）</p>
+<p>- <strong>T</strong>rade-offs: 主动说出你的选择放弃了什么</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<p><strong>问题题干：</strong> &quot;How do you approach system design trade-offs?&quot;</p>
+
+<p><strong>Situation（情境）：</strong></p>
+<p>&quot;在设计 X 系统时，我们面临 A 和 B 两个选择...&quot;</p>
+
+<p><strong>Task（任务）：</strong></p>
+<p>&quot;我需要在强一致性和高可用性之间做出决定（CAP theorem），同时满足 &lt;1s 的 p99 延迟要求...&quot;</p>
+
+<p><strong>Action（行动）：</strong></p>
+<p>&quot;我的方法是：先问清楚业务优先级——如果是金融交易，宁可不可用也不能数据不一致；如果是社交 feed，最终一致性完全可以接受。然后我会画出两种方案的架构，估算延迟和成本...&quot;</p>
+
+<p><strong>Result（结果）：</strong></p>
+<p>&quot;通过明确权衡，团队在 30 分钟内达成共识，避免了后来可能的重构...&quot;</p>
+
+<hr/>
+
+<h2>❌ 差回答 vs ✅ 好回答</h2>
+
+<p><strong>❌ Bad:</strong></p>
+<p>&gt; &quot;我会选 microservices，因为它更好扩展。&quot;</p>
+
+<p>（没有说为什么，没有权衡，没有基于约束）</p>
+
+<p><strong>✅ Good:</strong></p>
+<p>&gt; &quot;这取决于几个维度：团队规模、一致性要求、和现有基础设施。如果团队只有 5 人，微服务的运维复杂度会拖累交付速度；如果有强 ACID 要求，分布式事务会很痛苦。在这个场景下，我会先从 modular monolith 开始，等扩展瓶颈出现后再拆分。&quot;</p>
+
+<hr/>
+
+<h2>Senior/Staff 进阶技巧 / Senior/Staff Tips</h2>
+
+<p>1. <strong>主动引导对话</strong>：&quot;我想先明确几个约束，这会决定我的方向——DAU 是多少？数据一致性要求是什么？预算约束呢？&quot;</p>
+
+<p>2. <strong>用数字锚定讨论</strong>：&quot;如果写入 QPS 超过 10K，单机 MySQL 就到瓶颈了，我们需要 sharding 或 NoSQL&quot;</p>
+
+<p>3. <strong>预判面试官的 follow-up</strong>：&quot;我选择了 eventual consistency，这意味着用户可能看到短暂的不一致——我们可以用 client-side cache 或 read-your-write consistency 缓解这个问题&quot;</p>
+
+<p>4. <strong>承认不确定性</strong>：&quot;这我不确定，但我会这样评估...&quot; — 这比假装确定更加分</p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>- 权衡不是背答案，是展示<strong>思维过程</strong></p>
+<p>- 先问约束，再提方案——顺序很重要</p>
+<p>- 主动说出&quot;我选择 X 意味着放弃 Y&quot;，比等面试官问更加分</p>
+<p>- Staff 工程师的标志：能把技术决策和<strong>业务影响</strong>连接起来</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [Designing Data-Intensive Applications — Martin Kleppmann](https://dataintensive.net/)</p>
+<p>- [The Senior Engineer Checklist — blog.pragmaticengineer.com](https://blog.pragmaticengineer.com/the-senior-engineer-checklist/)</p>
+<p>- [How to Answer System Design Questions — interviewing.io](https://interviewing.io/guides/system-design-interview)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>如果你妈问你&quot;今晚想吃什么&quot;，说&quot;随便&quot;是最差的回答。好的回答是：&quot;如果你不想花太多时间，我们吃面；如果想吃得健康，可以做沙拉；如果今天你很累，我来做简单的炒饭。你最看重哪个？&quot;这就是系统设计权衡——先搞清楚优先级，然后给出基于约束的方案。</p>
+
+<p><em>If your mom asks &quot;what do you want for dinner?&quot;, &quot;anything&quot; is the worst answer. A good answer: &quot;If you don&#x27;t want to spend much time, noodles; if you want healthy, salad; if you&#x27;re tired, I&#x27;ll make easy fried rice. Which matters most?&quot; That&#x27;s system design trade-offs — clarify priorities first, then propose based on constraints.</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Code Splitting &amp; Lazy Loading — Ship Less JS</h2>
+
+<p>&gt; Day 38 · Mastery Phase · ~2 min read</p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个 SaaS dashboard，包含主页、分析报表、设置页、和管理员页面。用户打开首页，却要等待所有页面的 JavaScript 加载完——包括他们根本不会用的管理员功能。这就是需要 Code Splitting 的典型场景。</p>
+
+<p><em>You&#x27;re building a SaaS dashboard with home, analytics, settings, and admin pages. Users open the home page but wait for ALL pages&#x27; JavaScript to load — including admin features they&#x27;ll never use. This is the classic code splitting use case.</em></p>
+
+<hr/>
+
+<h2>核心概念 / Core Concept</h2>
+
+<p><strong>Code Splitting（代码分割）</strong> = 把 JS bundle 拆成多个小文件，按需加载</p>
+<p><strong>Lazy Loading（懒加载）</strong> = 用户访问某页面/组件时才加载对应代码</p>
+
+<p>React 内置支持：<code>React.lazy()</code> + <code>Suspense</code></p>
+
+<hr/>
+
+<h2>代码示例 / Code Examples</h2>
+
+<h3>基础用法 / Basic Usage</h3>
+
+<pre><code>
+import React, { lazy, Suspense } from &#x27;react&#x27;;
+
+// ❌ 同步导入 — 打包进主 bundle
+// import AdminPage from &#x27;./AdminPage&#x27;;
+
+// ✅ 懒加载 — 只在用户访问时才下载
+const AdminPage = lazy(() =&gt; import(&#x27;./AdminPage&#x27;));
+const AnalyticsPage = lazy(() =&gt; import(&#x27;./AnalyticsPage&#x27;));
+
+function App() {
+  return (
+    // Suspense 必须包裹懒加载组件 — 显示 loading 状态
+    &lt;Suspense fallback={&lt;div&gt;Loading...&lt;/div&gt;}&gt;
+      &lt;Routes&gt;
+        &lt;Route path=&quot;/admin&quot; element={&lt;AdminPage /&gt;} /&gt;
+        &lt;Route path=&quot;/analytics&quot; element={&lt;AnalyticsPage /&gt;} /&gt;
+      &lt;/Routes&gt;
+    &lt;/Suspense&gt;
+  );
+}
+</code></pre>
+
+<h3>Next.js 中的写法 / In Next.js</h3>
+
+<pre><code>
+import dynamic from &#x27;next/dynamic&#x27;;
+
+// Next.js 的 dynamic() = React.lazy() 的增强版
+const HeavyChart = dynamic(() =&gt; import(&#x27;./HeavyChart&#x27;), {
+  loading: () =&gt; &lt;p&gt;Loading chart...&lt;/p&gt;,
+  ssr: false,  // 禁用 SSR（对只在浏览器运行的库有用，如 D3）
+});
+
+// 也可以按条件懒加载
+const AdminPanel = dynamic(() =&gt; import(&#x27;./AdminPanel&#x27;), {
+  ssr: false,
+});
+</code></pre>
+
+<hr/>
+
+<h2>猜猜输出 / Quiz</h2>
+
+<pre><code>
+const LazyComp = lazy(() =&gt; import(&#x27;./HeavyComponent&#x27;));
+
+function App() {
+  const [show, setShow] = useState(false);
+  return (
+    &lt;&gt;
+      &lt;button onClick={() =&gt; setShow(true)}&gt;Show&lt;/button&gt;
+      {show &amp;&amp; (
+        &lt;Suspense fallback={&lt;p&gt;Loading...&lt;/p&gt;}&gt;
+          &lt;LazyComp /&gt;
+        &lt;/Suspense&gt;
+      )}
+    &lt;/&gt;
+  );
+}
+</code></pre>
+
+<p>首次点击 &quot;Show&quot; 按钮时会发生什么？</p>
+
+<p><strong>A)</strong> HeavyComponent 立即显示</p>
+<p><strong>B)</strong> 先显示 &quot;Loading...&quot;，然后显示组件</p>
+<p><strong>C)</strong> 报错，因为 Suspense 没在 Router 里</p>
+<p><strong>D)</strong> 什么都不发生，需要再次点击</p>
+
+<p>答案：<strong>B</strong> — React 触发网络请求下载 HeavyComponent 的 chunk，期间显示 fallback，加载完成后渲染组件。</p>
+
+<hr/>
+
+<h2>❌ 错误做法 vs ✅ 正确做法</h2>
+
+<pre><code>
+// ❌ 在组件内部定义 lazy — 每次渲染都重新创建
+function Parent() {
+  const LazyChild = lazy(() =&gt; import(&#x27;./Child&#x27;)); // BUG!
+  return &lt;Suspense fallback={null}&gt;&lt;LazyChild /&gt;&lt;/Suspense&gt;;
+}
+
+// ✅ 在模块顶层定义 — 只创建一次
+const LazyChild = lazy(() =&gt; import(&#x27;./Child&#x27;));
+
+function Parent() {
+  return &lt;Suspense fallback={null}&gt;&lt;LazyChild /&gt;&lt;/Suspense&gt;;
+}
+</code></pre>
+
+<pre><code>
+// ❌ 忘记 Suspense boundary — 会崩溃
+function App() {
+  return &lt;LazyComp /&gt;; // Error: A React component suspended without Suspense
+}
+
+// ✅ 始终包裹 Suspense
+function App() {
+  return (
+    &lt;Suspense fallback={&lt;Spinner /&gt;}&gt;
+      &lt;LazyComp /&gt;
+    &lt;/Suspense&gt;
+  );
+}
+</code></pre>
+
+<hr/>
+
+<h2>什么时候用 / When to Use</h2>
+
+<p><strong>✅ 适合懒加载：</strong></p>
+<p>- 路由级别的页面组件（最大收益）</p>
+<p>- 大型图表库（ECharts、D3、recharts）</p>
+<p>- 富文本编辑器（Quill、TipTap）</p>
+<p>- 弹窗/Modal（用户不一定会打开）</p>
+<p>- 管理员/权限功能</p>
+
+<p><strong>⛔ 不适合懒加载：</strong></p>
+<p>- 首屏必须显示的内容（会加重 LCP）</p>
+<p>- 非常小的组件（拆分开销 &gt; 收益）</p>
+<p>- 频繁切换的 Tab 内容（每次切换都重新加载）</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [React.lazy &amp; Suspense — React Docs](https://react.dev/reference/react/lazy)</p>
+<p>- [Next.js dynamic imports](https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading)</p>
+<p>- [Web.dev: Code splitting guide](https://web.dev/articles/code-splitting-suspense)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象一家餐厅，菜单上有 100 道菜。笨方法是开门就把所有菜都做好放着等（用户打开网页就加载所有 JS）。聪明方法是只备好常见菜，等有人点特殊菜再做（懒加载）。这样开门快，大多数客人不用等，偶尔点特殊菜的人稍等片刻——总体体验更好。</p>
+
+<p><em>Imagine a restaurant with 100 dishes. Dumb way: cook everything when you open (load all JS at page load). Smart way: prep common dishes, cook special ones when ordered (lazy loading). Faster opening, most customers don&#x27;t wait, occasional special orders take a moment — overall better experience.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Diffusion Models — How Image Generation Works</h2>
+
+<p>&gt; Day 38 · Mastery Phase · ~2 min read</p>
+
+<hr/>
+
+<h2>直觉理解 / Intuition</h2>
+
+<p>你有没有想过，Midjourney 和 DALL-E 怎么从文字生成图片？</p>
+
+<p>它们用的是<strong>扩散模型（Diffusion Models）</strong>。核心思路出乎意料地简单：<strong>先把图片弄乱，再学怎么恢复</strong>。</p>
+
+<p><em>Ever wonder how Midjourney and DALL-E generate images from text? They use Diffusion Models. The core idea is surprisingly simple: first learn to destroy an image, then learn to reverse that destruction.</em></p>
+
+<hr/>
+
+<h2>工作原理 / How It Works</h2>
+
+<h3>两个阶段 / Two Phases</h3>
+
+<p><strong>前向扩散（加噪）/ Forward Process (Noising):</strong></p>
+<pre><code>
+清晰图片 → [加一点噪声] → [再加一点] → ... → 纯随机噪声
+Cat photo → slightly noisy → more noisy → ... → pure Gaussian noise
+</code></pre>
+<p>这个过程是固定的，不需要学习，只需要逐步加高斯噪声。经过 ~1000 步后，图片变成纯噪声。</p>
+
+<p><em>Fixed, no learning needed. Just gradually add Gaussian noise over ~1000 steps until the image is pure noise.</em></p>
+
+<p><strong>反向扩散（去噪）/ Reverse Process (Denoising):</strong></p>
+<pre><code>
+纯噪声 → [预测并去掉噪声] → ... → 清晰图片
+Noise → [predict &amp; remove noise] → ... → clean image
+</code></pre>
+<p>神经网络学习<strong>每一步应该去掉多少噪声</strong>。训练完成后，从随机噪声出发，就能生成全新图片。</p>
+
+<p><em>The neural network learns &quot;how much noise to remove at each step.&quot; After training, start from random noise → generate new images.</em></p>
+
+<hr/>
+
+<h2>架构进化 / Architecture Evolution</h2>
+
+<pre><code>
+早期 (2020-2021)           现在 (2024-2025)
+U-Net                  →   DiT (Diffusion Transformer)
+像素空间               →   潜在空间 (Latent Space)
+纯噪声输入             →   文字/图像条件控制
+数百步生成             →   1-4步 (Consistency Models)
+</code></pre>
+
+<p><strong>关键进步 — 潜在扩散 (Latent Diffusion):</strong></p>
+<p>Stable Diffusion 的秘诀：先用 VAE 把图片压缩到更小的潜在空间（512×512 → 64×64），再在潜在空间做扩散。<strong>计算量减少 64 倍</strong>！</p>
+
+<p><em>Stable Diffusion&#x27;s secret: compress image to latent space first (512×512 → 64×64), then do diffusion there. 64x less computation!</em></p>
+
+<hr/>
+
+<h2>可运行代码 / Runnable Python</h2>
+
+<pre><code>
+# pip install diffusers transformers torch accelerate
+from diffusers import StableDiffusionPipeline
+import torch
+
+# Load Stable Diffusion (uses latent diffusion internally)
+pipe = StableDiffusionPipeline.from_pretrained(
+    &quot;runwayml/stable-diffusion-v1-5&quot;,
+    torch_dtype=torch.float16
+).to(&quot;cuda&quot;)  # use &quot;cpu&quot; if no GPU
+
+# Generate from text prompt
+image = pipe(
+    prompt=&quot;a futuristic city at sunset, photorealistic&quot;,
+    negative_prompt=&quot;blurry, low quality&quot;,
+    num_inference_steps=20,  # fewer steps = faster but lower quality
+    guidance_scale=7.5,      # higher = more prompt-adherent, less creative
+).images[0]
+
+image.save(&quot;output.png&quot;)
+print(&quot;Done! Check output.png&quot;)
+</code></pre>
+
+<hr/>
+
+<h2>文字引导的秘密 / The Secret of Text Guidance</h2>
+
+<p>纯扩散模型生成随机图片。<strong>CLIP + Classifier-Free Guidance</strong> 让它生成&quot;符合描述的&quot;图片：</p>
+
+<p>训练时，模型同时学习&quot;有文字条件&quot;和&quot;无文字条件&quot;的去噪。生成时：</p>
+<pre><code>
+最终噪声预测 = 无条件预测 + guidance_scale × (有条件预测 - 无条件预测)
+</code></pre>
+<p><code>guidance_scale</code> 越大，图片越贴近文字描述，但多样性降低。</p>
+
+<p><em>CLIP + Classifier-Free Guidance: during generation, blend conditional and unconditional predictions. Higher guidance_scale = more prompt-adherent but less diverse.</em></p>
+
+<hr/>
+
+<h2>应用 / Applications</h2>
+
+<p>- 🎨 图像生成：Midjourney、DALL-E 3、Stable Diffusion</p>
+<p>- 🎬 视频生成：Sora、Runway Gen-3</p>
+<p>- 🧬 蛋白质结构预测（RoseTTAFold Diffusion）</p>
+<p>- 💊 药物分子设计</p>
+<p>- 🗣️ 语音合成：Voicebox (Meta)</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [Denoising Diffusion Probabilistic Models (Ho et al., 2020)](https://arxiv.org/abs/2006.11239)</p>
+<p>- [The Illustrated Diffusion Models — jalammar.github.io](https://jalammar.github.io/illustrated-stable-diffusion/)</p>
+<p>- [Hugging Face Diffusers Library](https://huggingface.co/docs/diffusers/index)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你要学画猫。聪明的方法：找1000张猫的照片，把每张都逐渐涂上白色（加噪声），直到完全看不出来。然后训练自己&quot;从白色一点点还原出猫&quot;（去噪）。练熟了之后，给你一张纯白纸，你就能凭空画出一只猫！扩散模型就是这么工作的——它学会了&quot;从混乱中创造秩序&quot;。</p>
+
+<p><em>Imagine learning to draw cats. Smart approach: take 1000 cat photos, gradually paint them white (add noise) until unrecognizable. Then train yourself to &quot;restore the cat from white&quot; (denoise). Once mastered, give you a blank white page — you can draw a cat from scratch! Diffusion models work exactly this way — they learn to create order from chaos.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-07</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

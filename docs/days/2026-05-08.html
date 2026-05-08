@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-05-08</title>
+  <meta name="description" content="byte-by-byte daily lessons for Friday, May 8, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Friday, May 8, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-05-08.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-05-07.html" style="color:var(--text2)">← 2026-05-07</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-05-08</span>
+    <h1>Friday, May 8, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-05-07.html" class="day-nav-btn">← 2026-05-07</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Design a Payment System (Stripe)</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 / System Design — Design a Payment System (Stripe)</h1>
+
+<blockquote>Day 38 · Mastery Phase · ~3 min read</blockquote>
+
+<hr/>
+
+<h2>想象你在设计...</h2>
+
+<p>你被要求为一个电商平台设计支付系统，类似 Stripe。每天需要处理数百万笔交易，支持信用卡、数字钱包等多种支付方式，同时保证资金安全和高可用性。</p>
+
+<p><em>Imagine you're designing a payment system for an e-commerce platform like Stripe. You need to handle millions of transactions daily, support credit cards and digital wallets, and guarantee both fund security and high availability.</em></p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<div class="diagram-block">Client (Browser/App)
+       │
+       ▼
+  [API Gateway]
+  (TLS, auth, rate limit)
+       │
+  ┌────┴────┐
+  │         │
+  ▼         ▼
+[Payment   [Fraud
+ Service]   Detection]
+  │              │
+  │◄─────────────┘
+  │         (async scoring)
+  ▼
+[Payment Processor]
+(Stripe, Adyen, Braintree)
+       │
+  ┌────┴────────────┐
+  │                 │
+  ▼                 ▼
+[Ledger DB]    [Event Bus]
+(PostgreSQL     (Kafka)
+ + double-entry)    │
+                    ├──► [Notification Service]
+                    ├──► [Analytics Pipeline]
+                    └──► [Reconciliation Service]
+
+[Idempotency Store]  ←── All write requests keyed here
+(Redis)</div>
+
+<hr/>
+
+<h2>核心设计决策 / Key Design Decisions</h2>
+
+<h3>1. 幂等性 (Idempotency) — 最关键</h3>
+<p>支付最怕的是<strong>重复扣款</strong>。每个支付请求必须携带唯一 <code>idempotency_key</code>，服务端在 Redis 中记录已处理的请求。</p>
+
+<p><em>The biggest fear in payments is double-charging. Every payment request carries a unique <code>idempotency_key</code>. The service stores processed requests in Redis — if the same key comes again, return the cached result.</em></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="POST /v1/charges&#10;Idempotency-Key: user-123-order-456-attempt-1">Copy</button>
+  <pre><code class="language-text">POST /v1/charges
+Idempotency-Key: user-123-order-456-attempt-1</code></pre>
+</div>
+
+<h3>2. 双重记账 (Double-Entry Ledger)</h3>
+<p>银行用了几百年的方法。每笔交易产生两条记录：借方 + 贷方，总和必须为 0。这样账目永远对得上。</p>
+
+<p><em>Banks have used this for centuries. Every transaction creates two entries: debit + credit, always summing to zero. This makes reconciliation trivial and catches bugs immediately.</em></p>
+
+<h3>3. 状态机 (State Machine)</h3>
+<div class="diagram-block">支付状态：`PENDING → PROCESSING → AUTHORIZED → CAPTURED → SETTLED` (or `FAILED`, `REFUNDED`)</div>
+
+<p>每个状态转移必须是原子的，使用数据库事务 + 乐观锁防止并发问题。</p>
+
+<p><em>Each state transition must be atomic, using DB transactions + optimistic locking to prevent race conditions.</em></p>
+
+<h3>4. 异步欺诈检测 (Async Fraud Detection)</h3>
+<p>欺诈检测不能阻塞支付流程（延迟太高）。用 Kafka 异步处理：先放行，发现欺诈后退款，同时标记账户。</p>
+
+<p><em>Fraud detection can't block the payment flow (too slow). Use Kafka for async processing: approve first, refund + flag if fraud detected. This is the industry standard — 100% fraud prevention is impossible anyway.</em></p>
+
+<hr/>
+
+<h2>为什么这样设计？ / Why These Choices?</h2>
+
+<table><thead><tr><th>决策</th><th>原因</th></tr></thead><tbody><tr><td>Redis 幂等存储</td><td>快速 O(1) 查找，支付窗口内有效即可</td></tr><tr><td>PostgreSQL 账本</td><td>ACID 事务、强一致性，资金不能用最终一致</td></tr><tr><td>Kafka 事件流</td><td>解耦下游服务，支持重放审计</td></tr><tr><td>状态机</td><td>防止非法状态转移（不能从 FAILED 直接变 CAPTURED）</td></tr></tbody></table>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>直接调用支付网关不处理超时</strong> — 网络超时后你不知道是否扣款成功，必须轮询查询最终状态</p>
+
+<p>❌ <strong>数据库金额用 float</strong> — 浮点数精度问题会导致 $0.01 的差异。<strong>永远用整数存分 (cents)</strong></p>
+
+<p>❌ <strong>忽略退款流程</strong> — 退款和收款一样复杂，需要独立设计</p>
+
+<p>❌ <strong>单点支付网关</strong> — Stripe 也会宕机，需要备用支付通道 (Adyen, Braintree)</p>
+
+<p>✅ <strong>正确做法：</strong> 幂等键 + 整数金额 + 状态机 + 多通道降级</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<ul><li><a href="https://stripe.com/docs/api/idempotent_requests">Stripe API Idempotent Requests</a></li><li><a href="https://stripe.com/blog/ledger-stripe-system-for-tracking-and-validating-money-movement">Ledger — How Stripe's ledger works</a></li><li><a href="https://blog.bytebytego.com/p/design-a-payment-system">System Design: Payment System (ByteByteGo)</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你去超市买东西，把购物清单给收银员（支付请求）。收银员把你的名字写在小本本上（幂等键），这样就算你说了两遍"我要结账"，也只收你一次钱。收银员在账本上写"顾客减少 $50，超市增加 $50"（双重记账）。如果你的信用卡被盗，超市会事后发现然后退款——不会为了检查每张卡把所有人都堵在收银台前（异步欺诈检测）。</p>
+
+<p><em>Imagine buying groceries. The cashier writes your name in a notebook (idempotency key) so even if you say "charge me" twice, you only pay once. They record "customer -$50, store +$50" in the ledger (double-entry). If your card was stolen, the store discovers it later and refunds — they don't block the checkout line to verify every card (async fraud detection).</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — #981 Time Based Key-Value Store (Medium)</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 / Algorithms — #981 Time Based Key-Value Store (Medium)</h1>
+
+<blockquote>Day 38 · Mastery Phase · ~4 min read</blockquote>
+<blockquote>🧩 <strong>二分搜索模式 (6/7)</strong> — 在上一题 Search in Rotated Sorted Array 基础上进阶</blockquote>
+
+<hr/>
+
+<h2>🧩 模式回顾 / Pattern Recap (6/7)</h2>
+
+<p>Building on the template from earlier in this block:</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# 通用二分模板 / Universal Binary Search Template&#10;left, right = 0, len(arr) - 1&#10;while left &lt;= right:&#10;    mid = (left + right) // 2&#10;    if arr[mid] == target: return mid&#10;    elif arr[mid] &lt; target: left = mid + 1&#10;    else: right = mid - 1">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># 通用二分模板 / Universal Binary Search Template</span>
+left, right = <span style="color:#56b6c2;">0</span>, len(arr) - <span style="color:#56b6c2;">1</span>
+<span style="color:#c678dd;">while</span> left &lt;= right:
+    mid = (left + right) // <span style="color:#56b6c2;">2</span>
+    <span style="color:#c678dd;">if</span> arr[mid] == target: <span style="color:#c678dd;">return</span> mid
+    <span style="color:#c678dd;">elif</span> arr[mid] &lt; target: left = mid + <span style="color:#56b6c2;">1</span>
+    <span style="color:#c678dd;">else</span>: right = mid - <span style="color:#56b6c2;">1</span></code></pre>
+</div>
+
+<p><strong>今天的变体 / Today's Variation:</strong> 不是在连续数组中搜索，而是在<strong>时间戳列表</strong>中找"最大的 ≤ target 的值"（upper bound 变体）。核心洞察不变：排除一半搜索空间。</p>
+
+<p><em>Not searching a plain array — searching a list of timestamps for the largest value ≤ target. Same core insight: eliminate half the search space each time.</em></p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 <a href="https://leetcode.com/problems/time-based-key-value-store/">LeetCode #981</a> 🟡 Medium · 📹 <a href="https://neetcode.io/problems/time-based-key-value-store">NeetCode</a></p>
+
+<p>设计一个时间版本的 key-value 存储，支持：</p>
+<ul><li><code>set(key, value, timestamp)</code> — 存储 key 在某时间戳的值</li><li><code>get(key, timestamp)</code> — 获取 key 在 ≤ timestamp 的<strong>最新</strong>值</li></ul>
+
+<p><em>Design a time-versioned key-value store supporting <code>set(key, value, timestamp)</code> and <code>get(key, timestamp)</code> which returns the value at the largest timestamp ≤ the given timestamp.</em></p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>Git 的版本历史！<code>git log</code> 给你所有提交（按时间排序），<code>git checkout</code> 让你回到"某时间点之前最新的"那次提交。这道题就是实现这个机制。</p>
+
+<p><em>Git version history! <code>git log</code> gives you all commits (sorted by time), and <code>git checkout</code> lets you restore the most recent commit before a given time. This problem implements exactly that.</em></p>
+
+<hr/>
+
+<h2>解题思路 / Approach</h2>
+
+<ol><li>用 <code>defaultdict(list)</code> 存储每个 key 的 <code>(timestamp, value)</code> 列表</li><li><code>set</code> 时直接 append（题目保证时间戳递增，所以自然有序）</li><li><code>get</code> 时对时间戳列表做<strong>二分搜索</strong>，找最大的 ≤ target 的时间戳</li></ol>
+
+<p><em>Use <code>defaultdict(list)</code> to store <code>(timestamp, value)</code> pairs per key. <code>set</code> simply appends (timestamps are guaranteed increasing = naturally sorted). <code>get</code> binary searches the timestamp list for the largest timestamp ≤ target.</em></p>
+
+<hr/>
+
+<h2>Python 解法 / Solution</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from collections import defaultdict&#10;import bisect&#10;&#10;class TimeMap:&#10;    def __init__(self):&#10;        # key -&gt; list of (timestamp, value), sorted by timestamp&#10;        self.store = defaultdict(list)&#10;    &#10;    def set(self, key: str, value: str, timestamp: int) -&gt; None:&#10;        self.store[key].append((timestamp, value))&#10;    &#10;    def get(self, key: str, timestamp: int) -&gt; str:&#10;        if key not in self.store:&#10;            return &quot;&quot;&#10;        &#10;        values = self.store[key]  # [(ts1, val1), (ts2, val2), ...]&#10;        &#10;        # Binary search: find rightmost timestamp &lt;= target&#10;        # bisect_right on timestamps&#10;        left, right = 0, len(values) - 1&#10;        result = &quot;&quot;&#10;        &#10;        while left &lt;= right:&#10;            mid = (left + right) // 2&#10;            if values[mid][0] &lt;= timestamp:&#10;                result = values[mid][1]  # candidate — try to find closer&#10;                left = mid + 1           # go right (want larger timestamp ≤ target)&#10;            else:&#10;                right = mid - 1          # too large, go left&#10;        &#10;        return result&#10;&#10;# Trace example:&#10;# set(&quot;foo&quot;, &quot;bar&quot;, 1)  → store[&quot;foo&quot;] = [(1, &quot;bar&quot;)]&#10;# set(&quot;foo&quot;, &quot;bar2&quot;, 4) → store[&quot;foo&quot;] = [(1, &quot;bar&quot;), (4, &quot;bar2&quot;)]&#10;# get(&quot;foo&quot;, 4) → binary search [1,4] for ≤4 → ts=4 ✓ → &quot;bar2&quot;&#10;# get(&quot;foo&quot;, 3) → binary search [1,4] for ≤3 → ts=1 ✓ → &quot;bar&quot;&#10;# get(&quot;foo&quot;, 0) → ts=1 &gt; 0, right=-1 → result stays &quot;&quot; → &quot;&quot;">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> collections <span style="color:#c678dd;">import</span> defaultdict
+<span style="color:#c678dd;">import</span> bisect
+
+<span style="color:#c678dd;">class</span> TimeMap:
+    <span style="color:#c678dd;">def</span> __init__(self):
+        <span style="color:#5c6370;"># key -&gt; list of (timestamp, value), sorted by timestamp</span>
+        self.store = defaultdict(list)
+    
+    <span style="color:#c678dd;">def</span> set(self, key: str, value: str, timestamp: int) -&gt; <span style="color:#c678dd;">None</span>:
+        self.store[key].append((timestamp, value))
+    
+    <span style="color:#c678dd;">def</span> get(self, key: str, timestamp: int) -&gt; str:
+        <span style="color:#c678dd;">if</span> key <span style="color:#c678dd;">not</span> <span style="color:#c678dd;">in</span> self.store:
+            <span style="color:#c678dd;">return</span> <span style="color:#e5c07b;">""</span>
+        
+        values = self.store[key]  <span style="color:#5c6370;"># [(ts1, val1), (ts2, val2), ...]</span>
+        
+        <span style="color:#5c6370;"># Binary search: find rightmost timestamp &lt;= target</span>
+        <span style="color:#5c6370;"># bisect_right on timestamps</span>
+        left, right = <span style="color:#56b6c2;">0</span>, len(values) - <span style="color:#56b6c2;">1</span>
+        result = <span style="color:#e5c07b;">""</span>
+        
+        <span style="color:#c678dd;">while</span> left &lt;= right:
+            mid = (left + right) // <span style="color:#56b6c2;">2</span>
+            <span style="color:#c678dd;">if</span> values[mid][<span style="color:#56b6c2;">0</span>] &lt;= timestamp:
+                result = values[mid][<span style="color:#56b6c2;">1</span>]  <span style="color:#5c6370;"># candidate — try to find closer</span>
+                left = mid + <span style="color:#56b6c2;">1</span>           <span style="color:#5c6370;"># go right (want larger timestamp ≤ target)</span>
+            <span style="color:#c678dd;">else</span>:
+                right = mid - <span style="color:#56b6c2;">1</span>          <span style="color:#5c6370;"># too large, go left</span>
+        
+        <span style="color:#c678dd;">return</span> result
+
+<span style="color:#5c6370;"># Trace example:</span>
+<span style="color:#5c6370;"># set("foo", "bar", 1)  → store["foo"] = [(1, "bar")]</span>
+<span style="color:#5c6370;"># set("foo", "bar2", 4) → store["foo"] = [(1, "bar"), (4, "bar2")]</span>
+<span style="color:#5c6370;"># get("foo", 4) → binary search [1,4] for ≤4 → ts=4 ✓ → "bar2"</span>
+<span style="color:#5c6370;"># get("foo", 3) → binary search [1,4] for ≤3 → ts=1 ✓ → "bar"</span>
+<span style="color:#5c6370;"># get("foo", 0) → ts=1 &gt; 0, right=-1 → result stays "" → ""</span></code></pre>
+</div>
+
+<p><strong>时间/空间复杂度：</strong></p>
+<ul><li><code>set</code>: O(1) 均摊</li><li><code>get</code>: O(log n) — n 为该 key 的版本数</li><li>Space: O(n) — n 为总 set 调用次数</li></ul>
+
+<hr/>
+
+<h2>模板映射 / Template Mapping</h2>
+
+<div class="diagram-block">标准模板中:            这道题中:
+arr[mid] == target  →  values[mid][0] == timestamp (exact match)
+arr[mid] &lt; target   →  values[mid][0] &lt;= timestamp → result = value; left = mid + 1
+arr[mid] &gt; target   →  values[mid][0] &gt; timestamp  → right = mid - 1</div>
+
+<p><strong>关键变化：</strong> 不是找精确值，而是找"最右边满足条件的"。用 <code>result</code> 变量记录候选答案，继续向右搜索。</p>
+
+<p><em>Key difference: not finding exact match but the rightmost satisfying condition. Use a <code>result</code> variable to track the best candidate, keep searching right.</em></p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connection</h2>
+
+<p>这个 block 中的 6 道题都是二分的不同变体：</p>
+
+<table><thead><tr><th>题目</th><th>变体</th></tr></thead><tbody><tr><td>#704 Binary Search</td><td>基础：精确查找</td></tr><tr><td>#74 Search a 2D Matrix</td><td>把矩阵当 1D 数组</td></tr><tr><td>#875 Koko Eating Bananas</td><td>二分答案（不是数组）</td></tr><tr><td>#153 Find Min in Rotated</td><td>找边界点</td></tr><tr><td>#33 Search in Rotated</td><td>判断哪半段有序</td></tr><tr><td><strong>#981 Time Based KV</strong></td><td><strong>找最右满足条件的值</strong></td></tr><tr><td>#4 Median of Two Sorted</td><td>下次见 😈</td></tr></tbody></table>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<ul><li><a href="https://leetcode.com/problems/time-based-key-value-store/">LeetCode #981</a></li><li><a href="https://neetcode.io/problems/time-based-key-value-store">NeetCode Video Solution</a></li><li><a href="https://docs.python.org/3/library/bisect.html">Python bisect module docs</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象一本日记本，每页都有日期和内容。你想找"4月3日或之前最新的那页日记"。笨方法是从头翻到第4月3日。聪明方法是先翻到中间——如果中间那页是4月10日，说明太新了，往前翻；如果是3月20日，可以用它但继续往后翻找更新的。每次都排除一半，很快就找到了！</p>
+
+<p><em>Imagine a diary with dated pages. You want "the most recent entry on or before April 3rd." Dumb way: read every page. Smart way: open to the middle — if it's April 10th, it's too new so go earlier; if it's March 20th, it's a candidate but keep looking later. Eliminate half each time — that's binary search!</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — How Do You Approach System Design Trade-offs?</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 / Soft Skills — How Do You Approach System Design Trade-offs?</h1>
+
+<blockquote>Day 38 · Mastery Phase · ~2 min read</blockquote>
+
+<hr/>
+
+<h2>为什么这很重要 / Why This Matters</h2>
+
+<p>系统设计面试从来没有"标准答案"。面试官真正在评估的是：<strong>你怎么思考，不是你背了多少</strong>。能清晰表达权衡（trade-off）的工程师，才是 Senior/Staff 工程师的思维模式。</p>
+
+<p><em>System design interviews never have "correct" answers. Interviewers assess how you think, not what you've memorized. Engineers who can articulate trade-offs clearly demonstrate Senior/Staff-level thinking.</em></p>
+
+<hr/>
+
+<h2>核心框架 / Core Framework</h2>
+
+<p>用 <strong>PAST 框架</strong> 组织你的权衡讨论：</p>
+
+<ul><li><strong>P</strong>roblem: 先明确核心约束（读多写少？强一致性必须？延迟 vs 吞吐？）</li><li><strong>A</strong>lternatives: 列出 2-3 个方案，不要直接跳到答案</li><li><strong>S</strong>election: 说明为什么选这个方案（基于约束）</li><li><strong>T</strong>rade-offs: 主动说出你的选择放弃了什么</li></ul>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<p><strong>问题题干：</strong> "How do you approach system design trade-offs?"</p>
+
+<p><strong>Situation（情境）：</strong></p>
+<p>"在设计 X 系统时，我们面临 A 和 B 两个选择..."</p>
+
+<p><strong>Task（任务）：</strong></p>
+<p>"我需要在强一致性和高可用性之间做出决定（CAP theorem），同时满足 &lt;1s 的 p99 延迟要求..."</p>
+
+<p><strong>Action（行动）：</strong></p>
+<p>"我的方法是：先问清楚业务优先级——如果是金融交易，宁可不可用也不能数据不一致；如果是社交 feed，最终一致性完全可以接受。然后我会画出两种方案的架构，估算延迟和成本..."</p>
+
+<p><strong>Result（结果）：</strong></p>
+<p>"通过明确权衡，团队在 30 分钟内达成共识，避免了后来可能的重构..."</p>
+
+<hr/>
+
+<h2>❌ 差回答 vs ✅ 好回答</h2>
+
+<p><strong>❌ Bad:</strong></p>
+<blockquote>"我会选 microservices，因为它更好扩展。"</blockquote>
+
+<p>（没有说为什么，没有权衡，没有基于约束）</p>
+
+<p><strong>✅ Good:</strong></p>
+<blockquote>"这取决于几个维度：团队规模、一致性要求、和现有基础设施。如果团队只有 5 人，微服务的运维复杂度会拖累交付速度；如果有强 ACID 要求，分布式事务会很痛苦。在这个场景下，我会先从 modular monolith 开始，等扩展瓶颈出现后再拆分。"</blockquote>
+
+<hr/>
+
+<h2>Senior/Staff 进阶技巧 / Senior/Staff Tips</h2>
+
+<ol><li><strong>主动引导对话</strong>："我想先明确几个约束，这会决定我的方向——DAU 是多少？数据一致性要求是什么？预算约束呢？"</li></ol>
+
+<ol><li><strong>用数字锚定讨论</strong>："如果写入 QPS 超过 10K，单机 MySQL 就到瓶颈了，我们需要 sharding 或 NoSQL"</li></ol>
+
+<ol><li><strong>预判面试官的 follow-up</strong>："我选择了 eventual consistency，这意味着用户可能看到短暂的不一致——我们可以用 client-side cache 或 read-your-write consistency 缓解这个问题"</li></ol>
+
+<ol><li><strong>承认不确定性</strong>："这我不确定，但我会这样评估..." — 这比假装确定更加分</li></ol>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<ul><li>权衡不是背答案，是展示<strong>思维过程</strong></li><li>先问约束，再提方案——顺序很重要</li><li>主动说出"我选择 X 意味着放弃 Y"，比等面试官问更加分</li><li>Staff 工程师的标志：能把技术决策和<strong>业务影响</strong>连接起来</li></ul>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<ul><li><a href="https://dataintensive.net/">Designing Data-Intensive Applications — Martin Kleppmann</a></li><li><a href="https://blog.pragmaticengineer.com/the-senior-engineer-checklist/">The Senior Engineer Checklist — blog.pragmaticengineer.com</a></li><li><a href="https://interviewing.io/guides/system-design-interview">How to Answer System Design Questions — interviewing.io</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>如果你妈问你"今晚想吃什么"，说"随便"是最差的回答。好的回答是："如果你不想花太多时间，我们吃面；如果想吃得健康，可以做沙拉；如果今天你很累，我来做简单的炒饭。你最看重哪个？"这就是系统设计权衡——先搞清楚优先级，然后给出基于约束的方案。</p>
+
+<p><em>If your mom asks "what do you want for dinner?", "anything" is the worst answer. A good answer: "If you don't want to spend much time, noodles; if you want healthy, salad; if you're tired, I'll make easy fried rice. Which matters most?" That's system design trade-offs — clarify priorities first, then propose based on constraints.</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">🎨 前端 / Frontend — Code Splitting & Lazy Loading — Ship Less JS</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🎨 前端 / Frontend — Code Splitting &amp; Lazy Loading — Ship Less JS</h1>
+
+<blockquote>Day 38 · Mastery Phase · ~2 min read</blockquote>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个 SaaS dashboard，包含主页、分析报表、设置页、和管理员页面。用户打开首页，却要等待所有页面的 JavaScript 加载完——包括他们根本不会用的管理员功能。这就是需要 Code Splitting 的典型场景。</p>
+
+<p><em>You're building a SaaS dashboard with home, analytics, settings, and admin pages. Users open the home page but wait for ALL pages' JavaScript to load — including admin features they'll never use. This is the classic code splitting use case.</em></p>
+
+<hr/>
+
+<h2>核心概念 / Core Concept</h2>
+
+<p><strong>Code Splitting（代码分割）</strong> = 把 JS bundle 拆成多个小文件，按需加载</p>
+<p><strong>Lazy Loading（懒加载）</strong> = 用户访问某页面/组件时才加载对应代码</p>
+
+<p>React 内置支持：<code>React.lazy()</code> + <code>Suspense</code></p>
+
+<hr/>
+
+<h2>代码示例 / Code Examples</h2>
+
+<h3>基础用法 / Basic Usage</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import React, { lazy, Suspense } from 'react';&#10;&#10;// ❌ 同步导入 — 打包进主 bundle&#10;// import AdminPage from './AdminPage';&#10;&#10;// ✅ 懒加载 — 只在用户访问时才下载&#10;const AdminPage = lazy(() =&gt; import('./AdminPage'));&#10;const AnalyticsPage = lazy(() =&gt; import('./AnalyticsPage'));&#10;&#10;function App() {&#10;  return (&#10;    // Suspense 必须包裹懒加载组件 — 显示 loading 状态&#10;    &lt;Suspense fallback={&lt;div&gt;Loading...&lt;/div&gt;}&gt;&#10;      &lt;Routes&gt;&#10;        &lt;Route path=&quot;/admin&quot; element={&lt;AdminPage /&gt;} /&gt;&#10;        &lt;Route path=&quot;/analytics&quot; element={&lt;AnalyticsPage /&gt;} /&gt;&#10;      &lt;/Routes&gt;&#10;    &lt;/Suspense&gt;&#10;  );&#10;}">Copy</button>
+  <pre><code class="language-tsx">import React, { lazy, Suspense } from 'react';
+
+// ❌ 同步导入 — 打包进主 bundle
+// import AdminPage from './AdminPage';
+
+// ✅ 懒加载 — 只在用户访问时才下载
+const AdminPage = lazy(() =&gt; import('./AdminPage'));
+const AnalyticsPage = lazy(() =&gt; import('./AnalyticsPage'));
+
+function App() {
+  return (
+    // Suspense 必须包裹懒加载组件 — 显示 loading 状态
+    &lt;Suspense fallback={&lt;div&gt;Loading...&lt;/div&gt;}&gt;
+      &lt;Routes&gt;
+        &lt;Route path="/admin" element={&lt;AdminPage /&gt;} /&gt;
+        &lt;Route path="/analytics" element={&lt;AnalyticsPage /&gt;} /&gt;
+      &lt;/Routes&gt;
+    &lt;/Suspense&gt;
+  );
+}</code></pre>
+</div>
+
+<h3>Next.js 中的写法 / In Next.js</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import dynamic from 'next/dynamic';&#10;&#10;// Next.js 的 dynamic() = React.lazy() 的增强版&#10;const HeavyChart = dynamic(() =&gt; import('./HeavyChart'), {&#10;  loading: () =&gt; &lt;p&gt;Loading chart...&lt;/p&gt;,&#10;  ssr: false,  // 禁用 SSR（对只在浏览器运行的库有用，如 D3）&#10;});&#10;&#10;// 也可以按条件懒加载&#10;const AdminPanel = dynamic(() =&gt; import('./AdminPanel'), {&#10;  ssr: false,&#10;});">Copy</button>
+  <pre><code class="language-tsx">import dynamic from 'next/dynamic';
+
+// Next.js 的 dynamic() = React.lazy() 的增强版
+const HeavyChart = dynamic(() =&gt; import('./HeavyChart'), {
+  loading: () =&gt; &lt;p&gt;Loading chart...&lt;/p&gt;,
+  ssr: false,  // 禁用 SSR（对只在浏览器运行的库有用，如 D3）
+});
+
+// 也可以按条件懒加载
+const AdminPanel = dynamic(() =&gt; import('./AdminPanel'), {
+  ssr: false,
+});</code></pre>
+</div>
+
+<hr/>
+
+<h2>猜猜输出 / Quiz</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="const LazyComp = lazy(() =&gt; import('./HeavyComponent'));&#10;&#10;function App() {&#10;  const [show, setShow] = useState(false);&#10;  return (&#10;    &lt;&gt;&#10;      &lt;button onClick={() =&gt; setShow(true)}&gt;Show&lt;/button&gt;&#10;      {show &amp;&amp; (&#10;        &lt;Suspense fallback={&lt;p&gt;Loading...&lt;/p&gt;}&gt;&#10;          &lt;LazyComp /&gt;&#10;        &lt;/Suspense&gt;&#10;      )}&#10;    &lt;/&gt;&#10;  );&#10;}">Copy</button>
+  <pre><code class="language-tsx">const LazyComp = lazy(() =&gt; import('./HeavyComponent'));
+
+function App() {
+  const [show, setShow] = useState(false);
+  return (
+    &lt;&gt;
+      &lt;button onClick={() =&gt; setShow(true)}&gt;Show&lt;/button&gt;
+      {show &amp;&amp; (
+        &lt;Suspense fallback={&lt;p&gt;Loading...&lt;/p&gt;}&gt;
+          &lt;LazyComp /&gt;
+        &lt;/Suspense&gt;
+      )}
+    &lt;/&gt;
+  );
+}</code></pre>
+</div>
+
+<p>首次点击 "Show" 按钮时会发生什么？</p>
+
+<p><strong>A)</strong> HeavyComponent 立即显示</p>
+<p><strong>B)</strong> 先显示 "Loading..."，然后显示组件</p>
+<p><strong>C)</strong> 报错，因为 Suspense 没在 Router 里</p>
+<p><strong>D)</strong> 什么都不发生，需要再次点击</p>
+
+<p>答案：<strong>B</strong> — React 触发网络请求下载 HeavyComponent 的 chunk，期间显示 fallback，加载完成后渲染组件。</p>
+
+<hr/>
+
+<h2>❌ 错误做法 vs ✅ 正确做法</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// ❌ 在组件内部定义 lazy — 每次渲染都重新创建&#10;function Parent() {&#10;  const LazyChild = lazy(() =&gt; import('./Child')); // BUG!&#10;  return &lt;Suspense fallback={null}&gt;&lt;LazyChild /&gt;&lt;/Suspense&gt;;&#10;}&#10;&#10;// ✅ 在模块顶层定义 — 只创建一次&#10;const LazyChild = lazy(() =&gt; import('./Child'));&#10;&#10;function Parent() {&#10;  return &lt;Suspense fallback={null}&gt;&lt;LazyChild /&gt;&lt;/Suspense&gt;;&#10;}">Copy</button>
+  <pre><code class="language-tsx">// ❌ 在组件内部定义 lazy — 每次渲染都重新创建
+function Parent() {
+  const LazyChild = lazy(() =&gt; import('./Child')); // BUG!
+  return &lt;Suspense fallback={null}&gt;&lt;LazyChild /&gt;&lt;/Suspense&gt;;
+}
+
+// ✅ 在模块顶层定义 — 只创建一次
+const LazyChild = lazy(() =&gt; import('./Child'));
+
+function Parent() {
+  return &lt;Suspense fallback={null}&gt;&lt;LazyChild /&gt;&lt;/Suspense&gt;;
+}</code></pre>
+</div>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// ❌ 忘记 Suspense boundary — 会崩溃&#10;function App() {&#10;  return &lt;LazyComp /&gt;; // Error: A React component suspended without Suspense&#10;}&#10;&#10;// ✅ 始终包裹 Suspense&#10;function App() {&#10;  return (&#10;    &lt;Suspense fallback={&lt;Spinner /&gt;}&gt;&#10;      &lt;LazyComp /&gt;&#10;    &lt;/Suspense&gt;&#10;  );&#10;}">Copy</button>
+  <pre><code class="language-tsx">// ❌ 忘记 Suspense boundary — 会崩溃
+function App() {
+  return &lt;LazyComp /&gt;; // Error: A React component suspended without Suspense
+}
+
+// ✅ 始终包裹 Suspense
+function App() {
+  return (
+    &lt;Suspense fallback={&lt;Spinner /&gt;}&gt;
+      &lt;LazyComp /&gt;
+    &lt;/Suspense&gt;
+  );
+}</code></pre>
+</div>
+
+<hr/>
+
+<h2>什么时候用 / When to Use</h2>
+
+<p><strong>✅ 适合懒加载：</strong></p>
+<ul><li>路由级别的页面组件（最大收益）</li><li>大型图表库（ECharts、D3、recharts）</li><li>富文本编辑器（Quill、TipTap）</li><li>弹窗/Modal（用户不一定会打开）</li><li>管理员/权限功能</li></ul>
+
+<p><strong>⛔ 不适合懒加载：</strong></p>
+<ul><li>首屏必须显示的内容（会加重 LCP）</li><li>非常小的组件（拆分开销 &gt; 收益）</li><li>频繁切换的 Tab 内容（每次切换都重新加载）</li></ul>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<ul><li><a href="https://react.dev/reference/react/lazy">React.lazy &amp; Suspense — React Docs</a></li><li><a href="https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading">Next.js dynamic imports</a></li><li><a href="https://web.dev/articles/code-splitting-suspense">Web.dev: Code splitting guide</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象一家餐厅，菜单上有 100 道菜。笨方法是开门就把所有菜都做好放着等（用户打开网页就加载所有 JS）。聪明方法是只备好常见菜，等有人点特殊菜再做（懒加载）。这样开门快，大多数客人不用等，偶尔点特殊菜的人稍等片刻——总体体验更好。</p>
+
+<p><em>Imagine a restaurant with 100 dishes. Dumb way: cook everything when you open (load all JS at page load). Smart way: prep common dishes, cook special ones when ordered (lazy loading). Faster opening, most customers don't wait, occasional special orders take a moment — overall better experience.</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Diffusion Models — How Image Generation Works</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI — Diffusion Models — How Image Generation Works</h1>
+
+<blockquote>Day 38 · Mastery Phase · ~2 min read</blockquote>
+
+<hr/>
+
+<h2>直觉理解 / Intuition</h2>
+
+<p>你有没有想过，Midjourney 和 DALL-E 怎么从文字生成图片？</p>
+
+<p>它们用的是<strong>扩散模型（Diffusion Models）</strong>。核心思路出乎意料地简单：<strong>先把图片弄乱，再学怎么恢复</strong>。</p>
+
+<p><em>Ever wonder how Midjourney and DALL-E generate images from text? They use Diffusion Models. The core idea is surprisingly simple: first learn to destroy an image, then learn to reverse that destruction.</em></p>
+
+<hr/>
+
+<h2>工作原理 / How It Works</h2>
+
+<h3>两个阶段 / Two Phases</h3>
+
+<p><strong>前向扩散（加噪）/ Forward Process (Noising):</strong></p>
+<div class="diagram-block">清晰图片 → [加一点噪声] → [再加一点] → ... → 纯随机噪声
+Cat photo → slightly noisy → more noisy → ... → pure Gaussian noise</div>
+<p>这个过程是固定的，不需要学习，只需要逐步加高斯噪声。经过 ~1000 步后，图片变成纯噪声。</p>
+
+<p><em>Fixed, no learning needed. Just gradually add Gaussian noise over ~1000 steps until the image is pure noise.</em></p>
+
+<p><strong>反向扩散（去噪）/ Reverse Process (Denoising):</strong></p>
+<div class="diagram-block">纯噪声 → [预测并去掉噪声] → ... → 清晰图片
+Noise → [predict &amp; remove noise] → ... → clean image</div>
+<p>神经网络学习<strong>每一步应该去掉多少噪声</strong>。训练完成后，从随机噪声出发，就能生成全新图片。</p>
+
+<p><em>The neural network learns "how much noise to remove at each step." After training, start from random noise → generate new images.</em></p>
+
+<hr/>
+
+<h2>架构进化 / Architecture Evolution</h2>
+
+<div class="diagram-block">早期 (2020-2021)           现在 (2024-2025)
+U-Net                  →   DiT (Diffusion Transformer)
+像素空间               →   潜在空间 (Latent Space)
+纯噪声输入             →   文字/图像条件控制
+数百步生成             →   1-4步 (Consistency Models)</div>
+
+<p><strong>关键进步 — 潜在扩散 (Latent Diffusion):</strong></p>
+<p>Stable Diffusion 的秘诀：先用 VAE 把图片压缩到更小的潜在空间（512×512 → 64×64），再在潜在空间做扩散。<strong>计算量减少 64 倍</strong>！</p>
+
+<p><em>Stable Diffusion's secret: compress image to latent space first (512×512 → 64×64), then do diffusion there. 64x less computation!</em></p>
+
+<hr/>
+
+<h2>可运行代码 / Runnable Python</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# pip install diffusers transformers torch accelerate&#10;from diffusers import StableDiffusionPipeline&#10;import torch&#10;&#10;# Load Stable Diffusion (uses latent diffusion internally)&#10;pipe = StableDiffusionPipeline.from_pretrained(&#10;    &quot;runwayml/stable-diffusion-v1-5&quot;,&#10;    torch_dtype=torch.float16&#10;).to(&quot;cuda&quot;)  # use &quot;cpu&quot; if no GPU&#10;&#10;# Generate from text prompt&#10;image = pipe(&#10;    prompt=&quot;a futuristic city at sunset, photorealistic&quot;,&#10;    negative_prompt=&quot;blurry, low quality&quot;,&#10;    num_inference_steps=20,  # fewer steps = faster but lower quality&#10;    guidance_scale=7.5,      # higher = more prompt-adherent, less creative&#10;).images[0]&#10;&#10;image.save(&quot;output.png&quot;)&#10;print(&quot;Done! Check output.png&quot;)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># pip install diffusers transformers torch accelerate</span>
+<span style="color:#c678dd;">from</span> diffusers <span style="color:#c678dd;">import</span> StableDiffusionPipeline
+<span style="color:#c678dd;">import</span> torch
+
+<span style="color:#5c6370;"># Load Stable Diffusion (uses latent diffusion internally)</span>
+pipe = StableDiffusionPipeline.from_pretrained(
+    <span style="color:#e5c07b;">"runwayml/stable-diffusion-v1-5"</span>,
+    torch_dtype=torch.float16
+).to(<span style="color:#e5c07b;">"cuda"</span>)  <span style="color:#5c6370;"># use "cpu" if no GPU</span>
+
+<span style="color:#5c6370;"># Generate from text prompt</span>
+image = pipe(
+    prompt=<span style="color:#e5c07b;">"a futuristic city at sunset, photorealistic"</span>,
+    negative_prompt=<span style="color:#e5c07b;">"blurry, low quality"</span>,
+    num_inference_steps=<span style="color:#56b6c2;">20</span>,  <span style="color:#5c6370;"># fewer steps = faster but lower quality</span>
+    guidance_scale=<span style="color:#56b6c2;">7.5</span>,      <span style="color:#5c6370;"># higher = more prompt-adherent, less creative</span>
+).images[<span style="color:#56b6c2;">0</span>]
+
+image.save(<span style="color:#e5c07b;">"output.png"</span>)
+print(<span style="color:#e5c07b;">"Done! Check output.png"</span>)</code></pre>
+</div>
+
+<hr/>
+
+<h2>文字引导的秘密 / The Secret of Text Guidance</h2>
+
+<p>纯扩散模型生成随机图片。<strong>CLIP + Classifier-Free Guidance</strong> 让它生成"符合描述的"图片：</p>
+
+<p>训练时，模型同时学习"有文字条件"和"无文字条件"的去噪。生成时：</p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="最终噪声预测 = 无条件预测 + guidance_scale × (有条件预测 - 无条件预测)">Copy</button>
+  <pre><code class="language-text">最终噪声预测 = 无条件预测 + guidance_scale × (有条件预测 - 无条件预测)</code></pre>
+</div>
+<p><code>guidance_scale</code> 越大，图片越贴近文字描述，但多样性降低。</p>
+
+<p><em>CLIP + Classifier-Free Guidance: during generation, blend conditional and unconditional predictions. Higher guidance_scale = more prompt-adherent but less diverse.</em></p>
+
+<hr/>
+
+<h2>应用 / Applications</h2>
+
+<ul><li>🎨 图像生成：Midjourney、DALL-E 3、Stable Diffusion</li><li>🎬 视频生成：Sora、Runway Gen-3</li><li>🧬 蛋白质结构预测（RoseTTAFold Diffusion）</li><li>💊 药物分子设计</li><li>🗣️ 语音合成：Voicebox (Meta)</li></ul>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<ul><li><a href="https://arxiv.org/abs/2006.11239">Denoising Diffusion Probabilistic Models (Ho et al., 2020)</a></li><li><a href="https://jalammar.github.io/illustrated-stable-diffusion/">The Illustrated Diffusion Models — jalammar.github.io</a></li><li><a href="https://huggingface.co/docs/diffusers/index">Hugging Face Diffusers Library</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你要学画猫。聪明的方法：找1000张猫的照片，把每张都逐渐涂上白色（加噪声），直到完全看不出来。然后训练自己"从白色一点点还原出猫"（去噪）。练熟了之后，给你一张纯白纸，你就能凭空画出一只猫！扩散模型就是这么工作的——它学会了"从混乱中创造秩序"。</p>
+
+<p><em>Imagine learning to draw cats. Smart approach: take 1000 cat photos, gradually paint them white (add noise) until unrecognizable. Then train yourself to "restore the cat from white" (denoise). Once mastered, give you a blank white page — you can draw a cat from scratch! Diffusion models work exactly this way — they learn to create order from chaos.</em></p>
+
+<div class="attention-card">
+  <h3>Attention Heatmap</h3>
+  <p>When the model processes <code>it</code>, it attends most strongly to <code>animal</code>.</p>
+  <div class="heatmap-wrap">
+    <table class="heatmap">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="heatmap-axis">The</th><th class="heatmap-axis">animal</th><th class="heatmap-axis">didnt</th><th class="heatmap-axis">cross</th><th class="heatmap-axis">the</th><th class="heatmap-axis">street</th><th class="heatmap-axis">because</th><th class="heatmap-axis">it</th><th class="heatmap-axis">was</th><th class="heatmap-axis">too</th><th class="heatmap-axis">tired</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="heatmap-axis row-label">it →</th>
+          <td><div class="heatmap-cell" title="The: 0.02" aria-label="The attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="animal: 0.86" aria-label="animal attention weight 0.86" style="background:rgba(167, 139, 250, 0.86);"></div></td><td><div class="heatmap-cell" title="didnt: 0.03" aria-label="didnt attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="cross: 0.04" aria-label="cross attention weight 0.04" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="the: 0.02" aria-label="the attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="street: 0.08" aria-label="street attention weight 0.08" style="background:rgba(167, 139, 250, 0.08);"></div></td><td><div class="heatmap-cell" title="because: 0.05" aria-label="because attention weight 0.05" style="background:rgba(167, 139, 250, 0.05);"></div></td><td><div class="heatmap-cell" title="it: 0.03" aria-label="it attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="was: 0.07" aria-label="was attention weight 0.07" style="background:rgba(167, 139, 250, 0.07);"></div></td><td><div class="heatmap-cell" title="too: 0.10" aria-label="too attention weight 0.10" style="background:rgba(167, 139, 250, 0.10);"></div></td><td><div class="heatmap-cell" title="tired: 0.30" aria-label="tired attention weight 0.30" style="background:rgba(167, 139, 250, 0.30);"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
