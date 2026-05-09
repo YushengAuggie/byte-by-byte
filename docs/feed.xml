@@ -5,8 +5,404 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 08 May 2026 15:09:53 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 09 May 2026 15:08:04 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-09</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-09</guid>
+      <pubDate>Sat, 09 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>Saturday Deep Dive Day</h2>
+
+<p>Today is a Saturday Deep Dive day. The full deep dive content has been written to the deepdive archive file.</p>
+<p>Individual section summaries are not generated on Saturdays — see the deepdive file for comprehensive content covering the selected topic in full bilingual detail.</p>
+
+<p>Deep dive topic: Median of Two Sorted Arrays (LeetCode #4)</p>
+<p>Date: 2026-05-09</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>Saturday Deep Dive Day</h2>
+
+<p>Today is a Saturday Deep Dive day. The full deep dive content has been written to the deepdive archive file.</p>
+<p>Individual section summaries are not generated on Saturdays — see the deepdive file for comprehensive content covering the selected topic in full bilingual detail.</p>
+
+<p>Deep dive topic: Median of Two Sorted Arrays (LeetCode #4)</p>
+<p>Date: 2026-05-09</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>Saturday Deep Dive Day</h2>
+
+<p>Today is a Saturday Deep Dive day. The full deep dive content has been written to the deepdive archive file.</p>
+<p>Individual section summaries are not generated on Saturdays — see the deepdive file for comprehensive content covering the selected topic in full bilingual detail.</p>
+
+<p>Deep dive topic: Median of Two Sorted Arrays (LeetCode #4)</p>
+<p>Date: 2026-05-09</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>Saturday Deep Dive Day</h2>
+
+<p>Today is a Saturday Deep Dive day. The full deep dive content has been written to the deepdive archive file.</p>
+<p>Individual section summaries are not generated on Saturdays — see the deepdive file for comprehensive content covering the selected topic in full bilingual detail.</p>
+
+<p>Deep dive topic: Median of Two Sorted Arrays (LeetCode #4)</p>
+<p>Date: 2026-05-09</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>Saturday Deep Dive Day</h2>
+
+<p>Today is a Saturday Deep Dive day. The full deep dive content has been written to the deepdive archive file.</p>
+<p>Individual section summaries are not generated on Saturdays — see the deepdive file for comprehensive content covering the selected topic in full bilingual detail.</p>
+
+<p>Deep dive topic: Median of Two Sorted Arrays (LeetCode #4)</p>
+<p>Date: 2026-05-09</p>
+
+<hr/>
+<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Median of Two Sorted Arrays — The Hardest Easy Concept (15 min read)</strong></p>
+<p>📊 NeetCode: 33/150 · SysDesign: 32/40 · Behavioral: 32/40 · Frontend: 32/50 · AI: 16/30</p>
+<p>🔥 38-day streak!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p>这道题是 LeetCode #4，难度标注为 Hard，也是整个 NeetCode 150 中公认最难的二分搜索题之一。它不仅仅是&quot;找中位数&quot;这么简单——它要求你在 <strong>O(log(m+n))</strong> 时间复杂度内完成，这意味着你不能合并两个数组再找中位数。正确解法需要对二分搜索有深刻理解：<strong>不是搜索具体值，而是搜索分割位置</strong>。</p>
+
+<p>This is LeetCode #4 — one of the most notoriously tricky Hard problems in the entire NeetCode 150. The naive approach (merge + find middle) is O(m+n) and trivial. The interviewer wants O(log(min(m,n))). That constraint forces you to think about binary search not as &quot;find a value&quot; but as <strong>&quot;find the correct partition&quot;</strong> — a fundamental mental model shift that unlocks a whole class of problems.</p>
+
+<p><strong>Why it matters:</strong> This problem shows up in FAANG interviews precisely because it tests whether you truly understand binary search at a deep level, not just pattern-matching. The technique generalizes to finding k-th elements, weighted medians, and even some geometry problems.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>什么是中位数？/ What Is a Median?</h3>
+
+<p>中位数将一个有序序列分成两半：左半部分的所有元素都 ≤ 右半部分的所有元素。</p>
+
+<p>The median divides a sorted sequence into two equal halves where every element on the left ≤ every element on the right.</p>
+
+<p>- 若总长度为奇数：中位数 = 中间那个元素</p>
+<p>- 若总长度为偶数：中位数 = 中间两个元素的平均值</p>
+
+<h3>核心洞见：搜索分割，而非搜索值 / Core Insight: Search for a Partition, Not a Value</h3>
+
+<p>给定两个排序数组 <code>nums1</code> 和 <code>nums2</code>，我们要找到一个分割点，使得：</p>
+
+<p>Given two sorted arrays <code>nums1</code> and <code>nums2</code>, we need to find partitions such that:</p>
+
+<pre><code>
+nums1: [... L1 | R1 ...]
+nums2: [... L2 | R2 ...]
+</code></pre>
+
+<p>满足以下两个条件：</p>
+<p>Meeting both conditions:</p>
+
+<p>1. <strong>左半部分元素数量 = 右半部分元素数量</strong>（或相差 1）</p>
+<p>Left side has same count as right side (or differs by 1)</p>
+
+<p>2. <strong>L1 ≤ R2 且 L2 ≤ R1</strong>（左边所有元素 ≤ 右边所有元素）</p>
+<p>L1 ≤ R2 AND L2 ≤ R1 (all left elements ≤ all right elements)</p>
+
+<p>一旦找到这样的分割：</p>
+<p>Once found:</p>
+
+<p>- 偶数总长：<code>median = (max(L1, L2) + min(R1, R2)) / 2</code></p>
+<p>- 奇数总长：<code>median = max(L1, L2)</code>（若左边多一个）</p>
+
+<h3>为什么可以二分？/ Why Binary Search Works</h3>
+
+<p>关键：<strong>我们只需在较短的数组上二分</strong>。一旦确定了 <code>nums1</code> 的分割位置 <code>i</code>，<code>nums2</code> 的分割位置 <code>j</code> 就被自动确定了：</p>
+
+<p>Key insight: <strong>we only binary search on the shorter array</strong>. Once we fix partition <code>i</code> in <code>nums1</code>, partition <code>j</code> in <code>nums2</code> is fully determined by the total-half-length constraint:</p>
+
+<pre><code>
+i + j = half_len = (m + n + 1) // 2
+j = half_len - i
+</code></pre>
+
+<p>所以整个问题变成：在 <code>nums1</code> 的下标范围 <code>[0, m]</code> 上二分，找到满足条件的 <code>i</code>。</p>
+<p>So the problem reduces to: binary search over <code>[0, m]</code> in <code>nums1</code> to find valid <code>i</code>.</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>暴力解法（O(m+n)）— 面试中先说出来 / Naive Approach (mention first)</h3>
+
+<pre><code>
+def findMedianSortedArrays_naive(nums1: list[int], nums2: list[int]) -&gt; float:
+    # Merge and sort — O(m+n) time, O(m+n) space
+    # NOT acceptable if interviewer asks for O(log(m+n))
+    merged = sorted(nums1 + nums2)
+    n = len(merged)
+    if n % 2 == 1:
+        return float(merged[n // 2])
+    else:
+        return (merged[n // 2 - 1] + merged[n // 2]) / 2.0
+</code></pre>
+
+<p><strong>面试策略</strong>：先说&quot;我可以用 O(m+n) 暴力合并，但你要求 O(log) 所以我来优化&quot;。这展示了你的思维过程。</p>
+<p><strong>Interview strategy</strong>: Always state the naive solution first, then say &quot;but we can do better with binary search.&quot;</p>
+
+<h3>最优解法（O(log(min(m,n)))）/ Optimal Binary Search Solution</h3>
+
+<pre><code>
+def findMedianSortedArrays(nums1: list[int], nums2: list[int]) -&gt; float:
+    # Always binary search on the SHORTER array for efficiency
+    # If nums1 is longer, swap them
+    A, B = nums1, nums2
+    if len(A) &gt; len(B):
+        A, B = B, A
+    
+    m, n = len(A), len(B)
+    # half_len: number of elements in the &quot;left half&quot; of the merged array
+    # The +1 handles odd total length — left half gets the extra element
+    half_len = (m + n + 1) // 2
+    
+    # Binary search on partition point i in array A
+    # i = number of elements taken from A for the left half
+    # j = number of elements taken from B for the left half (derived)
+    lo, hi = 0, m
+    
+    while lo &lt;= hi:
+        i = (lo + hi) // 2      # partition in A: A[:i] | A[i:]
+        j = half_len - i         # partition in B: B[:j] | B[j:]
+        
+        # Boundary values — use -inf/+inf to handle edge cases
+        # (when partition is at the start or end of an array)
+        A_left  = A[i - 1] if i &gt; 0 else float(&#x27;-inf&#x27;)   # last elem of A&#x27;s left half
+        A_right = A[i]     if i &lt; m else float(&#x27;inf&#x27;)     # first elem of A&#x27;s right half
+        B_left  = B[j - 1] if j &gt; 0 else float(&#x27;-inf&#x27;)   # last elem of B&#x27;s left half
+        B_right = B[j]     if j &lt; n else float(&#x27;inf&#x27;)     # first elem of B&#x27;s right half
+        
+        # Check if we found the correct partition:
+        # All left elements must be ≤ all right elements
+        if A_left &lt;= B_right and B_left &lt;= A_right:
+            # FOUND! Compute median
+            if (m + n) % 2 == 1:
+                # Odd total: median is the max of both left halves
+                return float(max(A_left, B_left))
+            else:
+                # Even total: average of max-left and min-right
+                return (max(A_left, B_left) + min(A_right, B_right)) / 2.0
+        
+        elif A_left &gt; B_right:
+            # A&#x27;s left is too big — move partition left in A
+            hi = i - 1
+        else:
+            # B_left &gt; A_right: A&#x27;s left is too small — move partition right in A
+            lo = i + 1
+    
+    # Should never reach here if inputs are valid sorted arrays
+    raise ValueError(&quot;Input arrays are not sorted or otherwise invalid&quot;)
+</code></pre>
+
+<h3>手动追踪例子 / Manual Trace Example</h3>
+
+<pre><code>
+nums1 = [1, 3],  nums2 = [2, 4]
+m=2, n=2, half_len = (2+2+1)//2 = 2
+
+A = [1, 3], B = [2, 4]
+lo=0, hi=2
+
+Iteration 1:
+  i = 1, j = 2-1 = 1
+  A_left=1, A_right=3, B_left=2, B_right=4
+  1 &lt;= 4 ✓  AND  2 &lt;= 3 ✓  → FOUND!
+  Total is even: (max(1,2) + min(3,4)) / 2 = (2+3)/2 = 2.5 ✓
+</code></pre>
+
+<pre><code>
+nums1 = [1, 2],  nums2 = [3, 4]
+m=2, n=2, half_len = 2
+
+Iteration 1: i=1, j=1
+  A_left=1, A_right=2, B_left=3, B_right=4
+  B_left(3) &gt; A_right(2) → lo = 2
+
+Iteration 2: i=2, j=0
+  A_left=2, A_right=+inf, B_left=-inf, B_right=3
+  2 &lt;= 3 ✓  AND  -inf &lt;= +inf ✓ → FOUND!
+  (max(2,-inf) + min(+inf,3)) / 2 = (2+3)/2 = 2.5 ✓
+</code></pre>
+
+<h3>复杂度分析 / Complexity Analysis</h3>
+
+<p>| 方法 / Approach | 时间 / Time | 空间 / Space |</p>
+<p>|---|---|---|</p>
+<p>| Naive merge | O(m+n) | O(m+n) |</p>
+<p>| <strong>Binary search</strong> | <strong>O(log(min(m,n)))</strong> | <strong>O(1)</strong> |</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<h3>最常见的陷阱 / Most Common Traps</h3>
+
+<p><strong>1. 分割在数组边界 / Partition at array boundary</strong></p>
+
+<pre><code>
+# When i=0, there&#x27;s nothing on A&#x27;s left — use -inf as sentinel
+# When i=m, there&#x27;s nothing on A&#x27;s right — use +inf as sentinel
+A_left  = A[i - 1] if i &gt; 0 else float(&#x27;-inf&#x27;)
+A_right = A[i]     if i &lt; m else float(&#x27;inf&#x27;)
+</code></pre>
+
+<p>如果不处理边界，你会得到 <code>IndexError</code>。这是最常见的 bug 来源。</p>
+<p>If you don&#x27;t handle boundaries, you get <code>IndexError</code>. This is the #1 bug source.</p>
+
+<p><strong>2. 奇偶性处理 / Odd vs Even Length</strong></p>
+
+<pre><code>
+half_len = (m + n + 1) // 2  # The +1 is critical!
+# Without +1, for odd total length, left half gets fewer elements
+# For even: left=right=n/2 elements, median=(max_left+min_right)/2
+# For odd:  left gets one extra, median=max_left
+</code></pre>
+
+<p><strong>3. 必须在较短数组上二分 / Must binary search the shorter array</strong></p>
+
+<pre><code>
+if len(A) &gt; len(B):
+    A, B = B, A
+# This ensures j = half_len - i is always valid (0 &lt;= j &lt;= n)
+# If A is longer, j could go negative!
+</code></pre>
+
+<p><strong>4. 两个数组都为空 / Edge: empty inputs</strong></p>
+
+<pre><code>
+# LC guarantees at least one is non-empty, but in real code:
+if not A and not B: raise ValueError(&quot;both empty&quot;)
+# The -inf/+inf sentinels handle when one array is empty
+</code></pre>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<h3>这个技巧在生产中用在哪里？/ Where does this show up in production?</h3>
+
+<p><strong>1. 数据库 percentile 查询 / Database percentile queries</strong></p>
+
+<p>当你在 PostgreSQL 中运行 <code>PERCENTILE_CONT(0.5)</code> 时，数据库内部需要高效计算中位数。对于已经分区的数据，其核心思想与这道题类似——找到两个有序集合的分割点。</p>
+
+<p><code>PERCENTILE_CONT(0.5)</code> in PostgreSQL for partitioned/sharded data uses similar &quot;find the partition&quot; logic across sorted segments.</p>
+
+<p><strong>2. 分布式系统中的 p50/p99 延迟 / p50/p99 latency in distributed systems</strong></p>
+
+<p>监控系统（Datadog, Prometheus）在聚合多台机器的延迟数据时，每台机器维护自己的有序延迟数组。合并后找 p50 就是这道题的变体。</p>
+
+<p>Monitoring systems aggregate latency histograms from multiple nodes. Finding p50 across sorted arrays from 10 pods is this exact problem.</p>
+
+<p><strong>3. 流媒体中位数 / Streaming median (variant)</strong></p>
+
+<p>LeetCode #295 &quot;Find Median from Data Stream&quot; 用两个堆（max-heap + min-heap）维护中位数——这是对&quot;维护两个有序结构的分割点&quot;这一思想的直接应用。</p>
+
+<p>LC #295 uses two heaps to maintain the partition point dynamically — the same conceptual core.</p>
+
+<p><strong>4. 二分搜索思想的泛化 / Generalizing the &quot;partition binary search&quot; idea</strong></p>
+
+<p>- 找第 k 小的元素（k-th smallest in two sorted arrays）</p>
+<p>- 找两个序列合并后的任意百分位数</p>
+<p>- 寻找最优分割点（LeetCode #410 Split Array Largest Sum）</p>
+
+<p>The pattern: <em>binary search on a partition/decision variable, not a concrete value</em> — generalizes to split-array problems, capacity optimization, etc.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p>以下是面试官可能追问的 5 个问题和简洁答案：</p>
+
+<p><strong>Q1: 为什么要在较短的数组上二分？/ Why binary search on the shorter array?</strong></p>
+
+<p>因为较短数组长度为 <code>m</code>，二分复杂度是 O(log m)。同时，<code>j = half_len - i</code> 需要满足 <code>0 ≤ j ≤ n</code>，在较短数组上二分可以保证 <code>j</code> 始终有效。如果 <code>m &gt; n</code>，交换两个数组即可。</p>
+
+<p>To get O(log(min(m,n))) and to guarantee <code>j = half_len - i</code> stays in <code>[0, n]</code>. If we search the longer array, <code>j</code> could go out of bounds.</p>
+
+<hr/>
+
+<p><strong>Q2: 如果数组没有排序怎么办？/ What if arrays aren&#x27;t sorted?</strong></p>
+
+<p>题目保证有序。实际中需要先排序（O(m log m + n log n)），此时不如直接合并找中位数。如果数据流式到来（无法预排序），用两个堆的方案（LC #295）更合适。</p>
+
+<p>The problem guarantees sorted. If not, sort first — but then O((m+n)log(m+n)) merge is simpler. For streaming unsorted data, use the two-heap approach (LC #295).</p>
+
+<hr/>
+
+<p><strong>Q3: 这道题能用递归解吗？/ Can this be solved recursively?</strong></p>
+
+<p>可以。经典递归解法是&quot;找两个有序数组中第 k 小的数&quot;，每次递归排除 k/2 个元素，时间复杂度同样是 O(log(m+n))。但迭代二分更直观，代码更简洁，面试推荐迭代版本。</p>
+
+<p>Yes — recursive &quot;find k-th element&quot; approach works: each call eliminates k/2 elements from consideration. Same O(log(m+n)) complexity, but the iterative partition approach is cleaner to code under pressure.</p>
+
+<hr/>
+
+<p><strong>Q4: 如果有多个重复元素？/ What about duplicates?</strong></p>
+
+<p>完全没问题。算法不依赖元素唯一性——它只比较 <code>A_left ≤ B_right</code> 和 <code>B_left ≤ A_right</code>，重复元素不影响大小关系的判断。用测试用例 <code>[1,1]</code> 和 <code>[1,1]</code> 验证：答案 1.0，算法返回 <code>max(1,1) = 1.0</code> ✓。</p>
+
+<p>No problem. The comparisons <code>A_left ≤ B_right</code> handle duplicates correctly. Test: <code>[1,1]</code> and <code>[1,1]</code> → median 1.0. Algorithm: <code>max(1,1) = 1.0</code> ✓.</p>
+
+<hr/>
+
+<p><strong>Q5: 如何扩展到 k 个有序数组？/ How would you extend this to k sorted arrays?</strong></p>
+
+<p>对 k 个数组做二分搜索不再直接适用（搜索空间是 k 维的）。常见方法：</p>
+<p>(a) 最小堆合并（O(N log k)，N 是总元素数）</p>
+<p>(b) 分治：两两合并为一个，递归处理（O(N log k)）</p>
+<p>(c) 若只要中位数，可以用采样估计（近似算法）</p>
+
+<p>Binary search across k arrays isn&#x27;t straightforward (k-dimensional search space). Better approaches: (a) min-heap k-way merge O(N log k), (b) divide-and-conquer pairwise merge, (c) sampling-based approximation for very large k.</p>
+
+<hr/>
+
+<h2>🔗 Resources</h2>
+
+<p>- 🔗 <strong>LeetCode:</strong> https://leetcode.com/problems/median-of-two-sorted-arrays/</p>
+<p>- 📹 <strong>NeetCode Video:</strong> https://www.youtube.com/watch?v=q6IEA26hvXc</p>
+<p>- 📖 <strong>NeetCode Solution:</strong> https://neetcode.io/problems/median-of-two-sorted-arrays</p>
+<p>- 📚 <strong>Related Problem (Streaming Median):</strong> https://leetcode.com/problems/find-median-from-data-stream/</p>
+
+<hr/>
+
+<h2>Cross-Check: Diagram ↔ Code Verification / 图示与代码一致性验证</h2>
+
+<p><strong>Test input:</strong> <code>nums1 = [1, 3]</code>, <code>nums2 = [2, 4]</code></p>
+
+<p><strong>Partition diagram:</strong></p>
+<pre><code>
+A = [1 | 3]    (i=1: A_left=1, A_right=3)
+B = [2 | 4]    (j=1: B_left=2, B_right=4)
+         ↑ partition line
+
+Left half:  {1, 2}  →  max = 2
+Right half: {3, 4}  →  min = 3
+</code></pre>
+
+<p><strong>Code trace:</strong></p>
+<pre><code>
+A=[1,3], B=[2,4], m=2, n=2, half_len=2
+lo=0, hi=2
+→ i=1, j=1
+→ A_left=A[0]=1, A_right=A[1]=3
+→ B_left=B[0]=2, B_right=B[1]=4
+→ 1 ≤ 4 ✓ AND 2 ≤ 3 ✓ → FOUND
+→ even total: (max(1,2) + min(3,4))/2 = (2+3)/2 = 2.5
+</code></pre>
+
+<p>✅ Diagram matches code exactly. The partition line in the diagram corresponds directly to <code>i=1, j=1</code> in the code, and the left/right boundary values are the same in both.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-08</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

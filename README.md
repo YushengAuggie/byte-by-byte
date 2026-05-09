@@ -81,12 +81,12 @@ Every lesson is written in both Chinese and English — not translated, but **na
 
 | Field | Value |
 |-------|-------|
-| **Current Day** | Day 38 |
-| **Last Sent** | 2026-05-08 |
-| **Algorithms** | 33 / 150 (NeetCode 150) |
-| **System Design** | 32 / 40 |
-| **Frontend** | 32 / 50 |
-| **Soft Skills** | 32 / 40 |
+| **Current Day** | Day 39 |
+| **Last Sent** | 2026-05-09 |
+| **Algorithms** | 34 / 150 (NeetCode 150) |
+| **System Design** | 33 / 40 |
+| **Frontend** | 33 / 50 |
+| **Soft Skills** | 33 / 40 |
 | **AI Topics** | 16 / 30 |
 
 ---
