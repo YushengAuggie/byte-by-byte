@@ -5,8 +5,180 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 09 May 2026 15:08:04 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 10 May 2026 21:51:07 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-10</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-10</guid>
+      <pubDate>Sun, 10 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 9 (10 min read)</strong></p>
+<p>📊 NeetCode: 34/150 · SysDesign: 33/40 · Behavioral: 33/40 · Frontend: 33/50 · AI: 16/30</p>
+<p>🔥 39-day streak!</p>
+
+<hr/>
+
+<h2>🗓️ 本周旅程 / This Week&#x27;s Journey</h2>
+
+<p>本周是 Mastery 阶段的第二周（Day 35–39），系统设计冲进复杂现实场景，算法继续深挖二分搜索模式，周六迎来一次深度精讲。</p>
+
+<p><em>This was Week 2 of the Mastery Phase (Days 35–39) — system design tackled real-world complex platforms, algorithms continued the binary search deep-dive, and Saturday brought an extended hard-problem breakdown.</em></p>
+
+<p>| 日期 | 亮点 |</p>
+<p>|------|------|</p>
+<p>| <strong>Fri 5/5</strong> | 复习日(Day 35) — 回顾 YouTube/Google Maps/Uber/Google Drive + Binary Search 变体系列 |</p>
+<p>| <strong>Mon 5/6</strong> | 电商平台设计·Find Min in Rotated Array·设置技术方向·Memoization Triangle·多模态AI |</p>
+<p>| <strong>Tue 5/7</strong> | Ticketmaster 票务·Search in Rotated Array·过度设计的教训·Virtualization·AI新闻(Moonshot/Spotify/xAI) |</p>
+<p>| <strong>Wed 5/8</strong> | 支付系统(Stripe)·Time Based KV Store·系统设计权衡·Code Splitting·扩散模型 |</p>
+<p>| <strong>Thu 5/9</strong> | 🔬 周六深度精讲：Median of Two Sorted Arrays (LeetCode #4 Hard) — 分布式缓存(Redis) |</p>
+
+<hr/>
+
+<h2>🧠 系统设计：本周要点 / System Design: Key Takeaways</h2>
+
+<h3>1. 现实系统的&quot;三角困局&quot; — 库存 / 锁 / 一致性</h3>
+
+<p>本周三道设计题（电商、票务、支付）其实在反复考同一个核心：<strong>高并发写入时如何保证数据一致性而不牺牲性能</strong>。</p>
+
+<p>- <strong>电商（E-Commerce）</strong>：库存超卖是经典难题。Redis <code>DECR</code> 原子操作 + 悲观锁（秒杀时 <code>SELECT FOR UPDATE</code>）+ 15 分钟订单 TTL 自动释放库存，三层防护缺一不可。</p>
+<p>- <strong>票务（Ticketmaster）</strong>：更极端——10万人抢同一张座位。加了<strong>虚拟等候室（Virtual Waiting Room）</strong>，用 Kafka/SQS 削峰，先拿号再进场；座位锁是两阶段：Redis <code>SETNX</code> 软锁（10分钟）+ DB <code>SELECT FOR UPDATE</code> 硬提交。</p>
+<p>- <strong>支付（Stripe）</strong>：最不能出错的系统。核心是<strong>幂等键</strong>（避免重复扣款）+ <strong>双重记账账本</strong>（Double-Entry Ledger）+ <strong>状态机</strong>（PENDING→PAID→SETTLED）。金额永远存整数（分），不用 float。</p>
+
+<p><em>These three design problems — e-commerce, ticketing, and payments — all circle back to the same triangle: high-concurrency writes, data consistency, and performance. The layered approach (Redis for speed + DB for truth) is the recurring pattern across all three.</em></p>
+
+<p><strong>连接点 / The Thread:</strong> Redis 做速度缓冲，DB 是最终真相（Source of Truth）。两者分工明确，缺少任何一层都会导致系统崩溃或数据错误。</p>
+
+<hr/>
+
+<h2>💻 算法：模式总结 / Algorithms: Patterns Mastered</h2>
+
+<h3>二分搜索模式 — 4/7 → 7/7 基本完成</h3>
+
+<p>本周把整个<strong>二分搜索 Block</strong>（NeetCode 中的连续7道题）基本扫完：</p>
+
+<p>| # | 题目 | 变体模式 | 关键技巧 |</p>
+<p>|---|------|---------|---------|</p>
+<p>| 4 | #153 Find Min in Rotated | 旋转数组找最小值 | 比 <code>arr[right]</code>，用 <code>right = mid</code> |</p>
+<p>| 5 | #33 Search in Rotated | 旋转数组找target | 先判断哪半有序，再判断目标在哪半 |</p>
+<p>| 6 | #981 Time Based KV Store | 找最右满足条件的值 | <code>result = value; left = mid + 1</code> 保留候选 |</p>
+<p>| 7 | #4 Median of Two Sorted | 分割两数组找中位数 | 搜分割位置而非具体值（Hard深讲） |</p>
+
+<p><strong>核心规律 / The Pattern:</strong> 所有二分题的本质都是&quot;每次排除一半搜索空间&quot;。变体只是改变了&quot;条件&quot;：找值、找边界、找旋转点、找分割位置……模板不变，条件换换。</p>
+
+<p><em>All binary search variants share the same skeleton. The only difference is what condition drives the left/right decision. Once you internalize &quot;which half to eliminate,&quot; every variant falls into place.</em></p>
+
+<hr/>
+
+<h2>🗣️ 软技能：本周练习重点 / Soft Skills: What to Practice</h2>
+
+<p>本周三道 Behavioral 题，级别都偏 Staff：</p>
+
+<p>1. <strong>设置技术方向（Technical Direction）</strong>：Staff 工程师不只是&quot;提出了好想法&quot;，而是数据驱动诊断 → RFC 建立共识 → 处理异议（PoC 证明）→ 量化结果。关键词：跨团队影响力 + multi-quarter 视角。</p>
+
+<p>2. <strong>过度设计（Over-engineering）</strong>：YAGNI 原则。最容易翻车的地方：为假设的未来用户量优化。强回答结构：具体技术细节 + 业务代价（延期/复杂度）+ 根因分析（&quot;我的假设是…实际是…&quot;）+ 改变后的决策框架。</p>
+
+<p>3. <strong>系统设计权衡（Trade-offs）</strong>：PAST 框架（Problem → Alternatives → Selection → Trade-offs）。先问约束，再提方案。主动说出&quot;我选 X 意味着放弃 Y&quot;比等面试官追问更加分。</p>
+
+<p><strong>最需要练习的 / Most Needs Practice:</strong> 过度设计这题需要一个具体的真实案例，且要能量化业务代价（延期了几周、维护成本如何）。如果还没有现成案例，现在就开始构思一个。</p>
+
+<p><em>The over-engineering question is the trickiest — it requires a concrete story with measurable business cost, not just a philosophical lesson. Prepare a real example now.</em></p>
+
+<hr/>
+
+<h2>🎨 前端：本周巩固 / Frontend: Concepts to Lock In</h2>
+
+<p>本周三个前端主题组成了一个<strong>性能优化三件套</strong>：</p>
+
+<p><strong>1. React Memoization Triangle（React.memo + useMemo + useCallback）</strong></p>
+<p>- <code>React.memo</code> 只做 shallow compare，object/function prop 每次都是新引用 → memo 失效</p>
+<p>- <code>useMemo</code> 稳定 value 引用，<code>useCallback</code> 稳定 function 引用</p>
+<p>- <strong>自测：</strong> 什么时候 <code>React.memo</code> 不起作用？（答：prop 是 inline object/function 时）</p>
+
+<p><strong>2. Virtualization（react-window / TanStack Virtual）</strong></p>
+<p>- 核心：只渲染视口内节点，用 spacer 占位撑高度</p>
+<p>- 最常见 bug：忘记把 <code>style</code> prop 传给每个 Row，导致所有行堆在 top:0</p>
+<p>- <strong>自测：</strong> 1万条记录，行高固定，用哪个库？变高行呢？</p>
+
+<p><strong>3. Code Splitting &amp; Lazy Loading（React.lazy + Suspense）</strong></p>
+<p>- 路由级别拆分收益最大；<code>lazy()</code> 必须在模块顶层定义，不能在组件内部</p>
+<p>- <code>Suspense</code> 必须包裹 <code>lazy()</code> 组件，fallback 是加载期间显示的内容</p>
+<p>- <strong>自测：</strong> <code>dynamic(() =&gt; import(&#x27;./C&#x27;), { ssr: false })</code> 中 <code>ssr: false</code> 有什么作用？</p>
+
+<p><em>These three form a mental model: don&#x27;t render what you don&#x27;t see (virtualization), don&#x27;t load what you don&#x27;t use (code splitting), and don&#x27;t re-render what didn&#x27;t change (memoization). Three angles on the same goal: ship less, compute less, render less.</em></p>
+
+<hr/>
+
+<h2>🤖 AI：本周知识点 / AI: What Stuck</h2>
+
+<p><strong>Multimodal AI（多模态AI）</strong></p>
+<p>核心思路：把不同模态（图片、音频、文字）都转换成向量，在同一个嵌入空间里对齐。CLIP 用对比学习做图文对齐；GPT-4o 是原生多模态（不是插件），延迟更低。实际使用注意：图片上的幻觉比文字更严重，特别是小字和数字。</p>
+
+<p><strong>Diffusion Models（扩散模型）</strong></p>
+<p>两阶段：前向加噪（固定，不学习）→ 反向去噪（神经网络学习每步去掉多少噪声）。Stable Diffusion 的关键优化是<strong>潜在扩散（Latent Diffusion）</strong>——先用 VAE 压缩到 64×64，计算量减少 64 倍。文字引导靠 Classifier-Free Guidance：<code>guidance_scale</code> 越大越贴近描述，但多样性降低。</p>
+
+<p><strong>AI News（据报道）</strong></p>
+<p>- 据报道 Moonshot AI（Kimi）完成 20 亿美元融资，估值 200 亿美元</p>
+<p>- 据报道 Spotify 押注 AI 个人化音频，扩展 AI DJ 到多语言</p>
+<p>- 据报道 xAI 正转型为 neocloud，向外部客户出租 GPU 算力</p>
+
+<p><strong>最重要的一个 takeaway / Most Important Takeaway:</strong> 扩散模型的&quot;先破坏再重建&quot;思路——这个反直觉的训练范式（学习加噪的逆过程）是理解生成式AI的关键心智模型。它适用于图片、视频、音频、甚至蛋白质结构预测。</p>
+
+<p><em>The &quot;destroy to create&quot; mental model of diffusion is the most transferable insight this week — it&#x27;s the core paradigm behind image/video/audio generation. Once you understand it, the various architectures (DALL-E, Sora, Stable Diffusion) make intuitive sense.</em></p>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<p><strong>优先级高 / High Priority:</strong></p>
+
+<p>1. <strong>系统设计 — 支付系统状态机</strong>：能默写出完整状态转移链（<code>PENDING → PROCESSING → AUTHORIZED → CAPTURED → SETTLED</code>，以及各种失败和退款分支）吗？实际面试中画这个状态机会很加分。</p>
+
+<p>2. <strong>算法 — LeetCode #4 Hard</strong>：Median of Two Sorted Arrays 的二分分割逻辑非常容易遗忘。边界条件（L1/L2 = -∞，R1/R2 = +∞）是容易出错的地方。至少再做一遍。</p>
+
+<p>3. <strong>前端 — 实战练习</strong>：三个 memoization hook 的使用时机（React.memo / useMemo / useCallback）需要真正手写一个有性能问题的组件再优化，而不只是理解概念。</p>
+
+<p><strong>次优先级 / Medium Priority:</strong></p>
+
+<p>4. 票务系统的<strong>两阶段锁</strong>（Redis 软锁 + DB 硬锁）和过期处理逻辑。</p>
+<p>5. 软技能：准备一个过度设计的真实故事（含量化代价）。</p>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p><strong>🔬 周六深度精讲 — LeetCode #4 Median of Two Sorted Arrays</strong></p>
+
+<p>这道 Hard 题是整个 NeetCode 150 里公认最难的二分之一。完整精讲了从 O(m+n) 暴力解法到 O(log(min(m,n))) 最优解的完整思路演变——核心洞见是&quot;搜索分割位置，而不是搜索具体值&quot;。这是一个彻底的心智模型转变，掌握了它才算真正理解二分搜索的上限。</p>
+
+<p>能完整读完这道题的精讲，本身就是一个值得庆祝的里程碑 🎉</p>
+
+<p><em>Finishing the full deep-dive on LeetCode #4 is legitimately impressive — this problem trips up even experienced engineers. The key insight (search for the partition, not the value) represents a fundamental upgrade in how you think about binary search. That&#x27;s a real milestone.</em></p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p>基于当前进度（Day 39，即将进入 Day 40+），下周将继续 Mastery 阶段：</p>
+
+<p><strong>系统设计（SysDesign: 33→36+）</strong></p>
+<p>- 预计进入：Design a Social Media Feed（Twitter/Instagram）、Design a Live Streaming System、Design a Distributed Message Queue</p>
+
+<p><strong>算法（NeetCode: 34→37+）</strong></p>
+<p>- 进入新模块：<strong>Linked List</strong>（NeetCode Block）</p>
+<p>- 从 Reverse Linked List 开始，逐步到 LRU Cache</p>
+
+<p><strong>前端（Frontend: 33→36+）</strong></p>
+<p>- 预计主题：JavaScript 引擎工作原理、Web Security（XSS/CSRF）、Service Workers &amp; PWA</p>
+
+<p><strong>AI（AI: 16→18+）</strong></p>
+<p>- 将进入：Fine-tuning in Practice 或 AI Infrastructure</p>
+
+<p><strong>🔥 当前连击：39天！</strong> 继续保持！</p>
+
+<p><em>Next week dives deeper into large-scale distributed systems design and starts the Linked List algorithm block. The 40-day milestone is right around the corner — keep the streak alive!</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-09</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

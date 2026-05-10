@@ -322,3 +322,45 @@
 1. **P0 — Investigate 5-day outage root cause**: Check gateway logs for Apr 28 – May 2 period. Was the gateway down? Were crons disabled? Understanding the cause prevents recurrence.
 2. **P0 — Saturday cron**: Monitor May 9 run. If it errors again, may need manual re-trigger or cron recreation.
 3. **P2 — Cron JSON parsing**: Strip config warning lines before JSON parse, or switch to `grep -A999 '{'` approach.
+
+---
+
+## 2026-05-10 Optimization Run
+
+### Issues Found
+
+**P0 Critical:** None — delivery is healthy (7/7 this week).
+
+**P1 Quality:**
+- **review-and-send timed out today (Sunday, May 10)** — `cron: job execution timed out`, 1 consecutive error. Today's content (week review) was successfully rescued by `backup-send` (ran at 8:30, status: ok). Email log confirms delivery: `2026-05-10 sent=ok recipients=2 sections=1`. Impact: zero delivery loss, but the timeout is a reliability risk — if backup-send also failed, content would be missed.
+
+**P2 Maintenance:**
+1. **`openclaw cron list --json` still has config warning lines** — JSONDecodeError if parsing from stdin without stripping preamble. Known issue. Non-blocking.
+2. **`lastSentDate` in state.json (2026-05-09) trails email log (2026-05-10)** — `lastSentDate` tracks weekday generation, not weekend sends. Normal behavior but can appear as a gap. Non-blocking.
+3. **Saturday section files are 378-byte placeholders** — by design (deep-dive day), but could confuse automated content checks.
+
+### Metrics
+- Delivery rate (7d): **7/7** ✅ (May 4–10, perfect streak)
+- Cron errors: **1** — `review-and-send` (timeout, rescued by backup-send)
+- State: Day 39, all indices advancing (LC=34, SD=33, behavioral=33, frontend=33, AI=16)
+- Recipients per send: 2 (stable)
+
+### Cron Health
+| Job | Last Status | Notes |
+|-----|-------------|-------|
+| weekday | ok | — |
+| saturday | ok | Recovered from prior error |
+| sunday | ok | — |
+| review-and-send | **error (timeout)** | Rescued by backup-send today |
+| backup-send | ok | Saved today's delivery |
+| optimizer | ok | — |
+
+### Trend vs Last Run (May 7)
+- Delivery rate: **improved** (5/7 → 7/7) ✅ — full recovery from prior outage
+- saturday cron: **resolved** (was erroring, now ok)
+- review-and-send: **new timeout error** — first occurrence; backup-send is working as intended safety net
+- Day count: 37 → 39 (+2 in 3 days, consistent with weekend schedule)
+
+### Recommendations
+1. **P1 — Investigate review-and-send timeout**: Check if Sunday week-review generation is hitting model latency issues. Consider increasing the cron `timeoutSeconds` or simplifying the Sunday prompt if it's running too long.
+2. **P2 — Cron JSON parsing**: Strip config warning lines before JSON parse in optimizer script (known, low priority).
