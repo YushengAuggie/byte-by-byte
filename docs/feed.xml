@@ -5,8 +5,112 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 10 May 2026 21:51:07 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 11 May 2026 15:38:19 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-11</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-11</guid>
+      <pubDate>Mon, 11 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 / Review Day 40</h2>
+
+<p><strong>Day 40 | Mastery Phase | 2026-05-11</strong></p>
+
+<p>📊 NeetCode: 34/150 · SysDesign: 33/40 · Behavioral: 33/40 · Frontend: 33/50 · AI: 16/30</p>
+
+<hr/>
+
+<p>今天是复习日！回顾过去4天（Day 36–39）的内容。</p>
+<p>Today is review day! Let&#x27;s revisit the past 4 days (Days 36–39).</p>
+
+<p><strong>Topics covered:</strong></p>
+<p>- 🏗️ E-Commerce Platform, Ticketmaster, Stripe, Distributed Cache</p>
+<p>- 💻 Find Min in Rotated Array, Search in Rotated Array, Time-Based KV Store, Median of Two Sorted Arrays</p>
+<p>- 🗣️ Setting technical direction, over-engineering, trade-offs, aligning teams</p>
+<p>- 🎨 Memoization Triangle, Virtualization, Code Splitting, Web Vitals</p>
+<p>- 🤖 Multimodal AI, Diffusion Models</p>
+
+<hr/>
+
+<h2>📝 Quick Quiz — 3 Mini-Reviews</h2>
+
+<p><strong>Q1: [🏗️ System Design]</strong> — Design a Payment System (Stripe)</p>
+
+<p>在设计支付系统时，为什么要将支付操作设计为<strong>幂等的</strong>？如果不这样做，会发生什么？</p>
+
+<p>When designing a payment system like Stripe, why must payment operations be <strong>idempotent</strong>? What happens if they aren&#x27;t?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>幂等性意味着同一请求执行多次与执行一次的结果相同。在支付场景中，网络超时可能导致客户端不确定请求是否成功——如果重试一个非幂等操作，用户可能被重复扣款。Stripe 通过 <code>Idempotency-Key</code> 请求头来解决这个问题：服务端缓存该 key 对应的响应，重复请求直接返回缓存结果，不重新执行扣款逻辑。</p>
+
+<p>Idempotency means running the same operation multiple times produces the same result as running it once. In payments, network timeouts leave clients uncertain whether a charge succeeded — retrying a non-idempotent operation can double-charge the user. Stripe solves this with an <code>Idempotency-Key</code> header: the server caches the response for that key, and duplicate requests return the cached result without re-executing the charge. Always design financial mutations to be idempotent.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [💻 Algorithms]</strong> — Binary Search Pattern (Rotated Array / Time-Based KV)</p>
+
+<p>你有一个升序数组但不确定是否被旋转。说出一条规则，帮助你在 O(log n) 内判断 target 在哪一半。</p>
+
+<p>You have a sorted array that may or may not be rotated. State one rule that lets you determine which half contains your target in O(log n).</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>关键规则：<strong>先判断哪半部分是有序的，再判断 target 是否在有序的那半。</strong></p>
+
+<p>具体做法：计算 <code>mid</code>，然后比较 <code>nums[left]</code> 和 <code>nums[mid]</code>：</p>
+<p>- 如果 <code>nums[left] &lt;= nums[mid]</code>，左半部分有序；检查 <code>target</code> 是否在 <code>[nums[left], nums[mid])</code> 范围内，是则缩短到左半，否则到右半。</p>
+<p>- 如果 <code>nums[left] &gt; nums[mid]</code>，右半部分有序；检查 <code>target</code> 是否在 <code>(nums[mid], nums[right]]</code> 范围内，是则缩短到右半，否则到左半。</p>
+
+<p>这个规则适用于 Search in Rotated Sorted Array（#33），也是 Find Minimum（#153）和 Time-Based Key-Value Store 二分答案的基础思路。</p>
+
+<p>The key rule: <strong>first determine which half is sorted, then check if the target falls within that sorted half.</strong></p>
+
+<p>Compare <code>nums[left]</code> and <code>nums[mid]</code>: if <code>nums[left] &lt;= nums[mid]</code>, the left half is sorted — check if target is in <code>[nums[left], nums[mid])</code>; otherwise, the right half is sorted — check if target is in <code>(nums[mid], nums[right]]</code>. This single rule handles all rotated binary search variants, including the Time-Based KV Store where you binary search on timestamps.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [🎨 Frontend]</strong> — Memoization Triangle (React.memo, useMemo, useCallback)</p>
+
+<p>以下场景，你会用哪个 API？为什么？</p>
+<p>&quot;父组件重新渲染时，传给子组件的一个 onClick 处理函数导致子组件也重新渲染。&quot;</p>
+
+<p>Which memoization API should you use here, and why?</p>
+<p>&quot;A parent re-renders and passes an <code>onClick</code> handler to a child, causing the child to re-render unnecessarily.&quot;</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>需要同时用两个：</p>
+
+<p>1. <strong><code>useCallback</code></strong> — 包裹父组件中的 <code>onClick</code> 函数，确保引用稳定（每次渲染不生成新函数）。</p>
+<p>2. <strong><code>React.memo</code></strong> — 包裹子组件，让它只在 props 真正改变时重新渲染。</p>
+
+<p>仅用 <code>useCallback</code> 不够——子组件仍会在父渲染时重渲（除非它是 <code>React.memo</code> 组件）。</p>
+<p>仅用 <code>React.memo</code> 也不够——因为没有 <code>useCallback</code>，每次父渲染都会生成新的函数引用，<code>React.memo</code> 的浅比较会认为 prop 变了。</p>
+
+<p>记住三角形：<code>React.memo</code> 防止子组件渲染 → 需要稳定的 props → <code>useCallback</code> 稳定函数，<code>useMemo</code> 稳定对象/数组。</p>
+
+<p>You need both:</p>
+
+<p>1. <strong><code>useCallback</code></strong> — wrap the <code>onClick</code> in the parent to stabilize its reference (same function object across renders).</p>
+<p>2. <strong><code>React.memo</code></strong> — wrap the child component so it only re-renders when props actually change.</p>
+
+<p><code>useCallback</code> alone doesn&#x27;t help if the child isn&#x27;t memoized. <code>React.memo</code> alone doesn&#x27;t help if the function reference changes every render. The memoization triangle: <code>React.memo</code> prevents child renders → requires stable props → <code>useCallback</code> for functions, <code>useMemo</code> for objects/arrays.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。Review strengthens memory — spiral upward.</em></p>
+
+<p>📅 明天继续新内容！Tomorrow, back to new content!</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-10</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
