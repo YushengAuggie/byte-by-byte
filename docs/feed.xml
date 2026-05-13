@@ -5,8 +5,643 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 12 May 2026 15:09:41 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 13 May 2026 15:09:26 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-13</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-13</guid>
+      <pubDate>Wed, 13 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Design a Monitoring &amp; Alerting System (Datadog)</h2>
+
+<p>&gt; Day 42 · Mastery Phase · ~3 min read</p>
+
+<hr/>
+
+<h2>想象你在设计... / Imagine You&#x27;re Designing...</h2>
+
+<p>你在 Stripe 担任平台工程师，负责为数千个微服务搭建监控系统。每天处理数十亿个指标数据点，当支付服务延迟超过 200ms 时必须在 30 秒内触发报警。</p>
+
+<p>You&#x27;re a platform engineer at Stripe, building monitoring infrastructure for thousands of microservices. The system processes billions of metric data points daily and must trigger alerts within 30 seconds when payment service latency exceeds 200ms.</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+Services / Hosts
+     │
+     ▼
+[Metrics Agent]  ──────────────────────────────────────────
+[Log Shipper ]                                             │
+[Trace Sidecar]                                            │
+     │                                                     │
+     ▼                                                     ▼
+[Ingestion Gateway]  ←── Load Balancer              [Config Service]
+  /metrics  /logs  /traces                          (alert rules,
+     │                                               dashboards)
+     ▼
+[Kafka Topics]
+  metrics-raw │ logs-raw │ traces-raw
+     │
+     ├──────────────────────────────────┐
+     ▼                                  ▼
+[Stream Processor]              [Cold Storage Writer]
+ (Flink/Spark Streaming)         (S3/GCS Parquet)
+ - Aggregation (1min/5min)
+ - Anomaly detection
+ - Alert evaluation
+     │                    │
+     ▼                    ▼
+[TSDB]               [Alert Engine]
+(Prometheus/         - Rule evaluation
+ InfluxDB)           - Dedup &amp; grouping
+ Hot: 7 days         - Escalation policy
+ Cold: S3            │
+                     ▼
+              [Notification Service]
+              PagerDuty │ Slack │ Email │ Webhook
+                     │
+                     ▼
+              [Alert Store] ← ACK / Silence / History
+</code></pre>
+
+<hr/>
+
+<h2>核心组件设计 / Core Component Design</h2>
+
+<h3>指标摄入 / Metrics Ingestion</h3>
+<p>- <strong>Pull model</strong>: Prometheus 主动拉取 endpoints（适合内部服务）</p>
+<p>- <strong>Push model</strong>: StatsD / OpenTelemetry SDK 主动推送（适合短生命周期任务）</p>
+<p>- <strong>Hybrid</strong>: Agent (push to gateway) → Kafka → TSDB</p>
+<p>- 数据格式：<code>metric_name{label=value} value timestamp</code></p>
+
+<h3>时序数据库 / Time-Series Database</h3>
+<p>- <strong>存储层次化（Tiered Storage）</strong>:</p>
+<p>- Hot: 1-7 天，SSD，高压缩率（Gorilla 压缩）</p>
+<p>- Warm: 7-90 天，HDD，降采样（5min 粒度）</p>
+<p>- Cold: 90天+，S3 Parquet，1h 粒度</p>
+<p>- <strong>Gorilla 压缩</strong>: Facebook 开源，时序数据压缩率高达 12x</p>
+<p>- <strong>Cardinality 爆炸问题</strong>: 高基数标签（user_id）会导致数百万个时间序列</p>
+
+<h3>报警引擎 / Alert Engine</h3>
+<pre><code>
+Alert Rule: avg(latency{service=&quot;payment&quot;}[5m]) &gt; 200ms for 3m
+
+Evaluation loop:
+  every 30s → query TSDB → evaluate condition
+            → PENDING (condition met but not for 3m yet)
+            → FIRING (condition met for 3m)
+            → RESOLVED (condition no longer met)
+</code></pre>
+
+<h3>去重与静默 / Dedup &amp; Silencing</h3>
+<p>- <strong>Alert grouping</strong>: 同一服务 50 个 pod 全挂 → 合并成 1 个告警</p>
+<p>- <strong>Inhibition rules</strong>: DB 挂了 → 抑制所有依赖该 DB 的服务告警</p>
+<p>- <strong>Maintenance windows</strong>: 计划维护期间自动静默</p>
+
+<hr/>
+
+<h2>关键权衡 / Key Tradeoffs</h2>
+
+<p>| 决策 | 选项 A | 选项 B | 我的选择 |</p>
+<p>|------|--------|--------|----------|</p>
+<p>| 拉 vs 推 | Pull (Prometheus) | Push (StatsD) | Hybrid |</p>
+<p>| 存储 | 专用 TSDB | 通用数据库 | TSDB (Gorilla 压缩) |</p>
+<p>| 处理 | 批处理 | 流处理 | 流处理 (低延迟) |</p>
+<p>| 告警评估 | 客户端 | 服务端 | 服务端 (统一规则) |</p>
+
+<p><strong>为什么用 Kafka 做缓冲？/ Why Kafka as buffer?</strong></p>
+<p>- 削峰填谷：流量突刺时 TSDB 不被打垮</p>
+<p>- 多消费者：流处理、存储、审计可并行消费</p>
+<p>- 回放能力：出 bug 时可重新处理历史数据</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>1. <strong>Cardinality 爆炸</strong> — 不要把 user_id 这类高基数字段作为 label，会创建数百万时间序列</p>
+<p>2. <strong>告警疲劳</strong> — 告警太多导致 on-call 忽略。解决：分级（P0/P1/P2）+ 合并 + 抑制</p>
+<p>3. <strong>单点 TSDB</strong> — 时序数据库本身要高可用，用集群模式（Cortex/Thanos for Prometheus）</p>
+<p>4. <strong>不测试告警</strong> — 要定期&quot;演练&quot;：确认告警真的能触发，不是 dead link</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Prometheus Data Model](https://prometheus.io/docs/concepts/data_model/)</p>
+<p>- [Facebook Gorilla: Fast, Scalable, In-Memory Time Series Database](https://vldb.org/pvldb/vol8/p1816-teller.pdf)</p>
+<p>- [How Datadog Scales with Kafka](https://www.datadoghq.com/blog/engineering/datastores-at-datadog/)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>监控系统就像医院的体检仪器。传感器（agent）不停量你的心跳（CPU）、血压（内存）、体温（延迟）。数据存进病历（TSDB）。医生提前写好&quot;如果体温超过 38.5 度就打电话给我&quot;（告警规则）。一旦触发，护士（通知服务）就打电话、发短信（PagerDuty/Slack）。</p>
+
+<p>A monitoring system is like a hospital&#x27;s diagnostic equipment. Sensors (agents) constantly measure your heart rate (CPU), blood pressure (memory), and temperature (latency). Data is stored in medical records (TSDB). Doctors pre-define &quot;call me if temperature exceeds 38.5°C&quot; (alert rules). When triggered, nurses (notification service) call and text (PagerDuty/Slack).</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — #21 Merge Two Sorted Lists (Easy)</h2>
+
+<p>&gt; Day 42 · Mastery Phase · ~4 min read</p>
+
+<hr/>
+
+<p>🧩 <strong>链表技巧模式 (2/11)</strong> — building on the template from Day 41</p>
+
+<p>今天是链表 block 的第 2 题。昨天（Reverse Linked List）我们用了迭代指针翻转；今天换一个场景：<strong>合并</strong>两个有序链表。注意模板里的快慢指针今天不需要，改用<strong>双指针并行推进</strong>。</p>
+
+<p>This is the 2nd problem in the Linked List block. Yesterday (Reverse Linked List) we used iterative pointer reversal; today we shift to a different scenario: <strong>merging</strong> two sorted lists. The fast-slow pointer template isn&#x27;t needed here — instead we use <strong>two-pointer parallel traversal</strong>.</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 [LeetCode #21](https://leetcode.com/problems/merge-two-sorted-lists/) 🟢 Easy · 📹 [NeetCode](https://www.youtube.com/watch?v=XIdigk956u0)</p>
+
+<p>给定两个有序链表 <code>l1</code> 和 <code>l2</code>，将它们合并成一个新的有序链表并返回。</p>
+
+<p>Given two sorted linked lists <code>l1</code> and <code>l2</code>, merge them into a single sorted linked list.</p>
+
+<pre><code>
+Input:  l1 = 1→3→5→None, l2 = 2→4→6→None
+Output: 1→2→3→4→5→6→None
+</code></pre>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>两个有序的牌堆（l1 和 l2），你每次从两堆的顶部抽一张，把小的放到结果堆。最后哪堆还有剩的，整个接上去。</p>
+
+<p>You have two sorted decks of cards (l1 and l2). Each round, you peek at both tops and take the smaller card. When one deck runs out, append the rest.</p>
+
+<hr/>
+
+<h2>映射到模式 / Map to Pattern</h2>
+
+<p>今天<strong>不用快慢指针</strong>，而是链表的另一个核心技巧：<strong>dummy head（哨兵节点）+ 双指针合并</strong>。</p>
+
+<pre><code>
+Template variation: Dummy head + two-pointer merge
+
+dummy = ListNode(0)  # sentinel, avoids edge cases
+cur = dummy
+p1, p2 = l1, l2
+
+while p1 and p2:
+    pick the smaller node → attach to cur → advance that pointer
+    cur = cur.next
+
+attach remaining (p1 or p2)
+return dummy.next
+</code></pre>
+
+<p><strong>为什么用 dummy head?</strong> 避免处理&quot;结果链表第一个节点是谁&quot;的边界情况，统一了逻辑。</p>
+
+<hr/>
+
+<h2>Python 解法 + 逐步追踪 / Solution + Trace</h2>
+
+<pre><code>
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def mergeTwoLists(l1, l2):
+    dummy = ListNode(0)   # sentinel node
+    cur = dummy
+    
+    while l1 and l2:
+        if l1.val &lt;= l2.val:
+            cur.next = l1  # attach l1 node
+            l1 = l1.next   # advance l1
+        else:
+            cur.next = l2  # attach l2 node
+            l2 = l2.next   # advance l2
+        cur = cur.next     # advance result pointer
+    
+    # attach remaining nodes (at most one list has leftovers)
+    cur.next = l1 if l1 else l2
+    
+    return dummy.next  # skip the dummy
+
+# Trace: l1 = 1→3→5, l2 = 2→4→6
+# Step 1: 1 &lt; 2 → attach 1,  l1=3→5,  cur→1
+# Step 2: 2 &lt; 3 → attach 2,  l2=4→6,  cur→2
+# Step 3: 3 &lt; 4 → attach 3,  l1=5,    cur→3
+# Step 4: 4 &lt; 5 → attach 4,  l2=6,    cur→4
+# Step 5: 5 &lt; 6 → attach 5,  l1=None, cur→5
+# Loop ends (l1=None). cur.next = l2 (6→None)
+# Result: 1→2→3→4→5→6
+</code></pre>
+
+<p><strong>复杂度 / Complexity</strong>: Time O(m+n) · Space O(1)</p>
+
+<hr/>
+
+<h2>与同 block 题目的联系 / Connection to Block</h2>
+
+<p>| 题目 | 核心技巧 | 与今天的关系 |</p>
+<p>|------|---------|------------|</p>
+<p>| #206 Reverse Linked List | 迭代反转指针 | 指针操作基础 |</p>
+<p>| <strong>#21 Merge Two Sorted Lists</strong> | <strong>dummy head + 双指针</strong> | <strong>← 今天</strong> |</p>
+<p>| #143 Reorder List | 快慢找中点 → 反转后半 → 合并 | 今天 merge 是子问题！|</p>
+<p>| #23 Merge K Sorted Lists | 堆 + 多路 merge | 今天的升级版 |</p>
+
+<p><strong>关键洞察</strong>: #143 Reorder List 和 #23 Merge K Sorted Lists 都在内部调用今天的 merge 逻辑。学好这题，后面两道 hard/medium 就降维了。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [LeetCode #21 官方题解](https://leetcode.com/problems/merge-two-sorted-lists/solution/)</p>
+<p>- [NeetCode 视频讲解](https://www.youtube.com/watch?v=XIdigk956u0)</p>
+<p>- [Linked List Patterns — NeetCode](https://neetcode.io/roadmap)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>两个装糖果的队伍，糖果按大小排好了。你站中间，每次从两队前面各拿一颗，把小的放进新盒子。哪队先没了，把另一队剩下的全倒进去。</p>
+
+<p>Two queues of candies, sorted by size. You stand in the middle, compare the front of each queue each round, and take the smaller one into your new box. When one queue runs out, pour in everything left from the other.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — How Do You Handle Scope Creep?</h2>
+
+<p>&gt; Day 42 · Mastery Phase · ~2 min read</p>
+
+<hr/>
+
+<h2>为什么这道题很重要 / Why This Matters</h2>
+
+<p>Scope creep 是项目失败的头号杀手。面试官问这题，不是想听你怎么&quot;拒绝需求&quot;，而是想看你<strong>如何在交付压力、stakeholder 期望、工程质量之间找到平衡</strong>。Senior+ 工程师要展示主动识别风险、结构化沟通的能力。</p>
+
+<p>Scope creep is the #1 killer of engineering projects. Interviewers aren&#x27;t testing whether you refuse requests — they want to see how you <strong>balance delivery pressure, stakeholder expectations, and engineering quality</strong>. Senior+ engineers must show proactive risk identification and structured communication.</p>
+
+<hr/>
+
+<h2>STAR 结构 / STAR Framework</h2>
+
+<h3>Situation（情境）</h3>
+<p>&quot;我们在做一个新的支付对账系统，计划 8 周上线。第 4 周，PM 提出增加实时欺诈检测，这会引入 3 个新的外部 API 集成。&quot;</p>
+
+<p>&quot;We were building a new payment reconciliation system, scoped for 8 weeks. In week 4, the PM proposed adding real-time fraud detection, requiring 3 new external API integrations.&quot;</p>
+
+<h3>Task（任务）</h3>
+<p>识别风险、量化影响、向相关方清晰沟通，并推动达成一致决策。</p>
+
+<p>Identify the risk, quantify the impact, communicate clearly to stakeholders, and drive a consensus decision.</p>
+
+<h3>Action（行动）</h3>
+<p>1. <strong>立即叫停，不要悄悄吸收</strong> — 当场说&quot;我需要先评估影响，不能直接答应&quot;</p>
+<p>2. <strong>量化影响</strong> — 写一页纸 impact analysis：+3 周工期，+2 名工程师，延期 2 个 sprint</p>
+<p>3. <strong>提出选项</strong> — 不只说&quot;不行&quot;，给 3 个方案：</p>
+<p>- Option A: 推迟原计划上线，全做</p>
+<p>- Option B: 当前版本先上线，下个 sprint 加欺诈检测</p>
+<p>- Option C: 用第三方 SaaS（Stripe Radar）先填坑，内部方案等下季度</p>
+<p>4. <strong>推动决策</strong> — 带着选项开会，让 stakeholder 做 informed decision</p>
+
+<h3>Result（结果）</h3>
+<p>选了 Option C：原计划如期上线，用 Stripe Radar 临时方案。下季度我们自研方案完整上线，比临时方案准确率提高了 15%。</p>
+
+<p>Chose Option C: original plan launched on time with Stripe Radar as stopgap. Next quarter, the in-house solution shipped with 15% better accuracy than the temporary solution.</p>
+
+<hr/>
+
+<h2>❌ 不好的回答 vs ✅ 好的回答</h2>
+
+<p>❌ <strong>&quot;我会直接拒绝 scope 变更，告诉 PM 不行。&quot;</strong></p>
+<p>→ 听起来不灵活，不懂 business context</p>
+
+<p>❌ <strong>&quot;我会默默加班把它做完。&quot;</strong></p>
+<p>→ 设错预期，可能最后两头不讨好</p>
+
+<p>✅ <strong>&quot;我会先量化影响，再提出多个方案，让 stakeholder 做知情决策。&quot;</strong></p>
+<p>→ 展示工程判断力 + 沟通技巧 + 主人翁意识</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分项 / Senior/Staff Signals</h2>
+
+<p>- <strong>提前预防</strong> — 在 kickoff 时就建立 change control 流程，不是等 scope creep 发生才处理</p>
+<p>- <strong>区分 want vs need</strong> — 追问&quot;这个功能不上，业务目标能达成吗？&quot;往往 30% 的 scope 是 nice-to-have</p>
+<p>- <strong>建立信任储蓄</strong> — 平时交付靠谱，说&quot;这次先砍&quot;才有说服力</p>
+<p>- <strong>用数据说话</strong> — &quot;加 3 个 API 集成 = +3 周 = Q3 OKR miss&quot; 比&quot;感觉很复杂&quot;有力得多</p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>1. <strong>量化先于拒绝</strong> — 先评估影响，再做决定</p>
+<p>2. <strong>提供选项，不只说&quot;不&quot;</strong> — options-based communication</p>
+<p>3. <strong>让 stakeholder 做决策</strong> — 你提供信息，他们对结果负责</p>
+<p>4. <strong>事后复盘</strong> — scope creep 往往暴露需求分析不足，下次在 kickoff 阶段就对齐</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Shape Up — 37signals](https://basecamp.com/shapeup) — 如何用 appetite 控制 scope</p>
+<p>- [Staff Engineer: Leadership Beyond the Management Track](https://staffeng.com/) — Will Larson</p>
+<p>- [The Art of Saying No Without Saying No](https://www.svpg.com/the-art-of-saying-no/) — Marty Cagan</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>你和朋友说好一起做一个 4 层蛋糕，中途朋友说&quot;再加冰淇淋吧！&quot;你不是直接说不行，而是说：&quot;加冰淇淋要多买材料，要多 2 小时，我们要不要换个方案：先做好蛋糕，下次单独做冰淇淋？&quot;</p>
+
+<p>You and a friend agreed to bake a 4-layer cake. Halfway through, they say &quot;let&#x27;s add ice cream too!&quot; Instead of saying no, you say: &quot;Adding ice cream needs more ingredients and 2 more hours — should we finish the cake first and make ice cream separately next time?&quot;</p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Next.js Data Fetching: Server Components vs Client</h2>
+
+<p>&gt; Day 42 · Mastery Phase · ~2 min read</p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个电商 dashboard，需要展示：</p>
+<p>1. 商品列表（从数据库 fetch，SEO 重要）</p>
+<p>2. 购物车数量（登录用户实时状态，每次操作都变）</p>
+<p>3. 实时库存更新（WebSocket）</p>
+
+<p><strong>问题：这三个分别用 Server Component 还是 Client Component？</strong></p>
+
+<p>You&#x27;re building an e-commerce dashboard showing:</p>
+<p>1. Product list (fetched from DB, SEO-critical)</p>
+<p>2. Cart count (real-time per-user state, changes on every action)</p>
+<p>3. Live inventory updates (WebSocket)</p>
+
+<p><strong>Question: Which should be Server Component vs Client Component?</strong></p>
+
+<hr/>
+
+<h2>核心概念 / Core Concept</h2>
+
+<pre><code>
+Server Components (默认，default)    Client Components (&#x27;use client&#x27;)
+─────────────────────────────────    ─────────────────────────────────
+✅ 直接访问数据库/文件系统              ✅ useState, useEffect, hooks
+✅ 敏感信息不暴露给浏览器               ✅ 事件监听 (onClick, onChange)
+✅ 零 JS bundle size                  ✅ 浏览器 API (localStorage, WebSocket)
+✅ 自动流式传输/Suspense               ✅ 实时交互
+❌ 不能用 hooks                        ❌ 增加客户端 bundle
+❌ 不能用浏览器 API                    ❌ 不能直接访问数据库
+</code></pre>
+
+<hr/>
+
+<h2>代码对比 / Code Comparison</h2>
+
+<pre><code>
+// ✅ Server Component (app/products/page.tsx)
+// No &#x27;use client&#x27; → Server Component by default
+import { db } from &#x27;@/lib/db&#x27;
+
+export default async function ProductsPage() {
+  // Direct DB access — no API route needed
+  const products = await db.product.findMany({ take: 20 })
+  
+  return (
+    &lt;div&gt;
+      {products.map(p =&gt; (
+        &lt;ProductCard key={p.id} product={p} /&gt;  // Pass to client component
+      ))}
+    &lt;/div&gt;
+  )
+}
+
+// ✅ Client Component (components/CartButton.tsx)
+&#x27;use client&#x27;
+import { useState } from &#x27;react&#x27;
+
+export function CartButton({ initialCount }: { initialCount: number }) {
+  const [count, setCount] = useState(initialCount)
+  
+  return (
+    &lt;button onClick={() =&gt; setCount(c =&gt; c + 1)}&gt;
+      Cart ({count})
+    &lt;/button&gt;
+  )
+}
+</code></pre>
+
+<pre><code>
+// ❌ Common mistake: marking everything &#x27;use client&#x27;
+&#x27;use client&#x27;
+import { db } from &#x27;@/lib/db&#x27;  // ❌ This will FAIL — db can&#x27;t run in browser
+export default async function ProductsPage() { ... }
+
+// ❌ Another mistake: fetching in useEffect when Server Component would work
+&#x27;use client&#x27;
+export default function Products() {
+  const [products, setProducts] = useState([])
+  useEffect(() =&gt; {
+    fetch(&#x27;/api/products&#x27;).then(r =&gt; r.json()).then(setProducts)  // ❌ Extra API route, waterfall
+  }, [])
+}
+</code></pre>
+
+<hr/>
+
+<h2>猜猜输出 / Quiz</h2>
+
+<pre><code>
+// app/page.tsx (Server Component)
+export default async function Page() {
+  console.log(&#x27;where does this log?&#x27;)
+  return &lt;div&gt;Hello&lt;/div&gt;
+}
+</code></pre>
+
+<p>这个 <code>console.log</code> 输出在哪里？/ Where does this <code>console.log</code> appear?</p>
+
+<p>A) 浏览器 DevTools Console</p>
+<p>B) Node.js 服务器终端</p>
+<p>C) 两者都有</p>
+<p>D) 不会输出，Server Components 不支持 console.log</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>B) Node.js 服务器终端</strong></p>
+
+<p>Server Components 运行在服务器上，console.log 输出在你的终端（开发时）或服务器日志（生产时）。浏览器什么都看不到。</p>
+
+<p>Server Components run on the server. <code>console.log</code> appears in your terminal (dev) or server logs (production). Nothing appears in the browser console.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>决策框架 / Decision Framework</h2>
+
+<pre><code>
+需要 useState/useEffect/hooks?  → Client Component
+需要 onClick/onChange 等事件?   → Client Component
+需要访问 localStorage/WebSocket? → Client Component
+只是展示数据 + SEO 重要?        → Server Component ✅ (默认选择)
+需要访问数据库/文件?            → Server Component ✅
+</code></pre>
+
+<p><strong>黄金法则</strong>: 把交互部分&quot;下推&quot;到叶子节点，让尽可能多的组件保持 Server Component。</p>
+
+<p><strong>Golden rule</strong>: Push interactivity down to leaf nodes — keep as many components as Server Components as possible.</p>
+
+<hr/>
+
+<h2>回答之前的问题 / Answering the Original Question</h2>
+
+<p>1. <strong>商品列表</strong> → Server Component ✅（数据库直接访问，SEO 友好，零 JS）</p>
+<p>2. <strong>购物车数量</strong> → Client Component（需要 useState 跟踪变化）</p>
+<p>3. <strong>实时库存</strong> → Client Component（需要 WebSocket / useEffect）</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Next.js Server Components Docs](https://nextjs.org/docs/app/building-your-application/rendering/server-components)</p>
+<p>- [When to use Server vs Client Components](https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns)</p>
+<p>- [React Server Components RFC](https://github.com/reactjs/rfcs/blob/main/text/0188-server-components.md)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>Server Component 就像厨房里做好的菜直接端上桌——不需要顾客自己加热，已经是成品了，而且配料表（源码、数据库密码）留在厨房里。Client Component 就像自助餐台——食材在现场，顾客可以自己选、自己操作，但多了一些互动成本。</p>
+
+<p>Server Component is like food prepared in the kitchen and served ready — no heating needed at the table, and the recipe (source code, DB secrets) stays in the kitchen. Client Component is like a buffet station — ingredients are on-site and guests can interact, but with more overhead.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Mixture of Experts (MoE): Efficient Large Models</h2>
+
+<p>&gt; Day 42 · Mastery Phase · ~2 min read</p>
+
+<hr/>
+
+<h2>直觉解释 / Intuitive Explanation</h2>
+
+<p>传统大模型（Dense Model）每次处理 token 时，<strong>所有参数都参与计算</strong>。GPT-4 级别的模型有数千亿参数，每个 token 都要过一遍，这非常耗算力。</p>
+
+<p><strong>MoE（混合专家模型）</strong> 的思路完全不同：把模型拆分成多个&quot;专家&quot;（小型 FFN 网络），每次只激活少数几个专家，其余保持沉默。结果是：参数总量大，但每次推理的计算量小。</p>
+
+<p>Traditional Dense Models activate <strong>all parameters</strong> for every token. For a model with hundreds of billions of parameters, every single token triggers the full computation — extremely expensive.</p>
+
+<p><strong>MoE (Mixture of Experts)</strong> takes a different approach: split the model into multiple &quot;experts&quot; (small FFN sub-networks). For each token, only a few experts are activated; the rest stay silent. Result: large total parameters, but small per-token compute.</p>
+
+<hr/>
+
+<h2>工作原理 / How It Works</h2>
+
+<pre><code>
+Input Token
+    │
+    ▼
+[Router / Gating Network]
+    │ (softmax → Top-K experts selection)
+    ├──────────┬──────────┐
+    ▼          ▼          ▼
+[Expert 1] [Expert 4] [Expert 7]   ← Only top-2 (or top-K) activated
+    │          │          │
+    └──────────┴──────────┘
+               │
+          [Weighted Sum]
+               │
+            Output
+</code></pre>
+
+<p><strong>Router 的工作</strong> / What the Router Does:</p>
+<p>- 对每个 token，输出 N 个专家的概率分布</p>
+<p>- 选择 Top-K 个专家（通常 K=2）</p>
+<p>- 把 token 发给这 K 个专家处理，结果加权求和</p>
+
+<p><strong>关键参数</strong> / Key Numbers:</p>
+<p>- <strong>Total experts</strong>: 通常 8、64 甚至数百个</p>
+<p>- <strong>Active experts per token</strong>: 通常只有 2 个</p>
+<p>- <strong>Sparsity</strong>: 如果有 64 个专家每次只用 2 个，激活率 = 3%</p>
+
+<hr/>
+
+<h2>实际应用 / Real Applications</h2>
+
+<p>| 模型 | 架构 | 说明 |</p>
+<p>|------|------|------|</p>
+<p>| GPT-4 | 据报道是 MoE | 8 个专家，每次激活 2 个 |</p>
+<p>| Mixtral 8x7B | MoE | 8 个 7B 专家，相当于 47B 总参数，实际计算量约 13B |</p>
+<p>| DeepSeek-V3 | MoE | 671B 总参数，每次激活 37B |</p>
+<p>| Switch Transformer | MoE | Google，2021，证明 MoE 可扩展 |</p>
+
+<p><strong>为什么 Mixtral 8x7B 很厉害？</strong> 推理速度接近 13B 模型，但效果接近 70B 模型。鱼和熊掌兼得。</p>
+
+<p><strong>Why Mixtral 8x7B is impressive</strong>: Inference speed similar to a 13B model, but quality approaching a 70B model. Best of both worlds.</p>
+
+<hr/>
+
+<h2>可运行的演示 / Runnable Demo</h2>
+
+<pre><code>
+# pip install torch
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class MoELayer(nn.Module):
+    def __init__(self, input_dim=64, num_experts=4, top_k=2):
+        super().__init__()
+        self.top_k = top_k
+        # Each &quot;expert&quot; is a small FFN
+        self.experts = nn.ModuleList([
+            nn.Linear(input_dim, input_dim) for _ in range(num_experts)
+        ])
+        # Router: maps input to expert scores
+        self.router = nn.Linear(input_dim, num_experts)
+
+    def forward(self, x):
+        # x: (batch, input_dim)
+        scores = self.router(x)                      # (batch, num_experts)
+        weights, indices = torch.topk(scores, self.top_k, dim=-1)
+        weights = F.softmax(weights, dim=-1)          # normalize top-k weights
+        
+        output = torch.zeros_like(x)
+        for k in range(self.top_k):
+            expert_idx = indices[:, k]               # which expert for each item
+            weight = weights[:, k].unsqueeze(-1)     # scalar weight
+            for i, idx in enumerate(expert_idx):
+                output[i] += weight[i] * self.experts[idx](x[i])
+        return output
+
+# Demo
+layer = MoELayer(input_dim=64, num_experts=4, top_k=2)
+x = torch.randn(3, 64)  # batch of 3 tokens
+out = layer(x)
+print(f&quot;Input: {x.shape}, Output: {out.shape}&quot;)  # both (3, 64)
+</code></pre>
+
+<hr/>
+
+<h2>MoE 的挑战 / Challenges</h2>
+
+<p>1. <strong>负载不均衡（Load Imbalance）</strong> — Router 可能总选同几个专家，其他专家&quot;失业&quot;。解决：在 loss 里加辅助均衡项（auxiliary load balancing loss）</p>
+<p>2. <strong>通信开销</strong> — 分布式训练时，token 要路由到不同 GPU 上的专家，网络通信成为瓶颈</p>
+<p>3. <strong>训练不稳定</strong> — Router 学习过程中可能出现 &quot;expert collapse&quot;，需要精心调参</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Mixtral of Experts Paper](https://arxiv.org/abs/2401.04088) — Mistral AI, 2024</p>
+<p>- [Switch Transformers — Google](https://arxiv.org/abs/2101.03961) — Fedus et al., 2021</p>
+<p>- [DeepSeek-V3 Technical Report](https://arxiv.org/abs/2412.19437) — DeepSeek, 2024</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象一个公司有 64 位专家员工（数学、语言、代码、逻辑……）。来了一个任务，前台（Router）看一眼，说&quot;这道题找 2 号数学专家和 7 号代码专家来做&quot;，其他 62 人继续喝咖啡。这样公司总能力很强，但每次开会只叫 2 个人，效率超高。</p>
+
+<p>Imagine a company with 64 specialist employees (math, language, code, logic...). A task arrives and the receptionist (Router) says &quot;get Expert #2 (math) and Expert #7 (code) for this.&quot; The other 62 keep drinking coffee. Total capacity is huge, but only 2 people are called each time — very efficient.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-12</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
