@@ -364,3 +364,50 @@
 ### Recommendations
 1. **P1 — Investigate review-and-send timeout**: Check if Sunday week-review generation is hitting model latency issues. Consider increasing the cron `timeoutSeconds` or simplifying the Sunday prompt if it's running too long.
 2. **P2 — Cron JSON parsing**: Strip config warning lines before JSON parse in optimizer script (known, low priority).
+
+## 2026-05-13 Optimization Run
+
+### Data Summary
+- **Current day:** 42
+- **State indices:** SD=35, LC=36, Behavioral=35, Frontend=35, AI=17
+- **Cron jobs:** All 6 byte-by-byte crons showing status `ok`
+- **review-and-send:** Recovered from timeout error reported last run — now `ok` ✅
+
+### Delivery (Last 7 Days)
+| Date | Day | Sections | Recipients | Status |
+|------|-----|----------|------------|--------|
+| 2026-05-13 (Wed) | 42 | 5 | 2 | ✅ |
+| 2026-05-12 (Tue) | 41 | 5 | 2 | ✅ |
+| 2026-05-11 (Mon) | 40 | 1 (review) | 2 | ✅ |
+| 2026-05-10 (Sun) | — | 1 | 2 | ✅ |
+| 2026-05-09 (Sat) | 39 | 1 | 2 | ✅ |
+| 2026-05-08 (Fri) | 38 | 5 | 2 | ✅ |
+| 2026-05-07 (Thu) | 37 | 5 | 2 | ✅ |
+
+**Delivery rate: 7/7 (100%)** 🎯
+
+### Issues Found
+
+**P0 Critical:** None. All 7 days delivered successfully. All crons healthy.
+
+**P1 Quality:**
+- **Day 39 double-commit (May 9 + May 10):** Day 39 was generated on Saturday (May 9) at 08:08, then re-committed on Sunday (May 10) at 14:51 with the same day number. The Sunday cron appears to have re-run Day 39 content generation instead of advancing. Day 40 (review day) was then committed on Monday (May 11). This caused a 1-day calendar shift — no content was lost, but the cadence slipped. Email was still sent on May 10 with 1 section, so delivery wasn't missed, but the day counter stalled for a day.
+
+**P2 Maintenance:**
+- **Cron JSON parsing still broken:** The `openclaw cron list --json` output includes config warning lines before the JSON, causing the optimizer's Python parser to fail. Known issue from last run; low priority since raw grep works fine as fallback.
+
+### Metrics
+- Delivery rate (7d): **7/7** ✅
+- Cron errors: **0** (all ok)
+- Day advancement: 37→42 (+5 days in 7 calendar days, correct accounting for review day)
+- Recipients stable at 2
+
+### Trend vs Last Run (May 10)
+- Delivery rate: **maintained** at 7/7 ✅
+- review-and-send timeout: **resolved** — now showing ok
+- Day 39 stall: **resolved itself** — pipeline caught up by Monday
+- No new failures introduced
+
+### Recommendations
+1. **P2 — Day counter stall on weekends:** Investigate why the Sunday cron re-generated Day 39 instead of advancing to Day 40. Likely a timing/state race between Saturday deepdive and Sunday cron. Low urgency since it self-corrected.
+2. **P2 — Cron JSON parsing:** Same as last run — strip config warning lines before JSON parse. Cosmetic only.

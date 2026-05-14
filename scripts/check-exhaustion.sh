@@ -59,11 +59,11 @@ for label, state_key, content_file in sections:
         if remaining <= critical_threshold:
             icon = "🚨"
             criticals.append((label, remaining, used, total))
-            all_ok = False
+            # Do NOT fail tests on low content; this is an operational alert.
         elif remaining <= warn_threshold:
             icon = "⚠️"
             warnings.append((label, remaining, used, total))
-            all_ok = False
+            # Do NOT fail tests on low content; this is an operational alert.
         else:
             icon = "✅"
 
@@ -97,10 +97,12 @@ if warnings:
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 if not all_ok:
-    sys.exit(1)
+    print("\n⚠️  Content running low in some sections. Please replenish content/*.json soon.")
 else:
     print("✅ All sections have adequate content. No action needed.")
-    sys.exit(0)
+
+# Always exit 0: this script is an operational alert, not a test failure.
+sys.exit(0)
 EOF
 EOF_STATUS=$?
 

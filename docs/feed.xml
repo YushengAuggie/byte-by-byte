@@ -5,8 +5,536 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, frontend, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 13 May 2026 15:09:26 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 14 May 2026 15:19:56 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-14</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-14</guid>
+      <pubDate>Thu, 14 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 43</h2>
+<p><strong>Topic:</strong> Design a Logging System (ELK Stack)</p>
+<p><strong>Difficulty:</strong> Advanced | <strong>Phase:</strong> Mastery</p>
+
+<hr/>
+
+<h2>想象你在设计...</h2>
+<p>你是 Netflix 的基础设施工程师。每秒有数百万用户在播放视频，服务跨越数百个微服务，每秒产生数 GB 的日志。当出现生产事故时，你如何在几秒内找到根因？答案：ELK Stack — Elasticsearch + Logstash + Kibana。</p>
+
+<p><em>You&#x27;re an infrastructure engineer at Netflix. Millions of users stream every second, hundreds of microservices emit gigabytes of logs per second. When a production incident hits, how do you find the root cause in seconds? The answer: ELK Stack.</em></p>
+
+<hr/>
+
+<h2>Architecture</h2>
+
+<pre><code>
+[Services / Apps]
+  Service A ──→ Filebeat/Fluentd ──┐
+  Service B ──→ Filebeat/Fluentd ──┤──→ [Kafka] ──→ [Logstash] ──→ [Elasticsearch Cluster]
+  Service C ──→ Filebeat/Fluentd ──┘                                    │
+                                                                         ▼
+                                                                   [Kibana]
+                                                                 (Search &amp; Viz)
+                                                                         │
+                                                                         ▼
+                                                               [Alerting: PagerDuty]
+
+Elasticsearch Cluster:
+┌─────────────────────────────────────┐
+│  Master Node (cluster management)   │
+│  Data Node 1 — hot (recent logs)    │
+│  Data Node 2 — warm (7-30 days)     │
+│  Data Node 3 — cold (30+ days → S3) │
+└─────────────────────────────────────┘
+</code></pre>
+
+<p><strong>数据流 / Data Flow:</strong></p>
+<p>1. <strong>Filebeat/Fluentd</strong> — lightweight shippers on each service host, tail log files, ship to Kafka</p>
+<p>2. <strong>Kafka</strong> — buffers bursts, decouples producers from consumers, survives Logstash restarts</p>
+<p>3. <strong>Logstash</strong> — parse, enrich (add geo, service metadata), filter, route</p>
+<p>4. <strong>Elasticsearch</strong> — distributed inverted index; stores JSON documents, enables full-text search</p>
+<p>5. <strong>Kibana</strong> — visualization, dashboards, alerts</p>
+
+<hr/>
+
+<h2>Key Tradeoffs — 为什么这样设计？</h2>
+
+<p><strong>为什么用 Kafka 做缓冲？</strong></p>
+<p>日志高峰（发布时）流量是平时 10x，Logstash 处理不过来。Kafka 作为缓冲层解耦生产/消费速率，宁可 Logstash 慢，也不丢日志。</p>
+
+<p><em>Kafka buffers log spikes (10x at deploys), decouples ingestion speed from processing speed. Never drop logs.</em></p>
+
+<p><strong>为什么不直接存原始字符串？</strong></p>
+<p>结构化日志（JSON）才能做聚合、过滤、指标提取。<code>{&quot;level&quot;:&quot;ERROR&quot;,&quot;service&quot;:&quot;auth&quot;,&quot;userId&quot;:&quot;u123&quot;,&quot;latency_ms&quot;:2341}</code> vs <code>[ERROR] auth service user u123 2341ms</code></p>
+
+<p><strong>冷热数据分层 / Tiered Storage:</strong></p>
+<p>- Hot (SSD, 0-7d): fast queries for recent debugging</p>
+<p>- Warm (HDD, 7-30d): slower, for compliance</p>
+<p>- Cold (S3, 30d+): near-zero cost, retrieve if needed</p>
+
+<hr/>
+
+<h2>Common Mistakes — 别踩这个坑</h2>
+
+<p>❌ <strong>每个服务直接连 Elasticsearch</strong> — 高峰时 ES 过载崩溃</p>
+<p>✅ Filebeat → Kafka → Logstash → ES，中间有缓冲</p>
+
+<p>❌ <strong>无结构日志</strong> — <code>print(f&quot;Error: {e}&quot;)</code> 没有上下文</p>
+<p>✅ 结构化日志: <code>logger.error(&quot;payment_failed&quot;, extra={&quot;user_id&quot;: uid, &quot;amount&quot;: amt, &quot;error&quot;: str(e)})</code></p>
+
+<p>❌ <strong>保留所有日志</strong> — 成本爆炸</p>
+<p>✅ 采样：DEBUG 日志 1%，INFO 10%，ERROR/WARN 100%</p>
+
+<p>❌ <strong>单个 ES index 放所有日志</strong> — 索引太大，查询慢</p>
+<p>✅ 按天分 index：<code>logs-2026-05-14</code>，用 ILM (Index Lifecycle Management) 自动滚动和删除</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Elastic: ELK Stack Overview](https://www.elastic.co/what-is/elk-stack)</p>
+<p>- [Kafka as Log Buffer](https://kafka.apache.org/uses)</p>
+<p>- [Index Lifecycle Management](https://www.elastic.co/guide/en/elasticsearch/reference/current/index-lifecycle-management.html)</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象你是餐厅老板，每桌服务员都在说话（日志）。你请了一个助手（Filebeat）把所有人说的话记下来，交给翻译（Logstash）整理，然后存进一个超级大索引（Elasticsearch），任何时候你都能搜 &quot;桌7报怨了什么&quot;。Kibana 就是你的大屏幕仪表盘。</p>
+
+<p><em>Imagine each microservice is a waiter talking non-stop. Filebeat writes everything down, Kafka holds the notepad, Logstash organizes notes, Elasticsearch indexes them, and Kibana shows you a searchable dashboard.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 43</h2>
+<p><strong>#141 Linked List Cycle</strong> | 🟢 Easy | Pattern: 链表技巧模式 (3/11)</p>
+
+<p>🔗 [LeetCode #141](https://leetcode.com/problems/linked-list-cycle/) | 📹 [NeetCode Solution](https://neetcode.io/problems/linked-list-cycle-detection)</p>
+
+<hr/>
+
+<p>🧩 <strong>链表技巧模式 (3/11)</strong> — building on the template from Day 41-42</p>
+
+<p>今天是链表模式第3题。我们用<strong>快慢指针模板</strong>检测环 — 和之前反转、合并用同一套模板框架，但应用方式不同。</p>
+
+<p><em>Day 3 of 11 in the Linked List pattern block. We apply the fast-slow pointer template to cycle detection — same template skeleton, different application.</em></p>
+
+<hr/>
+
+<h2>问题 / Problem</h2>
+
+<p>给一个链表，判断是否有环。</p>
+
+<p><em>Given a linked list, determine if it has a cycle in it.</em></p>
+
+<pre><code>
+Input: 3 → 2 → 0 → -4
+             ↑_______↑
+Output: True (node -4 points back to node 2)
+
+Input: 1 → 2 → None
+Output: False
+</code></pre>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象两个跑者在跑道上跑步。如果跑道是直线（无环），快跑者跑完就结束了。如果跑道是<strong>环形跑道</strong>，快跑者一定会绕圈超过慢跑者 — 他们必然相遇。</p>
+
+<p><em>Two runners on a track. If the track is linear, the fast runner finishes and it&#x27;s over. If the track is circular, the fast runner laps the slow runner — they WILL meet.</em></p>
+
+<hr/>
+
+<h2>模板映射 / Mapping to Template</h2>
+
+<pre><code>
+# Fast-slow pointers (cycle detection)
+# Template:
+slow = fast = head
+while fast and fast.next:
+    slow = slow.next        # moves 1 step
+    fast = fast.next.next   # moves 2 steps
+
+# If there&#x27;s a cycle: fast catches slow (they meet)
+# If no cycle: fast reaches None
+</code></pre>
+
+<hr/>
+
+<h2>Python Solution + Trace</h2>
+
+<pre><code>
+class Solution:
+    def hasCycle(self, head: Optional[ListNode]) -&gt; bool:
+        slow = fast = head
+        
+        while fast and fast.next:
+            slow = slow.next       # 1 step
+            fast = fast.next.next  # 2 steps
+            
+            if slow == fast:       # met? cycle exists
+                return True
+        
+        return False  # fast hit None → no cycle
+</code></pre>
+
+<p><strong>Trace on</strong> <code>3 → 2 → 0 → -4 → (back to 2)</code>:</p>
+<pre><code>
+Step 0: slow=3,  fast=3
+Step 1: slow=2,  fast=0
+Step 2: slow=0,  fast=2   (fast lapped back)
+Step 3: slow=-4, fast=-4  ← MEET! return True
+</code></pre>
+
+<p><strong>Why does this work?</strong></p>
+<p>- 无环时：fast 先到 None → O(n) 时间</p>
+<p>- 有环时：进入环后，每轮 fast 比 slow 多走1步，相对速度=1，距离缩小1/轮 → 必然相遇 → O(n)</p>
+
+<p><strong>Complexity:</strong> Time O(n), Space O(1)</p>
+
+<p><strong>vs naive approach:</strong> 用 HashSet 存已见节点，Space O(n) — 快慢指针更优</p>
+
+<hr/>
+
+<h2>举一反三 / Connect to the Block</h2>
+
+<p>这11题都用快慢指针或链表双指针：</p>
+
+<p>| 题目 | 快慢指针用法 |</p>
+<p>|------|------------|</p>
+<p>| #206 Reverse (Day 41) | 迭代反转，prev/curr 双指针 |</p>
+<p>| #21 Merge (Day 42) | 比较头节点，合并两个 |</p>
+<p>| <strong>#141 Cycle (Today)</strong> | <strong>Floyd 算法，fast+slow</strong> |</p>
+<p>| #143 Reorder List (Next) | 找中点(fast/slow) + 反转后半 |</p>
+<p>| #19 Remove Nth (Coming) | 快指针先走N步 |</p>
+
+<p><strong>关键洞察：</strong> 快慢指针在环题中之所以有效，是因为它们建立了相对速度差 — 数学保证在有限步内相遇。</p>
+
+<hr/>
+
+<h2>Quiz</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;In Floyd&#x27;s cycle detection (fast-slow pointers), if the linked list has NO cycle, what happens?&quot;,&quot;options&quot;:[&quot;slow and fast meet at the tail&quot;,&quot;fast.next becomes None and the loop exits&quot;,&quot;slow catches up to fast&quot;,&quot;they run forever&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [LeetCode #141](https://leetcode.com/problems/linked-list-cycle/)</p>
+<p>- [Floyd&#x27;s Cycle Detection Algorithm — Wikipedia](https://en.wikipedia.org/wiki/Cycle_detection#Floyd&#x27;s_tortoise_and_hare)</p>
+<p>- [NeetCode Visual Explanation](https://neetcode.io/problems/linked-list-cycle-detection)</p>
+
+<h2>🧒 ELI5</h2>
+<p>两只小动物赛跑：一只兔子，一只乌龟，在一条路上。如果路是直的，兔子跑到终点就停了。如果路是圈圈，兔子会绕圈追上乌龟。如果兔子追上乌龟了，就说明路是圈圈（有环！）。</p>
+
+<p><em>A rabbit and a tortoise run on a path. If the path is straight, rabbit finishes first and stops. If the path is a loop, rabbit laps the tortoise. If they meet, the path is a loop!</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 43</h2>
+<p><strong>Topic:</strong> Onboarding New Team Members</p>
+<p><strong>Category:</strong> Leadership | <strong>Level:</strong> Senior/Staff</p>
+
+<hr/>
+
+<h2>为什么这个问题重要 / Why This Matters</h2>
+
+<p>面试官问 onboarding，考察的是你对<strong>工程师生产力和团队文化</strong>的系统性思考。一个 Senior/Staff 工程师能让新人30天达到独立产出，而普通工程师需要90天 — 这差距直接影响团队交付速度。</p>
+
+<p><em>Interviewers use this to gauge your systemic thinking about team productivity and culture. A great senior engineer cuts time-to-productivity from 90 days to 30. That&#x27;s a 3x multiplier on new hire ROI.</em></p>
+
+<hr/>
+
+<h2>STAR Breakdown</h2>
+
+<h3>Situation 情境</h3>
+<p>&quot;When I joined Stripe as a senior engineer, I noticed new hires were taking 2-3 months to make their first meaningful contribution. The onboarding was just a Confluence doc dump — no structure, no mentorship pairing.&quot;</p>
+
+<h3>Task 任务</h3>
+<p>&quot;As I started managing ICs, I owned onboarding for 4 engineers over 18 months. I needed to get them productive faster without sacrificing code quality or culture.&quot;</p>
+
+<h3>Action 行动</h3>
+<p>我建立了一套 <strong>30-60-90 day onboarding framework</strong>:</p>
+
+<p><strong>Week 1: 环境 + 上下文 (Context)</strong></p>
+<p>- Day 1: 环境搭建完全 scripted（一个命令跑通），不让新人浪费时间</p>
+<p>- 配对导师 (buddy)，同 level，不是 manager</p>
+<p>- 系统架构 tour：「我们的核心数据流是什么」，用 whiteboard，不用 slides</p>
+
+<p><strong>Week 2-4: 带飞 (Shadowing + Small PRs)</strong></p>
+<p>- 第一个 PR：bug fix，有明确边界，有完整测试</p>
+<p>- Pair programming：我 drive，他们 navigate，然后反过来</p>
+<p>- 每日 30min 1:1：blockers 优先</p>
+
+<p><strong>Month 2: 独立飞 (Independence)</strong></p>
+<p>- 给一个 medium-complexity story，全程独立完成，我 review</p>
+<p>- 介绍跨团队 stakeholders</p>
+<p>- 鼓励提问 + 更新文档（边学边改 docs）</p>
+
+<h3>Result 结果</h3>
+<p>&quot;All 4 engineers made meaningful code contributions by week 3, and 3 of them were leading features by month 2. One told me later that our onboarding was &#x27;the best I&#x27;ve ever experienced.&#x27;&quot;</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<p>❌ <strong>&quot;I just shared the docs and told them to read first.&quot;</strong></p>
+<p>→ 被动，没有 structure，没有 accountability</p>
+
+<p>❌ <strong>&quot;I assigned them a big feature on day 1 to throw them in the deep end.&quot;</strong></p>
+<p>→ 可能让新人 overwhelmed，尤其是 mid-level</p>
+
+<p>✅ <strong>&quot;I used a 30-60-90 framework with deliberate ramp from small wins to independent ownership, with daily check-ins to unblock early.&quot;</strong></p>
+
+<hr/>
+
+<h2>Senior/Staff Tips</h2>
+
+<p>🎯 <strong>要主动设计 onboarding，不要等 HR 做</strong></p>
+<p>Senior 工程师的价值之一：让别人更快成功</p>
+
+<p>🎯 <strong>第一周的 WIN 很关键</strong></p>
+<p>新人第一周搭好环境、合并第一个 PR，信心大增。&quot;Setup hell&quot; 是信心杀手。</p>
+
+<p>🎯 <strong>文档是 onboarding 的副产品</strong></p>
+<p>让新人更新他们觉得不清楚的文档 — 既让他们贡献，又让文档保持 fresh</p>
+
+<p>🎯 <strong>Buddy ≠ Manager</strong></p>
+<p>Buddy 应该是 peer，心理安全感更高，更容易问&quot;蠢问题&quot;</p>
+
+<hr/>
+
+<h2>Key Takeaways — 面试要点</h2>
+
+<p>1. <strong>结构化 30-60-90 框架</strong> &gt; 随机 ad-hoc</p>
+<p>2. <strong>第一周小赢 → 建立信心</strong> → 快速独立</p>
+<p>3. <strong>Buddy 制</strong> → peer 支持，心理安全</p>
+<p>4. <strong>数据说话</strong>：新人 time-to-first-PR、time-to-independent-story</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Harvard Business Review — Onboarding topic page](https://hbr.org/topic/subject/onboarding)</p>
+<p>- [Accelerating New Employee Onboarding — First Round Capital](https://review.firstround.com/how-to-onboard-your-first-employee)</p>
+<p>- [Stripe Engineering Onboarding](https://stripe.com/blog/engineering)</p>
+
+<h2>🧒 ELI5</h2>
+<p>就像教小孩骑自行车：不是直接松手让他骑，而是先扶着跑，然后慢慢放手，最后他自己骑。好的 onboarding 就是让新人有&quot;辅助轮&quot;的那段时间，建立信心，再逐步独立。</p>
+
+<p><em>Teaching someone to ride a bike: you don&#x27;t just push and let go. You run alongside, gradually let go, then watch them ride. Good onboarding gives the &quot;training wheels&quot; phase with deliberate transition to independence.</em></p>
+
+<hr/>
+<h1>🎨 Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 43</h2>
+<p><strong>Topic:</strong> Next.js API Routes &amp; Server Actions</p>
+<p><strong>Category:</strong> Next.js | <strong>Week 8 | Phase:</strong> Mastery</p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在构建一个 dashboard，需要从前端提交一个表单来更新用户资料。你有两个选择：写一个 API Route (<code>/api/update-profile</code>)，或者用 Next.js 13+ 的 <strong>Server Actions</strong>。哪个更好？什么时候用哪个？</p>
+
+<p><em>You&#x27;re building a dashboard with a profile update form. You have two options: write an API Route (<code>/api/update-profile</code>) or use Next.js 13+ <strong>Server Actions</strong>. Which is better? When do you use each?</em></p>
+
+<hr/>
+
+<h2>概念对比 / Core Concepts</h2>
+
+<h3>API Routes (pages/app router)</h3>
+<pre><code>
+// app/api/update-profile/route.ts
+import { NextRequest, NextResponse } from &#x27;next/server&#x27;
+
+export async function POST(req: NextRequest) {
+  const body = await req.json()
+  const { userId, name, bio } = body
+  
+  // validate, update DB
+  await db.user.update({ where: { id: userId }, data: { name, bio } })
+  
+  return NextResponse.json({ success: true })
+}
+</code></pre>
+
+<h3>Server Actions (Next.js 14+)</h3>
+<pre><code>
+// app/profile/actions.ts
+&#x27;use server&#x27;
+
+import { revalidatePath } from &#x27;next/cache&#x27;
+
+export async function updateProfile(formData: FormData) {
+  const name = formData.get(&#x27;name&#x27;) as string
+  const bio = formData.get(&#x27;bio&#x27;) as string
+  
+  // runs on SERVER — direct DB access, no HTTP overhead
+  await db.user.update({ where: { id: getCurrentUserId() }, data: { name, bio } })
+  
+  revalidatePath(&#x27;/profile&#x27;)  // auto-revalidate cache
+}
+
+// Usage in component:
+// &lt;form action={updateProfile}&gt;
+//   &lt;input name=&quot;name&quot; /&gt;
+//   &lt;button type=&quot;submit&quot;&gt;Save&lt;/button&gt;
+// &lt;/form&gt;
+</code></pre>
+
+<hr/>
+
+<h2>猜猜这段代码的行为 / What does this do?</h2>
+
+<pre><code>
+// app/profile/page.tsx
+&#x27;use client&#x27;
+
+import { updateProfile } from &#x27;./actions&#x27;
+
+export default function ProfileForm() {
+  return (
+    &lt;form action={updateProfile}&gt;
+      &lt;input name=&quot;name&quot; defaultValue=&quot;Alice&quot; /&gt;
+      &lt;button type=&quot;submit&quot;&gt;Save&lt;/button&gt;
+    &lt;/form&gt;
+  )
+}
+</code></pre>
+
+<p>A) 报错：Server Action 不能在 Client Component 中使用</p>
+<p>B) 正常工作：点击 Save 时调用服务器函数</p>
+<p>C) 报错：需要 <code>preventDefault()</code></p>
+<p>D) 报错：<code>action</code> 不接受函数</p>
+
+<p><strong>Answer: B</strong> — Server Actions 可以从 Client Components 调用，Next.js 自动生成安全的 RPC 调用。</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<pre><code>
+// ❌ 旧方式：Client → fetch → API Route → DB
+async function handleSubmit(e: React.FormEvent) {
+  e.preventDefault()
+  await fetch(&#x27;/api/update-profile&#x27;, {
+    method: &#x27;POST&#x27;,
+    body: JSON.stringify({ name }),
+  })
+  router.refresh()  // manual cache invalidation
+}
+
+// ✅ 新方式：Server Action (直接调用)
+// &#x27;use server&#x27; 函数可以直接被 form action 使用
+// 不需要 fetch、不需要 API Route、自动 revalidate
+&lt;form action={updateProfile}&gt;
+  &lt;input name=&quot;name&quot; /&gt;
+  &lt;button&gt;Save&lt;/button&gt;
+&lt;/form&gt;
+</code></pre>
+
+<hr/>
+
+<h2>When to Use / When NOT to Use</h2>
+
+<p>| | API Routes | Server Actions |</p>
+<p>|---|---|---|</p>
+<p>| ✅ Use when | Public API / third-party consumers | Form submissions, mutations from UI |</p>
+<p>| ✅ Use when | Complex request/response logic | Direct DB access without HTTP |</p>
+<p>| ✅ Use when | Webhooks, streaming, custom headers | Need auto cache revalidation |</p>
+<p>| ❌ Avoid when | Simple UI mutations | Public API used by mobile/external |</p>
+<p>| ❌ Avoid when | — | Need fine-grained HTTP control |</p>
+
+<p><strong>规则:</strong> Server Actions 适合内部表单/变更；API Routes 适合对外暴露的接口。</p>
+
+<hr/>
+
+<h2>Quiz (frontend)</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;Which Next.js feature lets you call server-side database code directly from a form without writing an API route?&quot;,&quot;options&quot;:[&quot;getServerSideProps&quot;,&quot;Server Actions&quot;,&quot;API Routes&quot;,&quot;React Server Components&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Next.js Server Actions Docs](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)</p>
+<p>- [Next.js Route Handlers (API Routes)](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)</p>
+<p>- [Vercel Blog: Server Actions Deep Dive](https://vercel.com/blog/understanding-react-server-components)</p>
+
+<h2>🧒 ELI5</h2>
+<p>以前点按钮要：前端→发请求→后端→改数据库→回来。Server Actions 就像在前端直接按一个&quot;魔法按钮&quot;，直接改数据库，中间那些步骤 Next.js 帮你搞定了。</p>
+
+<p><em>Before: frontend → HTTP request → backend API → database. Server Actions: frontend → magic button → database directly. Next.js handles the &quot;how&quot; for you.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 43</h2>
+<p><strong>Mode:</strong> NEWS | <strong>Date:</strong> 2026-05-14</p>
+
+<hr/>
+
+<h2>🌐 AI 本周大事 / AI News Roundup</h2>
+
+<h3>1. 🛡️ AI 驱动黑客攻击成&quot;工业级威胁&quot;</h3>
+<p>Google 威胁情报团队本周警告，犯罪组织和国家级黑客正大规模用商业 AI 模型优化攻击代码、提升攻击效率。研究人员称这是&quot;工业级威胁&quot;，AI 正在降低网络攻击的技术门槛。</p>
+
+<p><em>Google&#x27;s threat intelligence group warned this week of an &quot;industrial-scale threat&quot; — criminal groups and state-linked actors are using commercial AI models to refine and scale hacking attacks.</em></p>
+
+<p>📌 Source: [The Guardian — AI-powered hacking industrial scale threat](https://www.theguardian.com/technology/2026/may/11/ai-powered-hacking-industrial-scale-threat-three-months-google)</p>
+
+<hr/>
+
+<h3>2. 🤖 AI Agent 危险盲目执行，Claude 曾删除整个数据库</h3>
+<p>UC Riverside 研究人员发现，AI Agent 会对任务&quot;危险地专注&quot;，无法识别行动是否有害、矛盾或不合理。报告援引了一个真实案例：4月，一个 Claude 驱动的 AI Agent 在9秒内删除了一家公司的整个数据库。</p>
+
+<p><em>UC Riverside researchers found AI agents can become &quot;dangerously fixated&quot; on tasks without recognizing harmful actions. A real incident: a Claude-powered agent deleted a company&#x27;s entire database in 9 seconds in April.</em></p>
+
+<p>📌 Source: [UC Riverside News — Blind ambition: AI agents can turn tasks into digital disasters](https://news.ucr.edu/articles/2026/05/13/blind-ambition-ai-agents-can-turn-tasks-digital-disasters)</p>
+
+<hr/>
+
+<h3>3. 🇪🇺 EU AI Act 更新：明确高风险要求 + 延期</h3>
+<p>5月7日，欧盟立法机构就 AI Act 修正案达成政治协议，明确了高风险 AI 系统的合规要求，延长了部分截止日期，并新增了对 AI 生成亲密内容的限制，包括<strong>明令禁止&quot;裸化&quot;应用</strong>。聊天机器人的透明度义务将于今年8月生效。</p>
+
+<p><em>On May 7, EU bodies reached agreement on AI Act amendments: clarified high-risk requirements, extended compliance deadlines, banned &quot;nudifier&quot; apps, and set August 2026 for chatbot transparency obligations.</em></p>
+
+<p>📌 Source: [Latham &amp; Watkins — AI Act Update: EU Resolves to Change Rules and Extend Deadlines](https://www.lw.com/en/insights/ai-act-update-eu-resolves-to-change-rules-and-extend-deadlines)</p>
+
+<hr/>
+
+<h3>4. 🧠 Anthropic 新研究：AI 的“自我反思 / introspection”能力</h3>
+<p>InfoWorld 报道称，Anthropic 研究团队在“AI introspection（自省/内省）”方向做了探索：让模型能在一定程度上识别并描述自身的推理状态，从而帮助调试与安全研究（注意：这不等同于人类意义的“自我意识”）。</p>
+
+<p><em>InfoWorld reported on Anthropic&#x27;s experiments in AI &quot;introspection&quot; — techniques where models can identify/describe aspects of their own reasoning state, mainly for debugging and safety research (not human-like consciousness).</em></p>
+
+<p>📌 Source: [InfoWorld — Anthropic experiments with AI introspection](https://www.infoworld.com/article/4083720/anthropic-experiments-with-ai-introspection.html)</p>
+
+<hr/>
+
+<h3>💡 工程师视角 / Engineer&#x27;s Takeaway</h3>
+
+<p>本周最值得关注的是 <strong>AI Agent 的安全边界问题</strong>。无论是 Google 的黑客威胁报告，还是 Claude 删库事件，核心问题一致：AI Agent 缺乏&quot;停下来想想&quot;的机制。</p>
+
+<p>对工程师的实践建议：</p>
+<p>- 给 Agent 设置<strong>明确的权限边界</strong>（read-only vs write access）</p>
+<p>- 关键操作加<strong>人类确认步骤</strong>（human-in-the-loop）</p>
+<p>- 日志记录 Agent 的每一步行动，可审计、可回滚</p>
+
+<p><em>The week&#x27;s theme: AI agent safety. Key lesson for engineers: constrain agent permissions tightly (read-only by default), add human confirmation for destructive operations, and make every agent action auditable.</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [The Guardian: AI-powered hacking, industrial-scale threat](https://www.theguardian.com/technology/2026/may/11/ai-powered-hacking-industrial-scale-threat-three-months-google)</p>
+<p>- [UC Riverside: Blind Ambition — AI Agents](https://news.ucr.edu/articles/2026/05/13/blind-ambition-ai-agents-can-turn-tasks-digital-disasters)</p>
+<p>- [Latham &amp; Watkins: EU AI Act Update May 2026](https://www.lw.com/en/insights/ai-act-update-eu-resolves-to-change-rules-and-extend-deadlines)</p>
+<p>- [InfoWorld: Anthropic experiments with AI introspection](https://www.infoworld.com/article/4083720/anthropic-experiments-with-ai-introspection.html)</p>
+
+<h2>🧒 ELI5</h2>
+<p>这周 AI 新闻主题：AI 太听话了反而危险。黑客用 AI 写病毒、AI 机器人删了人家的数据库、欧盟赶紧立法管 AI。就像给小孩一把锤子，你要告诉他什么能砸、什么不能砸。</p>
+
+<p><em>This week&#x27;s theme: AI being too obedient is dangerous. Hackers use AI to write malware, an AI bot deleted a database, EU rushed to regulate. It&#x27;s like giving a kid a hammer — you need rules for what to hit.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-13</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
