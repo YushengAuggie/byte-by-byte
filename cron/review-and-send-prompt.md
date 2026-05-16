@@ -35,7 +35,7 @@ Check what type of day:
 **For normal weekday, verify ALL 5 sections meet minimum size:**
 ```bash
 MISSING=""
-for s in system-design algorithms soft-skills frontend ai; do
+for s in system-design algorithms soft-skills python-craft ai; do
   FILE="{{BBB_REPO_DIR}}/archive/${TODAY}-${s}.md"
   if [ ! -f "$FILE" ]; then
     MISSING="$MISSING $s(missing)"
@@ -54,7 +54,7 @@ If incomplete, reply with the error and stop. Do NOT send partial content.
 
 ⚠️ **CRITICAL: Do NOT read all 5 files at once.** Read one section, review it, fix if needed, then move to the next. This prevents context overload and LLM timeouts.
 
-**Review order:** algorithms → frontend → system-design → ai → soft-skills
+**Review order:** algorithms → python-craft → system-design → ai → soft-skills
 
 For EACH section, read the file, then check:
 
@@ -63,10 +63,11 @@ For EACH section, read the file, then check:
 - Is time/space complexity correct?
 - Are LeetCode/NeetCode URLs formatted correctly? (leetcode.com/problems/slug/)
 
-### Frontend (read file, then check)
+### Python Craft (read file, then check)
 - For "guess the output" quizzes: trace the code step by step
 - If your trace produces a different answer → UPDATE the answer AND /tmp/bbb-quiz-4.json
 - Would the code actually run? Check for syntax errors
+- Are threading/async examples correct about GIL behavior?
 
 ### System Design (read file, then check)
 - Is the architecture diagram data flow coherent?
@@ -126,7 +127,7 @@ Write report to `{{BBB_REPO_DIR}}/archive/${TODAY}-qa-report.md`:
 | 🏗️ System Design | ✅/⚠️ | brief note |
 | 💻 Algorithms | ✅/⚠️ | brief note |
 | 🗣️ Soft Skills | ✅/⚠️ | brief note |
-| 🎨 Frontend | ✅/⚠️ | brief note |
+| 🐍 Python Craft | ✅/⚠️ | brief note |
 | 🤖 AI | ✅/⚠️ | brief note |
 
 Issues found and fixed: N
@@ -143,7 +144,7 @@ If any ⚠️ remaining (unfixable — e.g. a claim you can't verify), note it b
 - Message 2: algorithms
 - Poll 2b: quiz from /tmp/bbb-quiz-2.json **if it exists** (pollAnonymous: false). If file missing, skip poll.
 - Message 3: soft skills
-- Message 4: frontend
+- Message 4: python craft
 - Poll 4b: quiz from /tmp/bbb-quiz-4.json **if it exists** (pollAnonymous: false), then answer reveal. If file missing, skip poll.
 - Message 5: AI
 

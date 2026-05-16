@@ -59,6 +59,7 @@ import json, sys
 checks = [
     ('content/system-design.json', 40, {'title', 'difficulty'}),
     ('content/behavioral.json', 40, {'question', 'category'}),
+    ('content/python-craft.json', 50, {'title', 'category'}),
     ('content/frontend.json', 50, {'title', 'category'}),
     ('content/ai-topics.json', 30, {'title', 'category'}),
 ]
@@ -81,7 +82,7 @@ python3 -c "
 import json, sys
 s = json.load(open('state.json'))
 required = ['currentDay', 'lastSentDate', 'systemDesignIndex', 'leetcodeIndex',
-            'behavioralIndex', 'frontendIndex', 'aiTopicIndex', 'history',
+            'behavioralIndex', 'pythonCraftIndex', 'frontendIndex', 'aiTopicIndex', 'history',
             'lastReviewDay', 'reviewDaysCompleted']
 missing = [k for k in required if k not in s]
 if missing:
@@ -190,6 +191,7 @@ bounds = {
     'systemDesignIndex': ('content/system-design.json', 40),
     'leetcodeIndex': ('content/neetcode-150.json', 150),
     'behavioralIndex': ('content/behavioral.json', 40),
+    'pythonCraftIndex': ('content/python-craft.json', 50),
     'frontendIndex': ('content/frontend.json', 50),
     'aiTopicIndex': ('content/ai-topics.json', 30),
 }
@@ -252,7 +254,7 @@ import json
 s = {
   'currentDay': 0, 'lastSentDate': None,
   'systemDesignIndex': 0, 'leetcodeIndex': 0,
-  'behavioralIndex': 0, 'frontendIndex': 0, 'aiTopicIndex': 0,
+  'behavioralIndex': 0, 'pythonCraftIndex': 0, 'frontendIndex': 0, 'aiTopicIndex': 0,
   'history': [], 'lastReviewDay': 0, 'reviewDaysCompleted': []
 }
 json.dump(s, open('state.json', 'w'), indent=2)
@@ -298,7 +300,7 @@ if bash scripts/generate.sh > /tmp/bbb-test-output.txt 2>&1; then
   # Use a temp dir to avoid overwriting real archive files
   TODAY_TEST=$(date +%Y-%m-%d)
   ARCHIVE_BACKED_UP=false
-  for section in system-design algorithms soft-skills frontend ai; do
+  for section in system-design algorithms soft-skills python-craft ai; do
     TARGET="archive/${TODAY_TEST}-${section}.md"
     if [ -f "$TARGET" ]; then
       cp "$TARGET" "$TARGET.test-backup"
@@ -327,7 +329,7 @@ if bash scripts/generate.sh > /tmp/bbb-test-output.txt 2>&1; then
   fi
 
   # Restore backed up archive files
-  for section in system-design algorithms soft-skills frontend ai; do
+  for section in system-design algorithms soft-skills python-craft ai; do
     TARGET="archive/${TODAY_TEST}-${section}.md"
     if [ -f "$TARGET.test-backup" ]; then
       mv "$TARGET.test-backup" "$TARGET"

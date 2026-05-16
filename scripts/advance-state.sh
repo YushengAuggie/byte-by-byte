@@ -61,7 +61,7 @@ if [ "$IS_REVIEW" -eq 1 ]; then
   fi
 else
   echo "Normal day — checking 5 section archives..."
-  for section in system-design algorithms soft-skills frontend ai; do
+  for section in system-design algorithms soft-skills python-craft ai; do
     FILE="$ARCHIVE_DIR/${TODAY}-${section}.md"
     if [ ! -f "$FILE" ]; then
       echo "❌ MISSING: $FILE"
@@ -133,7 +133,7 @@ else:
         1: ('system_design', 'systemDesignIndex', 'TOPIC'),
         2: ('algorithms', 'leetcodeIndex', 'TITLE'),
         3: ('soft_skills', 'behavioralIndex', 'QUESTION'),
-        4: ('frontend', 'frontendIndex', 'TITLE'),
+        4: ('python_craft', 'pythonCraftIndex', 'TITLE'),
         5: ('ai', 'aiTopicIndex', None),
     }
 
@@ -179,7 +179,7 @@ else:
     state['currentDay'] = next_day
     state['lastSentDate'] = today
     print(f"✅ State advanced to Day {next_day}")
-    print(f"   Indices: SD={state['systemDesignIndex']} LC={state['leetcodeIndex']} BH={state['behavioralIndex']} FE={state['frontendIndex']} AI={state['aiTopicIndex']}")
+    print(f"   Indices: SD={state['systemDesignIndex']} LC={state['leetcodeIndex']} BH={state['behavioralIndex']} PC={state['pythonCraftIndex']} AI={state['aiTopicIndex']}")
 
 with open(state_file, 'w') as f:
     json.dump(state, f, indent=2)

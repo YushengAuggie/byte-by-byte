@@ -11,7 +11,7 @@
 
 **5 topics. 15 minutes. Every day. Bilingual (Chinese/English). Designed to compound.**
 
-I built this because I wanted to grow as an engineer without blocking my calendar. 15 minutes a day adds up — after 30 days, you've covered 30 algorithm patterns, 30 system design concepts, and 30 frontend skills.
+I built this because I wanted to grow as an engineer without blocking my calendar. 15 minutes a day adds up — after 30 days, you've covered 30 algorithm patterns, 30 system design concepts, and 30 Python craft skills.
 
 🌐 [**Website**](https://yushengauggie.github.io/byte-by-byte/) • 📡 [**RSS Feed**](https://yushengauggie.github.io/byte-by-byte/feed.xml) • 📖 [**Browse Archive**](https://yushengauggie.github.io/byte-by-byte/archive.html)
 
@@ -24,7 +24,7 @@ I built this because I wanted to grow as an engineer without blocking my calenda
 | 🏗️ | System Design | 3-4 min | Architecture patterns, tradeoffs, real-world systems |
 | 💻 | Algorithms | 3-4 min | 150 problems, Python, **pattern-based** (template → variations) |
 | 🗣️ | Soft Skills | 2-3 min | STAR framework, senior/staff-level scenarios |
-| 🎨 | Frontend | 2-3 min | CSS → JS → React → Next.js → TypeScript |
+| 🐍 | Python Craft | 2-3 min | Concurrency, design patterns, internals — with runnable code |
 | 🤖 | AI | 2-3 min | Latest news + core concepts with runnable code |
 
 **~15 min daily** • **Bilingual 中/EN** • **Progressive difficulty** • **Telegram + Email delivery**
@@ -47,7 +47,7 @@ Every lesson is written in both Chinese and English — not translated, but **na
 
 ### 💬 Interactive Delivery
 - **Progress tracking** — `📊 Day 12/150 · 🔥 12-day streak!` header every day
-- **Quiz polls** — Telegram polls after Algorithms (complexity quiz) and Frontend (output quiz)
+- **Quiz polls** — Telegram polls after Algorithms (complexity quiz) and Python Craft (output quiz)
 - **Weekend format** — Saturday deep-dives, Sunday week-in-review
 - **Reading time estimates** — Every section shows estimated minutes
 - **Direct links** — Problem links + difficulty badges 🟢🟡🔴 + video solutions
@@ -81,11 +81,11 @@ Every lesson is written in both Chinese and English — not translated, but **na
 
 | Field | Value |
 |-------|-------|
-| **Current Day** | Day 44 |
-| **Last Sent** | 2026-05-15 |
+| **Current Day** | Day 45 |
+| **Last Sent** | 2026-05-16 |
 | **Algorithms** | 38 / 150 (NeetCode 150) |
 | **System Design** | 37 / 40 |
-| **Frontend** | 37 / 50 |
+| **Python Craft** | 0 / 50 |
 | **Soft Skills** | 37 / 40 |
 | **AI Topics** | 18 / 30 |
 
@@ -261,7 +261,8 @@ byte-by-byte/
 │   ├── pattern-templates.json ← 18 reusable pattern templates
 │   ├── system-design.json ← 40 system design topics
 │   ├── behavioral.json    ← 40 soft skills questions
-│   ├── frontend.json      ← 50 frontend topics
+│   ├── python-craft.json  ← 50 Python craft topics
+│   ├── frontend.json      ← 50 frontend topics (archived)
 │   ├── ai-topics.json     ← 30 AI concepts
 │   ├── difficulty-map.json← difficulty phases by day
 │   └── review-schedule.json← spaced repetition config
@@ -304,7 +305,7 @@ byte-by-byte/
 If this helps you, share it!
 
 **Twitter / X:**
-> byte-by-byte — free daily bilingual tech learning (Chinese + English). 15 min/day: system design, algorithms, soft skills, frontend, AI. Open source 🧠 https://github.com/YushengAuggie/byte-by-byte
+> byte-by-byte — free daily bilingual tech learning (Chinese + English). 15 min/day: system design, algorithms, soft skills, Python craft, AI. Open source 🧠 https://github.com/YushengAuggie/byte-by-byte
 
 **LinkedIn:**
 > I've been learning with byte-by-byte — a daily bilingual tech learning system. 5 topics × 15 minutes = compounding growth. Chinese and English. Automated. Open source. https://yushengauggie.github.io/byte-by-byte/

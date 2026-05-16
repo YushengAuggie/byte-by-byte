@@ -10,12 +10,12 @@ source "$REPO_DIR/config.env"
 
 cd "$BBB_REPO_DIR"
 TODAY=$(date +%Y-%m-%d)
-STATE=$(python3 -c "import json; s=json.load(open('state.json')); print(s['currentDay'],s.get('lastSentDate','?'),s.get('leetcodeIndex',0),s.get('systemDesignIndex',0),s.get('frontendIndex',0),s.get('behavioralIndex',0),s.get('aiTopicIndex',0))")
+STATE=$(python3 -c "import json; s=json.load(open('state.json')); print(s['currentDay'],s.get('lastSentDate','?'),s.get('leetcodeIndex',0),s.get('systemDesignIndex',0),s.get('pythonCraftIndex',0),s.get('behavioralIndex',0),s.get('aiTopicIndex',0))")
 CURRENT_DAY=$(echo "$STATE" | cut -d' ' -f1)
 LAST_DATE=$(echo "$STATE" | cut -d' ' -f2)
 ALGO_IDX=$(echo "$STATE" | cut -d' ' -f3)
 SD_IDX=$(echo "$STATE" | cut -d' ' -f4)
-FE_IDX=$(echo "$STATE" | cut -d' ' -f5)
+PC_IDX=$(echo "$STATE" | cut -d' ' -f5)
 SOFT_IDX=$(echo "$STATE" | cut -d' ' -f6)
 AI_IDX=$(echo "$STATE" | cut -d' ' -f7)
 
@@ -30,7 +30,7 @@ table = """| Field | Value |
 | **Last Sent** | ${LAST_DATE} |
 | **Algorithms** | ${ALGO_IDX} / 150 (NeetCode 150) |
 | **System Design** | ${SD_IDX} / 40 |
-| **Frontend** | ${FE_IDX} / 50 |
+| **Python Craft** | ${PC_IDX} / 50 |
 | **Soft Skills** | ${SOFT_IDX} / 40 |
 | **AI Topics** | ${AI_IDX} / 30 |"""
 readme = re.sub(

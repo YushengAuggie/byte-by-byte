@@ -44,7 +44,7 @@ SECTION_META = [
     ('system-design', '🏗️', 'System Design', '系统设计'),
     ('algorithms',    '💻', 'Algorithms',    '算法'),
     ('soft-skills',   '🗣️', 'Soft Skills',   '软技能'),
-    ('frontend',      '🎨', 'Frontend',      '前端'),
+    ('python-craft',  '🐍', 'Python Craft',  'Python实战'),
     ('ai',            '🤖', 'AI',            'AI'),
 ]
 

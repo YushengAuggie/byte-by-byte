@@ -41,18 +41,20 @@ Automated daily tech knowledge system delivering 5 bilingual (Chinese/English) m
 - Real scenario templates to adapt
 - Categories: leadership, conflict, failure, teamwork, ambiguity, etc.
 
-### 4. 🎨 Frontend (2-3 min read)
-- Tips/concepts for becoming full stack
-- Assumes basic understanding but rusty
+### 4. 🐍 Python Craft (2-3 min read)
+- Practical backend engineering skills with runnable Python code
+- Senior backend audience — concise cheat sheets, not tutorials
 - Interactive: "猜猜这段代码输出什么？/ What does this code output?"
-- Visual concepts with ASCII/emoji diagrams
-- Mini challenges at the end
+- One key code snippet per topic, ❌ vs ✅ comparisons
+- "When to use / When not to use" tradeoffs
 - Progression:
-  - Week 1-2: HTML/CSS fundamentals, Flexbox, Grid
-  - Week 3-4: JavaScript deep dives (closures, promises, event loop)
-  - Week 5-6: React core (hooks, state, lifecycle, rendering)
-  - Week 7-8: Next.js, SSR/SSG, routing
-  - Week 9+: TypeScript, testing, performance, accessibility
+  - Week 1-2: Concurrency & Parallelism (threading, multiprocessing, asyncio, WSGI/ASGI, GIL)
+  - Week 3-5: Design Patterns (strategy, observer, factory, command, state machine, repository)
+  - Week 5-6: Python Internals (descriptors, metaclasses, __slots__, GC, import system)
+  - Week 7-8: Practical Patterns (connection pooling, retry, circuit breaker, rate limiting, DI, logging)
+  - Week 9: Testing (mocking, fixtures, property-based, async, integration)
+  - Week 10-11: Data & Performance (profiling, generators, dataclasses vs pydantic, caching, serialization)
+  - Week 11-12: Networking & Security (HTTP internals, gRPC, WebSocket, secrets, validation, crypto)
 
 ### 5. 🤖 AI (2-3 min read)
 - Alternates between news days and concept days
@@ -107,16 +109,19 @@ Automated daily tech knowledge system delivering 5 bilingual (Chinese/English) m
 }
 ```
 
-### content/frontend.json
-50 frontend topics in progressive order:
+### content/python-craft.json
+50 Python craft topics in progressive order:
 ```json
 {
   "id": 1,
-  "title": "CSS Box Model",
-  "category": "CSS Fundamentals",
+  "title": "threading — GIL, Thread, Lock",
+  "category": "Concurrency & Parallelism",
   "week": 1
 }
 ```
+
+### content/frontend.json (archived, no longer used in pipeline)
+50 frontend topics — kept for historical reference.
 
 ### content/ai-topics.json
 30 AI concept topics (for non-news days):
@@ -137,7 +142,8 @@ Progress tracking — updated after each daily send:
   "systemDesignIndex": 0,
   "leetcodeIndex": 0,
   "behavioralIndex": 0,
-  "frontendIndex": 0,
+  "pythonCraftIndex": 0,
+  "frontendIndex": 37,
   "aiTopicIndex": 0,
   "history": []
 }

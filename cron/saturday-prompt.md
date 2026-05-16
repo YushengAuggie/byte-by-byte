@@ -8,7 +8,7 @@ cat {{BBB_REPO_DIR}}/state.json
 
 Build progress header:
 ```
-📊 NeetCode: {leetcodeIndex}/150 · SysDesign: {systemDesignIndex}/40 · Behavioral: {behavioralIndex}/40 · Frontend: {frontendIndex}/50 · AI: {aiTopicIndex}/30
+📊 NeetCode: {leetcodeIndex}/150 · SysDesign: {systemDesignIndex}/40 · Behavioral: {behavioralIndex}/40 · PyCraft: {pythonCraftIndex}/50 · AI: {aiTopicIndex}/30
 🔥 {streak}-day streak!
 ```
 
@@ -21,7 +21,7 @@ bash {{BBB_REPO_DIR}}/scripts/generate.sh
 Read `/tmp/bbb-section-{1..5}.txt`. Pick the **most complex topic**:
 1. Hard LeetCode problem → deep dive that
 2. Advanced system design → deep dive that
-3. Otherwise → Frontend or AI concept
+3. Otherwise → Python Craft or AI concept
 
 **IMPORTANT: Only write the deepdive archive file. Do NOT write individual section archives (system-design, algorithms, etc.) — those are for weekdays only.**
 

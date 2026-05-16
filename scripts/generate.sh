@@ -238,20 +238,20 @@ ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-soft-skills.md
 EOF
 echo "✓ Section 3: Soft Skills Day $BH_DAY — $(extract "$BH_TOPIC" "category")"
 
-# Section 4: Frontend
-FE_INDEX=$(get_index "frontendIndex")
-FE_TOPIC=$(get_topic "$CONTENT_DIR/frontend.json" "$FE_INDEX")
-FE_DAY=$((FE_INDEX + 1))
+# Section 4: Python Craft
+PC_INDEX=$(get_index "pythonCraftIndex")
+PC_TOPIC=$(get_topic "$CONTENT_DIR/python-craft.json" "$PC_INDEX")
+PC_DAY=$((PC_INDEX + 1))
 cat > /tmp/bbb-section-4.txt << EOF
-SECTION: Frontend
-DAY: $FE_DAY
-TITLE: $(extract "$FE_TOPIC" "title")
-CATEGORY: $(extract "$FE_TOPIC" "category")
-WEEK: $(extract "$FE_TOPIC" "week")
+SECTION: Python Craft
+DAY: $PC_DAY
+TITLE: $(extract "$PC_TOPIC" "title")
+CATEGORY: $(extract "$PC_TOPIC" "category")
+WEEK: $(extract "$PC_TOPIC" "week")
 DIFFICULTY_PHASE: $DIFFICULTY_PHASE
-ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-frontend.md
+ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-python-craft.md
 EOF
-echo "✓ Section 4: Frontend Day $FE_DAY — $(extract "$FE_TOPIC" "title")"
+echo "✓ Section 4: Python Craft Day $PC_DAY — $(extract "$PC_TOPIC" "title")"
 
 # Section 5: AI
 AI_INDEX=$(get_index "aiTopicIndex")

@@ -27,15 +27,16 @@ OUTPUT_XML  = os.path.join(DOCS_DIR, 'feed.xml')
 CHANNEL_TITLE       = 'byte-by-byte — Daily Tech Learning'
 CHANNEL_LINK        = 'https://github.com/YushengAuggie/byte-by-byte'
 CHANNEL_DESCRIPTION = ('Daily bilingual (Chinese/English) tech learning: '
-                       'system design, algorithms, soft skills, frontend, and AI.')
+                       'system design, algorithms, soft skills, Python craft, and AI.')
 CHANNEL_LANG        = 'en-us'
 
 # Section display order and labels
-SECTION_ORDER = ['system-design', 'algorithms', 'soft-skills', 'frontend', 'ai']
+SECTION_ORDER = ['system-design', 'algorithms', 'soft-skills', 'python-craft', 'ai']
 SECTION_LABELS = {
     'system-design': '🏗️ System Design',
     'algorithms':    '💻 Algorithms',
     'soft-skills':   '🗣️ Soft Skills',
+    'python-craft':  '🐍 Python Craft',
     'frontend':      '🎨 Frontend',
     'ai':            '🤖 AI',
 }

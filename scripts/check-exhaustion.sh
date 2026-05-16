@@ -39,7 +39,7 @@ sections = [
     ("system_design", "systemDesignIndex", "system-design.json"),
     ("algorithms",    "leetcodeIndex",     "neetcode-150.json"),
     ("behavioral",    "behavioralIndex",   "behavioral.json"),
-    ("frontend",      "frontendIndex",     "frontend.json"),
+    ("python-craft",  "pythonCraftIndex",  "python-craft.json"),
     ("ai_concepts",   "aiTopicIndex",      "ai-topics.json"),
 ]
 

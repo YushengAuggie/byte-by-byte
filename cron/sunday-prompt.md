@@ -8,7 +8,7 @@ cat {{BBB_REPO_DIR}}/state.json
 
 Build progress header:
 ```
-📊 NeetCode: {leetcodeIndex}/150 · SysDesign: {systemDesignIndex}/40 · Behavioral: {behavioralIndex}/40 · Frontend: {frontendIndex}/50 · AI: {aiTopicIndex}/30
+📊 NeetCode: {leetcodeIndex}/150 · SysDesign: {systemDesignIndex}/40 · Behavioral: {behavioralIndex}/40 · PyCraft: {pythonCraftIndex}/50 · AI: {aiTopicIndex}/30
 🔥 {streak}-day streak!
 ```
 
@@ -40,8 +40,8 @@ Save to `{{BBB_REPO_DIR}}/archive/$(date +%Y-%m-%d)-week-review.md`:
 ## 🗣️ Soft Skills: What to Practice / 软技能练习重点
 [Scenarios covered, which needs practice]
 
-## 🎨 Frontend: Concepts to Lock In / 前端知识巩固
-[Topics covered, quick self-check]
+## 🐍 Python Craft: Key Takeaways / Python实战要点
+[Topics covered, key patterns, what to practice]
 
 ## 🤖 AI: What Stuck / AI 知识点
 [Most important takeaway]

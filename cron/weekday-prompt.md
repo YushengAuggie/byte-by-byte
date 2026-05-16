@@ -10,7 +10,7 @@ cat {{BBB_REPO_DIR}}/state.json
 
 From state.json, build a progress header:
 ```
-📊 NeetCode: {leetcodeIndex}/150 · SysDesign: {systemDesignIndex}/40 · Behavioral: {behavioralIndex}/40 · Frontend: {frontendIndex}/50 · AI: {aiTopicIndex}/30
+📊 NeetCode: {leetcodeIndex}/150 · SysDesign: {systemDesignIndex}/40 · Behavioral: {behavioralIndex}/40 · PyCraft: {pythonCraftIndex}/50 · AI: {aiTopicIndex}/30
 🔥 {streak}-day streak!
 ```
 Streak = count consecutive days with history entries going backward. Omit if 0.
@@ -125,16 +125,17 @@ Content for every problem:
 - Why this matters → STAR breakdown → ❌ Bad vs ✅ Good → Senior/Staff tips → Key Takeaways
 - 📚 References + 🧒 ELI5
 
-### Section 4: Frontend (2 min — KEEP IT SHORT)
-🎨 **前端 / Frontend**
-The reader is a **senior backend engineer** refreshing frontend skills. NOT a beginner.
-- **Target length: 300-500 words max.** Do NOT write a tutorial. Write a concise cheat sheet.
-- Start with a **1-sentence scenario** (not a paragraph)
-- Show **ONE key code snippet** (10-20 lines max) that captures the core concept
-- **"猜猜输出"** quiz with A/B/C/D (only for JS behavior topics like closures/promises/event loop)
-- **One ❌ vs ✅ comparison** (3 lines each, not full functions)
-- **Skip** long explanations the reader already knows ("what is a function", "what is a variable")
-- 📚 References (2-3 real URLs: MDN, React docs) + 🧒 ELI5 (1 sentence)
+### Section 4: Python Craft (2 min — KEEP IT SHORT)
+🐍 **Python实战 / Python Craft**
+The reader is a **senior backend engineer**. NOT a beginner.
+- **Target length: 300-500 words max.** Do NOT write a tutorial. Write a concise cheat sheet with runnable code.
+- Start with a **1-sentence scenario** (not a paragraph) — e.g. "Your web server is handling 1000 concurrent requests..."
+- Show **ONE key code snippet** (10-20 lines max) that captures the core concept. Must be **runnable Python**.
+- **"猜猜输出"** quiz with A/B/C/D — show a short code snippet and ask what it prints/does (great for threading race conditions, async ordering, GIL behavior, pattern output)
+- **One ❌ vs ✅ comparison** (3 lines each, not full functions) — show the wrong way vs right way
+- **When to use / When not to use** — 2-3 bullet points each. Senior engineers care about tradeoffs.
+- **Skip** basics the reader already knows ("what is a class", "what is a function")
+- 📚 References (2-3 real URLs: Python docs, Real Python, relevant library docs) + 🧒 ELI5 (1 sentence)
 - **Also write** `/tmp/bbb-quiz-4.json`: `{"question":"...","options":[4 items],"correct_index":N}`
 
 ### Section 5: AI (2 min)
@@ -152,7 +153,7 @@ The reader is a **senior backend engineer** refreshing frontend skills. NOT a be
 After writing ALL 5 files:
 ```bash
 TODAY=$(date +%Y-%m-%d)
-for s in system-design algorithms soft-skills frontend ai; do
+for s in system-design algorithms soft-skills python-craft ai; do
   FILE="{{BBB_REPO_DIR}}/archive/${TODAY}-${s}.md"
   [ ! -f "$FILE" ] && echo "MISSING: $FILE" && exit 1
   echo "✅ ${s}: $(wc -c < "$FILE") bytes"

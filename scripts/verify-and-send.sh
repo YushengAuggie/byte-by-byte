@@ -40,7 +40,7 @@ echo "📧 Email not sent yet today."
 # ── Step 2: Verify archive files exist ───────────────────────────────
 ARCHIVE_DIR="$BBB_REPO_DIR/archive"
 NORMAL_COUNT=0
-for section in system-design algorithms soft-skills frontend ai; do
+for section in system-design algorithms soft-skills python-craft ai; do
   if [ -f "$ARCHIVE_DIR/${TODAY}-${section}.md" ]; then
     NORMAL_COUNT=$((NORMAL_COUNT + 1))
   fi
