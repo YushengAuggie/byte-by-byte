@@ -60,7 +60,7 @@ checks = [
     ('content/system-design.json', 40, {'title', 'difficulty'}),
     ('content/behavioral.json', 40, {'question', 'category'}),
     ('content/python-craft.json', 50, {'title', 'category'}),
-    ('content/frontend.json', 50, {'title', 'category'}),
+    ('content/frontend.json', 50, {'title', 'category'}),  # archived but still valid
     ('content/ai-topics.json', 30, {'title', 'category'}),
 ]
 ok = True
@@ -350,12 +350,13 @@ s['lastSentDate'] = '1970-01-01'  # Reset so generate.sh doesn't skip
 s['systemDesignIndex'] = 4
 s['leetcodeIndex'] = 4
 s['behavioralIndex'] = 4
+s['pythonCraftIndex'] = 4
 s['frontendIndex'] = 4
 s['aiTopicIndex'] = 2
 s['history'] = [
   {'day': i, 'date': '2026-01-0{}'.format(i), 'sections': {
     'system_design': {'title': 'test'}, 'algorithms': {'title': 'test'},
-    'soft_skills': {'question': 'test'}, 'frontend': {'title': 'test'},
+    'soft_skills': {'question': 'test'}, 'python_craft': {'title': 'test'},
     'ai': {'title': 'test'}
   }} for i in range(1, 5)
 ]

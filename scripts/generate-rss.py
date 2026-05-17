@@ -37,7 +37,7 @@ SECTION_LABELS = {
     'algorithms':    '💻 Algorithms',
     'soft-skills':   '🗣️ Soft Skills',
     'python-craft':  '🐍 Python Craft',
-    'frontend':      '🎨 Frontend',
+    'frontend':      '🎨 Frontend',   # historical archives
     'ai':            '🤖 AI',
 }
 
