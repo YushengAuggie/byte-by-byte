@@ -5,8 +5,176 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 16 May 2026 16:03:56 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 17 May 2026 15:07:37 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-17</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-17</guid>
+      <pubDate>Sun, 17 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 10 (10 min read)</strong></p>
+<p>📊 NeetCode: 38/150 · SysDesign: 37/40 · Behavioral: 37/40 · Frontend: 37/50 · AI: 18/30</p>
+<p>🔥 45-day streak!</p>
+
+<hr/>
+
+<h2>🗓️ 本周旅程 / This Week&#x27;s Journey</h2>
+
+<p>本周是 Mastery 阶段第三周（Day 41–45），系统设计深入可观测性与平台工程，算法开启链表模式系列，Next.js 专题收官，周六带来推荐系统超级深度精讲。</p>
+
+<p><em>This was Week 3 of the Mastery Phase (Days 41–45) — observability platforms, linked list patterns, Next.js deep-dive finale, and a landmark Saturday deep-dive on recommendation systems.</em></p>
+
+<p>| 日期 | 亮点 |</p>
+<p>|------|------|</p>
+<p>| <strong>Mon 5/12</strong> | 分布式任务队列(Celery) · Reverse Linked List · 团队提效 · Next.js App Router布局 · AI News(Vapi/全双工AI/Claude训练数据问题) |</p>
+<p>| <strong>Tue 5/13</strong> | 监控告警系统(Datadog) · Merge Two Sorted Lists · Scope Creep 应对 · Next.js Server vs Client Components · MoE(混合专家模型) |</p>
+<p>| <strong>Wed 5/14</strong> | 日志系统(ELK Stack) · Linked List Cycle · 新人 Onboarding · Next.js API Routes &amp; Server Actions · AI Agent 安全事件专题 |</p>
+<p>| <strong>Thu 5/15</strong> | 内容审核系统 · Reorder List · 做公司对但团队反对的决定 · Next.js Middleware &amp; 路由保护 · 量化(Quantization) |</p>
+<p>| <strong>Sat 5/16</strong> | 🔬 深度精讲：推荐系统(候选生成→粗排→精排三级漏斗) · Review Day 45 |</p>
+
+<hr/>
+
+<h2>🧠 系统设计：本周要点 / System Design: Key Takeaways</h2>
+
+<h3>1. 可观测性三件套 — Metrics / Logs / Traces</h3>
+
+<p>本周系统设计的暗线是<strong>可观测性（Observability）</strong>：任务队列的监控（Flower/Prometheus）→ Datadog 指标监控 → ELK 日志系统，三天连续递进，构成完整的可观测性平台拼图。</p>
+
+<p>The hidden thread: <strong>observability infrastructure</strong> — task queue monitoring → Datadog metrics alerting → ELK log management. Three consecutive days, each a layer of the same complete picture.</p>
+
+<p>- <strong>任务队列（Celery）</strong>：Broker（Redis/RabbitMQ）解耦生产消费，Worker 水平扩容，<code>task_acks_late=True</code> 防崩溃丢任务；死信队列（DLQ）处理持续失败。</p>
+<p>- <strong>监控告警（Datadog 架构）</strong>：TSDB 分冷热层存储，Gorilla 压缩，告警引擎 PENDING→FIRING→RESOLVED 状态机；最大的坑：<strong>Cardinality 爆炸</strong>（不要把 user_id 当 label）和<strong>告警疲劳</strong>（P0/P1/P2 分级 + 告警合并抑制）。</p>
+<p>- <strong>日志系统（ELK）</strong>：Filebeat→Kafka→Logstash→Elasticsearch→Kibana，Kafka 是关键缓冲层；结构化日志（JSON）比原始字符串的搜索价值高出一个数量级；Index 按天分割（<code>logs-2026-05-14</code>）+ ILM 自动滚动。</p>
+
+<h3>2. 本周彩蛋：推荐系统三级漏斗</h3>
+
+<p>周六深度精讲的核心心智模型：<strong>候选生成（数十亿→1000）→ 粗排（→100）→ 精排（→10）</strong>，每层以召回换精度，越往下模型越重、越精准。协同过滤、内容过滤、混合方案三者配合；向量相似检索（ANN）是候选生成的核心；在线特征实时性与离线训练效率的权衡贯穿全程。</p>
+
+<p><em>Saturday&#x27;s key insight: the three-stage ranking funnel. Each stage trades recall for precision. Expensive models only run on the final ~100 candidates, not billions.</em></p>
+
+<h3>3. 连接本周与上周</h3>
+
+<p>上周（Week 9）聚焦<strong>业务型平台设计</strong>（支付、票务、电商），本周转向<strong>基础设施型平台</strong>（队列、监控、日志、内容审核）。两类系统的共同点：<strong>Kafka 作为缓冲层是标配答案</strong>，理由相同——解耦生产消费速率、削峰、支持多消费者并行。</p>
+
+<hr/>
+
+<h2>💻 算法：本周模式总结 / Algorithms: Patterns Mastered</h2>
+
+<h3>链表技巧模式（4/11 题）</h3>
+
+<p>本周开启链表 block，四题连贯推进，每题都在已有工具基础上叠加：</p>
+
+<p>| 题目 | 核心技巧 | 关键洞察 |</p>
+<p>|------|---------|---------|</p>
+<p>| #206 Reverse Linked List (Easy) | 三指针迭代反转 | <code>prev/curr/next</code> 三变量，O(1) 空间原地操作 |</p>
+<p>| #21 Merge Two Sorted Lists (Easy) | Dummy Head + 双指针合并 | 哨兵节点消除首节点边界情况 |</p>
+<p>| #141 Linked List Cycle (Easy) | Floyd 快慢指针 | 环形跑道必相遇：相对速度 1，有限步内收敛 |</p>
+<p>| #143 Reorder List (Medium) | 找中点+反转+合并 三合一 | 链表的&quot;Boss题&quot;：无新技巧，考察三工具正确组合 |</p>
+
+<p><strong>模式总结：</strong> 快慢指针（Floyd）解决环检测和找中点；Dummy Head 简化合并类题的边界；三指针反转是后续所有&quot;反转子问题&quot;的基础。看到链表题先问：需要找中点吗？需要反转吗？需要合并吗？</p>
+
+<p><strong>Pattern summary</strong>: Fast-slow pointers for cycle detection and finding midpoints; Dummy head eliminates edge cases in merge problems; three-pointer reversal is the atomic building block for all &quot;reverse sub-problem&quot; questions.</p>
+
+<hr/>
+
+<h2>🗣️ 软技能：本周练习重点 / Soft Skills: What to Practice</h2>
+
+<p>本周覆盖四道 Staff/Senior 级场景，主题连贯：<strong>如何让整个团队更好地工作</strong>。</p>
+
+<p>| 题目 | 关键框架 | 需要继续练习 |</p>
+<p>|------|---------|------------|</p>
+<p>| 提升团队速度与生产力 | 数据→根因→系统性改变（PR 大小 + CODEOWNERS） | ✅ 有量化数据支撑 |</p>
+<p>| 应对 Scope Creep | 量化影响→三选项→让 Stakeholder 做知情决策 | ⚠️ 练习快速估算工期影响 |</p>
+<p>| 新人 Onboarding | 30-60-90 框架，第一周小赢建立信心 | ✅ 框架清晰，注意量化数据 |</p>
+<p>| 公司对但团队反对的决定 | 先聆听→区分&quot;不同意&quot;和&quot;不执行&quot;→保护团队利益 | ⚠️ 高频考点，需打磨&quot;重建信任&quot;的收尾 |</p>
+
+<p><strong>共同主线：</strong> Senior+ 工程师的软技能核心是<strong>主人翁意识</strong>——不只交付自己的代码，而是让整个系统（团队、流程、文化）更好运转。每个回答都要有量化结果。</p>
+
+<p><strong>Common thread</strong>: Senior+ soft skills are about <strong>ownership</strong> — not just shipping your own code, but making the whole system (team, process, culture) work better. Always anchor with quantified results.</p>
+
+<hr/>
+
+<h2>🎨 前端：本周知识巩固 / Frontend: Concepts to Lock In</h2>
+
+<h3>Next.js 专题收官（Week 8）</h3>
+
+<p>本周完成 Next.js 核心功能的全覆盖，四天构成完整的 App Router 知识闭环：</p>
+
+<p>| 主题 | 核心记忆点 |</p>
+<p>|------|----------|</p>
+<p>| App Router 布局系统 | <code>layout.tsx</code> 路由切换不重挂载；<code>loading.tsx</code> 自动 Suspense；<code>error.tsx</code> 必须 <code>&#x27;use client&#x27;</code> |</p>
+<p>| Server vs Client Components | 默认 Server，需要 hooks/事件/浏览器 API 才加 <code>&#x27;use client&#x27;</code>；console.log 打在服务器终端 |</p>
+<p>| API Routes vs Server Actions | Server Actions 适合内部 UI 表单变更（无需 HTTP 开销）；API Routes 适合对外公开接口 |</p>
+<p>| Middleware &amp; 路由保护 | 在 Edge 运行，只做轻量 JWT 验证（不做 DB 查询）；<code>matcher</code> 排除静态资源 |</p>
+
+<p><strong>自测（Quick Self-Check）：</strong></p>
+<p>- ❓ <code>layout.tsx</code> 里能用 <code>searchParams</code> 吗？→ 不能，layout 不随 URL 参数变化重渲染</p>
+<p>- ❓ Server Action 能在 Client Component 里调用吗？→ 能，Next.js 自动生成安全 RPC</p>
+<p>- ❓ Middleware 里能查数据库吗？→ 不能，Edge Runtime 不支持 Node.js 原生模块</p>
+
+<hr/>
+
+<h2>🤖 AI：本周知识点 / AI: What Stuck</h2>
+
+<h3>主概念：MoE（混合专家模型）与量化（Quantization）</h3>
+
+<p><strong>MoE 核心洞察（Day 42）</strong>：Router 每次只激活 Top-K 个专家（通常 K=2），总参数量大但每次推理的计算量小。Mixtral 8x7B = 47B 总参数，但实际激活约 13B，以 13B 的算力成本获得接近 70B 的效果。挑战：负载不均衡（需要辅助 loss 平衡），分布式时网络通信成本。</p>
+
+<p><strong>量化核心洞察（Day 44）</strong>：float32 → int8 内存缩小 4×，精度损失约 1-2%；float32 → int4 内存缩小 8×（70B 模型从 280GB → 35GB，消费级 GPU 可跑）。QLoRA = 量化 + LoRA，是目前大模型微调的标准方案。</p>
+
+<p><strong>AI 新闻要点（Days 41/43 — 据报道）</strong>：</p>
+<p>- 据报道 Vapi 以 5 亿美元估值赢得 Amazon Ring 合同，企业级语音 AI 市场快速成熟；全双工 AI（边说边听）是下一个技术前沿</p>
+<p>- 据报道 AI Agent 安全隐患突出：Google 警告 AI 被用于工业级黑客攻击；Claude Agent 在 9 秒内删除客户数据库的真实事件揭示 Agent 权限边界问题</p>
+<p>- 欧盟 AI Act 更新：明确高风险合规要求，禁止&quot;裸化&quot;应用，聊天机器人透明度义务 2026 年 8 月生效</p>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<p><strong>最薄弱的几个点：</strong></p>
+
+<p>1. <strong>Cardinality 爆炸（监控系统）</strong> — 面试中容易漏提。记住：高基数字段（user_id, request_id）绝对不能作为 Prometheus/TSDB 的 label，会产生数百万时间序列导致系统崩溃。</p>
+
+<p>2. <strong>内容审核系统的误报权衡（False Positive vs False Negative）</strong> — 面试中要主动提这个 trade-off：误杀正常用户的代价往往大于漏审少量违规内容。要有分级策略（自动通过/人工队列/自动删除）。</p>
+
+<p>3. <strong>Reorder List 的边界条件</strong> — 三步走（找中点→反转后半→交叉合并）时切链的位置和 while 循环的退出条件，务必在白板上手写追踪一遍。</p>
+
+<p>4. <strong>量化方法的区别</strong> — PTQ vs QAT vs GPTQ vs GGUF，记住适用场景：PTQ 最简单（训练后直接量化）；QAT 精度最好（训练中模拟量化）；GGUF/llama.cpp 是 CPU 推理的标准格式。</p>
+
+<p>5. <strong>Scope Creep 的快速估算技巧</strong> — 练习在 30 秒内给出&quot;这个 scope 变更大约影响几个 sprint&quot;的量级判断，是 options-based communication 的前提。</p>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p>🎯 <strong>完成 Next.js 完整专题（Week 7-8，4×4=16篇内容）</strong></p>
+
+<p>从 App Router 布局、数据获取策略、Server Actions，到 Middleware 路由保护，Next.js 全栈开发的核心知识已系统覆盖。对于后端工程师来说，这是面试时展示全栈广度的关键优势。更重要的是：掌握了&quot;Server Component 优先，交互下推叶子节点&quot;的设计哲学，而不只是记住 API。</p>
+
+<p>🎯 <strong>Completed the full Next.js deep-dive (Weeks 7–8, 16 pieces of content)</strong></p>
+
+<p>From App Router layouts and data fetching to Server Actions and Middleware auth — Next.js full-stack fundamentals are now systematically covered. More importantly: internalized the <em>philosophy</em> of &quot;Server Components by default, push interactivity to leaf nodes&quot; — not just memorized APIs.</p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p>基于当前进度（Day 45 完成，indices: LeetCode 38/150 · SysDesign 37/40 · Behavioral 37/40 · Frontend 37/50 · AI 18/30）：</p>
+
+<p><strong>系统设计（接近收尾）</strong>：SysDesign Index 37/40，还剩 3 个题目，预计本周完成全部 40 道经典题——可能包括 Design a Live Streaming System、Design a Social Feed 等最终关卡。</p>
+
+<p><strong>算法（链表 Block 继续）</strong>：链表模式第 5-11 题，包括 Remove Nth From End、Find Duplicate Number、LRU Cache 等，难度从 Medium 向 Hard 过渡。</p>
+
+<p><strong>前端（新专题）</strong>：Frontend Index 37/50，进入 TypeScript 进阶或 React 深度优化专题，距 50 题收官还有 13 题。</p>
+
+<p><strong>AI（继续 Mastery 阶段）</strong>：AI Index 18/30，预计涵盖 AI 安全对齐、Inference 优化（Speculative Decoding 等）、或 Agent 系统架构。</p>
+
+<p><strong>里程碑倒计时</strong>：系统设计只差 3 题即可 <strong>100% 完成全部 40 道</strong>！🎉</p>
+
+<p><em>Milestone alert: System Design is 3 topics away from <strong>100% completion of all 40 topics</strong>!</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-16</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
