@@ -5,8 +5,766 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 18 May 2026 15:09:12 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 20 May 2026 15:15:10 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-20</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-20</guid>
+      <pubDate>Wed, 20 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 39</h2>
+
+<p><strong>主题 / Topic:</strong> 分布式共识 — Raft 与 Paxos / Distributed Consensus (Raft/Paxos)</p>
+<p><strong>难度 / Difficulty:</strong> Expert | <strong>阶段 / Phase:</strong> Mastery</p>
+
+<hr/>
+
+<h2>想象你在设计...</h2>
+
+<p>你在构建一个分布式数据库集群（想想 etcd、CockroachDB 或 Kafka）。你需要让 5 台机器就&quot;谁是 leader&quot;、&quot;写操作按什么顺序执行&quot;达成一致意见。</p>
+
+<p><strong>如果没有共识算法，</strong>任何一台机器宕机都可能导致脑裂（split-brain）——两个节点都认为自己是 leader，各自接受写入，数据永久分叉。</p>
+
+<p><strong>Imagine you&#x27;re designing a distributed database cluster</strong> (like etcd, CockroachDB, or Kafka&#x27;s KRaft). You need 5 machines to agree on &quot;who is the leader&quot; and &quot;in what order writes happen.&quot; Without consensus, any machine failure risks split-brain — two nodes both think they&#x27;re leader, data forks forever.</p>
+
+<hr/>
+
+<h2>ASCII 架构 / Architecture</h2>
+
+<pre><code>
+       Client
+         │  Write Request
+         ▼
+    ┌─────────┐
+    │ Leader  │  ← elected by majority vote
+    │ Node 1  │
+    └────┬────┘
+         │ AppendEntries RPC (log replication)
+    ┌────┼─────────┐
+    ▼    ▼         ▼
+ Node2  Node3    Node4   Node5
+ (F)    (F)      (F)     (F)
+
+F = Follower
+
+Quorum = ⌊N/2⌋ + 1 = 3 out of 5 must acknowledge
+before leader commits an entry.
+
+Leader Election:
+  Follower timeout → Candidate → RequestVote RPC
+  Gets majority → becomes Leader → heartbeat starts
+</code></pre>
+
+<hr/>
+
+<h2>核心概念 / Core Concepts</h2>
+
+<h3>Raft — 为可读性而设计 / Designed for Understandability</h3>
+
+<p>Raft 把共识问题分解成三个相对独立的子问题：</p>
+<p>1. <strong>Leader 选举</strong> — 随机超时，先超时先投票</p>
+<p>2. <strong>日志复制</strong> — Leader 把日志条目发给所有 Follower，得到多数 ACK 后提交</p>
+<p>3. <strong>安全性</strong> — 已提交的日志条目永不丢失（只有拥有最新日志的节点才能成为 Leader）</p>
+
+<p>Raft splits consensus into three relatively independent sub-problems:</p>
+<p>1. <strong>Leader Election</strong> — randomized timeouts, first to time out requests votes</p>
+<p>2. <strong>Log Replication</strong> — leader appends, waits for majority ACK, then commits</p>
+<p>3. <strong>Safety</strong> — committed entries are never lost (only node with most up-to-date log can win election)</p>
+
+<p><strong>Raft 核心保证 / Core Guarantee:</strong></p>
+<pre><code>
+Term N 中已提交的日志条目，在 Term N+1 的新 Leader 中一定存在。
+An entry committed in Term N is guaranteed to exist in any leader elected in Term N+1.
+</code></pre>
+
+<h3>Paxos — 更通用但更难理解 / More General but Harder</h3>
+
+<pre><code>
+Phase 1a: Proposer sends Prepare(n) to majority
+Phase 1b: Acceptors respond with Promise (if n &gt; any seen)
+Phase 2a: Proposer sends Accept(n, value) with highest seen value
+Phase 2b: Acceptors accept if n &gt;= promised; Learners learn when majority accepts
+</code></pre>
+
+<p>Multi-Paxos 优化：选出稳定 Leader 后跳过 Phase 1，性能接近 Raft。</p>
+<p>Multi-Paxos optimization: skip Phase 1 after stable leader elected — performance close to Raft.</p>
+
+<hr/>
+
+<h2>关键权衡 / Key Tradeoffs</h2>
+
+<p>| 维度 | Raft | Paxos (Multi) |</p>
+<p>|------|------|---------------|</p>
+<p>| 可理解性 | ✅ 高 | ❌ 低 |</p>
+<p>| 工程实现 | ✅ 直观 | ❌ 复杂 |</p>
+<p>| 灵活性 | 🔶 固定模型 | ✅ 更通用 |</p>
+<p>| 性能 | 相当 | 相当 |</p>
+<p>| 实际使用 | etcd, Consul, TiKV | Chubby (Google), Zookeeper (ZAB ≈ Paxos) |</p>
+
+<p><strong>CAP 下的位置：</strong> 共识算法实现 CP — 有网络分区时宁可拒绝请求，也不接受可能不一致的写入。</p>
+
+<hr/>
+
+<h2>为什么这样设计？</h2>
+
+<p><strong>为什么需要 Quorum（多数派）？</strong></p>
+<p>- 5 节点集群可容忍 2 个节点宕机</p>
+<p>- 任何两个多数派集合至少有 1 个共同节点 → 保证信息传递</p>
+<p>- <code>N=2f+1</code> 节点可容忍 <code>f</code> 个故障</p>
+
+<p><strong>Why Quorum?</strong> Any two majority sets share at least 1 node, guaranteeing information propagation. N=2f+1 nodes tolerate f failures.</p>
+
+<p><strong>为什么随机化选举超时？</strong></p>
+<p>防止所有 Follower 同时成为 Candidate 造成票数分裂（split vote）。</p>
+
+<p><strong>Why randomized election timeouts?</strong> Prevents all followers from simultaneously becoming candidates (split vote → no winner → livelock).</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>认为 Raft/Paxos 解决了一切</strong> — 它们只解决单值或日志顺序共识，不解决拜占庭故障（节点可能发恶意消息）。拜占庭容错需要 PBFT 或 BFT 变种。</p>
+
+<p>❌ <strong>忘记 Leader 选举期间的不可用性</strong> — 典型 Raft 实现选举超时 150-300ms，选出新 Leader 需要 1-2 轮 RTT。在此期间请求被拒绝。</p>
+
+<p>❌ <strong>混淆&quot;已提交&quot;与&quot;已应用&quot;</strong> — 日志条目被多数派确认叫&quot;committed&quot;，被状态机执行叫&quot;applied&quot;。读从 Leader 读是强一致，从 Follower 读可能读到&quot;committed but not applied&quot;。</p>
+
+<p>❌ <strong>Assuming Raft/Paxos handles everything</strong> — they handle ordering/consensus, NOT Byzantine faults (malicious nodes). Byzantine fault tolerance needs PBFT.</p>
+
+<hr/>
+
+<h2>真实系统 / Real Systems</h2>
+
+<p>- <strong>etcd</strong> — Kubernetes 的 backing store，使用 Raft，是学习 Raft 的最佳代码库</p>
+<p>- <strong>CockroachDB / TiKV</strong> — Raft group per range/region</p>
+<p>- <strong>Apache Kafka KRaft</strong> — 2.8+ 用 Raft 替代 ZooKeeper</p>
+<p>- <strong>Google Spanner</strong> — Paxos groups，结合 TrueTime 实现外部一致性</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>1. [The Raft Consensus Algorithm (raft.github.io)](https://raft.github.io/) — 原论文 + 可视化动画</p>
+<p>2. [In Search of an Understandable Consensus Algorithm (Ongaro &amp; Ousterhout, 2014)](https://raft.github.io/raft.pdf) — Raft 原论文</p>
+<p>3. [Paxos Made Simple — Leslie Lamport (2001)](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf)</p>
+<p>4. [etcd Raft implementation](https://github.com/etcd-io/raft) — 生产级实现</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象一个 5 人委员会做决定。Raft 的规则是：一个人举手说&quot;我来主持会议&quot;，只要有 3 人（多数）说&quot;好&quot;，他就成为主持人。主持人提议每件事，只要 3 人点头，这件事就正式通过。如果主持人突然消失，大家等一段随机时间，第一个说&quot;我来&quot;并获得 3 票的人成为新主持人。</p>
+
+<p>Imagine a 5-person committee making decisions. The rule: one person raises their hand &quot;I&#x27;ll chair the meeting&quot; — if 3+ people say &quot;OK,&quot; they&#x27;re the chair. Chair proposes everything, and items only pass with 3+ nods. If the chair disappears, everyone waits a random time, and the first person who asks and gets 3 votes becomes the new chair.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 40</h2>
+
+<p><strong>题目 / Problem:</strong> #138 Copy List with Random Pointer</p>
+<p><strong>难度 / Difficulty:</strong> 🟡 Medium | <strong>模式 / Pattern:</strong> Linked List (6/11)</p>
+<p><strong>阶段 / Phase:</strong> Mastery</p>
+
+<hr/>
+
+<h2>🧩 链表技巧模式 (6/11) — 在第 41 天的模版基础上继续 / Building on the Template from Day 41</h2>
+
+<p>前 5 题回顾：Reverse → Merge → Cycle Detection → Reorder → Remove Nth</p>
+<p>今天：<strong>深拷贝带随机指针的链表</strong> — 需要 Hash Map，不能用快慢指针</p>
+
+<p>Previous 5: Reverse → Merge → Cycle Detection → Reorder → Remove Nth</p>
+<p>Today: <strong>Deep copy a linked list with random pointers</strong> — requires Hash Map, fast-slow pointer won&#x27;t help here</p>
+
+<p><strong>与模版的关系：</strong> 快慢指针解决&quot;遍历类&quot;问题，这题是&quot;复制类&quot;问题 — 关键挑战是 random 指针可以指向链表中任意节点，包括还没遍历到的节点。</p>
+
+<p><strong>Relationship to template:</strong> Fast-slow handles traversal/detection problems; this is a <em>copy</em> problem. The challenge: random pointer can point to any node, including ones you haven&#x27;t visited yet.</p>
+
+<hr/>
+
+<h2>🔗 链接 / Links</h2>
+
+<p>- 🔗 [LeetCode #138](https://leetcode.com/problems/copy-list-with-random-pointer/) 🟡 Medium</p>
+<p>- 📹 [NeetCode 讲解](https://www.youtube.com/watch?v=5Y2EiZST97Y)</p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>你有一本通讯录，每条联系人有：</p>
+<p>- <code>next</code>：下一条联系人</p>
+<p>- <code>random</code>：&quot;最佳朋友&quot;，指向通讯录中的任意一人</p>
+
+<p>你要<strong>完整复制</strong>这本通讯录，包括所有的&quot;最佳朋友&quot;关系。</p>
+<p>难点：复制第 1 个人时，他的&quot;最佳朋友&quot;可能是第 5 个人，但第 5 个人还没复制出来。</p>
+
+<p>You have an address book. Each contact has <code>next</code> (next person) and <code>random</code> (their &quot;best friend&quot; — anyone in the book). Challenge: when copying person #1, their best friend might be person #5, who doesn&#x27;t exist in the new book yet.</p>
+
+<hr/>
+
+<h2>问题描述 / Problem</h2>
+
+<pre><code>
+# Node definition
+class Node:
+    def __init__(self, x, next=None, random=None):
+        self.val = x
+        self.next = next
+        self.random = random
+
+# Input: head of linked list, random can point to any node or null
+# Output: deep copy — completely new nodes, same structure
+</code></pre>
+
+<hr/>
+
+<h2>解法：两次遍历 + Hash Map / Two-Pass with Hash Map</h2>
+
+<p><strong>核心思路 / Key Insight:</strong></p>
+<p>第一遍：遍历原链表，为每个节点创建对应的新节点，存入 <code>{old_node: new_node}</code> 映射。</p>
+<p>第二遍：再次遍历，用 hash map 设置每个新节点的 <code>next</code> 和 <code>random</code>。</p>
+
+<p>Pass 1: Create new node for each original node, store in <code>{old: new}</code> map.</p>
+<p>Pass 2: Wire up <code>next</code> and <code>random</code> using the map.</p>
+
+<pre><code>
+def copyRandomList(head):
+    # Edge case
+    if not head:
+        return None
+    
+    # Pass 1: Create all new nodes
+    old_to_new = {}
+    curr = head
+    while curr:
+        old_to_new[curr] = Node(curr.val)  # create copy, no links yet
+        curr = curr.next
+    
+    # Pass 2: Wire up next and random
+    curr = head
+    while curr:
+        if curr.next:
+            old_to_new[curr].next = old_to_new[curr.next]
+        if curr.random:
+            old_to_new[curr].random = old_to_new[curr.random]
+        curr = curr.next
+    
+    return old_to_new[head]
+</code></pre>
+
+<p><strong>执行追踪 / Trace:</strong></p>
+<pre><code>
+Input: 1 → 2 → 3, random: 1→3, 2→1, 3→2
+
+Pass 1 (create nodes):
+old_to_new = {1: Node(1), 2: Node(2), 3: Node(3)}
+
+Pass 2 (wire links):
+Node(1).next = Node(2), Node(1).random = Node(3)
+Node(2).next = Node(3), Node(2).random = Node(1)
+Node(3).next = None,    Node(3).random = Node(2)
+
+Result: New Node(1) → Node(2) → Node(3) ✓
+</code></pre>
+
+<hr/>
+
+<h2>进阶：O(1) 空间的交织法 / Bonus: O(1) Space Interweaving</h2>
+
+<pre><code>
+def copyRandomList_O1(head):
+    if not head:
+        return None
+    
+    # Step 1: Interweave — insert copy after each original
+    # 1 → 1&#x27; → 2 → 2&#x27; → 3 → 3&#x27;
+    curr = head
+    while curr:
+        copy = Node(curr.val)
+        copy.next = curr.next
+        curr.next = copy
+        curr = copy.next
+    
+    # Step 2: Set random pointers for copies
+    curr = head
+    while curr:
+        if curr.random:
+            curr.next.random = curr.random.next  # copy&#x27;s random = original&#x27;s random&#x27;s copy
+        curr = curr.next.next  # skip the copy
+    
+    # Step 3: Separate the two lists
+    dummy = Node(0)
+    copy_curr = dummy
+    curr = head
+    while curr:
+        copy_curr.next = curr.next  # take the copy
+        curr.next = curr.next.next  # restore original
+        copy_curr = copy_curr.next
+        curr = curr.next
+    
+    return dummy.next
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Hash Map 法：Time O(n), Space O(n) ✅ 面试首选</p>
+<p>- 交织法：Time O(n), Space O(1) ⚡ 进阶</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections (Linked List Block)</h2>
+
+<p>| 题目 | 核心技巧 | 与今天的联系 |</p>
+<p>|------|---------|------------|</p>
+<p>| #206 Reverse | 三指针翻转 | 最基础的链表操作 |</p>
+<p>| #141 Cycle | 快慢指针 | 检测环 |</p>
+<p>| #19 Remove Nth | 快指针超前 N 步 | 找相对位置 |</p>
+<p>| <strong>#138 今天</strong> | <strong>Hash Map / 交织</strong> | 复制结构 |</p>
+<p>| #146 LRU Cache | HashMap + 双向链表 | 链表 + 哈希组合 |</p>
+
+<p><strong>规律：</strong> 链表题要么用指针技巧（快慢、多指针），要么用 Hash Map（复制、随机访问）。</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>1. [LeetCode #138 官方题解](https://leetcode.com/problems/copy-list-with-random-pointer/editorial/)</p>
+<p>2. [NeetCode 视频讲解](https://www.youtube.com/watch?v=5Y2EiZST97Y)</p>
+<p>3. [Python Hash Map in Linked List Problems — Real Python](https://realpython.com/python-hash-table/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>你要抄一张人物关系图。每个人有个&quot;下一位&quot;和一个&quot;随机朋友&quot;。直接抄，抄到第 1 个人时，他的朋友是第 5 个人，第 5 个人还没画出来怎么办？</p>
+
+<p>方法：先把所有人的&quot;空壳&quot;画出来（第一遍），再把所有的连线画上去（第二遍）。这就是两次遍历的核心思想！</p>
+
+<p>Copy a relationship chart: each person has a &quot;next person&quot; and a &quot;random friend.&quot; Problem: when copying person #1, their friend is person #5 who doesn&#x27;t exist yet. Solution: first create all &quot;empty shells&quot; (pass 1), then draw all the connections (pass 2).</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 39</h2>
+
+<p><strong>问题 / Question:</strong> 描述一次你扭转了一个表现不佳项目的经历 / Describe a time you turned around an underperforming project</p>
+<p><strong>类别 / Category:</strong> Leadership | <strong>级别 / Level:</strong> Senior/Staff</p>
+<p><strong>阶段 / Phase:</strong> Mastery</p>
+
+<hr/>
+
+<h2>为什么这个问题很重要 / Why This Question Matters</h2>
+
+<p>这是一个<strong>高度分化</strong>的面试题。Junior 候选人会描述技术修复；Senior 候选人会展示：识别根本原因、获得对齐、执行路径、文化影响。</p>
+
+<p>面试官真正想听的是：</p>
+<p>- 你如何<strong>诊断</strong>真正的问题（不只是症状）</p>
+<p>- 你如何<strong>影响</strong>你没有直接控制权的人</p>
+<p>- 你如何在<strong>压力下决策</strong></p>
+
+<p>This question is highly differentiating. Junior candidates describe technical fixes; Senior candidates show root cause diagnosis, stakeholder alignment, execution, and cultural impact. Interviewers want to see <strong>how you think about organizational dynamics</strong>, not just coding skills.</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<h3>Situation — 设定背景</h3>
+<p>描述具体的&quot;表现不佳&quot;：</p>
+<p>- 具体数字：&quot;Sprint 完成率从 85% 跌到 40%，连续三个 Sprint&quot;</p>
+<p>- 外部影响：&quot;关键合作方开始质疑我们能否按期交付&quot;</p>
+<p>- 时间压力：&quot;距离产品发布还有 8 周&quot;</p>
+
+<p>❌ 避免：&quot;项目进展不顺利&quot;（太模糊）</p>
+<p>✅ 好：&quot;Q3 的核心功能进度延误了 6 周，工程团队和 PM 之间出现了明显的不信任，每周同步会变成了互相指责的场所。&quot;</p>
+
+<h3>Task — 你的角色</h3>
+<p>明确说明你的责任范围，以及<strong>为什么是你来解决</strong>：</p>
+<p>- &quot;我是 Tech Lead，但这不完全是技术问题&quot;</p>
+<p>- &quot;我主动请缨，因为我和两边都有信任关系&quot;</p>
+
+<h3>Action — 你做了什么（最重要）</h3>
+
+<p><strong>第一步：诊断真正的问题 / Diagnose the Real Problem</strong></p>
+<pre><code>
+表面症状 → 根本原因
+代码质量差 → 没有明确的 Definition of Done
+截止日期总 miss → 需求在 Sprint 中途变更，没有变更管理流程  
+工程师士气低 → 他们的技术债务请求被忽视了 6 个月
+</code></pre>
+
+<p><strong>第二步：创造心理安全 / Create Psychological Safety</strong></p>
+<p>单独 1-on-1 与关键人员：先听，不评判，不立刻提方案。</p>
+<p>找出每个人的<strong>真实痛点</strong>，而不是他们公开表达的立场。</p>
+
+<p><strong>第三步：给所有人一个&quot;共同的敌人&quot; / Give Everyone a Common Enemy</strong></p>
+<p>不是&quot;工程 vs PM&quot;，而是&quot;流程问题导致我们都在受苦&quot;。</p>
+<p>数据化问题：&quot;我们在返工上花了 30% 的 Sprint 时间&quot; — 具体数字打破防御性姿态。</p>
+
+<p><strong>第四步：小步快跑修复 / Small, Quick Wins First</strong></p>
+<p>在尝试改变整个文化之前，先解决 1-2 个具体痛点，建立信任和动力。</p>
+
+<h3>Result — 结果</h3>
+<p>量化：</p>
+<p>- &quot;接下来两个 Sprint 完成率回升到 75%，最终按时交付&quot;</p>
+<p>- &quot;团队 NPS 从 -20 上升到 +15&quot;</p>
+<p>- &quot;建立了变更管理流程，被整个 org 采用&quot;</p>
+
+<hr/>
+
+<h2>❌ Bad Answer vs ✅ Good Answer</h2>
+
+<p><strong>❌ 弱答案：</strong></p>
+<p>&quot;项目延误了，我加班加点写代码，最终追上了进度。&quot;</p>
+<p>→ 问题：只展示了个人执行，没有展示领导力、系统思维、影响力。</p>
+
+<p><strong>✅ 强答案（结构）：</strong></p>
+<p>&quot;项目延误的表面原因是代码质量，但深层原因是工程和 PM 之间的信息不对称。我花了一周做诊断，分别和 5 个关键人做 1-on-1，发现真正的痛点是需求在 Sprint 中途频繁变更但没有成本核算。我提议引入&#x27;变更影响评估&#x27;流程，并亲自推动与 PM 负责人对齐。接下来两个迭代，Sprint 完成率从 38% 回到 78%，并在发布前两周完成了核心功能。&quot;</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分点 / Senior/Staff Tips</h2>
+
+<p>1. <strong>展示你改变了系统，不只是救了火</strong> — &quot;我们建立了 X 流程，后来被其他团队也采用了&quot;</p>
+<p>2. <strong>展示你管理了向上的期望</strong> — &quot;我主动更新了 VP，提供了现实的路径，而不是等他们来问&quot;</p>
+<p>3. <strong>展示你考虑到了人的因素</strong> — &quot;PM 当时感到被指责，我需要先修复关系，才能修复流程&quot;</p>
+<p>4. <strong>承认你的局限</strong> — &quot;有一件我没做好的是...但这是我学到的教训&quot;</p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>- 🔍 <strong>诊断 &gt; 执行</strong>：花时间找根本原因，而不是立刻开始修复症状</p>
+<p>- 🤝 <strong>关系 &gt; 流程</strong>：在修复流程之前先修复信任</p>
+<p>- 📊 <strong>数据化你的故事</strong>：具体数字比&quot;显著改善&quot;有说服力 10 倍</p>
+<p>- 🔄 <strong>系统性修复</strong>：好的答案改变了系统，而不只是救了一次火</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>1. [STAR Method for Behavioral Interviews — Indeed](https://www.indeed.com/career-advice/interviewing/how-to-use-the-star-interview-response-technique)</p>
+<p>2. [Diagnosing Organizational Problems — HBR](https://hbr.org/2019/11/the-leader-as-coach)</p>
+<p>3. [Turning Around a Failing Project — PMI](https://www.pmi.org/learning/library/turning-around-failing-project-7061)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你的学校项目组快失败了。聪明的做法不是自己把所有作业都做了，而是：先搞清楚<strong>为什么</strong>大家不配合（也许有人觉得自己的意见没被听），然后找到让所有人都愿意合作的方法，最后建立一个让下次不再出问题的规则。这就是 Senior 工程师和 Junior 工程师的区别。</p>
+
+<p>Imagine your school group project is failing. The smart move isn&#x27;t to do everyone&#x27;s work yourself — it&#x27;s to figure out <em>why</em> people aren&#x27;t cooperating, fix the relationships, and then fix the process. That&#x27;s the difference between a Senior and Junior engineer.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 2</h2>
+
+<p><strong>主题 / Topic:</strong> multiprocessing — Pool, Process, Shared Memory</p>
+<p><strong>类别 / Category:</strong> 并发与并行 / Concurrency &amp; Parallelism</p>
+<p><strong>阶段 / Phase:</strong> Mastery</p>
+
+<hr/>
+
+<h2>为什么你需要 multiprocessing？/ Why Do You Need multiprocessing?</h2>
+
+<p>上一节我们学了 <code>threading</code>，它有一个大问题：<strong>GIL（全局解释器锁）</strong>。</p>
+<p>Python 的 GIL 确保同一时刻只有一个线程执行 Python 字节码，这意味着多线程<strong>无法真正并行执行 CPU 密集型任务</strong>。</p>
+
+<p><strong>解决方案：multiprocessing</strong> — 每个进程有独立的 Python 解释器和内存空间，绕过 GIL，实现真正的 CPU 并行。</p>
+
+<p>Last session: <code>threading</code> has a big problem — the <strong>GIL</strong> (Global Interpreter Lock). Python ensures only one thread executes Python bytecode at a time, meaning threads <em>cannot truly parallelize CPU-bound work</em>. <strong>Solution: multiprocessing</strong> — each process has its own interpreter and memory, bypassing the GIL for real CPU parallelism.</p>
+
+<pre><code>
+threading: Thread1 ─┐
+                    ├── GIL ──► Only 1 runs at a time (I/O-bound OK)
+           Thread2 ─┘
+
+multiprocessing: Process1 ──► CPU Core 1 ┐
+                 Process2 ──► CPU Core 2 ├── True parallelism
+                 Process3 ──► CPU Core 3 ┘
+</code></pre>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你有 1000 张图片需要调整大小，每张需要 200ms CPU 时间。单线程需要 200 秒。用 4 核 multiprocessing Pool，约 50 秒。</p>
+
+<p>1000 images to resize, 200ms CPU each. Single-threaded: 200 seconds. 4-core Pool: ~50 seconds.</p>
+
+<hr/>
+
+<h2>Process — 最基本的方式 / Basic: Process</h2>
+
+<pre><code>
+from multiprocessing import Process
+import os
+
+def worker(task_id):
+    print(f&quot;Task {task_id} running in PID {os.getpid()}&quot;)
+    # CPU-intensive work here
+    result = sum(i * i for i in range(10_000_000))
+    print(f&quot;Task {task_id} done: {result}&quot;)
+
+if __name__ == &quot;__main__&quot;:  # REQUIRED on Windows/macOS!
+    processes = []
+    for i in range(4):
+        p = Process(target=worker, args=(i,))
+        processes.append(p)
+        p.start()
+    
+    for p in processes:
+        p.join()  # wait for all to finish
+    
+    print(&quot;All done!&quot;)
+</code></pre>
+
+<p>⚠️ <strong><code>if __name__ == &quot;__main__&quot;:</code></strong> 在 macOS/Windows 上是必须的，否则 spawn 新进程时会无限递归。</p>
+
+<hr/>
+
+<h2>Pool — 推荐方式 / Recommended: Pool</h2>
+
+<p>Pool 管理一个工作进程池，自动分配任务。</p>
+
+<pre><code>
+from multiprocessing import Pool
+import time
+
+def cpu_bound_task(n):
+    &quot;&quot;&quot;Simulate CPU-intensive work&quot;&quot;&quot;
+    return sum(i * i for i in range(n))
+
+if __name__ == &quot;__main__&quot;:
+    numbers = [1_000_000, 2_000_000, 3_000_000, 4_000_000]
+    
+    # map: blocking, returns results in order
+    with Pool(processes=4) as pool:
+        results = pool.map(cpu_bound_task, numbers)
+    print(f&quot;map results: {results}&quot;)
+    
+    # imap: lazy iterator, memory-efficient for large inputs
+    with Pool(processes=4) as pool:
+        for result in pool.imap(cpu_bound_task, numbers):
+            print(f&quot;Got: {result}&quot;)
+    
+    # map_async: non-blocking
+    with Pool(processes=4) as pool:
+        async_result = pool.map_async(cpu_bound_task, numbers)
+        # do other work...
+        results = async_result.get(timeout=30)
+</code></pre>
+
+<p><strong>Pool API 速查 / Quick Reference:</strong></p>
+<p>| 方法 | 特点 |</p>
+<p>|------|------|</p>
+<p>| <code>pool.map(f, iterable)</code> | 阻塞，结果有序 |</p>
+<p>| <code>pool.imap(f, iterable)</code> | 懒惰迭代，省内存 |</p>
+<p>| <code>pool.starmap(f, [(a,b), ...])</code> | 多参数版 map |</p>
+<p>| <code>pool.map_async(f, iterable)</code> | 非阻塞，返回 AsyncResult |</p>
+<p>| <code>pool.apply(f, args)</code> | 单任务，阻塞 |</p>
+
+<hr/>
+
+<h2>Shared Memory — 进程间共享数据 / Shared Memory</h2>
+
+<p>进程间不共享内存！需要显式共享。</p>
+
+<pre><code>
+from multiprocessing import Process, Value, Array, Manager
+import ctypes
+
+def increment(counter, lock_needed=False):
+    for _ in range(100):
+        counter.value += 1  # NOT thread-safe without lock!
+
+def safe_increment(counter, lock):
+    for _ in range(100):
+        with lock:
+            counter.value += 1
+
+if __name__ == &quot;__main__&quot;:
+    # Value: single shared value
+    counter = Value(ctypes.c_int, 0)  # c_int type, initial value 0
+    
+    # Array: shared array
+    shared_arr = Array(ctypes.c_double, [1.0, 2.0, 3.0])
+    
+    # Manager: more flexible but slower (uses socket communication)
+    with Manager() as manager:
+        shared_dict = manager.dict()
+        shared_list = manager.list()
+        
+        def worker(d, l, key):
+            d[key] = key * 2
+            l.append(key)
+        
+        procs = [Process(target=worker, args=(shared_dict, shared_list, i)) for i in range(5)]
+        for p in procs: p.start()
+        for p in procs: p.join()
+        print(dict(shared_dict))  # {0: 0, 1: 2, 2: 4, 3: 6, 4: 8}
+</code></pre>
+
+<hr/>
+
+<h2>threading vs multiprocessing 选择指南 / When to Use What</h2>
+
+<pre><code>
+任务类型                    推荐
+──────────────────────────────────────────────
+I/O 密集（网络请求、文件）  → threading 或 asyncio
+CPU 密集（计算、图像处理）  → multiprocessing
+混合任务                    → ProcessPool + ThreadPool
+简单并发                    → concurrent.futures (统一 API)
+</code></pre>
+
+<pre><code>
+# concurrent.futures — 统一接口，推荐！/ Unified interface, recommended!
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+
+def task(n): return n * n
+
+# CPU-bound: ProcessPoolExecutor
+with ProcessPoolExecutor(max_workers=4) as executor:
+    futures = [executor.submit(task, i) for i in range(10)]
+    results = [f.result() for f in futures]
+
+# I/O-bound: ThreadPoolExecutor  
+with ThreadPoolExecutor(max_workers=10) as executor:
+    results = list(executor.map(task, range(10)))
+</code></pre>
+
+<hr/>
+
+<h2>常见陷阱 / Common Pitfalls</h2>
+
+<p>❌ <strong>忘记 <code>if __name__ == &quot;__main__&quot;:</code></strong> — 进程 spawn 时会 import 主模块，导致无限循环创建进程。</p>
+
+<p>❌ <strong>共享大量数据</strong> — 进程间通信（pickle 序列化）有开销。数据量大时用 <code>shared_memory</code>（Python 3.8+）或 <code>numpy</code> + <code>mmap</code>。</p>
+
+<p>❌ <strong>在 lambda 或局部函数上用 Pool</strong> — Pool 用 pickle 序列化函数，lambda 不可序列化。</p>
+
+<pre><code>
+# ❌ Wrong
+pool.map(lambda x: x*2, [1,2,3])  # PicklingError!
+
+# ✅ Correct
+def double(x): return x * 2
+pool.map(double, [1,2,3])
+</code></pre>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>1. [Python multiprocessing 官方文档](https://docs.python.org/3/library/multiprocessing.html)</p>
+<p>2. [Python Concurrency: threading vs multiprocessing vs asyncio — Real Python](https://realpython.com/python-concurrency/)</p>
+<p>3. [concurrent.futures — Higher-level interface](https://docs.python.org/3/library/concurrent.futures.html)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你要解 1000 道数学题。</p>
+<p>- <strong>单线程</strong>：你一道一道解，200 分钟。</p>
+<p>- <strong>threading</strong>：你和朋友们在同一张桌子用同一支笔轮流写（GIL），一样慢。</p>
+<p>- <strong>multiprocessing</strong>：你的 4 个朋友各自拿一张独立的桌子和笔，同时解，50 分钟！</p>
+
+<p>Imagine solving 1000 math problems. Single-threaded: you do them one by one, 200 min. Threading: you and friends share one pen at one table (GIL) — still slow. Multiprocessing: 4 friends each have their own table and pen, working truly in parallel — 50 min!</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI 资讯 / AI News — Day 47</h2>
+
+<p><strong>模式 / Mode:</strong> NEWS | <strong>日期 / Date:</strong> 2026-05-20</p>
+<p><strong>阶段 / Phase:</strong> Mastery</p>
+
+<p><em>来源 / Sources: The Verge AI, Figma Blog, Google Blog (fetched 2026-05-20)</em></p>
+
+<hr/>
+
+<h2>本周 AI 要闻 / This Week in AI</h2>
+
+<hr/>
+
+<h3>1. 🎨 Figma 推出 AI 设计 Agent / Figma Launches AI Design Agent</h3>
+
+<p>Figma 发布了一款<strong>产品设计 AI Agent</strong>，可以直接在 Figma Design 中帮助生成、编辑设计项目，以及&quot;自动化繁琐工作&quot;。这是继 Canva 和 Adobe 之后，又一家创意工具公司推出 AI 助手。</p>
+
+<p>Figma has launched a <strong>product design AI agent</strong>, initially available in Figma Design, that can assist with generating or editing design projects and &quot;automate busywork.&quot; It follows similar moves by Canva and Adobe.</p>
+
+<p>📌 <strong>对工程师的意义：</strong> 设计稿生成速度将大幅提升，前端工程师与设计师的协作方式可能发生变化——未来的 PRD 可能直接附带 AI 生成的交互原型。</p>
+
+<p><strong>Why it matters for engineers:</strong> Design iteration will speed up dramatically. The frontend dev↔designer handoff may shift — future specs might ship with AI-generated interactive prototypes.</p>
+
+<p>🔗 [Figma Blog: The Figma Agent is Here](https://www.figma.com/blog/the-figma-agent-is-here/)</p>
+
+<hr/>
+
+<h3>2. 🤖 Andrej Karpathy 加入 Anthropic / Andrej Karpathy Joins Anthropic</h3>
+
+<p>前特斯拉 AI 负责人、OpenAI 联合创始人 <strong>Andrej Karpathy</strong> 宣布加入 Anthropic，专注 R&amp;D 工作。他此前一直在研究&quot;AI-native 新型学校&quot;的教育项目，称自己&quot;对教育仍深度热情&quot;，日后会回归教育方向。</p>
+
+<p>Former Tesla AI head and OpenAI co-founder <strong>Andrej Karpathy</strong> announced he&#x27;s joining Anthropic to work on R&amp;D. He had been building an &quot;AI-native school&quot; and says he remains &quot;deeply passionate about education&quot; and plans to return to it &quot;in time.&quot;</p>
+
+<p>📌 <strong>背景：</strong> Karpathy 是深度学习领域最有影响力的工程师之一（3Blue1Brown 风格的教学视频、nanoGPT 作者）。他的加入意味着 Anthropic 在基础研究上的雄心。</p>
+
+<p><strong>Context:</strong> Karpathy is one of the most influential engineers in deep learning (nanoGPT, famous teaching videos). His joining signals Anthropic&#x27;s serious research ambition.</p>
+
+<p>🔗 [The Verge: Andrej Karpathy joins Anthropic](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<hr/>
+
+<h3>3. 🎵 Google Flow Music 获移动 App + 粒度编辑 / Google Flow Music Gets Mobile App &amp; Granular Editing</h3>
+
+<p>Google 的 AI 音乐生成工具 <strong>Flow Music</strong> 已在 iOS 上线，Android 即将推出。新功能包括：</p>
+<p>- 对 AI 生成歌曲的<strong>局部编辑</strong>（修改某段的节奏、改写某句歌词）</p>
+<p>- 生成&quot;翻唱版&quot;和<strong>音乐视频</strong></p>
+
+<p>Google&#x27;s AI music generation tool <strong>Flow Music</strong> is now available on iOS (Android coming soon). New features include granular editing tools for changing portions of an AI-generated song — beat drops, lyrics rewrites — plus the ability to generate &quot;covers&quot; and music videos.</p>
+
+<p>📌 <strong>趋势：</strong> AI 媒体创作工具正从&quot;生成一次&quot;向&quot;可迭代编辑&quot;演进，这与代码 IDE 的发展路径高度类似。</p>
+
+<p><strong>Trend:</strong> AI creative tools are evolving from &quot;one-shot generation&quot; to &quot;iterative editing&quot; — the same trajectory as code IDEs.</p>
+
+<p>🔗 [Google Blog: Flow Music Updates](https://blog.google/innovation-and-ai/models-and-research/google-labs/flow-updates/)</p>
+
+<hr/>
+
+<h3>4. 💰 Google AI Ultra 降价 / Google AI Ultra Gets Price Cut</h3>
+
+<p>Google 的顶级 AI 订阅套餐 AI Ultra（此前 $249.99/月）现在起步价调整为 <strong>$100/月</strong>，另有 $200/月 选项（含 Project Genie 世界模型访问权限）。这与 OpenAI Pro 的 $100/$200 两档定价结构一致。</p>
+
+<p>Google&#x27;s top AI subscription AI Ultra (previously $249.99/month) now reportedly starts at <strong>$100/month</strong>, with a $200/month option including Project Genie world model access. This mirrors OpenAI Pro&#x27;s $100/$200 tier structure.</p>
+
+<p>📌 <strong>竞争格局：</strong> 两大 AI 巨头的高端套餐定价趋同，消费者对 AI 订阅价格的接受上限正在被 $100-$200/月 这个锚点固化。</p>
+
+<p><strong>Competition:</strong> The two biggest AI players converging on the same pricing signals a market anchor forming around the $100-200/month range for premium AI.</p>
+
+<p>🔗 [The Verge: Google AI Ultra pricing](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<hr/>
+
+<h2>本周洞察 / Weekly Insight</h2>
+
+<p>这周的 AI 新闻有一个共同主线：<strong>AI 工具正在向各垂直行业深度渗透</strong>（设计、音乐），同时基础研究层面的人才流动（Karpathy → Anthropic）预示着下一轮模型能力跃升已在酝酿中。</p>
+
+<p>This week&#x27;s theme: <strong>AI tools deepening into vertical industries</strong> (design, music), while talent movement at the research level (Karpathy → Anthropic) signals the next capability leap is already being built.</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>1. [The Verge AI News (2026-05-20)](https://www.theverge.com/ai-artificial-intelligence)</p>
+<p>2. [Figma Agent Blog Post](https://www.figma.com/blog/the-figma-agent-is-here/)</p>
+<p>3. [Google Flow Music Updates](https://blog.google/innovation-and-ai/models-and-research/google-labs/flow-updates/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>这周 AI 界发生了什么？设计软件 Figma 有了会帮你画图的 AI 助手；Google 的 AI 音乐软件出了手机版还能改歌词；有个特别厉害的 AI 工程师跳槽去了另一家 AI 公司；Google 的 AI 会员降价了。总之，AI 越来越便宜，越来越聪明，越来越多地方可以用到。</p>
+
+<p>What happened in AI this week? Figma now has an AI that helps you design; Google&#x27;s AI music app went mobile and lets you edit songs; a famous AI engineer switched companies; and Google&#x27;s AI subscription got cheaper. Bottom line: AI keeps getting cheaper, smarter, and available in more places.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-18</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
