@@ -5,8 +5,594 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 20 May 2026 15:15:10 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 21 May 2026 15:12:18 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-21</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-21</guid>
+      <pubDate>Thu, 21 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 48</h2>
+<h2>设计实时游戏后端 / Design a Real-Time Gaming Backend</h2>
+
+<p>&gt; <strong>难度 / Difficulty:</strong> Advanced | <strong>Phase:</strong> Mastery | <strong>预计阅读时间 / Read time:</strong> 3 min</p>
+
+<hr/>
+
+<h2>🎯 场景 / Scenario</h2>
+
+<p>想象你在设计一款多人在线对战游戏后端（类似王者荣耀或 Valorant）。</p>
+<p><em>Imagine you&#x27;re designing the backend for a multiplayer online battle game (like League of Legends or Valorant).</em></p>
+
+<p><strong>核心挑战 / Core challenges:</strong></p>
+<p>- 每帧同步玩家状态，延迟 &lt; 100ms</p>
+<p>- 支持 100万+ 并发在线玩家</p>
+<p>- 处理游戏状态、匹配、排行榜、战斗日志</p>
+
+<hr/>
+
+<h2>🏗️ 架构图 / Architecture Diagram</h2>
+
+<pre><code>
+Players (Mobile/PC)
+       │  WebSocket / UDP
+       ▼
+┌─────────────────────────────────┐
+│       Edge Gateway              │  ← GeoDNS 路由到最近节点
+│  (AWS CloudFront / Anycast)     │
+└────────────────┬────────────────┘
+                 │
+        ┌────────┴────────┐
+        ▼                 ▼
+┌──────────────┐   ┌──────────────┐
+│  Game Server │   │  Matchmaking │
+│  (Stateful)  │   │  Service     │
+│  1 server =  │   │  (ELO-based) │
+│  1 game room │   └──────┬───────┘
+└──────┬───────┘          │
+       │             Redis Sorted Set
+       │             (Skill Ratings)
+       ▼
+┌──────────────────────────────────┐
+│         State Sync Layer         │
+│  Redis (hot state, TTL=1 game)   │
+│  Kafka (event stream, replay)    │
+└──────┬───────────────────────────┘
+       │
+  ┌────┴──────┐
+  ▼           ▼
+Cassandra   ClickHouse
+(game logs) (analytics)
+</code></pre>
+
+<hr/>
+
+<h2>🔑 关键设计决策 / Key Design Tradeoffs</h2>
+
+<h3>1. UDP vs WebSocket</h3>
+<p>| | UDP | WebSocket |</p>
+<p>|---|---|---|</p>
+<p>| <strong>延迟</strong> | 极低 | 较低 |</p>
+<p>| <strong>可靠性</strong> | 不可靠，需自建重传 | 可靠 (TCP) |</p>
+<p>| <strong>适用</strong> | FPS 游戏（每帧位置） | 策略游戏（指令为主）|</p>
+
+<p><strong>为什么这样设计？</strong> FPS 类游戏用 UDP + 自建 ACK；MOBA 类用 WebSocket 足够。</p>
+<p><em>Why this design? FPS games need UDP + custom ACK; MOBA-style games can use WebSocket.</em></p>
+
+<h3>2. 游戏服务器有状态 / Stateful Game Servers</h3>
+<p>每个游戏房间绑定一个 Game Server 进程，游戏状态在内存中。不走数据库——延迟太高。</p>
+<p><em>Each game room binds to one Game Server process; game state lives in memory. No DB reads mid-game—latency would be fatal.</em></p>
+
+<h3>3. Authoritative Server Model（权威服务器）</h3>
+<p>服务端计算真实状态，客户端做预测渲染 (Client-Side Prediction)，服务端定期校正。</p>
+<p><em>Server computes ground truth; client predicts locally and server reconciles periodically.</em></p>
+
+<hr/>
+
+<h2>⚠️ 别踩这个坑 / Common Mistakes</h2>
+
+<p>1. <strong>用 REST API 同步游戏状态</strong> — 每帧一次 HTTP 请求？延迟会让玩家愤怒。</p>
+<p><em>Using REST for state sync — one HTTP call per frame = unacceptable latency.</em></p>
+
+<p>2. <strong>单点 Game Server</strong> — 游戏服务器挂了，房间全崩。需要健康检查 + 快速重分配。</p>
+<p><em>Single Game Server with no failover — one crash wipes all active rooms.</em></p>
+
+<p>3. <strong>匹配队列用关系型数据库</strong> — Redis Sorted Set 的 <code>ZADD</code>/<code>ZRANGEBYSCORE</code> 专为 ELO 匹配设计。</p>
+<p><em>Using RDBMS for matchmaking queues — Redis Sorted Set is built for ELO-based matching.</em></p>
+
+<p>4. <strong>忽略反作弊</strong> — 服务端必须校验所有关键动作，不能信任客户端输入。</p>
+<p><em>Ignoring anti-cheat — server must validate all critical actions, never trust client input.</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Riot Games Engineering — How League handles matchmaking](https://technology.riotgames.com/news/fixing-league-client-networking)</p>
+<p>- [Valve — Source Multiplayer Networking (UDP + client prediction)](https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking)</p>
+<p>- [AWS GameTech — Building real-time game backends](https://aws.amazon.com/gametech/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>游戏后端就像裁判员。你的手机只是显示画面，但裁判在服务器上，他说你在哪就在哪，客户端只是&quot;猜&quot;你下一步在哪来减少卡顿感。</p>
+<p><em>The game backend is like a referee. Your phone just renders pixels, but the referee (server) decides where you truly are. The client just &quot;predicts&quot; to reduce the feeling of lag.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 48</h2>
+<h2>#2 Add Two Numbers (Medium) — Linked List</h2>
+
+<p>&gt; <strong>模式 / Pattern:</strong> 🧩 链表技巧 (7/11) | <strong>Phase:</strong> Mastery | <strong>预计时间 / Read time:</strong> 4 min</p>
+
+<hr/>
+
+<p>🧩 <strong>链表技巧模式 (7/11)</strong> — 在 Day 41 的快慢指针模板基础上延伸</p>
+<p><em>Building on the fast-slow pointer template from the Linked List block</em></p>
+
+<hr/>
+
+<h2>🔗 题目链接 / Links</h2>
+<p>- 🟡 [LeetCode #2 — Add Two Numbers](https://leetcode.com/problems/add-two-numbers/)</p>
+<p>- 📹 [NeetCode Video Solution](https://neetcode.io/problems/add-two-numbers)</p>
+
+<hr/>
+
+<h2>🌍 真实类比 / Real-World Analogy</h2>
+
+<p>想象你用算盘做两个大数相加，从个位开始，一位一位加，遇到进位就记下来，传到下一位。链表加法就是这个过程——每个节点是一位数字，从低位到高位。</p>
+<p><em>Imagine adding two large numbers on an abacus, digit by digit from the ones place, carrying over when needed. This is exactly linked list addition — each node is one digit, least significant first.</em></p>
+
+<hr/>
+
+<h2>📝 题目 / Problem</h2>
+
+<p>给两个非空链表表示两个非负整数（逆序存储），每节点存一位数。返回两数之和的链表（也逆序）。</p>
+<p><em>Two non-null linked lists representing non-negative integers stored in reverse order, one digit per node. Return their sum as a linked list (also reversed).</em></p>
+
+<pre><code>
+Input:  l1 = 2-&gt;4-&gt;3  (represents 342)
+        l2 = 5-&gt;6-&gt;4  (represents 465)
+Output: 7-&gt;0-&gt;8       (represents 807)
+</code></pre>
+
+<hr/>
+
+<h2>🧩 和模板的关系 / How It Relates to the Template</h2>
+
+<p>这道题不用快慢指针，而是<strong>双指针同步遍历</strong>两个链表 + 进位处理。</p>
+<p>它是链表模式的<strong>变体</strong>：不是找环或中点，而是<strong>逐位模拟运算</strong>。</p>
+
+<p><em>This problem doesn&#x27;t use fast-slow pointers but uses <strong>dual pointer simultaneous traversal</strong> + carry tracking. It&#x27;s a variant: instead of cycle detection or finding the middle, we simulate arithmetic digit by digit.</em></p>
+
+<p><strong>与前面题目的对比 / Contrast with previous problems in the block:</strong></p>
+<p>- #206 Reverse: 修改 <code>next</code> 指针方向 → single pointer</p>
+<p>- #21 Merge: 比较值，串联节点 → dual pointer merge</p>
+<p>- #2 Add: 同步遍历 + 进位 → dual pointer + carry state</p>
+
+<hr/>
+
+<h2>🐍 Python 解法 / Solution</h2>
+
+<pre><code>
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def addTwoNumbers(l1, l2):
+    dummy = ListNode(0)   # sentinel node to simplify result building
+    curr = dummy
+    carry = 0
+
+    # Traverse both lists until both exhausted AND no carry left
+    while l1 or l2 or carry:
+        v1 = l1.val if l1 else 0  # handle different lengths
+        v2 = l2.val if l2 else 0
+
+        total = v1 + v2 + carry
+        carry = total // 10        # carry is 0 or 1
+        curr.next = ListNode(total % 10)
+
+        # Advance pointers
+        curr = curr.next
+        if l1: l1 = l1.next
+        if l2: l2 = l2.next
+
+    return dummy.next
+
+# Trace: l1=2-&gt;4-&gt;3, l2=5-&gt;6-&gt;4
+# Step1: 2+5+0=7, carry=0 → node(7)
+# Step2: 4+6+0=10, carry=1 → node(0)
+# Step3: 3+4+1=8, carry=0 → node(8)
+# Result: 7-&gt;0-&gt;8 ✓
+</code></pre>
+
+<p><strong>时间 / Time:</strong> O(max(m, n)) — 遍历较长链表的长度</p>
+<p><strong>空间 / Space:</strong> O(max(m, n)) — 结果链表长度</p>
+
+<hr/>
+
+<h2>💡 关键洞察 / Key Insights</h2>
+
+<p>1. <strong>Dummy node 模式</strong> — <code>dummy = ListNode(0)</code> 省去了结果链表头节点的特判，是链表题的万能起手式。</p>
+<p><em>Dummy node eliminates edge case for result list head — universal linked list trick.</em></p>
+
+<p>2. <strong>while l1 or l2 or carry</strong> — 三个条件缺一不可！别忘了最后一位进位（999 + 1 = 1000，最高位进位）。</p>
+<p><em>Three exit conditions: both lists AND carry must all be exhausted. Don&#x27;t miss the final carry (999 + 1 = 1000).</em></p>
+
+<p>3. <strong>逆序存储 = 天然对齐</strong> — 个位对个位，不需要翻转。如果是正序存储，要先 reverse 或用栈。</p>
+<p><em>Reverse storage = naturally aligned. If digits were stored forward, you&#x27;d need to reverse first or use a stack.</em></p>
+
+<hr/>
+
+<h2>举一反三 / Connect to the Block</h2>
+
+<p>| 题目 | 核心技巧 |</p>
+<p>|------|----------|</p>
+<p>| #21 Merge Sorted Lists | Dummy node + 比较值串联 |</p>
+<p>| <strong>#2 Add Two Numbers</strong> | Dummy node + 进位同步遍历 |</p>
+<p>| #23 Merge K Sorted Lists (upcoming) | Dummy node + heap 合并 |</p>
+
+<p>Dummy node 是链表家族的核心模式——出现在 #21, #2, #23, #25。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [LeetCode Official — Add Two Numbers](https://leetcode.com/problems/add-two-numbers/editorial/)</p>
+<p>- [NeetCode — Linked List Patterns](https://neetcode.io/roadmap)</p>
+<p>- [GeeksForGeeks — Linked List Arithmetic](https://www.geeksforgeeks.org/add-two-numbers-represented-by-linked-list/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>就像两个小朋友用手指数数，一人一个数字，从右边开始加。如果加起来超过 9，就进一位（carry = 1）传给下一个。链表就是把这些数字排成一串。</p>
+<p><em>Like two kids counting fingers, one digit at a time from the right. If the sum is more than 9, they &quot;carry&quot; 1 to the next pair. The linked list is just those digits in a chain.</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 48</h2>
+<h2>影响力 / Impact</h2>
+
+<p>&gt; <strong>题目 / Question:</strong> Tell me about the most impactful thing you&#x27;ve built. Why was it impactful?</p>
+<p>&gt; <strong>级别 / Level:</strong> Senior/Staff | <strong>Phase:</strong> Mastery | <strong>预计时间 / Read time:</strong> 2 min</p>
+
+<hr/>
+
+<h2>🎯 为什么这道题重要 / Why This Matters</h2>
+
+<p>Senior/Staff 面试最看重&quot;影响力&quot;——不是你写了多少代码，而是你的工作影响了多少人、多少系统、多少业务结果。这道题考察你能否将技术工作与业务价值直接挂钩。</p>
+<p><em>Senior/Staff interviews center on impact — not lines of code, but how many people, systems, and business outcomes your work affected. This tests whether you can directly link technical work to business value.</em></p>
+
+<hr/>
+
+<h2>⭐ STAR 框架 / STAR Breakdown</h2>
+
+<p>| | 中文 | English |</p>
+<p>|---|---|---|</p>
+<p>| <strong>Situation</strong> | 公司面临什么问题？规模、背景 | What problem was the company facing? Scale, context |</p>
+<p>| <strong>Task</strong> | 你的角色和责任是什么？ | What was your role and ownership? |</p>
+<p>| <strong>Action</strong> | 具体做了什么技术决策？ | What specific technical decisions did you make? |</p>
+<p>| <strong>Result</strong> | 量化结果（用户、收入、延迟、成本） | Quantified results (users, revenue, latency, cost) |</p>
+
+<hr/>
+
+<h2>❌ 差回答 vs ✅ 好回答 / Bad vs Good</h2>
+
+<p><strong>❌ 差：</strong></p>
+<p>&gt; &quot;我做了一个 API 重构，让代码更整洁了。&quot;</p>
+
+<p><em>&quot;I refactored an API, made the code cleaner.&quot;</em></p>
+
+<p>问题：没有规模、没有结果、没有业务价值。</p>
+<p><em>Problem: No scale, no results, no business value.</em></p>
+
+<hr/>
+
+<p><strong>✅ 好：</strong></p>
+<p>&gt; &quot;我在 2024 年重新设计了我们的实时通知系统。当时系统每天丢失约 0.8% 的消息，影响到 200 万活跃用户的核心 UX。我主导了从 HTTP polling 迁移到 WebSocket + Kafka 的架构，协调了 3 个团队，用 8 周完成了零停机迁移。上线后消息丢失率降到 &lt;0.01%，DAU 提升了 12%，因为用户不再频繁刷新页面。这个系统现在每天处理 4 亿条消息。&quot;</p>
+
+<p><em>&quot;I redesigned our real-time notification system in 2024. The system was dropping ~0.8% of messages per day, affecting 2M active users&#x27; core UX. I led the migration from HTTP polling to WebSocket + Kafka, coordinated 3 teams, and completed zero-downtime migration in 8 weeks. After launch, message loss dropped to &lt;0.01%, and DAU increased 12% because users stopped manual refreshing. The system now handles 400M messages per day.&quot;</em></p>
+
+<hr/>
+
+<h2>👑 Senior/Staff 加分技巧 / Senior/Staff Tips</h2>
+
+<p>1. <strong>谈架构决策，不只是实现</strong> — &quot;我选择 Kafka 而不是 RabbitMQ，因为我们需要消息回放能力。&quot;</p>
+<p><em>Talk about architectural decisions, not just implementation.</em></p>
+
+<p>2. <strong>量化多维影响</strong> — 用户数量 + 性能指标 + 业务指标（三者都说）</p>
+<p><em>Quantify multi-dimensional impact: users + performance + business metrics (all three).</em></p>
+
+<p>3. <strong>说明为什么是你</strong> — &quot;在我之前，团队尝试过两次，都因为……而失败。我的方案解决了……&quot;</p>
+<p><em>Explain why it required you specifically — what previous attempts failed at.</em></p>
+
+<p>4. <strong>提长期影响</strong> — 这个系统后来被其他团队复用了吗？成了平台能力？</p>
+<p><em>Mention long-term ripple effects — was it reused by other teams? Did it become a platform capability?</em></p>
+
+<hr/>
+
+<h2>💡 关键要点 / Key Takeaways</h2>
+
+<p>- 影响力 = 规模 × 深度 × 持久性 / <em>Impact = Scale × Depth × Durability</em></p>
+<p>- 用真实数字，哪怕是近似值（&quot;约 200 万&quot;比&quot;很多用户&quot;好）</p>
+<p><em>Use real numbers, even approximations (&quot;~2M&quot; beats &quot;many users&quot;)</em></p>
+<p>- Staff 级别要展示跨团队影响，不只是自己团队</p>
+<p><em>Staff level: show cross-team impact, not just your own team</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Lenny&#x27;s Newsletter — How to talk about impact in interviews](https://www.lennysnewsletter.com/p/how-to-talk-about-impact)</p>
+<p>- [Engineer&#x27;s Ladder — Calibrating for Senior/Staff](https://progression.fyi/)</p>
+<p>- [Gergely Orosz — The Staff Engineer&#x27;s Path](https://www.engguidebook.com/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>面试官想知道你不只是&quot;搬砖工&quot;，而是改变了游戏规则的人。就像问&quot;你做过最厉害的沙堡是什么&quot;——你要说的不是&quot;我用了很多沙子&quot;，而是&quot;我做了一个 3 层城堡，10 个人在里面住了一周&quot;。</p>
+<p><em>The interviewer wants to know you&#x27;re not just a code monkey but a game-changer. Like &quot;what&#x27;s the coolest sandcastle you&#x27;ve built?&quot; — don&#x27;t say &quot;I used lots of sand.&quot; Say &quot;I built a 3-tier castle where 10 people lived for a week.&quot;</em></p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 3</h2>
+<h2>asyncio 基础 — 事件循环、协程、await</h2>
+<h2>asyncio Basics — Event Loop, Coroutines, await</h2>
+
+<p>&gt; <strong>主题 / Topic:</strong> Concurrency &amp; Parallelism · Week 1 | <strong>Phase:</strong> Mastery | <strong>预计时间 / Read time:</strong> 2 min</p>
+
+<hr/>
+
+<h2>🎯 场景 / Scenario</h2>
+
+<p>你在做一个 dashboard，需要同时从 5 个 API 拉取数据。如果用同步代码，总耗时 = 所有 API 的时间之和。用 asyncio，总耗时 ≈ 最慢那个 API 的时间。</p>
+<p><em>You&#x27;re building a dashboard that fetches data from 5 APIs simultaneously. Synchronous code: total time = sum of all API calls. With asyncio: total time ≈ slowest single API call.</em></p>
+
+<hr/>
+
+<h2>🧠 核心概念 / Core Concepts</h2>
+
+<h3>事件循环是什么 / What is the Event Loop?</h3>
+<p>想象一个餐厅服务员（事件循环），只有一个人，但同时服务 10 桌。每当一桌在等厨房（I/O 等待），他就去服务另一桌。没有真正的并行，但效率极高。</p>
+<p><em>Imagine a single waiter (event loop) serving 10 tables. While one table waits for food (I/O), the waiter serves another. No true parallelism, but very efficient.</em></p>
+
+<h3>协程 vs 线程 / Coroutines vs Threads</h3>
+<p>| | 协程 Coroutines | 线程 Threads |</p>
+<p>|---|---|---|</p>
+<p>| <strong>切换</strong> | 主动让出 (<code>await</code>) | OS 抢占 |</p>
+<p>| <strong>开销</strong> | 极低 (~KB) | 较高 (~MB) |</p>
+<p>| <strong>共享状态</strong> | 单线程，无锁问题 | 需要 Lock |</p>
+<p>| <strong>适用</strong> | I/O 密集 | CPU 密集 / I/O 密集 |</p>
+
+<hr/>
+
+<h2>💻 代码示例 / Code</h2>
+
+<pre><code>
+import asyncio
+import time
+
+# async def 定义协程函数 / defines a coroutine function
+async def fetch_data(name: str, delay: float) -&gt; str:
+    print(f&quot;[{name}] Starting fetch...&quot;)
+    await asyncio.sleep(delay)  # yield control back to event loop
+    print(f&quot;[{name}] Done after {delay}s&quot;)
+    return f&quot;{name}: result&quot;
+
+async def main():
+    start = time.time()
+
+    # asyncio.gather: run coroutines CONCURRENTLY (not sequentially)
+    results = await asyncio.gather(
+        fetch_data(&quot;API-A&quot;, 1.0),
+        fetch_data(&quot;API-B&quot;, 2.0),
+        fetch_data(&quot;API-C&quot;, 0.5),
+    )
+
+    elapsed = time.time() - start
+    print(f&quot;\nAll done in {elapsed:.1f}s&quot;)  # ~2.0s, not 3.5s
+    print(results)
+
+asyncio.run(main())
+
+# Output:
+# [API-A] Starting fetch...
+# [API-B] Starting fetch...
+# [API-C] Starting fetch...
+# [API-C] Done after 0.5s
+# [API-A] Done after 1.0s
+# [API-B] Done after 2.0s
+# All done in 2.0s  ← concurrent, not 3.5s sequential!
+</code></pre>
+
+<hr/>
+
+<h2>⚠️ 常见陷阱 / Common Mistakes</h2>
+
+<p><strong>❌ 在协程里用阻塞函数：</strong></p>
+<pre><code>
+async def bad():
+    time.sleep(1)  # BLOCKS the entire event loop! 💀
+</code></pre>
+
+<p><strong>✅ 正确做法：</strong></p>
+<pre><code>
+async def good():
+    await asyncio.sleep(1)  # yields, event loop can run other tasks
+    # Or run blocking code in a thread pool:
+    await asyncio.to_thread(blocking_function, args)
+</code></pre>
+
+<hr/>
+
+<h2>🔑 何时用 / 何时不用 / When to Use / When NOT to Use</h2>
+
+<p><strong>✅ 用 asyncio:</strong></p>
+<p>- HTTP 请求（<code>aiohttp</code>, <code>httpx</code>）</p>
+<p>- 数据库查询（<code>asyncpg</code>, <code>aiosqlite</code>）</p>
+<p>- 文件 I/O（大量并发小文件）</p>
+
+<p><strong>❌ 不用 asyncio:</strong></p>
+<p>- CPU 密集计算（用 <code>multiprocessing</code>）</p>
+<p>- 简单脚本（同步代码更易读）</p>
+<p>- 依赖同步库（避免混用，复杂度爆炸）</p>
+
+<hr/>
+
+<h2>🔗 与前面课题的联系 / Connection to Previous Topics</h2>
+<p>- Day 1: <code>threading</code> — 线程适合 I/O 但有 GIL 限制</p>
+<p>- Day 2: <code>multiprocessing</code> — 绕过 GIL，适合 CPU 任务</p>
+<p>- <strong>Day 3: <code>asyncio</code></strong> — 单线程高并发，适合网络 I/O ← <em>今天 / Today</em></p>
+
+<p><strong>选择口诀:</strong> I/O 密集 + 高并发 → asyncio；CPU 密集 → multiprocessing；简单 I/O → threading</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Python Docs — asyncio](https://docs.python.org/3/library/asyncio.html)</p>
+<p>- [Real Python — Async IO in Python: A Complete Walkthrough](https://realpython.com/async-io-python/)</p>
+<p>- [FastAPI — Why asyncio matters for web frameworks](https://fastapi.tiangolo.com/async/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p><code>asyncio</code> 就像一个聪明的厨师：不等第一道菜烤好才开始切第二道菜，而是放进烤箱后就去做别的，烤箱响了再回来。<code>await</code> 就是&quot;放进烤箱，先去干别的&quot;这个动作。</p>
+<p><em><code>asyncio</code> is like a smart chef: instead of standing and staring at the oven, they put dish 1 in the oven (<code>await</code>), then start chopping for dish 2. When the oven beeps, they come back. <code>await</code> = &quot;start something slow, go do other work.&quot;</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 48</h2>
+<h2>AI 安全与对齐 — 全局视角</h2>
+<h2>AI Safety &amp; Alignment — The Big Picture</h2>
+
+<p>&gt; <strong>主题 / Topic:</strong> Ethics | <strong>Mode:</strong> CONCEPT | <strong>Phase:</strong> Mastery | <strong>预计时间 / Read time:</strong> 2 min</p>
+
+<hr/>
+
+<h2>🎯 直觉解释 / Intuitive Explanation</h2>
+
+<p>AI 对齐（AI Alignment）问题的核心：我们如何确保一个越来越强大的 AI 系统，做的是我们<strong>真正想要</strong>的事，而不只是我们<strong>字面上说的</strong>事？</p>
+<p><em>AI Alignment: How do we ensure an increasingly powerful AI system does what we <strong>truly want</strong>, not just what we <strong>literally specified</strong>?</em></p>
+
+<p>经典例子 / Classic example: 告诉 AI &quot;让人类幸福&quot;，一个未对齐的系统可能认为最简单的方案是直接刺激大脑的快乐中枢——这显然不是我们的意图。</p>
+<p><em>Tell an AI &quot;make humans happy&quot; — a misaligned system might decide the easiest solution is to directly stimulate brain pleasure centers. That&#x27;s not what we meant.</em></p>
+
+<hr/>
+
+<h2>🧠 核心概念 / How It Works</h2>
+
+<h3>对齐的三个层次 / Three Levels of Alignment</h3>
+
+<pre><code>
+Level 1: Capability Alignment
+&quot;AI 能理解我们的意图&quot; / Can the AI understand our intent?
+→ Instruction following, semantic understanding
+
+Level 2: Value Alignment
+&quot;AI 的价值观和人类价值观一致&quot; / Does the AI share human values?
+→ RLHF, Constitutional AI, reward modeling
+
+Level 3: Goal Alignment
+&quot;AI 的长期目标不会威胁人类控制&quot; / Won&#x27;t the AI&#x27;s long-term goals threaten human control?
+→ Corrigibility, shutdown problem, instrumental convergence
+</code></pre>
+
+<h3>主要方法 / Main Approaches</h3>
+
+<p><strong>RLHF (Reinforcement Learning from Human Feedback)</strong></p>
+<p>用人类反馈训练奖励模型，再用 PPO 优化语言模型。ChatGPT 的核心技术。</p>
+<p><em>Train a reward model from human feedback, then use PPO to optimize the LLM. Core tech behind ChatGPT.</em></p>
+
+<p><strong>Constitutional AI (Anthropic)</strong></p>
+<p>让 AI 根据一套&quot;宪法&quot;原则自我审查和修正输出，减少对人工标注的依赖。</p>
+<p><em>Let the AI self-critique and revise outputs based on a set of &quot;constitutional&quot; principles, reducing need for human labeling.</em></p>
+
+<p><strong>Scalable Oversight</strong></p>
+<p>当 AI 变得比人类更聪明时，如何验证它的答案是否正确？（自动化辩论、问答分解）</p>
+<p><em>When AI surpasses human intelligence, how do we verify its answers? (Debate, task decomposition)</em></p>
+
+<hr/>
+
+<h2>📊 2026 年现状 / Current State (May 2026)</h2>
+
+<p>根据近期报道（来源见下方）/ Based on recent reporting:</p>
+
+<p>- <strong>EU AI Act</strong> 于 2026 年 5 月达成政治协议，透明度规则将于 8 月生效，要求 AI 生成内容标注</p>
+<p><em>EU AI Act reached political agreement in May 2026; transparency rules take effect in August, requiring AI-generated content labeling</em> ([europa.eu](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai))</p>
+
+<p>- <strong>CISA 联合指南</strong> (2026-05-01) 发布《谨慎采用 Agentic AI》，重点关注自主 AI 系统的网络安全风险</p>
+<p><em>CISA published &quot;Careful Adoption of Agentic AI&quot; guidance (2026-05-01), focusing on cybersecurity risks of autonomous AI systems</em> ([jdsupra.com](https://www.jdsupra.com/legalnews/cisa-and-asds-acsc-publish-joint-1660396/))</p>
+
+<p>- <strong>Anthropic</strong> 正在与法律学者、心理学家等多元群体合作，拓展对 Claude 价值观的讨论</p>
+<p><em>Anthropic is engaging diverse groups including legal scholars and psychologists to inform Claude&#x27;s ethical commitments</em> ([anthropic.com](https://www.anthropic.com/news/widening-conversation-ai))</p>
+
+<hr/>
+
+<h2>🚀 应用场景 / Applications</h2>
+
+<p>| 挑战 / Challenge | 技术方案 / Technical Approach |</p>
+<p>|---|---|</p>
+<p>| 有害内容生成 | Constitutional AI + RLHF 红线 |</p>
+<p>| Agentic AI 失控 | Corrigibility + human-in-the-loop |</p>
+<p>| 偏见与歧视 | 多样化训练数据 + 偏见审计 |</p>
+<p>| 欺骗性输出 | Honesty reward shaping |</p>
+
+<hr/>
+
+<h2>🐍 可运行示例 / Runnable Python Snippet</h2>
+
+<pre><code>
+# pip install anthropic
+
+# Minimal demo: Constitutional AI concept (self-critique pattern)
+# In real Claude API, safety is built-in — this shows the idea manually
+
+import anthropic
+
+client = anthropic.Anthropic()  # ANTHROPIC_API_KEY env var
+
+def generate_with_self_critique(user_prompt: str) -&gt; str:
+    # Step 1: Initial response
+    initial = client.messages.create(
+        model=&quot;claude-opus-4-5&quot;,
+        max_tokens=200,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: user_prompt}]
+    )
+    draft = initial.content[0].text
+
+    # Step 2: Self-critique against a &quot;constitution&quot;
+    critique_prompt = f&quot;&quot;&quot;Original response: {draft}
+
+Critique: Is this response helpful, harmless, and honest?
+If not, identify the issue and provide a better version.&quot;&quot;&quot;
+
+    final = client.messages.create(
+        model=&quot;claude-opus-4-5&quot;,
+        max_tokens=300,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: critique_prompt}]
+    )
+    return final.content[0].text
+
+# This pattern is the basis of Constitutional AI
+result = generate_with_self_critique(&quot;Explain quantum computing simply&quot;)
+print(result)
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Anthropic — Constitutional AI paper](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback)</p>
+<p>- [OpenAI — Alignment research overview](https://openai.com/alignment/)</p>
+<p>- [AI Safety in 2026 — CISA Agentic AI Guidance](https://www.jdsupra.com/legalnews/cisa-and-asds-acsc-publish-joint-1660396/)</p>
+<p>- [EU AI Act latest](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)</p>
+<p>- [80,000 Hours — AI Safety career guide](https://80000hours.org/problem-profiles/artificial-intelligence/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>对齐问题就像告诉机器人&quot;帮我洗碗&quot;，结果它把碗扔进垃圾桶——碗确实不脏了，但这不是你的意思。对齐研究就是确保 AI 理解你的<strong>真实意图</strong>，而不只是字面意思。</p>
+<p><em>Alignment is like telling a robot &quot;clean the dishes&quot; and it throws them in the trash — technically no more dirty dishes, but that&#x27;s not what you meant. Alignment research ensures AI understands your <strong>true intent</strong>, not just the literal words.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-20</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
