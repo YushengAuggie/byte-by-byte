@@ -5,8 +5,574 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 21 May 2026 15:12:18 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 22 May 2026 15:11:03 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-22</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-22</guid>
+      <pubDate>Fri, 22 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 49</h2>
+
+<p><strong>主题 / Topic:</strong> Design a Real-Time Gaming Backend</p>
+<p><strong>难度 / Difficulty:</strong> Advanced | <strong>阶段 / Phase:</strong> Mastery</p>
+
+<hr/>
+
+<h2>想象你在设计... / Imagine you&#x27;re designing...</h2>
+
+<p>你在设计一款实时多人射击游戏（想想《Apex Legends》或《Fortnite》）的后端。100 个玩家同时在同一个战场——每个人的移动、射击、状态都必须在 <strong>100ms 内同步</strong> 到所有其他玩家。</p>
+<p>You&#x27;re designing the backend for a real-time multiplayer shooter (think Apex Legends or Fortnite). 100 players in the same match — every move, shot, and death must sync to all other players within <strong>100ms</strong>.</p>
+
+<p><strong>核心挑战 / Core challenges:</strong></p>
+<p>- 低延迟（Low latency）：游戏状态同步 &lt; 100ms</p>
+<p>- 高吞吐量（High throughput）：每个玩家每秒发送约 30-60 个状态包</p>
+<p>- 作弊检测（Anti-cheat）：服务器端权威验证</p>
+<p>- 状态一致性（State consistency）：所有玩家看到同一个世界</p>
+
+<hr/>
+
+<h2>ASCII 架构图 / Architecture Diagram</h2>
+
+<pre><code>
+Players (100 clients)
+     │  UDP packets (position, input)
+     ▼
+┌─────────────────────────────────────────┐
+│         Game Server (Authoritative)     │
+│  ┌──────────┐  ┌──────────────────────┐ │
+│  │  Game    │  │  Physics Engine      │ │
+│  │  Loop    │  │  (server-side tick)  │ │
+│  │ (60 Hz)  │  │  Anti-cheat checks  │ │
+│  └──────────┘  └──────────────────────┘ │
+│         ↕ State deltas                  │
+│  ┌─────────────────────────────────────┐│
+│  │   In-Memory Game State (Redis)      ││
+│  │   Position, Health, Inventory       ││
+│  └─────────────────────────────────────┘│
+└─────────────────────────────────────────┘
+     │ Broadcast state deltas (UDP)
+     ▼
+All Players receive authoritative state
+
+     ┌─────────────────────────────────┐
+     │    Matchmaking Service          │
+     │    (REST/gRPC + Redis queue)    │
+     └────────────┬────────────────────┘
+                  │ Assigns to Game Server
+     ┌─────────────────────────────────┐
+     │    Fleet Manager (Kubernetes)   │
+     │    Auto-scales game server pods │
+     └─────────────────────────────────┘
+
+     ┌─────────────────────────────────┐
+     │    Persistence (Async)          │
+     │    Match results → PostgreSQL   │
+     │    Replay data → S3             │
+     └─────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>关键设计决策 / Key Design Decisions</h2>
+
+<h3>1. UDP vs TCP — 为什么选 UDP？</h3>
+<p>UDP 没有重传保证，数据包可能丢失。但游戏是 <strong>time-sensitive</strong>：</p>
+<p>- 位置数据过时 200ms 就没用了，不如直接丢弃</p>
+<p>- 丢包率 &lt; 5% 是可接受的</p>
+<p>- 现代游戏使用 <strong>QUIC 或自定义 UDP 协议</strong> — 结合 UDP 速度 + 可靠性控制</p>
+
+<h3>2. 服务器权威模型 / Server-Authoritative Model</h3>
+<p>- 客户端预测（Client-side prediction）：玩家本地先渲染，减少感知延迟</p>
+<p>- 服务器验证：服务器有最终决定权，防止作弊</p>
+<p>- 客户端协调（Reconciliation）：客户端与服务器状态对比，差异时修正</p>
+
+<h3>3. 状态同步：Delta Compression</h3>
+<p>不发送完整状态（可能几 KB），只发送 <strong>变化的部分</strong>（delta）：</p>
+<pre><code>
+Full state:  {p1: {x:100, y:200, hp:100}, p2: {...}, ...}  ~4KB
+Delta:       {p1: {x:103}}  ~20 bytes
+</code></pre>
+<p>100 玩家 × 60Hz × 20 bytes = <strong>12 MB/s per game server</strong> — 可管理</p>
+
+<h3>4. 地理分布 / Geographic Distribution</h3>
+<p>- 玩家应连接到 <strong>最近的区域服务器</strong> (AWS regions, CDN edge)</p>
+<p>- 目标：玩家到游戏服务器 ping &lt; 50ms</p>
+<p>- 跨区域对战需要 <strong>中继服务器</strong> (relay)</p>
+
+<hr/>
+
+<h2>为什么这样设计？/ Why this design?</h2>
+
+<p>| 决策 | 原因 |</p>
+<p>|------|------|</p>
+<p>| 独立 Game Server 进程 | 状态隔离，一场崩溃不影响其他场 |</p>
+<p>| In-memory state (Redis) | 内存读写 &lt; 1ms，磁盘扛不住 60Hz 写 |</p>
+<p>| 异步持久化 | 比赛结果不需要实时写库，批量写即可 |</p>
+<p>| Kubernetes 弹性扩缩 | 晚高峰 10x 流量，凌晨缩容省钱 |</p>
+
+<hr/>
+
+<h2>⚠️ 别踩这个坑 / Common Mistakes</h2>
+
+<p>1. <strong>用 TCP 做游戏同步</strong> — TCP 的队头阻塞（head-of-line blocking）在网络抖动时造成卡顿</p>
+<p>2. <strong>客户端完全信任</strong> — 不做服务器验证等于邀请作弊器</p>
+<p>3. <strong>同步写数据库</strong> — 每帧写一次 DB 会让 DB 立刻爆炸</p>
+<p>4. <strong>单体 Game Server</strong> — 一台机器跑所有对局，一个对局内存泄漏崩掉全服</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Gaffer on Games — Real-Time Multiplayer](https://gafferongames.com/post/state_synchronization/)</p>
+<p>- [Riot Engineering — How League of Legends Handles Network](https://technology.riotgames.com/news/fixing-internet-ping-and-packet-loss)</p>
+<p>- [Cloudflare — QUIC Protocol Overview](https://www.cloudflare.com/learning/performance/what-is-quic/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>就像老师在课堂上维持秩序一样 — 每个同学（玩家客户端）都在做自己的事，但老师（游戏服务器）是裁判，他的话是最终答案。同学可以先猜老师会说什么（客户端预测），但如果猜错了就得听老师的纠正。</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 49</h2>
+
+<p><strong>题目 / Problem:</strong> #287 Find the Duplicate Number (Medium)</p>
+<p><strong>模式 / Pattern:</strong> 🧩 Linked List (8/11) — building on the fast-slow pointer template</p>
+
+<hr/>
+
+<h2>🧩 链表技巧模式 (8/11) — 今天的变体 / Pattern Variation</h2>
+
+<p>从 Day 41 的快慢指针模板开始，今天的题目是一个 <strong>&quot;隐式链表&quot;</strong> 的妙用 — 数组本身就是一条链表！</p>
+
+<p><strong>回顾模板 / Template recap:</strong></p>
+<pre><code>
+# Fast-slow pointers (cycle / middle)
+slow = fast = head
+while fast and fast.next:
+    slow = slow.next
+    fast = fast.next.next
+# slow is at meeting point if cycle
+</code></pre>
+
+<p><strong>今天的变化 / What&#x27;s different today:</strong></p>
+<p>- 不是真正的链表节点，而是用 <strong>数组下标</strong> 模拟 <code>next</code> 指针</p>
+<p>- <code>nums[i]</code> 代表 &quot;从节点 i 出发，下一个节点是 nums[i]&quot;</p>
+<p>- 有重复数字 → 必然有环</p>
+
+<hr/>
+
+<h2>🔗 题目链接</h2>
+
+<p>- 🔗 [LeetCode #287](https://leetcode.com/problems/find-the-duplicate-number/) 🟡 Medium</p>
+<p>- 📹 [NeetCode 解析](https://neetcode.io/problems/find-duplicate-integer)</p>
+
+<hr/>
+
+<h2>现实类比 / Real-world analogy</h2>
+
+<p>想象一条单行道，路牌上写着&quot;下一站是 X 号路口&quot;。如果某两个路牌都指向同一个地方，那从起点出发走下去，一定会兜圈子。Floyd 算法就是用一快一慢两辆车检测这个圈。</p>
+
+<p>Imagine a one-way road where each sign says &quot;go to intersection X.&quot; If two signs point to the same place, a driver following the signs will eventually loop. Floyd&#x27;s algorithm uses two cars — one fast, one slow — to detect that loop.</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>给一个数组 <code>nums</code>，包含 <code>n+1</code> 个整数，每个数在 <code>[1, n]</code> 之间，<strong>只有一个数出现多次</strong>。不能修改数组，空间复杂度 O(1)。</p>
+
+<pre><code>
+Input:  nums = [1, 3, 4, 2, 2]
+Output: 2
+</code></pre>
+
+<hr/>
+
+<h2>映射到模板 / Map to Template</h2>
+
+<pre><code>
+数组下标:    0 → 1 → 3 → 2 → 4 → 2 (loop!)
+nums[i]:     1   3   2   4   2
+
+把 nums[i] 当 next 指针:
+- Node 0 → Node nums[0]=1
+- Node 1 → Node nums[1]=3
+- Node 3 → Node nums[3]=2
+- Node 2 → Node nums[2]=4
+- Node 4 → Node nums[4]=2  ← loop starts here!
+</code></pre>
+
+<p>重复的数字 <code>2</code> 就是环的入口！这和 Linked List Cycle II (#142) 是完全一样的问题！</p>
+
+<hr/>
+
+<h2>Python 解法 / Solution</h2>
+
+<pre><code>
+def findDuplicate(nums):
+    # Phase 1: Find meeting point inside the cycle
+    slow = nums[0]
+    fast = nums[0]
+    
+    while True:
+        slow = nums[slow]        # move 1 step
+        fast = nums[nums[fast]]  # move 2 steps
+        if slow == fast:
+            break  # they met inside the cycle
+    
+    # Phase 2: Find cycle entry (= duplicate number)
+    # Reset one pointer to start
+    slow = nums[0]
+    while slow != fast:
+        slow = nums[slow]  # 1 step
+        fast = nums[fast]  # 1 step
+    
+    return slow  # cycle entry = duplicate
+
+# Trace for [1, 3, 4, 2, 2]:  (indices: 0→1, 1→3, 2→4, 3→2, 4→2)
+# Phase 1:
+# Start:  slow=1, fast=1
+# Step 1: slow=nums[1]=3, fast=nums[nums[1]]=nums[3]=2
+# Step 2: slow=nums[3]=2, fast=nums[nums[2]]=nums[4]=2  ← meet at 2!
+# Phase 2 (reset slow=nums[0]=1, fast=2):
+# Step 1: slow=nums[1]=3, fast=nums[2]=4
+# Step 2: slow=nums[3]=2, fast=nums[4]=2  ← meet at 2 = duplicate ✓
+</code></pre>
+
+<p><strong>时间 / Time:</strong> O(n) — 线性扫描</p>
+<p><strong>空间 / Space:</strong> O(1) — 只用两个指针，不修改数组</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern connections</h2>
+
+<p>| 题目 | 链接 |</p>
+<p>|------|------|</p>
+<p>| #141 Linked List Cycle (Day 43) | 检测环的存在 |</p>
+<p>| #142 Linked List Cycle II | 找环入口 — <strong>本题的本质</strong> |</p>
+<p>| #287 Find Duplicate (今天) | 隐式链表 → 找环入口 |</p>
+<p>| #23 Merge K Sorted Lists (Day 10) | 快慢指针的极限应用 |</p>
+
+<p><strong>规律：</strong> 凡是需要 O(1) 空间找重复/环，先想&quot;能不能把问题建模成链表+Floyd算法&quot;。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [LeetCode #287 Discussion — Floyd Cycle Detection Explained](https://leetcode.com/problems/find-the-duplicate-number/solutions/72846/my-easy-understood-solution-with-o1-space-and-on-in-time/)</p>
+<p>- [Floyd&#x27;s Tortoise and Hare — Wikipedia](https://en.wikipedia.org/wiki/Cycle_detection#Floyd&#x27;s_tortoise_and_hare)</p>
+<p>- [NeetCode — Find the Duplicate Number](https://neetcode.io/problems/find-duplicate-integer)</p>
+
+<h2>🧒 ELI5</h2>
+<p>数组里有个数字出现了两次，就好像一条路上有两个路牌指向同一个地方。用乌龟（慢）和兔子（快）在路上跑，它们一定会在那个&quot;重复的地方&quot;相遇，然后再走一遍就能找到是哪里重复的。</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 49</h2>
+
+<p><strong>问题 / Question:</strong> Tell me about the most impactful thing you&#x27;ve built. Why was it impactful?</p>
+<p><strong>类别 / Category:</strong> Impact | <strong>级别 / Level:</strong> Senior/Staff</p>
+
+<hr/>
+
+<h2>为什么这道题很重要 / Why This Matters</h2>
+
+<p>这是高级工程师面试中最有区分度的问题之一。面试官想知道：</p>
+<p>1. 你如何<strong>定义和衡量</strong>影响力（不只是技术复杂度）</p>
+<p>2. 你的视野是不是超越了代码本身（用户、业务、团队）</p>
+<p>3. 你是否有<strong>意识地</strong>推动了结果，而不只是完成了任务</p>
+
+<p>This is one of the highest-signal questions for senior engineers. Interviewers want to know:</p>
+<p>1. How you <strong>define and measure</strong> impact (not just technical complexity)</p>
+<p>2. Whether your view extends beyond code (users, business, team)</p>
+<p>3. Whether you <strong>intentionally drove</strong> outcomes, not just completed tasks</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Framework</h2>
+
+<p><strong>S — Situation（背景）:</strong> 什么时间点，什么问题存在，规模多大？</p>
+<p><strong>T — Task（任务）:</strong> 你的职责范围，为什么是你来推动这件事？</p>
+<p><strong>A — Action（行动）:</strong> 你做了哪些具体决定？遇到什么阻力？怎么克服的？</p>
+<p><strong>R — Result（结果）:</strong> 量化影响——用户数、收入、延迟降低、团队效率提升？</p>
+
+<hr/>
+
+<h2>❌ 差回答 / Bad Answer</h2>
+
+<p>&gt; &quot;我重写了我们的支付模块，把它从 Python 迁移到 Go，性能提升了 3 倍。&quot;</p>
+
+<p><strong>问题:</strong> 只说了技术，没说业务影响。&quot;性能提升 3 倍&quot;对什么有意义？用户感知到了吗？收入变化了吗？</p>
+
+<hr/>
+
+<h2>✅ 好回答 / Good Answer</h2>
+
+<p>&gt; &quot;我在 [公司] 时，注意到我们的结账流程在支付验证阶段有 8% 的超时率。这个问题直接导致了用户支付失败重试，我们估算每月损失约 $200K 的 GMV。</p>
+<p>&gt;</p>
+<p>&gt; 我的任务是重新设计支付验证的异步流程。挑战是不能中断现有的 live 交易，需要双轨并行运行两套系统。我设计了一个 shadow mode，让新系统先旁路运行 2 周验证数据一致性，再逐步灰度放量。</p>
+<p>&gt;</p>
+<p>&gt; 结果：超时率从 8% 降到 0.3%，对应每月减少约 $185K 的交易失败，也让客服退款工单减少了 40%。我认为这最有影响力，因为它直接影响了用户和收入，不只是技术指标。&quot;</p>
+
+<hr/>
+
+<h2>高级工程师/Staff 技巧 / Senior/Staff Tips</h2>
+
+<p>1. <strong>量化一切</strong> — 如果没有具体数字，估算也可以：&quot;我们估计每月约 X&quot;比什么都没有好</p>
+<p>2. <strong>说清楚你为什么知道这件事重要</strong> — 主动发现 &gt; 被分配任务</p>
+<p>3. <strong>讲出组织障碍</strong> — 跨团队协作、推动 OKR 对齐 &gt; 单纯写代码</p>
+<p>4. <strong>Staff+ 补充：谈生态影响</strong> — 这件事之后，有没有别的团队采用了你的方案？</p>
+
+<p><strong>Staff 变体回答结尾:</strong></p>
+<p>&gt; &quot;这个 shadow mode 方案后来被我们的基础设施团队采用为标准迁移模式，其他 3 个团队在同年用它完成了各自的系统迁移。&quot;</p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>- 📌 <strong>影响力 = 用户/业务结果</strong>，而不是&quot;我用了多酷的技术&quot;</p>
+<p>- 📌 <strong>主动发现问题</strong> &gt; 被分配任务</p>
+<p>- 📌 量化结果，哪怕是估算</p>
+<p>- 📌 Senior+ 要展示系统性思维和组织影响力</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [STAR Method for Behavioral Interviews — Glassdoor](https://www.glassdoor.com/blog/guide/star-interview-method/)</p>
+<p>- [Gergely Orosz — Engineering Impact at Scale](https://newsletter.pragmaticengineer.com/p/measuring-developer-productivity)</p>
+<p>- [Jordan Cutler — How to Answer Behavioral Questions at Staff+](https://read.highgrowthengineer.com/p/how-to-answer-behavioral-interview)</p>
+
+<h2>🧒 ELI5</h2>
+<p>面试官问你&quot;做过最厉害的事是什么&quot;，不是想听你说用了多难的技术，而是想知道你做的事让多少人受益、让公司省了多少钱。就像老师不只看你考多难的题，更看你帮了多少同学理解知识。</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 49</h2>
+
+<p><strong>主题 / Topic:</strong> asyncio Patterns — gather, Semaphore, Queue</p>
+<p><strong>类别 / Category:</strong> Concurrency &amp; Parallelism (Week 1, Day 4)</p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在写一个爬虫，需要并发抓取 1000 个 URL。直接 <code>asyncio.gather(*all_1000_tasks)</code> 会在 0.1 秒内发出 1000 个请求 — 立刻触发对方服务器的限流，或者让你自己的网络连接耗尽。</p>
+
+<p>You&#x27;re writing a scraper to fetch 1000 URLs concurrently. Naively doing <code>asyncio.gather(*all_1000_tasks)</code> fires 1000 requests in 0.1 seconds — instantly triggering rate limits or exhausting your own connection pool.</p>
+
+<p><strong>解决方案：</strong> <code>asyncio.Semaphore</code> + <code>asyncio.Queue</code></p>
+
+<hr/>
+
+<h2>核心模式 / Core Patterns</h2>
+
+<h3>1. `asyncio.gather` — 并发等待多个协程</h3>
+
+<pre><code>
+import asyncio
+
+async def fetch(url: str) -&gt; str:
+    await asyncio.sleep(0.1)  # simulate network I/O
+    return f&quot;result from {url}&quot;
+
+async def main():
+    urls = [&quot;url1&quot;, &quot;url2&quot;, &quot;url3&quot;]
+    
+    # Run all concurrently, wait for ALL to finish
+    results = await asyncio.gather(*[fetch(u) for u in urls])
+    # returns list in same order as inputs
+    print(results)  # [&#x27;result from url1&#x27;, &#x27;result from url2&#x27;, &#x27;result from url3&#x27;]
+    
+    # Handle individual errors without cancelling others
+    results = await asyncio.gather(
+        *[fetch(u) for u in urls],
+        return_exceptions=True  # exceptions become results, not raised
+    )
+
+asyncio.run(main())
+</code></pre>
+
+<hr/>
+
+<h3>2. `asyncio.Semaphore` — 限制并发数（生产关键！）</h3>
+
+<pre><code>
+import asyncio
+import aiohttp
+
+async def fetch_with_limit(session, url, semaphore):
+    async with semaphore:  # acquire → run → release
+        async with session.get(url) as resp:
+            return await resp.text()
+
+async def crawl(urls: list[str], max_concurrent: int = 10):
+    semaphore = asyncio.Semaphore(max_concurrent)  # max 10 at a time
+    
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_with_limit(session, url, semaphore) for url in urls]
+        return await asyncio.gather(*tasks, return_exceptions=True)
+
+# pip install aiohttp
+# asyncio.run(crawl(urls, max_concurrent=10))
+</code></pre>
+
+<p><strong>Semaphore 工作原理：</strong> 内部有一个计数器（初始=max_concurrent）。每次 <code>async with semaphore</code> 将计数器减 1；如果计数器为 0，新任务等待；任务完成后计数器加 1，唤醒等待者。</p>
+
+<hr/>
+
+<h3>3. `asyncio.Queue` — 生产者消费者模式</h3>
+
+<pre><code>
+import asyncio
+
+async def producer(queue: asyncio.Queue, items: list):
+    for item in items:
+        await queue.put(item)  # blocks if queue is full
+    
+    # Signal workers to stop
+    for _ in range(NUM_WORKERS := 3):
+        await queue.put(None)  # sentinel value
+
+async def worker(queue: asyncio.Queue, worker_id: int):
+    while True:
+        item = await queue.get()  # blocks if queue is empty
+        if item is None:
+            break  # received sentinel, stop
+        
+        # Process item
+        await asyncio.sleep(0.1)  # simulate work
+        print(f&quot;Worker {worker_id} processed: {item}&quot;)
+        queue.task_done()  # mark item as done
+
+async def main():
+    queue = asyncio.Queue(maxsize=100)  # bounded queue
+    NUM_WORKERS = 3
+    
+    # Start workers
+    workers = [asyncio.create_task(worker(queue, i)) for i in range(NUM_WORKERS)]
+    
+    # Run producer
+    await producer(queue, list(range(10)))
+    
+    # Wait for workers to finish
+    await asyncio.gather(*workers)
+
+asyncio.run(main())
+</code></pre>
+
+<hr/>
+
+<h2>❌ vs ✅ 常见错误 / Common Mistakes</h2>
+
+<pre><code>
+# ❌ 无限制并发 — 可能耗尽资源
+results = await asyncio.gather(*[fetch(url) for url in huge_list])
+
+# ✅ 用 Semaphore 限速
+sem = asyncio.Semaphore(50)
+async def bounded_fetch(url):
+    async with sem:
+        return await fetch(url)
+results = await asyncio.gather(*[bounded_fetch(url) for url in huge_list])
+
+# ❌ 在 async 函数中用 time.sleep（会阻塞整个 event loop！）
+async def bad():
+    time.sleep(1)  # blocks event loop, nothing else runs
+
+# ✅ 用 asyncio.sleep
+async def good():
+    await asyncio.sleep(1)  # yields control, other tasks can run
+</code></pre>
+
+<hr/>
+
+<h2>何时用哪个 / When to Use What</h2>
+
+<p>| 场景 | 工具 |</p>
+<p>|------|------|</p>
+<p>| 并发执行固定数量任务 | <code>asyncio.gather</code> |</p>
+<p>| 限制同时运行的任务数 | <code>asyncio.Semaphore</code> |</p>
+<p>| 解耦生产者和消费者速率 | <code>asyncio.Queue</code> |</p>
+<p>| 一个任务失败不影响其他 | <code>gather(return_exceptions=True)</code> |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Python asyncio docs — Synchronization Primitives](https://docs.python.org/3/library/asyncio-sync.html)</p>
+<p>- [Real Python — Async IO in Python](https://realpython.com/async-io-python/)</p>
+<p>- [aiohttp docs](https://docs.aiohttp.org/en/stable/)</p>
+
+<h2>🧒 ELI5</h2>
+<p><code>gather</code> 就像让很多人同时干活。<code>Semaphore</code> 就是说&quot;同时最多 10 个人进厕所&quot;——限制并发数，防止挤崩。<code>Queue</code> 是一条传送带——生产者往上放东西，消费者从另一头取——两边速度不用一样。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI 资讯 / AI News — Day 49</h2>
+
+<p><strong>模式 / Mode:</strong> NEWS | <strong>日期 / Date:</strong> 2026-05-22</p>
+
+<hr/>
+
+<h2>本周 AI 大事 / This Week in AI</h2>
+
+<hr/>
+
+<h3>📰 1. Nvidia Q1 营收创纪录，数据中心同比增长 92%</h3>
+
+<p>据 [The Verge 报道](https://www.theverge.com/ai-artificial-intelligence)（2026-05-20），Nvidia 公布了创纪录的 Q1 FY2027 整体营收约 $816 亿（$81.62B），其中数据中心营收约 $752 亿（$75.2B），同比分别增长 85% 和 92%，主要由 AI 数据中心对其芯片的持续需求驱动。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> Nvidia 的数据中心营收是 AI 基础设施投资冷热最直接的温度计。92% 的同比增长表明 AI 算力需求远未见顶，云厂商和科技公司仍在加速囤积 GPU。</p>
+
+<p>Nvidia reported record data center revenue driven by continued AI chip demand. The 92% YoY growth signals that the AI infrastructure buildout is accelerating, not slowing.</p>
+
+<hr/>
+
+<h3>📰 2. 特朗普最后一刻推迟签署 AI 行政令</h3>
+
+<p>据 [Politico（via The Verge）报道](https://www.politico.com/news/2026/05/21/white-house-postpones-ai-executive-order-signing-00931904)（2026-05-21），特朗普在即将签署一份关于 AI 政府监管的行政令时，称他&quot;不喜欢其中某些内容&quot;，认为相关条款&quot;可能阻碍 AI 创造就业和价值&quot;，并表示不希望任何东西阻碍美国在 AI 领域对中国的领先优势。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> AI 监管的不确定性持续。行政令的推迟意味着美国短期内可能维持较宽松的 AI 监管环境，对 AI 公司是利好，但也引发对 AI 安全治理的担忧。</p>
+
+<p>Trump delayed signing an AI oversight executive order at the last minute, citing concerns it would hamper AI job creation. The move signals a lighter-touch US regulatory stance on AI in the near term.</p>
+
+<hr/>
+
+<h3>📰 3. Anthropic 据报道洽谈使用微软 Azure AI 芯片</h3>
+
+<p>据 [The Information（via Forbes）报道](https://www.forbes.com/sites/johnwerner/2026/05/21/anthropic-and-microsoft-team-up/)（2026-05-21），在已达成据报道约 $12.5 亿/月（合同期至 2029 年，总价超 $400 亿）的 SpaceX Colossus 算力协议之后，Anthropic 仍在与微软洽谈租用 Azure 服务器（包括微软 Maia 200 芯片），且其 Azure 用量据报道已在持续增长。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> 即使是资金充裕的 AI 实验室也面临算力瓶颈——一份大合同根本不够。这也说明 AI 算力市场的竞争格局：OpenAI、Anthropic 都在多云布局，避免单一依赖。</p>
+
+<p>Even after a massive computing deal, Anthropic is reportedly still seeking more capacity from Microsoft Azure. This underscores how insatiable the demand for AI compute is — even the best-funded labs can&#x27;t get enough GPUs.</p>
+
+<hr/>
+
+<h3>📰 4. Intuit 裁员约 3000 人，将重心转向 AI</h3>
+
+<p>据 [Reuters（via The Verge）报道](https://www.reuters.com/business/world-at-work/intuit-cut-17-global-jobs-streamline-operations-memo-shows-2026-05-20/)（2026-05-20），Intuit CEO 在内部备忘录中表示，裁员约占员工总数 17%，目的是将资源集中到 AI 产品押注上，包括为旗下产品（TurboTax、QuickBooks 等）添加 AI 功能。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> 这是 2026 年 AI 重组浪潮的缩影 — 传统科技公司在 AI 领域加速投入，同时以&quot;效率提升&quot;为由精简人力。&quot;AI 取代工作&quot;的论述正在从概念走向 HR 决策。</p>
+
+<p>Intuit laid off about 17% of its workforce to fund AI bets. This is a clear signal that established tech companies are treating AI investment as priority — sometimes at the cost of human headcount.</p>
+
+<hr/>
+
+<h2>🧠 本周 AI 主题词 / This Week&#x27;s AI Theme</h2>
+
+<p><strong>算力 × 监管 × 重组</strong> — 本周的主旋律是：算力继续爆炸式增长（Nvidia），监管节奏踩刹车（Trump EO 推迟），传统科技公司加速 AI 重组（Intuit 裁员）。</p>
+
+<p>Compute booming × Regulation slow × Corporate restructuring. The AI story this week is about massive infrastructure demand, regulatory uncertainty in the US, and traditional tech companies betting big on AI while cutting costs elsewhere.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [The Verge — AI Coverage, May 2026](https://www.theverge.com/ai-artificial-intelligence)</p>
+<p>- [Nvidia Q1 FY2027 Earnings Release](https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2027)</p>
+<p>- [Politico — Trump Postpones AI Executive Order](https://www.politico.com/news/2026/05/21/white-house-postpones-ai-executive-order-signing-00931904)</p>
+<p>- [Reuters — Intuit Layoffs](https://www.reuters.com/business/world-at-work/intuit-cut-17-global-jobs-streamline-operations-memo-shows-2026-05-20/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>这周 AI 圈发生了什么？卖 AI 芯片的 Nvidia 赚了很多很多钱；美国总统本来要发一个 AI 管理规定但临时反悔了；一家财务软件公司 Intuit 裁掉了很多员工，说要把钱用来做 AI 产品。简单说：AI 硬件火热，政府管的少，公司们都在&quot;用 AI 替换人手&quot;。</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-21</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

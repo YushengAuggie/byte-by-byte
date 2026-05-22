@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-05-22</title>
+  <meta name="description" content="byte-by-byte daily lessons for Friday, May 22, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Friday, May 22, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-05-22.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-05-21.html" style="color:var(--text2)">← 2026-05-21</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-05-22</span>
+    <h1>Friday, May 22, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-05-21.html" class="day-nav-btn">← 2026-05-21</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 49</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 / System Design — Day 49</h1>
+
+<p><strong>主题 / Topic:</strong> Design a Real-Time Gaming Backend  </p>
+<p><strong>难度 / Difficulty:</strong> Advanced | <strong>阶段 / Phase:</strong> Mastery</p>
+
+<hr/>
+
+<h2>想象你在设计... / Imagine you're designing...</h2>
+
+<p>你在设计一款实时多人射击游戏（想想《Apex Legends》或《Fortnite》）的后端。100 个玩家同时在同一个战场——每个人的移动、射击、状态都必须在 <strong>100ms 内同步</strong> 到所有其他玩家。  </p>
+<p>You're designing the backend for a real-time multiplayer shooter (think Apex Legends or Fortnite). 100 players in the same match — every move, shot, and death must sync to all other players within <strong>100ms</strong>.</p>
+
+<p><strong>核心挑战 / Core challenges:</strong></p>
+<ul><li>低延迟（Low latency）：游戏状态同步 &lt; 100ms</li><li>高吞吐量（High throughput）：每个玩家每秒发送约 30-60 个状态包</li><li>作弊检测（Anti-cheat）：服务器端权威验证</li><li>状态一致性（State consistency）：所有玩家看到同一个世界</li></ul>
+
+<hr/>
+
+<h2>ASCII 架构图 / Architecture Diagram</h2>
+
+<div class="sequence-diagram" role="img" aria-label="TCP three-way handshake sequence diagram between client and server">
+  <div class="sequence-grid">
+    <div class="seq-party">Client</div>
+    <div></div>
+    <div class="seq-party server">Server</div>
+
+    <div class="seq-label">Ready to connect</div>
+    <div class="seq-line" aria-hidden="true"></div>
+    <div class="seq-label right">Listening</div>
+
+    <div class="seq-event">
+      <div class="seq-label">SYN</div>
+      <div class="seq-arrow syn right" aria-hidden="true"></div>
+      <div class="seq-label right">“I want to connect”</div>
+    </div>
+
+    <div class="seq-event">
+      <div class="seq-label">Waiting for reply</div>
+      <div class="seq-arrow syn-ack left" aria-hidden="true"></div>
+      <div class="seq-label right">SYN-ACK</div>
+    </div>
+
+    <div class="seq-event">
+      <div class="seq-label">ACK</div>
+      <div class="seq-arrow ack right" aria-hidden="true"></div>
+      <div class="seq-label right">Connection confirmed</div>
+    </div>
+  </div>
+  <div class="seq-est">Connection Established / 连接建立</div>
+</div>
+
+<hr/>
+
+<h2>关键设计决策 / Key Design Decisions</h2>
+
+<h3>1. UDP vs TCP — 为什么选 UDP？</h3>
+<p>UDP 没有重传保证，数据包可能丢失。但游戏是 <strong>time-sensitive</strong>：</p>
+<ul><li>位置数据过时 200ms 就没用了，不如直接丢弃</li><li>丢包率 &lt; 5% 是可接受的</li><li>现代游戏使用 <strong>QUIC 或自定义 UDP 协议</strong> — 结合 UDP 速度 + 可靠性控制</li></ul>
+
+<h3>2. 服务器权威模型 / Server-Authoritative Model</h3>
+<ul><li>客户端预测（Client-side prediction）：玩家本地先渲染，减少感知延迟</li><li>服务器验证：服务器有最终决定权，防止作弊</li><li>客户端协调（Reconciliation）：客户端与服务器状态对比，差异时修正</li></ul>
+
+<h3>3. 状态同步：Delta Compression</h3>
+<p>不发送完整状态（可能几 KB），只发送 <strong>变化的部分</strong>（delta）：</p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Full state:  {p1: {x:100, y:200, hp:100}, p2: {...}, ...}  ~4KB&#10;Delta:       {p1: {x:103}}  ~20 bytes">Copy</button>
+  <pre><code class="language-text">Full state:  {p1: {x:100, y:200, hp:100}, p2: {...}, ...}  ~4KB
+Delta:       {p1: {x:103}}  ~20 bytes</code></pre>
+</div>
+<p>100 玩家 × 60Hz × 20 bytes = <strong>12 MB/s per game server</strong> — 可管理</p>
+
+<h3>4. 地理分布 / Geographic Distribution</h3>
+<ul><li>玩家应连接到 <strong>最近的区域服务器</strong> (AWS regions, CDN edge)</li><li>目标：玩家到游戏服务器 ping &lt; 50ms</li><li>跨区域对战需要 <strong>中继服务器</strong> (relay)</li></ul>
+
+<hr/>
+
+<h2>为什么这样设计？/ Why this design?</h2>
+
+<table><thead><tr><th>决策</th><th>原因</th></tr></thead><tbody><tr><td>独立 Game Server 进程</td><td>状态隔离，一场崩溃不影响其他场</td></tr><tr><td>In-memory state (Redis)</td><td>内存读写 &lt; 1ms，磁盘扛不住 60Hz 写</td></tr><tr><td>异步持久化</td><td>比赛结果不需要实时写库，批量写即可</td></tr><tr><td>Kubernetes 弹性扩缩</td><td>晚高峰 10x 流量，凌晨缩容省钱</td></tr></tbody></table>
+
+<hr/>
+
+<h2>⚠️ 别踩这个坑 / Common Mistakes</h2>
+
+<ol><li><strong>用 TCP 做游戏同步</strong> — TCP 的队头阻塞（head-of-line blocking）在网络抖动时造成卡顿</li><li><strong>客户端完全信任</strong> — 不做服务器验证等于邀请作弊器</li><li><strong>同步写数据库</strong> — 每帧写一次 DB 会让 DB 立刻爆炸</li><li><strong>单体 Game Server</strong> — 一台机器跑所有对局，一个对局内存泄漏崩掉全服</li></ol>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://gafferongames.com/post/state_synchronization/">Gaffer on Games — Real-Time Multiplayer</a></li><li><a href="https://technology.riotgames.com/news/fixing-internet-ping-and-packet-loss">Riot Engineering — How League of Legends Handles Network</a></li><li><a href="https://www.cloudflare.com/learning/performance/what-is-quic/">Cloudflare — QUIC Protocol Overview</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>就像老师在课堂上维持秩序一样 — 每个同学（玩家客户端）都在做自己的事，但老师（游戏服务器）是裁判，他的话是最终答案。同学可以先猜老师会说什么（客户端预测），但如果猜错了就得听老师的纠正。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 49</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 / Algorithms — Day 49</h1>
+
+<p><strong>题目 / Problem:</strong> #287 Find the Duplicate Number (Medium)  </p>
+<p><strong>模式 / Pattern:</strong> 🧩 Linked List (8/11) — building on the fast-slow pointer template</p>
+
+<hr/>
+
+<h2>🧩 链表技巧模式 (8/11) — 今天的变体 / Pattern Variation</h2>
+
+<p>从 Day 41 的快慢指针模板开始，今天的题目是一个 <strong>"隐式链表"</strong> 的妙用 — 数组本身就是一条链表！</p>
+
+<p><strong>回顾模板 / Template recap:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Fast-slow pointers (cycle / middle)&#10;slow = fast = head&#10;while fast and fast.next:&#10;    slow = slow.next&#10;    fast = fast.next.next&#10;# slow is at meeting point if cycle">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Fast-slow pointers (cycle / middle)</span>
+slow = fast = head
+<span style="color:#c678dd;">while</span> fast <span style="color:#c678dd;">and</span> fast.next:
+    slow = slow.next
+    fast = fast.next.next
+<span style="color:#5c6370;"># slow is at meeting point if cycle</span></code></pre>
+</div>
+
+<p><strong>今天的变化 / What's different today:</strong></p>
+<ul><li>不是真正的链表节点，而是用 <strong>数组下标</strong> 模拟 <code>next</code> 指针</li><li><code>nums[i]</code> 代表 "从节点 i 出发，下一个节点是 nums[i]"</li><li>有重复数字 → 必然有环</li></ul>
+
+<hr/>
+
+<h2>🔗 题目链接</h2>
+
+<ul><li>🔗 <a href="https://leetcode.com/problems/find-the-duplicate-number/">LeetCode #287</a> 🟡 Medium</li><li>📹 <a href="https://neetcode.io/problems/find-duplicate-integer">NeetCode 解析</a></li></ul>
+
+<hr/>
+
+<h2>现实类比 / Real-world analogy</h2>
+
+<p>想象一条单行道，路牌上写着"下一站是 X 号路口"。如果某两个路牌都指向同一个地方，那从起点出发走下去，一定会兜圈子。Floyd 算法就是用一快一慢两辆车检测这个圈。</p>
+
+<p>Imagine a one-way road where each sign says "go to intersection X." If two signs point to the same place, a driver following the signs will eventually loop. Floyd's algorithm uses two cars — one fast, one slow — to detect that loop.</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>给一个数组 <code>nums</code>，包含 <code>n+1</code> 个整数，每个数在 <code>[1, n]</code> 之间，<strong>只有一个数出现多次</strong>。不能修改数组，空间复杂度 O(1)。</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Input:  nums = [1, 3, 4, 2, 2]&#10;Output: 2">Copy</button>
+  <pre><code class="language-text">Input:  nums = [1, 3, 4, 2, 2]
+Output: 2</code></pre>
+</div>
+
+<hr/>
+
+<h2>映射到模板 / Map to Template</h2>
+
+<div class="diagram-block">数组下标:    0 → 1 → 3 → 2 → 4 → 2 (loop!)
+nums[i]:     1   3   2   4   2
+
+把 nums[i] 当 next 指针:
+- Node 0 → Node nums[0]=1
+- Node 1 → Node nums[1]=3
+- Node 3 → Node nums[3]=2
+- Node 2 → Node nums[2]=4
+- Node 4 → Node nums[4]=2  ← loop starts here!</div>
+
+<p>重复的数字 <code>2</code> 就是环的入口！这和 Linked List Cycle II (#142) 是完全一样的问题！</p>
+
+<hr/>
+
+<h2>Python 解法 / Solution</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def findDuplicate(nums):&#10;    # Phase 1: Find meeting point inside the cycle&#10;    slow = nums[0]&#10;    fast = nums[0]&#10;    &#10;    while True:&#10;        slow = nums[slow]        # move 1 step&#10;        fast = nums[nums[fast]]  # move 2 steps&#10;        if slow == fast:&#10;            break  # they met inside the cycle&#10;    &#10;    # Phase 2: Find cycle entry (= duplicate number)&#10;    # Reset one pointer to start&#10;    slow = nums[0]&#10;    while slow != fast:&#10;        slow = nums[slow]  # 1 step&#10;        fast = nums[fast]  # 1 step&#10;    &#10;    return slow  # cycle entry = duplicate&#10;&#10;# Trace for [1, 3, 4, 2, 2]:  (indices: 0→1, 1→3, 2→4, 3→2, 4→2)&#10;# Phase 1:&#10;# Start:  slow=1, fast=1&#10;# Step 1: slow=nums[1]=3, fast=nums[nums[1]]=nums[3]=2&#10;# Step 2: slow=nums[3]=2, fast=nums[nums[2]]=nums[4]=2  ← meet at 2!&#10;# Phase 2 (reset slow=nums[0]=1, fast=2):&#10;# Step 1: slow=nums[1]=3, fast=nums[2]=4&#10;# Step 2: slow=nums[3]=2, fast=nums[4]=2  ← meet at 2 = duplicate ✓">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> findDuplicate(nums):
+    <span style="color:#5c6370;"># Phase 1: Find meeting point inside the cycle</span>
+    slow = nums[<span style="color:#56b6c2;">0</span>]
+    fast = nums[<span style="color:#56b6c2;">0</span>]
+    
+    <span style="color:#c678dd;">while</span> <span style="color:#c678dd;">True</span>:
+        slow = nums[slow]        <span style="color:#5c6370;"># move 1 step</span>
+        fast = nums[nums[fast]]  <span style="color:#5c6370;"># move 2 steps</span>
+        <span style="color:#c678dd;">if</span> slow == fast:
+            <span style="color:#c678dd;">break</span>  <span style="color:#5c6370;"># they met inside the cycle</span>
+    
+    <span style="color:#5c6370;"># Phase 2: Find cycle entry (= duplicate number)</span>
+    <span style="color:#5c6370;"># Reset one pointer to start</span>
+    slow = nums[<span style="color:#56b6c2;">0</span>]
+    <span style="color:#c678dd;">while</span> slow != fast:
+        slow = nums[slow]  <span style="color:#5c6370;"># 1 step</span>
+        fast = nums[fast]  <span style="color:#5c6370;"># 1 step</span>
+    
+    <span style="color:#c678dd;">return</span> slow  <span style="color:#5c6370;"># cycle entry = duplicate</span>
+
+<span style="color:#5c6370;"># Trace for [1, 3, 4, 2, 2]:  (indices: 0→1, 1→3, 2→4, 3→2, 4→2)</span>
+<span style="color:#5c6370;"># Phase 1:</span>
+<span style="color:#5c6370;"># Start:  slow=1, fast=1</span>
+<span style="color:#5c6370;"># Step 1: slow=nums[1]=3, fast=nums[nums[1]]=nums[3]=2</span>
+<span style="color:#5c6370;"># Step 2: slow=nums[3]=2, fast=nums[nums[2]]=nums[4]=2  ← meet at 2!</span>
+<span style="color:#5c6370;"># Phase 2 (reset slow=nums[0]=1, fast=2):</span>
+<span style="color:#5c6370;"># Step 1: slow=nums[1]=3, fast=nums[2]=4</span>
+<span style="color:#5c6370;"># Step 2: slow=nums[3]=2, fast=nums[4]=2  ← meet at 2 = duplicate ✓</span></code></pre>
+</div>
+
+<p><strong>时间 / Time:</strong> O(n) — 线性扫描  </p>
+<p><strong>空间 / Space:</strong> O(1) — 只用两个指针，不修改数组</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern connections</h2>
+
+<table><thead><tr><th>题目</th><th>链接</th></tr></thead><tbody><tr><td>#141 Linked List Cycle (Day 43)</td><td>检测环的存在</td></tr><tr><td>#142 Linked List Cycle II</td><td>找环入口 — <strong>本题的本质</strong></td></tr><tr><td>#287 Find Duplicate (今天)</td><td>隐式链表 → 找环入口</td></tr><tr><td>#23 Merge K Sorted Lists (Day 10)</td><td>快慢指针的极限应用</td></tr></tbody></table>
+
+<p><strong>规律：</strong> 凡是需要 O(1) 空间找重复/环，先想"能不能把问题建模成链表+Floyd算法"。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://leetcode.com/problems/find-the-duplicate-number/solutions/72846/my-easy-understood-solution-with-o1-space-and-on-in-time/">LeetCode #287 Discussion — Floyd Cycle Detection Explained</a></li><li><a href="https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_tortoise_and_hare">Floyd's Tortoise and Hare — Wikipedia</a></li><li><a href="https://neetcode.io/problems/find-duplicate-integer">NeetCode — Find the Duplicate Number</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>数组里有个数字出现了两次，就好像一条路上有两个路牌指向同一个地方。用乌龟（慢）和兔子（快）在路上跑，它们一定会在那个"重复的地方"相遇，然后再走一遍就能找到是哪里重复的。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 49</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 / Soft Skills — Day 49</h1>
+
+<p><strong>问题 / Question:</strong> Tell me about the most impactful thing you've built. Why was it impactful?  </p>
+<p><strong>类别 / Category:</strong> Impact | <strong>级别 / Level:</strong> Senior/Staff</p>
+
+<hr/>
+
+<h2>为什么这道题很重要 / Why This Matters</h2>
+
+<p>这是高级工程师面试中最有区分度的问题之一。面试官想知道：</p>
+<ol><li>你如何<strong>定义和衡量</strong>影响力（不只是技术复杂度）</li><li>你的视野是不是超越了代码本身（用户、业务、团队）</li><li>你是否有<strong>意识地</strong>推动了结果，而不只是完成了任务</li></ol>
+
+<p>This is one of the highest-signal questions for senior engineers. Interviewers want to know:</p>
+<ol><li>How you <strong>define and measure</strong> impact (not just technical complexity)</li><li>Whether your view extends beyond code (users, business, team)</li><li>Whether you <strong>intentionally drove</strong> outcomes, not just completed tasks</li></ol>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Framework</h2>
+
+<p><strong>S — Situation（背景）:</strong> 什么时间点，什么问题存在，规模多大？  </p>
+<p><strong>T — Task（任务）:</strong> 你的职责范围，为什么是你来推动这件事？  </p>
+<p><strong>A — Action（行动）:</strong> 你做了哪些具体决定？遇到什么阻力？怎么克服的？  </p>
+<p><strong>R — Result（结果）:</strong> 量化影响——用户数、收入、延迟降低、团队效率提升？</p>
+
+<hr/>
+
+<h2>❌ 差回答 / Bad Answer</h2>
+
+<blockquote>"我重写了我们的支付模块，把它从 Python 迁移到 Go，性能提升了 3 倍。"</blockquote>
+
+<p><strong>问题:</strong> 只说了技术，没说业务影响。"性能提升 3 倍"对什么有意义？用户感知到了吗？收入变化了吗？</p>
+
+<hr/>
+
+<h2>✅ 好回答 / Good Answer</h2>
+
+<blockquote>"我在 [公司] 时，注意到我们的结账流程在支付验证阶段有 8% 的超时率。这个问题直接导致了用户支付失败重试，我们估算每月损失约 $200K 的 GMV。</blockquote>
+<blockquote></blockquote>
+<blockquote>我的任务是重新设计支付验证的异步流程。挑战是不能中断现有的 live 交易，需要双轨并行运行两套系统。我设计了一个 shadow mode，让新系统先旁路运行 2 周验证数据一致性，再逐步灰度放量。</blockquote>
+<blockquote></blockquote>
+<blockquote>结果：超时率从 8% 降到 0.3%，对应每月减少约 $185K 的交易失败，也让客服退款工单减少了 40%。我认为这最有影响力，因为它直接影响了用户和收入，不只是技术指标。"</blockquote>
+
+<hr/>
+
+<h2>高级工程师/Staff 技巧 / Senior/Staff Tips</h2>
+
+<ol><li><strong>量化一切</strong> — 如果没有具体数字，估算也可以："我们估计每月约 X"比什么都没有好</li><li><strong>说清楚你为什么知道这件事重要</strong> — 主动发现 &gt; 被分配任务</li><li><strong>讲出组织障碍</strong> — 跨团队协作、推动 OKR 对齐 &gt; 单纯写代码</li><li><strong>Staff+ 补充：谈生态影响</strong> — 这件事之后，有没有别的团队采用了你的方案？</li></ol>
+
+<p><strong>Staff 变体回答结尾:</strong>  </p>
+<blockquote>"这个 shadow mode 方案后来被我们的基础设施团队采用为标准迁移模式，其他 3 个团队在同年用它完成了各自的系统迁移。"</blockquote>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<ul><li>📌 <strong>影响力 = 用户/业务结果</strong>，而不是"我用了多酷的技术"</li><li>📌 <strong>主动发现问题</strong> &gt; 被分配任务</li><li>📌 量化结果，哪怕是估算</li><li>📌 Senior+ 要展示系统性思维和组织影响力</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://www.glassdoor.com/blog/guide/star-interview-method/">STAR Method for Behavioral Interviews — Glassdoor</a></li><li><a href="https://newsletter.pragmaticengineer.com/p/measuring-developer-productivity">Gergely Orosz — Engineering Impact at Scale</a></li><li><a href="https://read.highgrowthengineer.com/p/how-to-answer-behavioral-interview">Jordan Cutler — How to Answer Behavioral Questions at Staff+</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>面试官问你"做过最厉害的事是什么"，不是想听你说用了多难的技术，而是想知道你做的事让多少人受益、让公司省了多少钱。就像老师不只看你考多难的题，更看你帮了多少同学理解知识。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI 资讯 / AI News — Day 49</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI 资讯 / AI News — Day 49</h1>
+
+<p><strong>模式 / Mode:</strong> NEWS | <strong>日期 / Date:</strong> 2026-05-22</p>
+
+<hr/>
+
+<h2>本周 AI 大事 / This Week in AI</h2>
+
+<hr/>
+
+<h3>📰 1. Nvidia Q1 营收创纪录，数据中心同比增长 92%</h3>
+
+<p>据 <a href="https://www.theverge.com/ai-artificial-intelligence">The Verge 报道</a>（2026-05-20），Nvidia 公布了创纪录的 Q1 FY2027 整体营收约 $816 亿（$81.62B），其中数据中心营收约 $752 亿（$75.2B），同比分别增长 85% 和 92%，主要由 AI 数据中心对其芯片的持续需求驱动。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> Nvidia 的数据中心营收是 AI 基础设施投资冷热最直接的温度计。92% 的同比增长表明 AI 算力需求远未见顶，云厂商和科技公司仍在加速囤积 GPU。</p>
+
+<p>Nvidia reported record data center revenue driven by continued AI chip demand. The 92% YoY growth signals that the AI infrastructure buildout is accelerating, not slowing.</p>
+
+<hr/>
+
+<h3>📰 2. 特朗普最后一刻推迟签署 AI 行政令</h3>
+
+<p>据 <a href="https://www.politico.com/news/2026/05/21/white-house-postpones-ai-executive-order-signing-00931904">Politico（via The Verge）报道</a>（2026-05-21），特朗普在即将签署一份关于 AI 政府监管的行政令时，称他"不喜欢其中某些内容"，认为相关条款"可能阻碍 AI 创造就业和价值"，并表示不希望任何东西阻碍美国在 AI 领域对中国的领先优势。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> AI 监管的不确定性持续。行政令的推迟意味着美国短期内可能维持较宽松的 AI 监管环境，对 AI 公司是利好，但也引发对 AI 安全治理的担忧。</p>
+
+<p>Trump delayed signing an AI oversight executive order at the last minute, citing concerns it would hamper AI job creation. The move signals a lighter-touch US regulatory stance on AI in the near term.</p>
+
+<hr/>
+
+<h3>📰 3. Anthropic 据报道洽谈使用微软 Azure AI 芯片</h3>
+
+<p>据 <a href="https://www.forbes.com/sites/johnwerner/2026/05/21/anthropic-and-microsoft-team-up/">The Information（via Forbes）报道</a>（2026-05-21），在已达成据报道约 $12.5 亿/月（合同期至 2029 年，总价超 $400 亿）的 SpaceX Colossus 算力协议之后，Anthropic 仍在与微软洽谈租用 Azure 服务器（包括微软 Maia 200 芯片），且其 Azure 用量据报道已在持续增长。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> 即使是资金充裕的 AI 实验室也面临算力瓶颈——一份大合同根本不够。这也说明 AI 算力市场的竞争格局：OpenAI、Anthropic 都在多云布局，避免单一依赖。</p>
+
+<p>Even after a massive computing deal, Anthropic is reportedly still seeking more capacity from Microsoft Azure. This underscores how insatiable the demand for AI compute is — even the best-funded labs can't get enough GPUs.</p>
+
+<hr/>
+
+<h3>📰 4. Intuit 裁员约 3000 人，将重心转向 AI</h3>
+
+<p>据 <a href="https://www.reuters.com/business/world-at-work/intuit-cut-17-global-jobs-streamline-operations-memo-shows-2026-05-20/">Reuters（via The Verge）报道</a>（2026-05-20），Intuit CEO 在内部备忘录中表示，裁员约占员工总数 17%，目的是将资源集中到 AI 产品押注上，包括为旗下产品（TurboTax、QuickBooks 等）添加 AI 功能。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> 这是 2026 年 AI 重组浪潮的缩影 — 传统科技公司在 AI 领域加速投入，同时以"效率提升"为由精简人力。"AI 取代工作"的论述正在从概念走向 HR 决策。</p>
+
+<p>Intuit laid off about 17% of its workforce to fund AI bets. This is a clear signal that established tech companies are treating AI investment as priority — sometimes at the cost of human headcount.</p>
+
+<hr/>
+
+<h2>🧠 本周 AI 主题词 / This Week's AI Theme</h2>
+
+<p><strong>算力 × 监管 × 重组</strong> — 本周的主旋律是：算力继续爆炸式增长（Nvidia），监管节奏踩刹车（Trump EO 推迟），传统科技公司加速 AI 重组（Intuit 裁员）。</p>
+
+<p>Compute booming × Regulation slow × Corporate restructuring. The AI story this week is about massive infrastructure demand, regulatory uncertainty in the US, and traditional tech companies betting big on AI while cutting costs elsewhere.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://www.theverge.com/ai-artificial-intelligence">The Verge — AI Coverage, May 2026</a></li><li><a href="https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2027">Nvidia Q1 FY2027 Earnings Release</a></li><li><a href="https://www.politico.com/news/2026/05/21/white-house-postpones-ai-executive-order-signing-00931904">Politico — Trump Postpones AI Executive Order</a></li><li><a href="https://www.reuters.com/business/world-at-work/intuit-cut-17-global-jobs-streamline-operations-memo-shows-2026-05-20/">Reuters — Intuit Layoffs</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>这周 AI 圈发生了什么？卖 AI 芯片的 Nvidia 赚了很多很多钱；美国总统本来要发一个 AI 管理规定但临时反悔了；一家财务软件公司 Intuit 裁掉了很多员工，说要把钱用来做 AI 产品。简单说：AI 硬件火热，政府管的少，公司们都在"用 AI 替换人手"。</p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
