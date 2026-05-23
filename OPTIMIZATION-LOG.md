@@ -411,3 +411,20 @@
 ### Recommendations
 1. **P2 — Day counter stall on weekends:** Investigate why the Sunday cron re-generated Day 39 instead of advancing to Day 40. Likely a timing/state race between Saturday deepdive and Sunday cron. Low urgency since it self-corrected.
 2. **P2 — Cron JSON parsing:** Same as last run — strip config warning lines before JSON parse. Cosmetic only.
+
+## 2026-05-22 Optimization Run
+
+### Issues Found
+- **P0**: Missed delivery on 2026-05-19. email-send-log.json has no entry for that date. Git history confirms no Day-N commit on 2026-05-19 (Day 46 = 2026-05-18, Day 47 = 2026-05-20). One day of content was skipped entirely.
+- **P0 (tooling)**: `openclaw` CLI not on PATH from cron shell, so this optimizer can't list cron job lastError/lastRunStatus. Need an absolute path (e.g. `~/.nvm/versions/node/v25.6.1/bin/openclaw`) or a fallback that reads gateway logs / cron state file directly. Without this, root-causing future P0 misses is harder.
+- **P1**: None observed this cycle (last 6 days delivered; recent commits look normal).
+- **P2**: None this cycle.
+
+### Metrics
+- Delivery rate (7d): 6/7 (missed 2026-05-19)
+- Cron errors: unable to enumerate — `openclaw` not in PATH for this run
+- State: currentDay=49, lastSentDate=2026-05-22, lastReviewDay=45, reviewDaysCompleted through Day 45
+
+### Suggested Manual Follow-ups
+1. Investigate why 2026-05-19 was skipped: check gateway logs / cron job state for that date; confirm whether the daily generator failed silently or the cron didn't fire.
+2. Fix the optimizer's `openclaw` invocation to use an absolute path so future runs can report cron lastError.

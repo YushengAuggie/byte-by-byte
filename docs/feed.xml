@@ -5,8 +5,618 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 22 May 2026 15:11:03 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 23 May 2026 15:12:54 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-23</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-23</guid>
+      <pubDate>Sat, 23 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Raft Consensus Algorithm (18 min read)</strong></p>
+<p>📊 NeetCode: 42/150 · SysDesign: 41/40 · Behavioral: 41/40 · Frontend: 37/50 · AI: 20/30</p>
+<p>🔥 深入掌握分布式一致性！</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>分布式系统最难的问题之一：当多台机器需要就某个值达成一致，且其中一些机器可能崩溃或网络断开时，怎么办？这就是<strong>分布式共识问题</strong>。</p>
+
+<p>Raft 是 2014 年由 Diego Ongaro 和 John Ousterhout 在斯坦福设计的共识算法，目标是比 Paxos <strong>更易理解</strong>。它被用于 etcd（Kubernetes 的大脑）、CockroachDB、TiKV 等生产系统中。</p>
+
+<p><strong>English:</strong></p>
+<p>Distributed consensus is the problem of getting multiple machines to agree on a single value — even when some machines crash or the network partitions. Raft was designed as a more understandable alternative to Paxos, and it underpins etcd (the backbone of Kubernetes), CockroachDB, TiKV, and more. If you&#x27;re interviewing for Staff/Principal roles or distributed systems positions, this is non-negotiable.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>核心思想 / Core Idea</h3>
+
+<p><strong>中文：</strong></p>
+<p>Raft 将共识问题分解为三个相对独立的子问题：</p>
+
+<p>1. <strong>Leader 选举</strong> — 在任何时刻，集群中最多有一个 Leader</p>
+<p>2. <strong>日志复制</strong> — Leader 接收客户端请求，将操作追加到日志，再复制到所有 Follower</p>
+<p>3. <strong>安全性</strong> — 一旦某个操作被提交（Committed），它永远不会被丢失</p>
+
+<p><strong>English:</strong></p>
+<p>Raft decomposes consensus into three sub-problems:</p>
+<p>1. <strong>Leader Election</strong> — at most one leader at any time</p>
+<p>2. <strong>Log Replication</strong> — leader receives requests, appends to its log, replicates to followers</p>
+<p>3. <strong>Safety</strong> — once an entry is committed, it&#x27;s never lost</p>
+
+<hr/>
+
+<h3>关键概念 / Key Concepts</h3>
+
+<p><strong>中文：</strong></p>
+
+<p><strong>Term（任期）</strong>：Raft 用单调递增的整数 term 来标记时间。每次选举开始时 term 加一。Term 是逻辑时钟，帮助节点识别过时的信息。</p>
+
+<p><strong>日志（Log）</strong>：每个节点维护一个操作日志。日志条目格式：<code>(term, index, command)</code>。如果两个日志在相同 index 有相同 term，则它们之后的所有条目都相同（Log Matching Property）。</p>
+
+<p><strong>Quorum（多数派）</strong>：一个 N 节点集群需要 <code>⌊N/2⌋ + 1</code> 个节点同意才能提交。3 节点需要 2，5 节点需要 3。这保证了任意两个 Quorum 必然有交集。</p>
+
+<p><strong>English:</strong></p>
+
+<p><strong>Term</strong>: A monotonically increasing integer. Every election starts a new term. Terms are logical clocks — nodes reject messages from stale terms.</p>
+
+<p><strong>Log</strong>: Each node maintains an ordered log. Entry format: <code>(term, index, command)</code>. The <em>Log Matching Property</em>: if two logs agree at <code>(term, index)</code>, they agree on all prior entries.</p>
+
+<p><strong>Quorum</strong>: <code>⌊N/2⌋ + 1</code> nodes must acknowledge before a log entry is <em>committed</em>. This ensures any two quorums share at least one member — the safety overlap.</p>
+
+<hr/>
+
+<h3>节点状态机 / Node State Machine</h3>
+
+<pre><code>
+         timeout (no heartbeat)          wins election
+  ┌─────────────────────────┐    ┌───────────────────────┐
+  │                         ▼    │                       ▼
+Follower  ──────────────► Candidate ──────────────► Leader
+  ▲   sees higher term │            discovers higher term │
+  └────────────────────┘            └───────────────────────┘
+  (also: any node that sees a higher term reverts to Follower)
+</code></pre>
+
+<p><strong>中文：</strong></p>
+<p>- <strong>Follower</strong>：被动响应，接受 Leader 的心跳和日志</p>
+<p>- <strong>Candidate</strong>：选举中的候选者，向其他节点发送投票请求</p>
+<p>- <strong>Leader</strong>：唯一处理客户端请求的节点，定期发送心跳防止选举</p>
+
+<p><strong>English:</strong></p>
+<p>- <strong>Follower</strong>: Passive — responds to RPCs from Leader and Candidates</p>
+<p>- <strong>Candidate</strong>: Starts an election when its heartbeat timer expires</p>
+<p>- <strong>Leader</strong>: The sole entry point for client requests; sends periodic heartbeats (empty AppendEntries RPCs) to reset follower timers</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>完整 Raft 实现 / Full Raft Implementation (Python)</h3>
+
+<pre><code>
+import threading
+import time
+import random
+import logging
+from enum import Enum
+from dataclasses import dataclass, field
+from typing import Optional
+
+logging.basicConfig(level=logging.INFO, format=&#x27;%(asctime)s [%(name)s] %(message)s&#x27;)
+
+
+class NodeState(Enum):
+    FOLLOWER = &quot;follower&quot;
+    CANDIDATE = &quot;candidate&quot;
+    LEADER = &quot;leader&quot;
+
+
+@dataclass
+class LogEntry:
+    term: int         # term when this entry was received by leader
+    index: int        # 1-based position in the log
+    command: str      # the state machine command (e.g., &quot;SET x=5&quot;)
+
+
+class RaftNode:
+    &quot;&quot;&quot;
+    Simplified Raft implementation for educational purposes.
+    In production, RPCs would be network calls; here they&#x27;re in-process method calls.
+    &quot;&quot;&quot;
+
+    def __init__(self, node_id: int, peers: list[&#x27;RaftNode&#x27;]):
+        self.node_id = node_id
+        self.peers = peers           # references to other nodes
+        self.logger = logging.getLogger(f&quot;Node-{node_id}&quot;)
+
+        # --- Persistent state (must survive restarts in real systems) ---
+        self.current_term = 0        # latest term seen
+        self.voted_for: Optional[int] = None  # candidate voted for in current term
+        self.log: list[LogEntry] = []         # log entries; index 0 = first entry
+
+        # --- Volatile state (all nodes) ---
+        self.commit_index = 0        # highest log entry known to be committed
+        self.last_applied = 0        # highest log entry applied to state machine
+
+        # --- Volatile state (leaders only, reinitialized after election) ---
+        self.next_index: dict[int, int] = {}   # for each peer, next log index to send
+        self.match_index: dict[int, int] = {}  # for each peer, highest replicated index
+
+        # --- Node behavior ---
+        self.state = NodeState.FOLLOWER
+        self.leader_id: Optional[int] = None
+        self.lock = threading.Lock()
+        self.election_timeout = self._new_election_timeout()
+        self.last_heartbeat = time.time()
+
+        # State machine (just a dict for demo)
+        self.state_machine: dict[str, str] = {}
+
+    def _new_election_timeout(self) -&gt; float:
+        &quot;&quot;&quot;
+        Randomized timeout between 150-300ms prevents split votes.
+        All followers use different timeouts so one becomes candidate first.
+        &quot;&quot;&quot;
+        return random.uniform(0.15, 0.30)
+
+    # =========================================================
+    # PART A: Leader Election
+    # =========================================================
+
+    def start_election(self):
+        &quot;&quot;&quot;
+        Called when a follower&#x27;s election timer fires.
+        Transition: Follower → Candidate
+        &quot;&quot;&quot;
+        with self.lock:
+            self.state = NodeState.CANDIDATE
+            self.current_term += 1          # increment term before starting election
+            self.voted_for = self.node_id   # vote for self
+            term = self.current_term
+            last_log_index = len(self.log)
+            last_log_term = self.log[-1].term if self.log else 0
+            self.logger.info(f&quot;Starting election for term {term}&quot;)
+
+        votes_received = 1  # self-vote
+        votes_needed = (len(self.peers) + 1) // 2 + 1  # majority of total nodes
+
+        for peer in self.peers:
+            granted = peer.request_vote(
+                term=term,
+                candidate_id=self.node_id,
+                last_log_index=last_log_index,
+                last_log_term=last_log_term,
+            )
+            if granted:
+                votes_received += 1
+                if votes_received &gt;= votes_needed:
+                    self._become_leader()
+                    return
+
+        # Didn&#x27;t win; revert to follower and wait for next timeout
+        with self.lock:
+            if self.state == NodeState.CANDIDATE:
+                self.state = NodeState.FOLLOWER
+
+    def request_vote(self, term: int, candidate_id: int,
+                     last_log_index: int, last_log_term: int) -&gt; bool:
+        &quot;&quot;&quot;
+        RPC handler: another node is asking for our vote.
+        Grant vote only if:
+          1. candidate&#x27;s term &gt;= our current term
+          2. we haven&#x27;t voted for someone else this term
+          3. candidate&#x27;s log is at least as up-to-date as ours (Election Restriction)
+        &quot;&quot;&quot;
+        with self.lock:
+            # Step down if we see a higher term
+            if term &gt; self.current_term:
+                self.current_term = term
+                self.voted_for = None
+                self.state = NodeState.FOLLOWER
+
+            if term &lt; self.current_term:
+                return False  # stale term; reject
+
+            # Check if we already voted this term
+            if self.voted_for is not None and self.voted_for != candidate_id:
+                return False
+
+            # Election Restriction: candidate must be at least as up-to-date
+            # &quot;Up-to-date&quot; = higher last term, OR same last term + longer log
+            my_last_log_term = self.log[-1].term if self.log else 0
+            my_last_log_index = len(self.log)
+
+            candidate_is_up_to_date = (
+                last_log_term &gt; my_last_log_term or
+                (last_log_term == my_last_log_term and last_log_index &gt;= my_last_log_index)
+            )
+
+            if candidate_is_up_to_date:
+                self.voted_for = candidate_id
+                self.last_heartbeat = time.time()  # reset our timer
+                self.logger.info(f&quot;Voted for node {candidate_id} in term {term}&quot;)
+                return True
+
+            return False
+
+    def _become_leader(self):
+        &quot;&quot;&quot;Transition to leader; initialize replication tracking.&quot;&quot;&quot;
+        with self.lock:
+            self.state = NodeState.LEADER
+            self.leader_id = self.node_id
+            # nextIndex = last log index + 1 for all peers (optimistic)
+            next_idx = len(self.log) + 1
+            for peer in self.peers:
+                self.next_index[peer.node_id] = next_idx
+                self.match_index[peer.node_id] = 0
+            self.logger.info(f&quot;Became LEADER for term {self.current_term}&quot;)
+
+    # =========================================================
+    # PART B: Log Replication
+    # =========================================================
+
+    def client_request(self, command: str) -&gt; bool:
+        &quot;&quot;&quot;
+        Entry point for client commands.
+        Only the leader should accept these; followers redirect.
+        &quot;&quot;&quot;
+        with self.lock:
+            if self.state != NodeState.LEADER:
+                self.logger.warning(f&quot;Not leader; redirecting to node {self.leader_id}&quot;)
+                return False
+
+            # Append to local log first
+            entry = LogEntry(
+                term=self.current_term,
+                index=len(self.log) + 1,
+                command=command,
+            )
+            self.log.append(entry)
+            self.logger.info(f&quot;Appended to log: {entry}&quot;)
+
+        # Replicate to all followers; wait for quorum
+        return self._replicate_log(entry.index)
+
+    def _replicate_log(self, target_index: int) -&gt; bool:
+        &quot;&quot;&quot;
+        Send AppendEntries to all peers and wait for quorum acknowledgment.
+        Returns True when the entry is safely committed.
+        &quot;&quot;&quot;
+        acks = 1  # leader counts itself
+        needed = (len(self.peers) + 1) // 2 + 1
+
+        for peer in self.peers:
+            success = self._send_append_entries(peer)
+            if success:
+                acks += 1
+                if acks &gt;= needed:
+                    # Quorum reached — commit!
+                    self._advance_commit_index(target_index)
+                    return True
+
+        return acks &gt;= needed  # might still have quorum
+
+    def _send_append_entries(self, peer: &#x27;RaftNode&#x27;) -&gt; bool:
+        &quot;&quot;&quot;
+        Send AppendEntries RPC to a single peer.
+        Includes a consistency check: prevLogIndex/prevLogTerm must match.
+        On failure, we decrement nextIndex and retry (back-tracking).
+        &quot;&quot;&quot;
+        with self.lock:
+            next_idx = self.next_index.get(peer.node_id, 1)
+            prev_log_index = next_idx - 1
+            prev_log_term = (
+                self.log[prev_log_index - 1].term if prev_log_index &gt; 0 else 0
+            )
+            entries = self.log[next_idx - 1:]  # entries to send
+            term = self.current_term
+            leader_commit = self.commit_index
+
+        success, peer_term = peer.append_entries(
+            term=term,
+            leader_id=self.node_id,
+            prev_log_index=prev_log_index,
+            prev_log_term=prev_log_term,
+            entries=entries,
+            leader_commit=leader_commit,
+        )
+
+        with self.lock:
+            if peer_term &gt; self.current_term:
+                # Discovered higher term; step down
+                self.current_term = peer_term
+                self.state = NodeState.FOLLOWER
+                self.voted_for = None
+                return False
+
+            if success:
+                # Update our tracking of this peer&#x27;s log
+                new_match = prev_log_index + len(entries)
+                self.match_index[peer.node_id] = new_match
+                self.next_index[peer.node_id] = new_match + 1
+            else:
+                # Consistency check failed; back off by 1 and retry next time
+                self.next_index[peer.node_id] = max(1, self.next_index[peer.node_id] - 1)
+
+        return success
+
+    def append_entries(self, term: int, leader_id: int,
+                       prev_log_index: int, prev_log_term: int,
+                       entries: list[LogEntry], leader_commit: int):
+        &quot;&quot;&quot;
+        RPC handler: leader is sending log entries (or heartbeat if entries=[]).
+        Returns (success, my_current_term).
+        &quot;&quot;&quot;
+        with self.lock:
+            if term &gt; self.current_term:
+                self.current_term = term
+                self.voted_for = None
+                self.state = NodeState.FOLLOWER
+
+            if term &lt; self.current_term:
+                return False, self.current_term  # stale leader; reject
+
+            # Reset heartbeat timer — we heard from a valid leader
+            self.last_heartbeat = time.time()
+            self.leader_id = leader_id
+            self.state = NodeState.FOLLOWER
+
+            # Consistency check: does our log match up to prevLogIndex?
+            if prev_log_index &gt; 0:
+                if len(self.log) &lt; prev_log_index:
+                    return False, self.current_term  # we&#x27;re missing entries
+                if self.log[prev_log_index - 1].term != prev_log_term:
+                    # Conflict: delete from this index onward and retry
+                    self.log = self.log[:prev_log_index - 1]
+                    return False, self.current_term
+
+            # Append new entries, overwriting any conflicts
+            for i, entry in enumerate(entries):
+                log_index = prev_log_index + i + 1
+                if log_index &lt;= len(self.log):
+                    if self.log[log_index - 1].term != entry.term:
+                        # Conflicting entry; truncate and append
+                        self.log = self.log[:log_index - 1]
+                        self.log.append(entry)
+                else:
+                    self.log.append(entry)
+
+            # Advance commit index if leader says we can
+            if leader_commit &gt; self.commit_index:
+                self.commit_index = min(leader_commit, len(self.log))
+                self._apply_committed_entries()
+
+            return True, self.current_term
+
+    def _advance_commit_index(self, new_index: int):
+        &quot;&quot;&quot;
+        Leader advances commit_index once a quorum has replicated the entry.
+        Critical safety rule: only commit entries from the CURRENT term.
+        (Prevents the &#x27;Figure 8&#x27; bug from the Raft paper.)
+        &quot;&quot;&quot;
+        with self.lock:
+            if (new_index &gt; self.commit_index and
+                    self.log[new_index - 1].term == self.current_term):
+                self.commit_index = new_index
+                self._apply_committed_entries()
+
+    def _apply_committed_entries(self):
+        &quot;&quot;&quot;Apply all committed but not-yet-applied entries to the state machine.&quot;&quot;&quot;
+        while self.last_applied &lt; self.commit_index:
+            self.last_applied += 1
+            entry = self.log[self.last_applied - 1]
+            # Parse &quot;SET key=value&quot; commands
+            if entry.command.startswith(&quot;SET &quot;):
+                parts = entry.command[4:].split(&quot;=&quot;, 1)
+                if len(parts) == 2:
+                    self.state_machine[parts[0].strip()] = parts[1].strip()
+            self.logger.info(
+                f&quot;Applied entry {self.last_applied}: {entry.command} &quot;
+                f&quot;→ state={self.state_machine}&quot;
+            )
+
+
+# =========================================================
+# DEMO: 3-node Raft cluster
+# =========================================================
+
+def demo_raft_cluster():
+    &quot;&quot;&quot;
+    Create a 3-node cluster, elect a leader, and replicate some commands.
+    This is in-process (no real network), so we manually trigger election.
+    &quot;&quot;&quot;
+    # Create nodes (no peers yet)
+    nodes = [RaftNode(i, []) for i in range(3)]
+
+    # Wire up peers (each node knows about the other two)
+    for i, node in enumerate(nodes):
+        node.peers = [n for n in nodes if n.node_id != i]
+
+    # Manually start election on node 0
+    print(&quot;\n=== Starting election on Node 0 ===&quot;)
+    nodes[0].start_election()
+
+    # Find who became leader
+    leader = next((n for n in nodes if n.state == NodeState.LEADER), None)
+    if leader:
+        print(f&quot;\n=== Leader elected: Node {leader.node_id} ===&quot;)
+
+        # Submit commands
+        leader.client_request(&quot;SET name=Alice&quot;)
+        leader.client_request(&quot;SET age=30&quot;)
+
+        # Check state machine on all nodes
+        print(&quot;\n=== State machines after replication ===&quot;)
+        for node in nodes:
+            print(f&quot;  Node {node.node_id}: {node.state_machine}&quot;)
+    else:
+        print(&quot;No leader elected (split vote?)&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    demo_raft_cluster()
+</code></pre>
+
+<hr/>
+
+<h3>关键数据流追踪 / Critical Flow Trace</h3>
+
+<p><strong>中文：</strong></p>
+<p>让我们追踪一个写请求从客户端到提交的完整路径。</p>
+
+<p><strong>English:</strong></p>
+<p>Trace a single <code>SET name=Alice</code> request through the system:</p>
+
+<pre><code>
+Client → Leader (Node 0)
+    │
+    ├── 1. Leader appends to local log: [(term=1, idx=1, &quot;SET name=Alice&quot;)]
+    │
+    ├── 2. Leader sends AppendEntries to Node 1:
+    │       prevLogIndex=0, prevLogTerm=0, entries=[entry1], leaderCommit=0
+    │       Node 1: consistency check passes → append → return (True, term=1)
+    │
+    ├── 3. Leader sends AppendEntries to Node 2:
+    │       same as above
+    │       Node 2: append → return (True, term=1)
+    │
+    ├── 4. Leader has 3/3 acks (quorum = 2). 
+    │       _advance_commit_index(1): commit_index = 1
+    │       _apply_committed_entries(): state_machine[&quot;name&quot;] = &quot;Alice&quot;
+    │
+    ├── 5. Next heartbeat: leader sends AppendEntries with leaderCommit=1
+    │       Followers: advance their commit_index → apply locally
+    │
+    └── 6. Client receives success ✓
+</code></pre>
+
+<p><strong>Cross-check with code:</strong></p>
+<p>Step 4 maps to <code>_advance_commit_index()</code> → <code>_apply_committed_entries()</code> in the Leader.</p>
+<p>Step 5 maps to <code>append_entries()</code> handler where followers check <code>if leader_commit &gt; self.commit_index</code>.</p>
+<p>The diagram and code are consistent. ✓</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<h3>1. Figure 8 问题（最容易踩的坑）</h3>
+<p>Raft 中有一个微妙规则：<strong>Leader 只能提交当前 term 的日志条目</strong>，不能直接提交旧 term 的条目。为什么？因为即使某个旧条目被多数节点复制了，也可能被新 Leader 用更新的条目覆盖。Raft 通过&quot;间接提交&quot;解决：当前 term 的新条目提交时，顺带提交之前所有未提交的旧条目。</p>
+
+<p><strong>English:</strong></p>
+
+<h3>1. The Figure 8 Bug (Most Subtle)</h3>
+<p>A leader <strong>cannot directly commit log entries from previous terms</strong>, even if a majority has replicated them. An older entry could be overwritten by a new leader. The fix: commit a new entry from the <em>current</em> term — this implicitly commits all prior entries. This is <code>_advance_commit_index</code>&#x27;s check: <code>self.log[new_index-1].term == self.current_term</code>.</p>
+
+<h3>2. 脑裂（Brain Split）/ Network Partition</h3>
+<p>If a network splits a 5-node cluster into [2] and [3]:</p>
+<p>- The partition with 3 nodes <strong>can</strong> elect a new leader and commit (quorum = 3)</p>
+<p>- The partition with 2 nodes <strong>cannot</strong> commit (no quorum)</p>
+<p>- When the partition heals, the 2-node side&#x27;s leader steps down (sees higher term)</p>
+
+<h3>3. 选举超时必须随机化 / Randomized Election Timeout</h3>
+<p>If all nodes had the same timeout, they&#x27;d all start elections simultaneously — <strong>split vote</strong> forever. Randomization (150–300ms typical) ensures one node fires first with high probability.</p>
+
+<h3>4. nextIndex 回退 / nextIndex Back-tracking</h3>
+<p>When a follower rejects AppendEntries (consistency check fails), the leader decrements <code>nextIndex</code> by 1 and retries. In pathological cases (follower is very far behind), this is O(N) RPCs. Optimization: follower returns the first conflicting term to skip entire terms at once.</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<h3>etcd — Kubernetes 的基础</h3>
+<p>etcd 是 Kubernetes 的核心存储，使用 Raft 实现高可用。每个 <code>kubectl apply</code> 最终都是一个 Raft 日志条目。etcd 集群通常部署 3 或 5 个节点——3 节点可容忍 1 个节点故障，5 节点可容忍 2 个。</p>
+
+<p><strong>English:</strong></p>
+
+<p>| System | Raft Usage |</p>
+<p>|--------|-----------|</p>
+<p>| <strong>etcd</strong> | Kubernetes control plane; every API resource is a Raft log entry |</p>
+<p>| <strong>CockroachDB</strong> | Each range (96 MB shard) runs its own Raft group — thousands of concurrent Raft instances |</p>
+<p>| <strong>TiKV</strong> | Per-region Raft groups, plus Multi-Raft for cross-region coordination |</p>
+<p>| <strong>Consul</strong> | Service discovery &amp; distributed locks via Raft |</p>
+
+<p><strong>性能特征 / Performance Characteristics:</strong></p>
+<p>- Write latency = 2 × one-way network RTT (leader → follower → ack)</p>
+<p>- A 3-node cluster on a single datacenter: ~1-5ms per commit</p>
+<p>- Cross-datacenter: ~50-100ms (this is why geo-distributed systems use Multi-Paxos or alternatives like Spanner&#x27;s TrueTime)</p>
+<p>- Throughput: etcd handles ~10K writes/sec; CockroachDB uses pipelining to batch</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>中文/English: 典型面试追问 + 简答 / Follow-up Questions</strong></p>
+
+<hr/>
+
+<p><strong>Q1: Why does Raft need randomized election timeouts? Why not just use a fixed timeout?</strong></p>
+
+<p><strong>A:</strong> A fixed timeout causes all followers to start elections simultaneously when the leader dies, leading to perpetual split votes where no candidate gets majority. Randomization ensures one follower fires first (~150ms) and collects votes before others start. The probability of a split vote decreases exponentially with the range of randomization.</p>
+
+<hr/>
+
+<p><strong>Q2: What happens if the leader crashes right after appending to its local log but before any follower replicates?</strong></p>
+<p><strong>（Leader 在本地写入后、复制前崩溃怎么办？）</strong></p>
+
+<p><strong>A:</strong> The entry was never committed (no quorum). When a new leader is elected, it will overwrite this uncommitted entry if needed. The client&#x27;s request times out and must retry. This is safe — the entry never reached a committed state, so durability is preserved.</p>
+
+<hr/>
+
+<p><strong>Q3: Why can&#x27;t Raft elect a leader with a stale log? How is this prevented?</strong></p>
+<p><strong>（为什么日志旧的节点不能成为 Leader？）</strong></p>
+
+<p><strong>A:</strong> The <strong>Election Restriction</strong> in <code>request_vote</code>: a voter rejects a candidate whose log is &quot;less up-to-date&quot; (lower last-entry term, or same term but shorter log). Since a committed entry was replicated to a quorum, at least one node in any quorum has that entry. That node will reject a candidate with a stale log — the candidate can&#x27;t get majority votes.</p>
+
+<hr/>
+
+<p><strong>Q4: How does Raft handle a 5-node cluster where 2 nodes are permanently down?</strong></p>
+
+<p><strong>A:</strong> The remaining 3 nodes form a quorum (3 &gt; 5/2). The cluster continues normally. However, if a 3rd node goes down, the cluster becomes unavailable (only 2 nodes, can&#x27;t reach majority of 3). This is the trade-off: CAP theorem — Raft chooses CP (Consistency + Partition tolerance, sacrifices Availability when below quorum).</p>
+
+<hr/>
+
+<p><strong>Q5: What&#x27;s the difference between Raft and Paxos? When would you use Multi-Raft?</strong></p>
+<p><strong>（Raft 和 Paxos 的区别？Multi-Raft 是什么？）</strong></p>
+
+<p><strong>A:</strong> Both solve consensus but Paxos is notoriously hard to implement correctly (it&#x27;s underspecified; &quot;Multi-Paxos&quot; is informal). Raft adds strong leader semantics, explicit log structure, and clear membership change protocol — making it easier to implement and reason about.</p>
+
+<p><strong>Multi-Raft</strong> (used by CockroachDB, TiKV) runs thousands of Raft groups simultaneously — one per data shard. This gives horizontal scalability: instead of one Raft group bottlenecking all writes, each shard has independent consensus. The challenge is coordinating cross-shard transactions (solved with 2PC over Multi-Raft).</p>
+
+<hr/>
+
+<p>🔗 <strong>Further Reading:</strong></p>
+<p>- [Raft Paper (Ongaro &amp; Ousterhout, 2014)](https://raft.github.io/raft.pdf)</p>
+<p>- [The Secret Lives of Data — Raft Visualization](https://thesecretlivesofdata.com/raft/)</p>
+<p>- [etcd Raft Library](https://github.com/etcd-io/etcd/tree/main/raft)</p>
+<p>- [Diego Ongaro&#x27;s PhD Thesis](https://web.stanford.edu/~ouster/cgi-bin/papers/OngaroPhD.pdf)</p>
+
+<hr/>
+<h1>Review</h1>
+<h2>Day 50 Review — Saturday Deep Dive Week</h2>
+
+<p>&gt; 📌 Saturday Deep Dive: Raft Consensus Algorithm. See the deep dive message above for the full 18-min read.</p>
+
+<h2>Quick Quiz: Days 46–49</h2>
+
+<p><strong>Q1: [System Design] What algorithm does Distributed Consensus (Raft/Paxos) use to ensure only one leader at a time?</strong></p>
+<p>A1: Leader election via randomized election timeouts. A node starts an election when it hasn&#x27;t heard from the leader within its timeout window. Majority quorum (⌊N/2⌋+1) vote required to win.</p>
+
+<p><strong>Q2: [Algorithms] What technique does &quot;Find the Duplicate Number&quot; use to detect a cycle in O(1) space?</strong></p>
+<p>A2: Floyd&#x27;s Cycle Detection (tortoise and hare). Treat array values as &quot;next pointers&quot; — a duplicate creates a cycle. The meeting point in Phase 1 leads to the cycle entrance in Phase 2, which is the duplicate.</p>
+
+<p><strong>Q3: [Python Craft] What&#x27;s the key difference between asyncio&#x27;s <code>gather</code> and a Semaphore?</strong></p>
+<p>A3: <code>gather</code> runs all coroutines concurrently with no limit; a Semaphore caps the concurrency to N at a time. Use Semaphore when calling rate-limited APIs or managing resource pools (e.g., DB connections).</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-22</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
