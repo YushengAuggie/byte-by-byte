@@ -56,6 +56,7 @@ print('  ✅ neetcode-150.json: 150 entries, no dupes, schema OK')
 # Other content files — check required fields
 python3 -c "
 import json, sys
+# (path, minimum entries, required fields per item)
 checks = [
     ('content/system-design.json', 40, {'title', 'difficulty'}),
     ('content/behavioral.json', 40, {'question', 'category'}),
@@ -64,16 +65,16 @@ checks = [
     ('content/ai-topics.json', 30, {'title', 'category'}),
 ]
 ok = True
-for path, expected, required in checks:
+for path, minimum, required in checks:
     data = json.load(open(path))
-    if len(data) != expected:
-        print(f'  ❌ {path}: expected {expected}, got {len(data)}'); ok = False; continue
+    if len(data) < minimum:
+        print(f'  ❌ {path}: expected at least {minimum}, got {len(data)}'); ok = False; continue
     for i, item in enumerate(data):
         missing = required - set(item.keys())
         if missing:
             print(f'  ❌ {path}[{i}]: missing {missing}'); ok = False; break
     else:
-        print(f'  ✅ {path}: {expected} entries, schema OK')
+        print(f'  ✅ {path}: {len(data)} entries (≥{minimum}), schema OK')
 if not ok: sys.exit(1)
 " 2>&1 && PASS=$((PASS + 4)) || FAIL=$((FAIL + 1))
 
@@ -188,9 +189,9 @@ python3 -c "
 import json, sys
 s = json.load(open('state.json'))
 bounds = {
-    'systemDesignIndex': ('content/system-design.json', 40),
+    'systemDesignIndex': ('content/system-design.json', 60),
     'leetcodeIndex': ('content/neetcode-150.json', 150),
-    'behavioralIndex': ('content/behavioral.json', 40),
+    'behavioralIndex': ('content/behavioral.json', 60),
     'pythonCraftIndex': ('content/python-craft.json', 50),
     'frontendIndex': ('content/frontend.json', 50),
     'aiTopicIndex': ('content/ai-topics.json', 30),
