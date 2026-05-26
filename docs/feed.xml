@@ -5,8 +5,596 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 24 May 2026 15:09:43 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 26 May 2026 19:33:34 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-26</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-26</guid>
+      <pubDate>Tue, 26 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 42</h2>
+<p><strong>Topic:</strong> Design a Distributed File System (HDFS/GFS)</p>
+<p><strong>Date:</strong> 2026-05-26 | <strong>Phase:</strong> Expert</p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design — 分布式文件系统 (HDFS/GFS)</h2>
+<p><strong>⏱️ 预计阅读时间 / Estimated reading time: 3 min</strong></p>
+
+<hr/>
+
+<h3>场景导入 / Scenario</h3>
+
+<p>想象你在 Google 负责存储互联网上所有网页的爬虫数据——每天新增 PB 级数据，数千台机器并发写入，任何单台机器随时可能宕机。你怎么设计这个系统？</p>
+
+<p>Imagine you&#x27;re at Google storing petabytes of web crawl data — terabytes added daily, thousands of machines writing concurrently, any single machine can fail at any time. How do you design this?</p>
+
+<p>这就是 <strong>GFS（Google File System）</strong>要解决的问题，也是 Hadoop HDFS 的原型。</p>
+
+<hr/>
+
+<h3>架构图 / Architecture</h3>
+
+<pre><code>
+Clients
+  │
+  ├──► Master Node (NameNode)
+  │      - Namespace tree (file → chunk IDs)
+  │      - Chunk location map (in-memory!)
+  │      - No data I/O — metadata only
+  │
+  └──► Chunk Servers (DataNodes)  ×N
+         - Store 64MB chunks
+         - 3x replication by default
+         - Heartbeat to master
+
+Write Flow:
+  Client ──► Master: &quot;Where do I write /foo/bar?&quot;
+  Master ──► Client: &quot;Primary=CS1, replicas=CS2,CS3&quot;
+  Client ──► CS1 (pipeline): CS1→CS2→CS3 (chain replication)
+  CS1 ──► Master: &quot;Chunk committed&quot;
+
+Read Flow:
+  Client ──► Master: &quot;Where is chunk 42?&quot;
+  Master ──► Client: &quot;CS2, CS5, CS7&quot; (closest replica)
+  Client ──────────► CS2 directly (bypasses master!)
+</code></pre>
+
+<hr/>
+
+<h3>关键设计决策 / Key Design Decisions</h3>
+
+<p><strong>1. 大文件优先（64MB chunk size）</strong></p>
+<p>- 减少 master 元数据量（1PB 数据 ≈ 只需几十万 chunk 记录）</p>
+<p>- 减少网络往返（一次 metadata 查询读取更多数据）</p>
+<p>- ❗ 代价：小文件效率差（1KB 文件占用 64MB chunk）</p>
+
+<p><strong>2. Master 只存元数据，不存数据</strong></p>
+<p>- 所有数据直接在 client ↔ chunkserver 之间流动</p>
+<p>- Master 成为控制平面，不是数据瓶颈</p>
+<p>- Master 挂了 → 读写停止，但数据不丢失</p>
+
+<p><strong>3. 三副本 + 机架感知（Rack-Aware Replication）</strong></p>
+<pre><code>
+Rack A: CS1 (primary), CS2 (replica 1)
+Rack B: CS3 (replica 2)
+</code></pre>
+<p>- 同机架故障（断电、网络交换机）时仍有 Rack B 副本</p>
+
+<p><strong>4. 追加写优化（Append-Only Workload）</strong></p>
+<p>- GFS 的设计假设：文件一旦写入很少修改</p>
+<p>- 支持 <code>record append</code>（原子追加），不支持随机写</p>
+<p>- 适合 MapReduce、日志处理、大数据批处理</p>
+
+<hr/>
+
+<h3>为什么这样设计？/ Why This Design?</h3>
+
+<p>| 选择 | 原因 |</p>
+<p>|------|------|</p>
+<p>| 中心化 Master | 简化一致性，避免分布式锁复杂度 |</p>
+<p>| 大 chunk size | Google 的 workload 就是大文件顺序读 |</p>
+<p>| Append-only | 简化并发控制，牺牲通用性换可靠性 |</p>
+<p>| 心跳检测故障 | Chunkserver 每 N 秒向 master 心跳，超时自动踢出 |</p>
+
+<hr/>
+
+<h3>别踩这个坑 / Common Mistakes</h3>
+
+<p>❌ <strong>&quot;HDFS 适合小文件&quot;</strong> — 错！HDFS 对小文件极不友好。1 亿个小文件 = 1 亿条 NameNode 内存记录，直接打爆 NameNode。</p>
+
+<p>✅ 小文件场景改用 HBase、S3（object storage）或先合并再存 HDFS。</p>
+
+<p>❌ <strong>&quot;Master 单点 → 系统不可用&quot;</strong> — 现代 HDFS 有 HA NameNode（active/standby + shared journal），不再是单点。</p>
+
+<p>❌ <strong>面试忘说 consistency model</strong> — GFS 是 relaxed consistency（宽松一致性）。并发追加可能有重复/填充字节，应用层需处理。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Google File System Paper (2003)](https://research.google/pubs/pub51/)</p>
+<p>- [HDFS Architecture Guide](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html)</p>
+<p>- [Designing Data-Intensive Applications — Chapter 3 (Kleppmann)](https://dataintensive.net/)</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象一个超级大图书馆。图书馆有一个&quot;目录员&quot;（Master/NameNode），他只记&quot;哪本书放在哪个书架&quot;，但不实际搬书。书架工人（ChunkServer）负责存放真正的书页。每本书被复印成3份放在不同书架，这样就算一个书架着火了，书还在。</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 43</h2>
+<p><strong>Topic:</strong> #146 LRU Cache (Medium) — Linked List Pattern</p>
+<p><strong>Date:</strong> 2026-05-26 | <strong>Phase:</strong> Expert</p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms — #146 LRU Cache (Medium)</h2>
+<p><strong>⏱️ 预计阅读时间 / Estimated reading time: 4 min</strong></p>
+
+<hr/>
+
+<h3>🧩 链表技巧模式 (9/11) — 延续 Day 41 开始的模式</h3>
+
+<p>🧩 <strong>Linked List Pattern (9/11)</strong> — building on the template from Day 41</p>
+
+<p>前 8 题我们用快慢指针处理环检测、找中点、合并等问题。今天的 LRU Cache 是这个 pattern 的&quot;Boss 关&quot;——它需要把<strong>链表 + 哈希表</strong>结合起来，实现 O(1) 的所有操作。</p>
+
+<p>The first 8 problems used fast-slow pointers for cycle detection, finding midpoints, and merging. LRU Cache is the &quot;boss fight&quot; — it combines <strong>linked list + hash map</strong> to achieve O(1) for all operations.</p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+<p>- [LeetCode #146 LRU Cache](https://leetcode.com/problems/lru-cache/) 🟡 Medium</p>
+<p>- [NeetCode Video Solution](https://neetcode.io/problems/lru-cache)</p>
+
+<hr/>
+
+<h3>现实类比 / Real-World Analogy</h3>
+
+<p>你的浏览器最多显示 10 个最近访问的标签历史。每次访问一个网站，如果它已在列表中就把它移到最前；如果列表满了，删掉最久没访问的那个。</p>
+
+<p>Your browser&#x27;s &quot;recent tabs&quot; keeps the last N sites. When you visit a site already in the list, bump it to the front. When the list is full, evict the least recently used one.</p>
+
+<hr/>
+
+<h3>问题分析 / Problem</h3>
+
+<pre><code>
+LRUCache(capacity):
+- get(key): return value if exists, else -1. Mark key as recently used.
+- put(key, value): insert/update. If capacity exceeded, evict LRU key.
+
+All operations must be O(1).
+</code></pre>
+
+<p><strong>关键洞察：</strong>为什么要用双向链表 + 哈希表？</p>
+<p>- 哈希表：O(1) 查找 key → node</p>
+<p>- 双向链表：O(1) 移动节点到头部、删除尾节点</p>
+<p>- 单向链表不行 → 删除节点需要找前驱，O(n)</p>
+
+<hr/>
+
+<h3>与模式模板的关系 / Mapping to Pattern</h3>
+
+<pre><code>
+快慢指针模板 → LRU 变体：
+
+快慢指针用于遍历/找位置
+LRU 用双向链表 + dummy head/tail 做 O(1) 插删
+
+核心技巧相同：用额外的指针结构突破链表的 O(n) 限制
+</code></pre>
+
+<hr/>
+
+<h3>Python Solution (带 trace)</h3>
+
+<pre><code>
+class LRUCache:
+    def __init__(self, capacity: int):
+        self.cap = capacity
+        self.cache = {}  # key -&gt; Node
+
+        # Dummy head (most recent) &amp; tail (least recent)
+        # head &lt;-&gt; ... &lt;-&gt; tail
+        self.head = Node(0, 0)
+        self.tail = Node(0, 0)
+        self.head.next = self.tail
+        self.tail.prev = self.head
+
+    def _remove(self, node):
+        &quot;&quot;&quot;Remove node from its current position.&quot;&quot;&quot;
+        node.prev.next = node.next
+        node.next.prev = node.prev
+
+    def _insert_front(self, node):
+        &quot;&quot;&quot;Insert node right after head (most recent).&quot;&quot;&quot;
+        node.next = self.head.next
+        node.prev = self.head
+        self.head.next.prev = node
+        self.head.next = node
+
+    def get(self, key: int) -&gt; int:
+        if key not in self.cache:
+            return -1
+        node = self.cache[key]
+        self._remove(node)
+        self._insert_front(node)  # mark as recently used
+        return node.val
+
+    def put(self, key: int, value: int) -&gt; None:
+        if key in self.cache:
+            self._remove(self.cache[key])
+        node = Node(key, value)
+        self.cache[key] = node
+        self._insert_front(node)
+
+        if len(self.cache) &gt; self.cap:
+            # Evict LRU: node right before tail
+            lru = self.tail.prev
+            self._remove(lru)
+            del self.cache[lru.key]  # don&#x27;t forget to remove from dict!
+
+class Node:
+    def __init__(self, key, val):
+        self.key, self.val = key, val
+        self.prev = self.next = None
+
+# Trace: capacity=2
+# put(1,1): head &lt;-&gt; [1,1] &lt;-&gt; tail
+# put(2,2): head &lt;-&gt; [2,2] &lt;-&gt; [1,1] &lt;-&gt; tail
+# get(1):   head &lt;-&gt; [1,1] &lt;-&gt; [2,2] &lt;-&gt; tail  (1 moved to front)
+# put(3,3): capacity exceeded, evict LRU=2
+#           head &lt;-&gt; [3,3] &lt;-&gt; [1,1] &lt;-&gt; tail
+# get(2) -&gt; -1 (evicted!)
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(1) — 所有操作</p>
+<p>- Space: O(capacity)</p>
+
+<hr/>
+
+<h3>举一反三 / Pattern Connections</h3>
+
+<p>在同一个 Linked List block 中：</p>
+<p>- <strong>#141 Linked List Cycle</strong>: fast/slow pointer 找环入口</p>
+<p>- <strong>#19 Remove Nth From End</strong>: fast/slow pointer 找倒数第 N 个</p>
+<p>- <strong>#146 LRU Cache</strong>: 双向链表 + 哈希表，O(1) 插删</p>
+
+<p>下一步（block 剩余 2 题）：</p>
+<p>- <strong>#23 Merge K Sorted Lists</strong>: 用堆合并，不是纯链表题</p>
+<p>- <strong>#25 Reverse Nodes in K-Group</strong>: 分组反转，递归/迭代</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [LeetCode #146](https://leetcode.com/problems/lru-cache/)</p>
+<p>- [NeetCode LRU Cache Explanation](https://neetcode.io/problems/lru-cache)</p>
+<p>- [Python OrderedDict LRU (built-in shortcut)](https://docs.python.org/3/library/collections.html#collections.OrderedDict)</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象你有一个最多放 3 本书的桌子。每次你看一本书，就把它放到桌子最左边（最新）。桌子满了要放新书？把最右边的（最久没看的）扔掉。链表就是这张桌子，哈希表让你能瞬间找到任何书在哪里。</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 42</h2>
+<p><strong>Topic:</strong> Service Deprecation &amp; Migration</p>
+<p><strong>Date:</strong> 2026-05-26 | <strong>Phase:</strong> Expert</p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills — 下线服务与迁移</h2>
+<p><strong>⏱️ 预计阅读时间 / Estimated reading time: 2 min</strong></p>
+
+<p><strong>问题 / Question:</strong></p>
+<p>&gt; Tell me about a time you had to deprecate or sunset a service. How did you handle the migration?</p>
+
+<hr/>
+
+<h3>为什么这个问题很重要 / Why This Matters</h3>
+
+<p>Senior/Staff 工程师不只是构建系统，还需要<strong>安全地结束系统的生命周期</strong>。服务下线是比上线更难的工程问题：你有未知的依赖方、不愿迁移的用户、以及&quot;删掉就出故障&quot;的恐惧。</p>
+
+<p>Deprecating a service is often harder than building one. Unknown callers, resistant stakeholders, fear of breaking prod — this question tests operational maturity and communication skills, not just technical depth.</p>
+
+<hr/>
+
+<h3>STAR 结构 / STAR Breakdown</h3>
+
+<p><strong>Situation（情境）:</strong></p>
+<p>描述为什么需要下线：技术债、安全风险、维护成本、重复功能、云迁移...</p>
+
+<p>&gt; &quot;我们有一个 5 年历史的 v1 内部 RPC 服务，没有 SLA、没有监控、没有鉴权。维护它每月消耗 2 人周，且影响了新功能的迭代速度。&quot;</p>
+
+<p><strong>Task（任务）:</strong></p>
+<p>你的职责范围——是否跨团队、是否有 hard deadline、是否有外部依赖？</p>
+
+<p>&gt; &quot;作为 Tech Lead，我负责协调 3 个依赖团队的迁移，目标是 6 个月内完成下线。&quot;</p>
+
+<p><strong>Action（行动）— 这是核心：</strong></p>
+
+<p>1. <strong>发现阶段：搞清楚谁在用</strong></p>
+<p>- 在网关/日志层加 instrumentation，统计调用方</p>
+<p>- 发现 2 个团队的 &quot;legacy batch jobs&quot; 每天深夜还在调用</p>
+
+<p>2. <strong>沟通：不要直接 email 说&quot;我们要关掉你的依赖&quot;</strong></p>
+<p>- 设置 deprecation timeline，给足够的缓冲时间（建议 3-6 个月）</p>
+<p>- 提供迁移指南和迁移工具，主动帮对方团队迁移</p>
+
+<p>3. <strong>渐进式关闭：不要一刀切</strong></p>
+<pre><code>
+   Phase 1: 新流量禁止接入 (freeze new clients)
+   Phase 2: 已有流量加 deprecation warning header
+   Phase 3: 限流 + 增加延迟（让依赖方感到&quot;痛苦&quot;）
+   Phase 4: 真正关闭
+</code></pre>
+
+<p>4. <strong>监控退出流量：</strong></p>
+<p>- 在 Grafana 看 request count 趋势，趋近 0 时才真正下线</p>
+
+<p><strong>Result（结果）:</strong></p>
+<p>&gt; &quot;6 个月内，所有依赖完成迁移，关闭前最后一周流量为 0。释放了约 15% 的基础设施成本，v1 的安全漏洞彻底消除。&quot;</p>
+
+<hr/>
+
+<h3>❌ 不好的回答 / Bad Answer</h3>
+<p>&gt; &quot;我们直接在 flag day 关了服务，然后收到了很多 oncall 报警。&quot;</p>
+
+<p>告诉面试官你会直接关掉服务而不考虑下游影响——这是 flag。</p>
+
+<hr/>
+
+<h3>✅ 好的回答要素 / Good Answer Elements</h3>
+<p>- 主动发现未知依赖（Instrumentation）</p>
+<p>- 提前沟通，给充足 runway</p>
+<p>- 渐进式下线，有监控和 rollback plan</p>
+<p>- 定量结果（迁移时间、成本节省、故障数）</p>
+
+<hr/>
+
+<h3>Senior/Staff 加分点 / Senior/Staff Tips</h3>
+
+<p>- <strong>政治敏感性</strong>：有些团队不愿迁移，因为&quot;这不在我的 OKR 里&quot;。你的解法是把迁移工作帮他们做掉，或者让他们的老板 buy in。</p>
+<p>- <strong>技术策略</strong>：先提供一个&quot;兼容层&quot; adapter，让依赖方零修改迁移，再异步推动他们升级。</p>
+<p>- <strong>提到 &quot;strangler fig pattern&quot;</strong>：面试官会印象深刻。</p>
+
+<hr/>
+
+<h3>Key Takeaways</h3>
+<p>1. 下线和上线一样需要 planning，甚至更难</p>
+<p>2. 发现未知依赖 &gt; 假设你知道所有依赖</p>
+<p>3. 渐进式关闭降低风险，监控是保障</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Strangler Fig Pattern (Martin Fowler)](https://martinfowler.com/bliki/StranglerFigApplication.html)</p>
+<p>- [Google SRE Book — Chapter on Service Lifecycle](https://sre.google/sre-book/table-of-contents/)</p>
+<p>- [API Deprecation Best Practices (Stripe Engineering)](https://stripe.com/blog/api-versioning)</p>
+
+<h3>🧒 ELI5</h3>
+<p>就像老家的老房子要拆迁，你不能直接挖掉地基——得先确认屋里没人，把家具搬走，切断水电，再慢慢拆。服务下线也一样：先找到所有&quot;住户&quot;，帮他们搬家，最后才能关门。</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 5</h2>
+<p><strong>Topic:</strong> WSGI/ASGI — How Web Servers Handle Requests</p>
+<p><strong>Date:</strong> 2026-05-26 | <strong>Phase:</strong> Expert | <strong>Category:</strong> Concurrency &amp; Parallelism</p>
+
+<hr/>
+
+<h2>🎨 Python Craft — WSGI/ASGI: Web 服务器如何处理请求</h2>
+<p><strong>⏱️ 预计阅读时间 / Estimated reading time: 2 min</strong></p>
+
+<hr/>
+
+<h3>真实场景 / Real Scenario</h3>
+
+<p>你在生产环境用 Nginx + Gunicorn + Django 部署了一个 API。面试官问：&quot;收到一个 HTTP 请求，从 Nginx 到你的 Django view 函数，中间发生了什么？&quot;</p>
+
+<p>You deploy Nginx + Gunicorn + FastAPI. The interviewer asks: &quot;What happens between the HTTP request arriving at Nginx and your view function executing?&quot;</p>
+
+<hr/>
+
+<h3>WSGI：同步时代的标准</h3>
+
+<pre><code>
+Client → Nginx (reverse proxy) → Gunicorn (WSGI server) → Django/Flask App
+
+WSGI 接口：一个 Python 可调用对象
+  def application(environ, start_response):
+      start_response(&#x27;200 OK&#x27;, [(&#x27;Content-Type&#x27;, &#x27;text/plain&#x27;)])
+      return [b&#x27;Hello World&#x27;]
+
+# environ: HTTP 请求信息 (method, path, headers, body)
+# start_response: 回调，设置状态码和响应头
+</code></pre>
+
+<p><strong>Gunicorn 工作模型：</strong></p>
+<pre><code>
+Master Process
+  ├── Worker 1 (处理请求 A)
+  ├── Worker 2 (处理请求 B)
+  └── Worker 3 (等待)
+
+每个 Worker = 一个 OS 进程或线程
+Worker 在处理 I/O 时会 block（等数据库/文件）
+→ 这就是 WSGI 的性能瓶颈
+</code></pre>
+
+<hr/>
+
+<h3>ASGI：异步时代的标准</h3>
+
+<pre><code>
+Client → Nginx → Uvicorn (ASGI server) → FastAPI/Django Channels App
+
+ASGI 接口：
+  async def application(scope, receive, send):
+      # scope: connection 信息
+      # receive: async 函数，接收请求体
+      # send: async 函数，发送响应
+
+# 同一个 Worker 可以同时处理多个 I/O-bound 请求
+# 无需多进程/线程切换
+</code></pre>
+
+<p><strong>ASGI 对比 WSGI：</strong></p>
+<pre><code>
+WSGI Worker:
+  请求A ──[处理]──[等DB 50ms]──[等DB 50ms]──[返回]
+  请求B                                              [等待...]
+
+ASGI Worker (async):
+  请求A ──[处理]──[await DB]─────────────────[返回]
+  请求B           ──[处理]──[await DB]──[返回]
+</code></pre>
+
+<hr/>
+
+<h3>代码示例 / Code Snippet</h3>
+
+<pre><code>
+# WSGI (Flask)
+from flask import Flask
+app = Flask(__name__)
+
+@app.route(&#x27;/sync&#x27;)
+def sync_view():
+    import time
+    time.sleep(0.1)  # BLOCKS the whole worker!
+    return &#x27;Done&#x27;
+
+# ASGI (FastAPI)
+from fastapi import FastAPI
+import asyncio
+app = FastAPI()
+
+@app.get(&#x27;/async&#x27;)
+async def async_view():
+    await asyncio.sleep(0.1)  # yields control, other requests proceed
+    return {&#x27;status&#x27;: &#x27;done&#x27;}
+
+# Run:
+# WSGI: gunicorn app:app -w 4
+# ASGI: uvicorn app:app --workers 4
+</code></pre>
+
+<hr/>
+
+<h3>❌ 常见误区 vs ✅ 正确理解</h3>
+
+<p>❌ <strong>&quot;FastAPI 一定比 Flask 快&quot;</strong></p>
+<p>✅ FastAPI 在 <strong>I/O-bound</strong> 场景（数据库查询、HTTP 调用）下快得多。CPU-bound 场景（图片处理、加密）下区别不大，因为 asyncio 不能突破 GIL。</p>
+
+<p>❌ <strong>&quot;用了 async/await 就是 ASGI&quot;</strong></p>
+<p>✅ 必须用 ASGI server（Uvicorn/Daphne）运行，用 Gunicorn 运行 FastAPI 会退化成 WSGI 模式。</p>
+
+<hr/>
+
+<h3>何时用哪个 / When to Use</h3>
+
+<p>| 场景 | 推荐 |</p>
+<p>|------|------|</p>
+<p>| 大量数据库查询 / 外部 API 调用 | ASGI + FastAPI |</p>
+<p>| WebSocket / SSE / 长连接 | 必须用 ASGI |</p>
+<p>| 纯 CPU 计算（ML inference）| WSGI + Gunicorn + multiprocessing |</p>
+<p>| 已有大型 Django 项目 | Django + Gunicorn（或迁移到 ASGI channels）|</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [PEP 3333 — Python WSGI Spec](https://peps.python.org/pep-3333/)</p>
+<p>- [ASGI Spec](https://asgi.readthedocs.io/en/latest/)</p>
+<p>- [Uvicorn Performance](https://www.uvicorn.org/deployment/)</p>
+<p>- [FastAPI docs — Concurrency](https://fastapi.tiangolo.com/async/)</p>
+
+<h3>🧒 ELI5</h3>
+<p>WSGI 就像一个收银台——同时只能服务一个顾客，别人排队等。ASGI 就像手机点餐系统——你下单后服务员去做其他事，做好了叫号通知你，一个人能同时服务很多桌。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 51</h2>
+<p><strong>Topic:</strong> AI News Roundup</p>
+<p><strong>Date:</strong> 2026-05-26 | <strong>Mode:</strong> NEWS</p>
+
+<hr/>
+
+<h2>🤖 AI 新闻速递 / AI News Roundup</h2>
+<p><strong>⏱️ 预计阅读时间 / Estimated reading time: 2 min</strong></p>
+<p><strong>Source:</strong> Stories found via The Verge AI section (theverge.com/ai-artificial-intelligence, fetched 2026-05-26)</p>
+
+<hr/>
+
+<h3>📰 Story 1: 白宫申请 90 亿美元购买 AI 芯片用于情报机构</h3>
+
+<p><strong>The White House is asking for $9 billion to buy AI chips for spy agencies.</strong></p>
+
+<p>据报道，CIA 和 NSA 缺乏足够的算力来运行最新的 AI 模型，白宫已批准一项申请，拟购置 Nvidia Grace Blackwell 超级芯片并建设相关基础设施，总计据报道约 90 亿美元，但仍需国会批准。</p>
+
+<p>The White House has reportedly approved a request for ~$9 billion to buy cutting-edge chips and build infrastructure for spy agencies. The CIA and NSA reportedly lack the computing capacity to run the latest AI models. Infrastructure would support Nvidia&#x27;s Grace Blackwell superchip. Congress must still approve the funds.</p>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<p>国家情报机构的 AI 军备竞赛正在变得和民间科技公司一样白热化。算力即国力——这一点在 2026 年已经不是隐喻，而是字面意思。</p>
+
+<p>The AI arms race has reached intelligence agencies. Compute = national power is no longer a metaphor.</p>
+
+<p>📎 Source: [The Verge, May 24 2026](https://www.theverge.com/ai-artificial-intelligence) (referencing NYT reporting)</p>
+
+<hr/>
+
+<h3>📰 Story 2: Anthropic 与五角大楼的冲突：AI 自主战争的边界</h3>
+
+<p><strong>Anthropic&#x27;s fight with the Pentagon highlights risks of autonomous warfare.</strong></p>
+
+<p>Anthropic 据报道与美国国防部在 Claude 用于自主战争决策的边界问题上产生了摩擦，引发了业界对 AI 武器化的讨论。报道指出，虽然这一争议吸引了公众注意，但真正令人担忧的是：真正的自主 AI 军事系统比公众认知的要近得多。</p>
+
+<p>Anthropic reportedly clashed with the Pentagon over the limits of Claude&#x27;s use in autonomous warfare decisions. The Verge notes that while the public dispute makes headlines, the more alarming story is how close truly autonomous AI military systems actually are — closer than most people realize.</p>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<p>AI 安全的战场已经不只是聊天机器人的对齐问题——它延伸到了字面意义上的&quot;战场&quot;。Anthropic 在商业利益和道德边界之间走钢丝。</p>
+
+<p>AI safety is no longer just about chatbot alignment — it now extends to literal warfare. This is the real test of whether AI labs can hold ethical lines under pressure.</p>
+
+<p>📎 Source: [The Verge, May 26 2026](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<hr/>
+
+<h3>📰 Story 3: Anthropic Project Glasswing 更新：安全工具向用户开放</h3>
+
+<p><strong>Anthropic makes Claude Mythos Preview security tools more available.</strong></p>
+
+<p>Anthropic 更新了 Project Glasswing（据报道是其内部红队/安全项目），包括技能工具、Claude 安全测试框架和威胁模型构建器，现在可向&quot;符合资质&quot;的客户开放申请。同时发布了一个开源漏洞披露仪表板。</p>
+
+<p>Anthropic updated Project Glasswing, making security tools — including skills, a Claude harness, and a threat model builder — available to &quot;qualifying&quot; customers upon request. Anthropic also published a dashboard of open-source vulnerabilities discovered by Claude Mythos Preview.</p>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<p>AI 公司开始把&quot;安全能力&quot;本身作为产品输出，而不只是内部自用。这反映了 AI 安全生态系统的逐渐成熟——把模型的攻击性理解能力转化为防御工具。</p>
+
+<p>AI companies are beginning to productize their safety capabilities. This reflects a maturing AI security ecosystem: turning the model&#x27;s adversarial understanding into defensive tools for others.</p>
+
+<p>📎 Source: [Anthropic Project Glasswing Update](https://www.anthropic.com/research/glasswing-initial-update) (via The Verge, May 22 2026)</p>
+
+<hr/>
+
+<h3>💡 本周主题 / This Week&#x27;s Theme</h3>
+
+<p>三条新闻共同指向一个趋势：<strong>AI 正在快速进入高风险领域</strong>——情报、军事、安全。民间实验室（Anthropic、OpenAI）突然需要回答以前只有政府才需要回答的问题：算力谁控制？决策权给不给 AI？红线在哪里？</p>
+
+<p>All three stories point to a trend: <strong>AI is rapidly entering high-stakes domains</strong> — intelligence, warfare, security. Civilian labs now need to answer questions previously reserved for governments: Who controls the compute? How much autonomy for AI? Where are the red lines?</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [The Verge AI section](https://www.theverge.com/ai-artificial-intelligence)</p>
+<p>- [Anthropic Project Glasswing](https://www.anthropic.com/research/glasswing-initial-update)</p>
+<p>- [White House AI chip story via NYT](https://www.nytimes.com/2026/05/22/us/politics/spy-agencies-ai-chips-shortage.html)</p>
+
+<h3>🧒 ELI5</h3>
+<p>AI 不只是帮你写邮件和做作业了。这周的新闻说：间谍机构要花很多钱买超级电脑跑 AI、军队想用 AI 做战争决策、AI 公司在争论能不能帮他们做这些事。AI 长大了，但世界还没准备好规则。</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-24</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
