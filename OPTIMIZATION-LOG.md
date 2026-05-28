@@ -428,3 +428,25 @@
 ### Suggested Manual Follow-ups
 1. Investigate why 2026-05-19 was skipped: check gateway logs / cron job state for that date; confirm whether the daily generator failed silently or the cron didn't fire.
 2. Fix the optimizer's `openclaw` invocation to use an absolute path so future runs can report cron lastError.
+
+## 2026-05-26 Optimization Run
+
+### Issues Found
+- **P0**: Missed delivery on 2026-05-25 (Mon). No entry in `email-send-log.json` for that date. Git also has no Day-N commit on 2026-05-25 — last prior was Day 50 on 2026-05-24, next was Day 51 on 2026-05-26. One full day skipped.
+- **P0**: 2026-05-26 email sent at **12:33 PM PT** instead of the usual ~08:10 (cron `byte-by-byte review-and-send` is `5 8 * * *`). Likely the morning run failed and was triggered manually or by backup-send much later.
+- **P1**: None directly observed in content this cycle.
+- **P2**: All crons report `status=ok` with empty `lastError` and empty `lastRunAt` in CLI output — `lastRunAt` looks unpopulated, so we can't confirm when each fired. Hard to diagnose the 5/25 miss from cron state alone.
+- **P2**: 2-day skip pattern continues (5/19 missed last cycle, 5/25 missed this cycle — both Mondays/Tue-adjacent). May be a recurring weekly-boundary issue worth investigating.
+
+### Metrics
+- Delivery rate (7d): **6/7** (missed 2026-05-25)
+- Late deliveries: 1 (2026-05-26 at 12:33 PT vs scheduled 08:05)
+- Cron errors: **0 reported** (all jobs status=ok, but lastRunAt empty — telemetry gap)
+- State: currentDay=51, lastSentDate=2026-05-26, lastReviewDay=50, reviewDays through 50 ✅
+- Day advancement: 47→51 across 7 days = correct (with 1 missed day + Day 50 review)
+
+### Suggested Manual Follow-ups
+1. **Investigate 2026-05-25 miss**: check gateway logs for cron run at 08:05 PT on 5/25; was the job triggered? Did the daily generator fail? `email-send-log.json` has no entry, so the send step never completed.
+2. **Investigate 5/26 late send (12:33 PT)**: confirm whether morning run failed or was deferred. The `backup-send` cron (if scheduled later) may have rescued it — verify that's the intended path.
+3. **Pattern**: 5/19 and 5/25 misses fall ~6 days apart (Tue and Mon). Worth checking if any weekly maintenance window or system event correlates.
+4. **Telemetry**: `openclaw cron list --json` returns `lastRunAt=''` for byte-by-byte jobs. Check if cron state is being persisted properly — without it, optimizer can't diagnose silent failures.

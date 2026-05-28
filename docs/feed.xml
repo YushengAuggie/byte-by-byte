@@ -5,8 +5,1328 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 26 May 2026 19:33:34 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 28 May 2026 15:11:58 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-28</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-28</guid>
+      <pubDate>Thu, 28 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 44</h2>
+<h2>Design a Feature Flag System (LaunchDarkly)</h2>
+<p><strong>难度 / Difficulty:</strong> Advanced | <strong>阶段 / Phase:</strong> Expert | <strong>用时 / Time:</strong> ~3 min</p>
+
+<hr/>
+
+<h2>真实场景 / Real-World Scenario</h2>
+
+<p>想象你在 Meta 负责一个每天服务 30 亿用户的 News Feed 系统。你要上线一个全新的推荐算法 — 但你<strong>不敢直接全量发布</strong>：万一出了 Bug，全球用户都受影响。</p>
+
+<p>你需要的是<strong>功能开关 (Feature Flag)</strong>：先放 0.1% 的流量，再 1%，再 10%... 一旦出问题立即关闭，零停机回滚。</p>
+
+<p>Imagine you&#x27;re at Meta, responsible for a News Feed serving 3 billion daily users. You&#x27;re shipping a new recommendation algorithm — but you can&#x27;t just deploy it to everyone at once. If it breaks, the entire world is affected.</p>
+
+<p>You need <strong>Feature Flags</strong>: start at 0.1% traffic, then 1%, then 10%... and kill it instantly if anything goes wrong. Zero-downtime rollback.</p>
+
+<hr/>
+
+<h2>系统架构 / Architecture</h2>
+
+<pre><code>
+                    ┌────────────────────────────┐
+                    │     Admin Dashboard         │
+                    │  (Create/Edit/Target Flags)  │
+                    └────────────┬───────────────┘
+                                 │ Config Changes
+                    ┌────────────▼───────────────┐
+                    │      Flag Control Plane     │
+                    │  - Flag CRUD API            │
+                    │  - Targeting Rules Engine   │
+                    │  - Audit Log                │
+                    └────────────┬───────────────┘
+                                 │ Write
+              ┌──────────────────▼──────────────────┐
+              │           PostgreSQL                  │
+              │  (flags, rules, environments, users)  │
+              └──────────────────┬──────────────────┘
+                                 │ CDC / PubSub
+              ┌──────────────────▼──────────────────┐
+              │         Redis (Flag Cache)            │
+              │  flag_key → {rules, rollout%}         │
+              └────┬─────────────────────────┬───────┘
+                   │ SSE/Long Poll              │
+         ┌─────────▼────────┐      ┌──────────▼────────┐
+         │   SDK (Server)    │      │   SDK (Browser)   │
+         │  Node / Python    │      │   React / Next    │
+         └─────────┬────────┘      └──────────┬────────┘
+                   │                           │
+         ┌─────────▼───────────────────────────▼───────┐
+         │              Your Application                 │
+         │   if (flags.isEnabled(&quot;new_algo&quot;, userId)):  │
+         │       return new_recommendation()            │
+         └──────────────────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>核心概念 / Key Concepts</h2>
+
+<h3>1. Flag 评估 (Evaluation)</h3>
+<p>每次 <code>isEnabled(flagKey, user)</code> 调用要<strong>极快</strong> — 不能每次都打数据库。</p>
+<p>SDK 在本地内存缓存全部 flag 规则，通过 SSE/WebSocket 接收增量更新。</p>
+
+<p>Every <code>isEnabled(flagKey, user)</code> call must be <strong>extremely fast</strong> — no DB lookups per call.</p>
+<p>The SDK caches all flag rules in-memory and receives incremental updates via SSE/WebSocket.</p>
+
+<h3>2. 灰度策略 / Targeting Rules (in priority order)</h3>
+<pre><code>
+Rule 1: userId in [&quot;user_123&quot;, &quot;user_456&quot;] → true (内测用户/beta users)
+Rule 2: country == &quot;US&quot; AND email ends with &quot;@company.com&quot; → true (内部员工/internal)  
+Rule 3: rollout = 10% (hash(userId) % 100 &lt; 10) → true (随机灰度/random rollout)
+Rule 4: default → false
+</code></pre>
+
+<h3>3. 一致性哈希灰度 / Consistent Rollout</h3>
+<p>用 <code>hash(userId + flagKey) % 100</code> 而非 <code>random()</code> — 保证同一用户每次看到<strong>相同结果</strong>。</p>
+
+<p>Use <code>hash(userId + flagKey) % 100</code> not <code>random()</code> — ensures the same user always gets the same result.</p>
+
+<pre><code>
+import hashlib
+
+def should_enable(user_id: str, flag_key: str, rollout_pct: int) -&gt; bool:
+    # Deterministic: same user always gets same result
+    seed = f&quot;{user_id}:{flag_key}&quot;
+    hash_val = int(hashlib.md5(seed.encode()).hexdigest(), 16)
+    return (hash_val % 100) &lt; rollout_pct
+</code></pre>
+
+<hr/>
+
+<h2>为什么这样设计？/ Key Tradeoffs</h2>
+
+<p>| 决策 / Decision | 原因 / Why |</p>
+<p>|---|---|</p>
+<p>| SDK 本地缓存 rules | P99 评估 &lt;1ms；无单点故障 |</p>
+<p>| SSE 推送更新 | 实时性 &lt;100ms；比轮询更高效 |</p>
+<p>| hash(userId+flagKey) | 跨服务一致性；可复现 |</p>
+<p>| 按环境隔离 | prod/staging/dev 互不干扰 |</p>
+<p>| 审计日志 | 合规；回溯事故 &quot;谁在什么时候改了什么&quot; |</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p><strong>❌ 坑 1: Flag 永不清理</strong></p>
+<p>Feature flags 是技术债。很多公司有数千个&quot;废弃&quot;flag 还在代码里。</p>
+<p>建立 TTL 机制：flag 超过 90 天自动提醒清理。</p>
+
+<p>Feature flags are tech debt. Many companies have thousands of &quot;dead&quot; flags still in code.</p>
+<p>Build TTL: auto-alert to clean up flags older than 90 days.</p>
+
+<p><strong>❌ 坑 2: 把 flag 用作配置系统</strong></p>
+<p>Feature flags ≠ 配置管理。不要把数据库连接字符串、超时时间放进 flag。</p>
+<p>用专门的配置系统 (AWS AppConfig, Consul)。</p>
+
+<p>Feature flags ≠ config management. Don&#x27;t put DB connection strings or timeouts in flags.</p>
+<p>Use dedicated config systems (AWS AppConfig, Consul).</p>
+
+<p><strong>❌ 坑 3: Flag 评估打数据库</strong></p>
+<p>每次请求都去 DB 查询 flag = 系统瘫痪。必须本地缓存 + 增量推送。</p>
+
+<p>Evaluating flags against DB on every request = system meltdown. Must use local cache + push updates.</p>
+
+<hr/>
+
+<h2>扩展问题 / Follow-up Questions</h2>
+
+<p>- 如何支持 A/B/C 多变量测试？(multivariate flags)</p>
+<p>- 如何实现 flag 依赖关系？(flag A 必须先开启 flag B 才能生效)</p>
+<p>- 怎么做 flag 评估的可观测性？(哪些用户看到了哪个变体？)</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [LaunchDarkly Architecture Blog](https://launchdarkly.com/blog/how-launchdarkly-serves-over-300-billion-feature-flags/)</p>
+<p>- [Feature Toggles — Martin Fowler](https://martinfowler.com/articles/feature-toggles.html)</p>
+<p>- [OpenFeature — open standard for feature flags](https://openfeature.dev/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>Feature flags 就像给代码装了&quot;电灯开关&quot;。你把新功能写好但先关着，然后可以只给自己、或者1%的用户开灯试试，不满意就关掉——完全不用重新部署。</p>
+
+<p>Feature flags are like installing light switches in your code. You write the new feature but keep it &quot;off&quot;, then flip it on for just yourself, or 1% of users. If something&#x27;s wrong, flip it off instantly — no redeployment needed.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 45</h2>
+<h2>#25 Reverse Nodes in K-Group — Hard</h2>
+<p><strong>模式 / Pattern:</strong> 链表技巧模式 (Linked List) | 11/11 — 最终章！</p>
+
+<hr/>
+
+<p>🧩 <strong>链表技巧模式 (11/11) — 本模式最后一题！</strong></p>
+<p>Building on the template from Day 41 (Reverse Linked List)</p>
+
+<p>这是链表模块的<strong>压轴 Hard 题</strong>。回顾一下我们走过的路：</p>
+
+<p>| # | 题目 | 核心技巧 |</p>
+<p>|---|---|---|</p>
+<p>| 1 | Reverse Linked List | 迭代/递归反转 |</p>
+<p>| 2 | Merge Two Sorted Lists | 双指针合并 |</p>
+<p>| 3 | Linked List Cycle | 快慢指针 |</p>
+<p>| 4 | Reorder List | 找中点 + 反转 + 合并 |</p>
+<p>| 5 | Remove Nth from End | 双指针间距 n |</p>
+<p>| 6 | Copy List with Random Pointer | HashMap 映射 |</p>
+<p>| 7 | Add Two Numbers | 模拟进位 |</p>
+<p>| 8 | Find the Duplicate Number | Floyd 判圈 |</p>
+<p>| 9 | LRU Cache | 双向链表 + HashMap |</p>
+<p>| 10 | Merge K Sorted Lists | 堆/分治 |</p>
+<p>| <strong>11</strong> | <strong>Reverse Nodes in K-Group</strong> | <strong>分组反转</strong> ← 今天 |</p>
+
+<hr/>
+
+<h2>🔗 题目链接 / Links</h2>
+<p>- 🟥 LeetCode: https://leetcode.com/problems/reverse-nodes-in-k-group/</p>
+<p>- 📹 NeetCode: https://neetcode.io/problems/reverse-nodes-in-k-group</p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象一队士兵 <code>[1,2,3,4,5,6]</code>，每 k=2 人一组，原地调换站位：</p>
+<p><code>[2,1,4,3,6,5]</code></p>
+
+<p>就像 <strong>撤销/重做历史</strong> 的批量反转操作 — 每次撤销 k 步，顺序倒转。</p>
+
+<p>Imagine a line of soldiers <code>[1,2,3,4,5,6]</code>. Every k=2, reverse their positions: <code>[2,1,4,3,6,5]</code>.</p>
+<p>Like a <strong>batch undo operation</strong> — reverse every k operations at once.</p>
+
+<hr/>
+
+<h2>问题分析 / Problem Breakdown</h2>
+
+<pre><code>
+Input:  1 → 2 → 3 → 4 → 5,  k=2
+Output: 2 → 1 → 4 → 3 → 5
+
+Input:  1 → 2 → 3 → 4 → 5,  k=3
+Output: 3 → 2 → 1 → 4 → 5
+</code></pre>
+
+<p>难点：</p>
+<p>1. 如何检查剩余节点是否有 k 个？</p>
+<p>2. 如何记录反转前后的连接点？</p>
+
+<hr/>
+
+<h2>如何映射到模式 / Mapping to Template</h2>
+
+<p>这题<strong>不直接用快慢指针</strong>，但用的是链表反转的核心操作——这是模式的变体：</p>
+
+<pre><code>
+标准模版：slow/fast 指针
+本题变体：
+  1. 用辅助函数检查是否还有 k 个节点 (类似 fast 指针向前探路)
+  2. 每次反转 k 个节点 (核心操作与 #206 相同)
+  3. 用 dummy head 统一处理边界
+</code></pre>
+
+<hr/>
+
+<h2>Python 解法 / Solution with Trace</h2>
+
+<pre><code>
+from typing import Optional
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def reverseKGroup(head: Optional[ListNode], k: int) -&gt; Optional[ListNode]:
+    dummy = ListNode(0, head)
+    group_prev = dummy  # tail of the last reversed group
+    
+    while True:
+        # Step 1: Check if k nodes remain (like fast pointer scouting ahead)
+        kth = get_kth(group_prev, k)
+        if not kth:
+            break  # fewer than k nodes left — keep as-is
+        
+        group_next = kth.next  # node AFTER this k-group
+        
+        # Step 2: Reverse k nodes (same as #206 Reverse Linked List!)
+        prev, curr = group_next, group_prev.next
+        while curr != group_next:
+            tmp = curr.next
+            curr.next = prev
+            prev = curr
+            curr = tmp
+        
+        # Step 3: Re-link
+        # group_prev.next is still pointing to OLD head of group (now tail)
+        tmp = group_prev.next  # old head = new tail
+        group_prev.next = kth  # connect prev group to new head (kth)
+        group_prev = tmp        # advance group_prev to new tail
+    
+    return dummy.next
+
+
+def get_kth(curr: ListNode, k: int) -&gt; Optional[ListNode]:
+    &quot;&quot;&quot;Advance k steps from curr; return None if not enough nodes.&quot;&quot;&quot;
+    while curr and k &gt; 0:
+        curr = curr.next
+        k -= 1
+    return curr
+</code></pre>
+
+<h3>执行追踪 / Trace (k=2, [1,2,3,4])</h3>
+
+<pre><code>
+初始:    dummy → 1 → 2 → 3 → 4
+                 ↑           ↑
+          group_prev    
+
+轮1: kth=node(2), group_next=node(3)
+     反转 [1,2]: 2 → 1 → 3 → 4
+     dummy → 2 → 1 → 3 → 4
+              ↑
+         group_prev
+
+轮2: kth=node(4), group_next=None
+     反转 [3,4]: 4 → 3 → None
+     dummy → 2 → 1 → 4 → 3
+                  ↑
+             group_prev
+
+轮3: get_kth 返回 None → break
+
+结果: 2 → 1 → 4 → 3 ✓
+</code></pre>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+
+<p>- <strong>时间 Time:</strong> O(n) — 每个节点最多访问两次 (一次 get_kth，一次 reverse)</p>
+<p>- <strong>空间 Space:</strong> O(1) — 原地操作，只用常数额外指针</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connection</h2>
+
+<p>学完整个链表模块，这道 Hard 题其实是 #206 (反转链表) + #141 (快慢指针探路) 的组合：</p>
+
+<p>- <code>get_kth</code> = 快指针向前探 k 步</p>
+<p>- 内层反转 = 完全复用 #206 的代码</p>
+<p>- 核心洞察：<strong>Hard 题往往是多个 Easy 技巧的组合</strong></p>
+
+<p>After the full linked list block, this Hard problem is literally #206 + #141 combined:</p>
+<p>- <code>get_kth</code> = fast pointer scouting k steps ahead</p>
+<p>- Inner reversal = exact same code as #206</p>
+<p>- Key insight: <strong>Hard problems are often compositions of Easy techniques</strong></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [LeetCode #25](https://leetcode.com/problems/reverse-nodes-in-k-group/)</p>
+<p>- [NeetCode explanation](https://neetcode.io/problems/reverse-nodes-in-k-group)</p>
+<p>- [Linked List patterns — NeetCode roadmap](https://neetcode.io/roadmap)</p>
+
+<h2>🧒 ELI5</h2>
+<p>给一排玩具按每 k 个一组，把每组里面的顺序倒过来。比如 k=3，[1,2,3,4,5,6] 变成 [3,2,1,6,5,4]。秘诀是先看看够不够 k 个，够的话就原地翻转，然后把各组拼在一起。</p>
+
+<p>Given a row of toys, reverse every k of them. k=3: [1,2,3,4,5,6] → [3,2,1,6,5,4]. The trick: check if k nodes exist, reverse them in place, stitch the groups together.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 44</h2>
+<h2>Tell me about a time you had to recover from a major mistake you made</h2>
+<p><strong>类别 / Category:</strong> Failure &amp; Growth | <strong>级别 / Level:</strong> Senior/Staff | <strong>用时 / Time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>为什么这道题很重要 / Why This Question Matters</h2>
+
+<p>面试官问这道题不是要看你多完美 — 他们要看的是：</p>
+
+<p>1. <strong>你的自我认知</strong> — 你能正视自己的失误吗？</p>
+<p>2. <strong>你的成熟度</strong> — 遇到问题你是逃避还是承担？</p>
+<p>3. <strong>你的成长能力</strong> — 你从失败中学到了什么？</p>
+<p>4. <strong>你的影响力</strong> — Senior 工程师的错误往往影响整个团队</p>
+
+<p>Interviewers ask this not to see how perfect you are — they want to know:</p>
+<p>1. <strong>Self-awareness</strong> — can you own your mistakes honestly?</p>
+<p>2. <strong>Maturity</strong> — do you deflect or take responsibility?</p>
+<p>3. <strong>Growth mindset</strong> — what did you actually learn?</p>
+<p>4. <strong>Scope of impact</strong> — Senior mistakes often affect whole teams</p>
+
+<hr/>
+
+<h2>STAR 框架 / STAR Breakdown</h2>
+
+<h3>❌ 反面示例 / Bad Answer</h3>
+
+<p>&gt; &quot;我在 deploy 的时候忘了跑测试，导致了一个 bug。我们回滚了，然后加了 CI 检查。&quot;</p>
+
+<p><strong>问题：</strong></p>
+<p>- 错误太小，不像 Senior 级别</p>
+<p>- 没有说明自己的具体责任</p>
+<p>- 学到的东西太表面（&quot;加了 CI&quot;）</p>
+<p>- 面试官会觉得你在隐瞒</p>
+
+<hr/>
+
+<h3>✅ 正面示例 / Good Answer</h3>
+
+<p><strong>Situation（情境）:</strong></p>
+<p>&gt; &quot;两年前我主导了一个数据库 Schema 迁移。这是一个高流量的核心服务，每天处理约 500 万次写入。&quot;</p>
+<p>&gt;</p>
+<p>&gt; &quot;Two years ago I led a database schema migration for a high-traffic core service — about 5M writes per day.&quot;</p>
+
+<p><strong>Task（任务）:</strong></p>
+<p>&gt; &quot;我的任务是在零停机时间内完成迁移，同时保证数据一致性。&quot;</p>
+<p>&gt;</p>
+<p>&gt; &quot;My goal was zero-downtime migration while maintaining data consistency.&quot;</p>
+
+<p><strong>Action（失误 + 应对）:</strong></p>
+<p>&gt; &quot;我低估了一个细节：新字段有 NOT NULL 约束，但我们有一个后台 job 还在往老 Schema 写入。上线后 5 分钟，报警开始响。我立刻 declare incident，把相关的 5 名工程师拉进来。我做了两件事：一是立刻临时修改约束为 nullable 止血，二是写了一个 backfill script 把历史数据修正。整个 incident 持续了 47 分钟。&quot;</p>
+<p>&gt;</p>
+<p>&gt; &quot;I underestimated one thing: the new column had a NOT NULL constraint, but a background job was still writing to the old schema. Five minutes after deploy, alerts fired. I immediately declared an incident, pulled in 5 engineers. Two actions: first, temporarily relax the constraint to nullable to stop the bleeding; second, write a backfill script to fix historical data. The incident lasted 47 minutes.&quot;</p>
+
+<p><strong>Result + Learning（结果 + 成长）:</strong></p>
+<p>&gt; &quot;我们没有数据丢失，但有 47 分钟的写入失败。事后我做了三件事：1) 写了详细的 postmortem，发给整个 infra 团队；2) 建立了 Schema 迁移 checklist，包括&#x27;检查所有写入路径&#x27;这一步；3) 在团队知识分享中讲了这次经历。这个 checklist 后来帮我们避免了至少两次类似问题。&quot;</p>
+<p>&gt;</p>
+<p>&gt; &quot;No data loss, but 47 minutes of write failures. Afterward: 1) wrote a detailed postmortem shared org-wide; 2) created a schema migration checklist including &#x27;audit all write paths&#x27;; 3) gave a team talk about this incident. That checklist prevented at least two similar issues since.&quot;</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分点 / Leveling Up</h2>
+
+<p><strong>普通工程师</strong> 说的是 &quot;我犯了个错，我修了它。&quot;</p>
+<p><strong>Senior 工程师</strong> 说的是 &quot;我犯了个错，我修了它，我让整个团队从中受益。&quot;</p>
+<p><strong>Staff 工程师</strong> 说的是 &quot;这次失败揭示了我们流程中的一个系统性漏洞，我改变了组织的工作方式。&quot;</p>
+
+<p><strong>Regular engineer:</strong> &quot;I made a mistake, I fixed it.&quot;</p>
+<p><strong>Senior engineer:</strong> &quot;I made a mistake, fixed it, and made the whole team better.&quot;</p>
+<p><strong>Staff engineer:</strong> &quot;This failure exposed a systemic gap in our process; I changed how the org operates.&quot;</p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>✅ <strong>选一个真实的、有分量的错误</strong> — 不要选太小的问题，也别选甩锅给别人的</p>
+<p>✅ <strong>直接承认责任</strong> — &quot;这是我的判断失误&quot;比&quot;我们当时不知道&quot;有力得多</p>
+<p>✅ <strong>强调你的应急响应</strong> — 面试官想看你在压力下的判断力</p>
+<p>✅ <strong>量化影响</strong> — 多少用户？多少时间？多少钱？</p>
+<p>✅ <strong>成长必须是具体的</strong> — &quot;我学会了要更仔细&quot;是废话；&quot;我建立了这个机制并用于团队&quot;才有价值</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [How to discuss failures in senior engineering interviews — blog.pragmaticengineer.com](https://blog.pragmaticengineer.com/preparing-for-the-systems-design-and-coding-interviews/)</p>
+<p>- [Postmortem culture: learning from failure — Google SRE Book](https://sre.google/sre-book/postmortem-culture/)</p>
+<p>- [STAR method guide — LinkedIn Career Blog](https://www.linkedin.com/business/talent/blog/talent-acquisition/tips-for-using-the-star-interview-response-technique)</p>
+
+<h2>🧒 ELI5</h2>
+<p>面试官问你犯过什么大错，是想看你够不够成熟。最好的回答是：我犯了错，我承担了责任，我快速止损，然后我改变了流程让这件事再也不会发生。</p>
+
+<p>When an interviewer asks about a big mistake, they want to see maturity. The best answer: I made a mistake, I owned it, I stopped the bleeding fast, then I changed the process so it can never happen again.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 7</h2>
+<h2>Producer-Consumer with queue.Queue</h2>
+<p><strong>类别 / Category:</strong> Concurrency &amp; Parallelism — Week 2 | <strong>阶段 / Phase:</strong> Expert | <strong>用时 / Time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>真实场景 / Real-World Scenario</h2>
+
+<p>你在构建一个<strong>日志处理 pipeline</strong>：</p>
+<p>- 多个线程持续产生日志事件 (producers)</p>
+<p>- 几个线程负责批量写入数据库 (consumers)</p>
+
+<p>两者速度不匹配 — 生产者偶尔会爆发，消费者来不及处理。</p>
+<p><code>queue.Queue</code> 是这类问题的标准解：<strong>线程安全的有界缓冲区</strong>。</p>
+
+<p>You&#x27;re building a <strong>log processing pipeline</strong>:</p>
+<p>- Multiple threads constantly produce log events (producers)</p>
+<p>- A few threads batch-write them to the database (consumers)</p>
+
+<p>They run at different speeds — producers sometimes burst, consumers can&#x27;t keep up.</p>
+<p><code>queue.Queue</code> is the standard solution: <strong>a thread-safe bounded buffer</strong>.</p>
+
+<hr/>
+
+<h2>核心 API / Core API</h2>
+
+<pre><code>
+import queue
+
+q = queue.Queue(maxsize=100)  # bounded: blocks when full
+
+# Producer side
+q.put(item)           # block if full
+q.put(item, block=False)  # raise queue.Full immediately
+q.put_nowait(item)    # alias for put(block=False)
+
+# Consumer side
+item = q.get()        # block if empty
+item = q.get(timeout=5)  # block up to 5s, then raise queue.Empty
+q.task_done()         # signal this item is processed
+
+# Coordination
+q.join()              # block until all items have task_done() called
+q.qsize()             # approximate size (not reliable for flow control!)
+</code></pre>
+
+<hr/>
+
+<h2>完整示例 / Full Example</h2>
+
+<pre><code>
+import queue
+import threading
+import time
+import random
+
+def producer(q: queue.Queue, name: str, count: int):
+    for i in range(count):
+        item = f&quot;{name}-event-{i}&quot;
+        q.put(item)  # blocks if queue is full (backpressure!)
+        print(f&quot;[PRODUCE] {item}&quot;)
+        time.sleep(random.uniform(0.01, 0.05))
+    print(f&quot;[PRODUCE] {name} done&quot;)
+
+
+def consumer(q: queue.Queue, name: str):
+    while True:
+        try:
+            item = q.get(timeout=2)  # wait up to 2s for new items
+        except queue.Empty:
+            print(f&quot;[CONSUME] {name}: queue empty, exiting&quot;)
+            break
+        
+        # Simulate processing
+        time.sleep(random.uniform(0.05, 0.1))
+        print(f&quot;[CONSUME] {name} processed: {item}&quot;)
+        q.task_done()  # IMPORTANT: signal completion
+
+
+def main():
+    q = queue.Queue(maxsize=20)  # bounded buffer — backpressure!
+    
+    # Start 3 producers
+    producers = [
+        threading.Thread(target=producer, args=(q, f&quot;P{i}&quot;, 10))
+        for i in range(3)
+    ]
+    
+    # Start 2 consumers
+    consumers = [
+        threading.Thread(target=consumer, args=(q, f&quot;C{i}&quot;))
+        for i in range(2)
+    ]
+    
+    for t in producers + consumers:
+        t.start()
+    
+    # Wait for all producers to finish
+    for t in producers:
+        t.join()
+    
+    # Wait for queue to drain
+    q.join()
+    print(&quot;All items processed!&quot;)
+    
+    for t in consumers:
+        t.join()
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+
+<hr/>
+
+<h2>关键机制 / Key Mechanisms</h2>
+
+<h3>1. 背压 / Backpressure</h3>
+<p><code>Queue(maxsize=20)</code> + <code>q.put(item)</code> 实现自动背压：</p>
+<p>- 队列满 → producer 自动阻塞，不会把内存打爆</p>
+<p>- 这比无限队列 <code>Queue()</code> 安全得多</p>
+
+<p><code>Queue(maxsize=20)</code> + <code>q.put(item)</code> = automatic backpressure:</p>
+<p>- Queue full → producer automatically blocks, memory won&#x27;t explode</p>
+<p>- Much safer than unbounded <code>Queue()</code></p>
+
+<h3>2. task_done + join 的配合 / task_done + join Pattern</h3>
+<pre><code>
+生产者放入: unfinished_tasks += 1
+消费者 task_done(): unfinished_tasks -= 1
+q.join(): 阻塞直到 unfinished_tasks == 0
+</code></pre>
+<p>如果忘记调用 <code>task_done()</code>，<code>q.join()</code> 会永远卡住。</p>
+
+<p>If you forget <code>task_done()</code>, <code>q.join()</code> hangs forever.</p>
+
+<h3>3. 毒丸模式 / Poison Pill Pattern (优雅退出)</h3>
+<p>比用 timeout 更优雅的消费者退出方式：</p>
+
+<pre><code>
+SENTINEL = None  # poison pill
+
+# Producer: after finishing, send one sentinel per consumer
+for _ in range(num_consumers):
+    q.put(SENTINEL)
+
+# Consumer:
+item = q.get()
+if item is SENTINEL:
+    q.task_done()
+    break  # clean exit
+</code></pre>
+
+<hr/>
+
+<h2>Queue 的变体 / Queue Variants</h2>
+
+<p>| 类型 | 行为 | 用途 |</p>
+<p>|---|---|---|</p>
+<p>| <code>Queue()</code> | FIFO | 标准 producer-consumer |</p>
+<p>| <code>LifoQueue()</code> | LIFO (stack) | DFS、撤销历史 |</p>
+<p>| <code>PriorityQueue()</code> | 最小堆 | 任务优先级调度 |</p>
+<p>| <code>SimpleQueue()</code> | 无界 FIFO，无 task_done | 只需要简单传递 |</p>
+
+<hr/>
+
+<h2>⚠️ 常见坑 / Common Gotchas</h2>
+
+<p><strong>坑 1:</strong> 忘记 <code>task_done()</code> → <code>q.join()</code> 卡死</p>
+<p><strong>坑 2:</strong> 用 <code>q.qsize()</code> 做流量控制 → 不精确，有竞态</p>
+<p><strong>坑 3:</strong> consumer 数量太少 → 队列持续满，producers 全堵住</p>
+<p><strong>坑 4:</strong> 不设 timeout → consumer 线程永远不退出</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [queue — Synchronized queue class (Python docs)](https://docs.python.org/3/library/queue.html)</p>
+<p>- [Producer-Consumer Problem — Python threading patterns](https://realpython.com/intro-to-python-threading/#producer-consumer-threading)</p>
+<p>- [Python Concurrency — queue.Queue vs asyncio.Queue](https://superfastpython.com/queue-in-python/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>生产者-消费者就像一个传菜口：厨师（生产者）做好菜放进去，服务员（消费者）从另一头取走。<code>queue.Queue</code> 是那个传菜口——大小有限（防止堆满），线程安全（多个厨师/服务员同时用不会乱）。</p>
+
+<p>Producer-consumer is like a restaurant pass-through window: chefs (producers) put plates in, servers (consumers) take them out. <code>queue.Queue</code> is that window — bounded (prevents overflow), thread-safe (multiple chefs/servers can use it simultaneously without chaos).</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI 新闻速递 / AI News Roundup — Day 53</h2>
+<p><strong>日期 / Date:</strong> 2026-05-28 | <strong>模式 / Mode:</strong> NEWS</p>
+
+<hr/>
+
+<h2>本周 AI 三大动态 / This Week&#x27;s Top 3 Stories</h2>
+
+<hr/>
+
+<h3>🚀 Story 1: Agentic AI 正在重塑企业工作流</h3>
+
+<p><strong>Microsoft 推出 Agent 365 和 Computer Use 功能</strong></p>
+
+<p>据报道 (via [buildez.ai](https://buildez.ai/blog/future-of-ai-may-2026-agentic-ai-changes-everything))，微软在 5 月发布了 <strong>Agent 365</strong>——一个专为企业 AI 智能体设计的控制平面，并在 Copilot Studio 中推出了 &quot;computer use&quot; 功能，使企业 AI 系统能像人类员工一样直接操作软件界面。</p>
+
+<p>微软 AI CEO Mustafa Suleyman 预测，AI 系统在未来 12-18 个月内将在大多数基于电脑的专业任务上达到&quot;人类水平&quot;的性能。但微软研究人员同时警告：AI 智能体在长时间运行的工作流中仍不可靠，常常在多步骤任务中引入错误，强调需要人类监督。</p>
+
+<p><strong>技术视角：</strong> 这标志着从&quot;工具型 AI&quot;到&quot;代理型 AI&quot;的范式转变。对后端工程师来说意味着：未来系统设计要考虑 AI 智能体作为一类特殊的&quot;用户&quot;——它们会比人类更频繁地调用 API，更需要幂等性设计和细粒度权限控制。</p>
+
+<p>Microsoft launched <strong>Agent 365</strong> — a dedicated control plane for enterprise agents — and &quot;computer use&quot; agents in Copilot Studio that can interact directly with software interfaces. While bold claims about human-level performance are being made, Microsoft researchers themselves caution that agents remain unreliable for long-running workflows.</p>
+
+<p><strong>Engineering takeaway:</strong> This marks a shift from &quot;tool AI&quot; to &quot;agentic AI.&quot; For backend engineers: future system design must treat AI agents as a special class of &quot;user&quot; — calling APIs far more frequently than humans, requiring stronger idempotency guarantees and fine-grained permission controls.</p>
+
+<hr/>
+
+<h3>🔬 Story 2: Anthropic 与 OpenAI 的 AI 安全能力引发关注</h3>
+
+<p><strong>前沿模型展现出高级网络攻击能力</strong></p>
+
+<p>据英国 AI 安全研究所评估 (reported via [marketingprofs.com](https://www.marketingprofs.com/opinions/2026/54803/ai-update-may-22-2026-ai-news-and-views-from-the-past-week))，Anthropic 的 Claude 和 OpenAI 的 GPT-5.5 据称通过了一个 32 步网络攻击范围模拟测试。英国 AI 安全研究所估计，前沿网络攻击能力每四个月翻一番。</p>
+
+<p><strong>技术视角：</strong> 这引发了业界对 AI 安全测试标准化的讨论。作为工程师，这提醒我们：在使用 AI 辅助工具（如代码审查、漏洞扫描）时，模型的能力边界正在快速扩展，需要更严格的访问控制和审计日志。</p>
+
+<p>The UK&#x27;s AI Security Institute reportedly found that frontier models cleared advanced cybersecurity simulations, with offensive capability reportedly doubling every four months.</p>
+
+<p><strong>Engineering takeaway:</strong> Standardized AI safety benchmarking is becoming critical. When using AI-assisted tools for code review or vulnerability scanning, the capability boundary is expanding rapidly — stricter access controls and audit trails are increasingly important.</p>
+
+<hr/>
+
+<h3>📊 Story 3: Amnesty International 警告 AI 训练数据的隐私问题</h3>
+
+<p><strong>据报道：大规模 AI 训练建立在未经授权的网络抓取上</strong></p>
+
+<p>国际特赦组织发布报告 &quot;Unlawful by Design&quot; (原文链接: [amnesty.org](https://www.amnesty.org/en/latest/news/2026/05/global-enormous-data-pipelines-powering-major-generative-ai-systems-are-rooted-in-mass-invasions-of-privacy-by-design/))，指出驱动主要生成式 AI 系统的海量数据管道建立在大规模侵犯隐私的网络抓取上，违反了隐私权设计原则。</p>
+
+<p><strong>技术视角：</strong> 这加速了各国对 AI 训练数据的立法监管。对于使用第三方 AI 服务的工程师：了解你们供应商的数据来源合规性，将成为 2026 年技术审查的重要维度。</p>
+
+<p>Amnesty International&#x27;s &quot;Unlawful by Design&quot; report highlights that major generative AI data pipelines are built on mass unlawful web scraping, violating privacy-by-design principles.</p>
+
+<p><strong>Engineering takeaway:</strong> This accelerates AI training data legislation globally. For engineers using third-party AI services: understanding your vendor&#x27;s data provenance compliance will become a critical dimension in technical due diligence.</p>
+
+<hr/>
+
+<h2>📚 本期引用 / Sources</h2>
+<p>- [buildez.ai — Future of AI: May 2026, Agentic AI Changes Everything](https://buildez.ai/blog/future-of-ai-may-2026-agentic-ai-changes-everything)</p>
+<p>- [marketingprofs.com — AI Update May 22, 2026](https://www.marketingprofs.com/opinions/2026/54803/ai-update-may-22-2026-ai-news-and-views-from-the-past-week)</p>
+<p>- [amnesty.org — Enormous data pipelines powering major generative AI systems](https://www.amnesty.org/en/latest/news/2026/05/global-enormous-data-pipelines-powering-major-generative-ai-systems-are-rooted-in-mass-invasions-of-privacy-by-design/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>本周 AI 三件大事：1) 微软的 AI 可以自己操控电脑干活了；2) 最新的 AI 模型据说能模拟黑客攻击，安全研究人员很担心；3) Amnesty International 说很多 AI 的训练数据是&quot;偷&quot;来的，在隐私法上存在问题。</p>
+
+<p>This week in AI: 1) Microsoft&#x27;s AI can now control computers like a human employee; 2) The latest models reportedly passed advanced hacking simulations, alarming security researchers; 3) Amnesty International says major AI systems trained on data scraped without permission, raising serious privacy law concerns.</p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-05-27</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-27</guid>
+      <pubDate>Wed, 27 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Design a Time-Series Database (InfluxDB)</h2>
+<p><em>Day 52 · Expert Phase · ~3 min read</em></p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<p>想象你在设计 Datadog 或 Prometheus 的存储后端。每秒要写入数百万条指标数据：CPU 使用率、请求延迟、错误率……这些数据都有一个关键特征：<strong>时间是主键</strong>。你会如何设计？</p>
+
+<p><em>Imagine building the storage backend for Datadog or Prometheus. You&#x27;re ingesting millions of metric data points per second: CPU usage, request latency, error rates. These all share one key property: <strong>time is the primary key</strong>. How would you design this?</em></p>
+
+<hr/>
+
+<h2>架构图 / Architecture</h2>
+
+<pre><code>
+                    ┌─────────────────────────────────────┐
+  Producers          │         Ingestion Layer              │
+  ─────────          │  ┌─────────┐    ┌──────────────┐    │
+  App Metrics ──────►│  │  HTTP   │    │   WAL        │    │
+  Server Stats──────►│  │  API    │───►│ (Write-Ahead │    │
+  IoT Sensors ──────►│  │         │    │    Log)      │    │
+                     │  └─────────┘    └──────┬───────┘    │
+                     └────────────────────────┼────────────┘
+                                              │ batch flush
+                     ┌────────────────────────▼────────────┐
+                     │         Storage Engine               │
+                     │                                      │
+                     │  ┌──────────────────────────────┐   │
+                     │  │ In-Memory Write Buffer        │   │
+                     │  │ (TSM Tree hot data ~1h)       │   │
+                     │  └──────────────┬───────────────┘   │
+                     │                 │ compaction         │
+                     │  ┌──────────────▼───────────────┐   │
+                     │  │ Columnar Storage (TSM Files)  │   │
+                     │  │ time│cpu│mem│req_rate│...     │   │
+                     │  │ ────┼───┼───┼────────┼───     │   │
+                     │  │ t1  │80 │60 │ 1200   │        │   │
+                     │  │ t2  │82 │61 │ 1250   │        │   │
+                     │  └──────────────────────────────┘   │
+                     │                                      │
+                     │  ┌──────────────────────────────┐   │
+                     │  │ Tag Index (inverted index)    │   │
+                     │  │ host=web-01 → [t1,t2,t3...]   │   │
+                     │  │ region=us-west → [...]        │   │
+                     │  └──────────────────────────────┘   │
+                     └────────────────────┬────────────────┘
+                                          │
+                     ┌────────────────────▼────────────────┐
+                     │      Retention &amp; Downsampling        │
+                     │  raw: 7d → 1m avg: 30d → 1h avg: 1y │
+                     └─────────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>核心设计决策 / Key Design Decisions</h2>
+
+<h3>1. 列式存储 (Columnar Storage)</h3>
+<p><strong>为什么？</strong> 时序查询几乎总是范围查询（&quot;过去1小时的CPU&quot;），列式存储让你只读需要的列。压缩率也更高 — 相邻时间点的值变化小，Delta + Gorilla 编码可压缩 90%+。</p>
+
+<p><em>Why columnar? Time-series queries are almost always range scans (&quot;last hour of CPU&quot;). Columnar lets you read only the columns you need. Compression is also far better — adjacent values change minimally, and Delta + Gorilla encoding achieves 90%+ compression.</em></p>
+
+<h3>2. TSM Tree (Time-Structured Merge Tree)</h3>
+<p>类似 LSM Tree，但针对时序优化：</p>
+<p>- <strong>Write Buffer</strong> → 写入内存，定期 flush 到磁盘</p>
+<p>- <strong>Compaction</strong> → 合并小文件，有序，利于范围扫描</p>
+<p>- <strong>Append-only</strong> → 时间天然有序，无需像 B-Tree 那样随机写</p>
+
+<p><em>Similar to LSM Tree but time-optimized. Writes go to memory buffer, flush to disk periodically. Compaction merges small files. Append-only nature aligns with time&#x27;s natural ordering.</em></p>
+
+<h3>3. 倒排索引 (Inverted Index for Tags)</h3>
+<pre><code>
+tag_index[&quot;host=web-01&quot;] → [series_1, series_5, series_12]
+tag_index[&quot;region=us-west&quot;] → [series_1, series_3]
+</code></pre>
+<p>允许高效过滤：<code>SELECT cpu WHERE host=&#x27;web-01&#x27; AND region=&#x27;us-west&#x27;</code></p>
+
+<h3>4. 数据保留策略 (Retention + Downsampling)</h3>
+<pre><code>
+Raw data (1s resolution) → keep 7 days
+1-minute averages        → keep 30 days  
+1-hour averages          → keep 1 year
+Delete oldest            → automatic TTL
+</code></pre>
+<p>这是时序数据库的&quot;超能力&quot; — 自动降精度。</p>
+
+<hr/>
+
+<h2>常见错误 / Common Mistakes</h2>
+
+<p>❌ <strong>用关系型数据库存时序数据</strong></p>
+<p>每秒百万写入 → 行锁、B-Tree 写放大、索引膨胀。PostgreSQL 可以用 TimescaleDB 扩展，但裸 Postgres 扛不住。</p>
+
+<p>❌ <strong>Tag cardinality 爆炸</strong></p>
+<p>把 user_id 或 trace_id 作为 tag → 倒排索引无限膨胀。Tags 应该是<strong>低基数</strong>的（host、region、env），高基数数据放 fields。</p>
+
+<p>❌ <strong>忽略时钟漂移</strong></p>
+<p>分布式系统中，不同节点的时间戳可能乱序到达。需要处理 <strong>out-of-order writes</strong>（InfluxDB 有 max-allowed-past-time 配置）。</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [InfluxDB TSM Engine Architecture](https://docs.influxdata.com/influxdb/v1/concepts/storage_engine/) — official deep dive</p>
+<p>- [Gorilla: A Fast, Scalable, In-Memory Time Series Database (Meta)](https://www.vldb.org/pvldb/vol8/p1816-teller.pdf) — Facebook&#x27;s TSDB paper</p>
+<p>- [TimescaleDB Architecture](https://docs.timescale.com/about/latest/timescaledb-editions/) — Postgres-based TSDB</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>时序数据库就像一本<strong>每秒自动记日记</strong>的笔记本。普通数据库像一本可以随意翻改的书，时序数据库像一卷纸带 — 只往前走，不往回改，查的时候按时间切一段就行。而且它会自动帮你把昨天的记录&quot;压缩摘要&quot;，省空间。</p>
+
+<p><em>A time-series database is like a notebook that auto-journals every second. Regular databases are like books you can edit anywhere. A TSDB is like a paper tape — always moves forward, never edits old entries, and it automatically &quot;summarizes&quot; old data to save space.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — #23 Merge K Sorted Lists (Hard)</h2>
+<p><em>Day 52 · Expert Phase · ~4 min read</em></p>
+
+<hr/>
+
+<p>🧩 <strong>链表技巧模式 (10/11)</strong> — building on the Linked List template</p>
+
+<p>今天是链表模式块的<strong>倒数第二题</strong>，也是本块难度最高的题目。前面我们用快慢指针解决了大部分问题，但 Merge K Sorted Lists 需要一个新武器：<strong>最小堆（Min-Heap）</strong>。这是 Linked List 模式与 Heap 模式的交汇点。</p>
+
+<p><em>This is the second-to-last problem in our Linked List block and the hardest. We&#x27;ve used fast-slow pointers for most problems, but Merge K Sorted Lists needs a new weapon: <strong>Min-Heap</strong>. This is where Linked List meets Heap patterns.</em></p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 [LeetCode #23 — Merge K Sorted Lists](https://leetcode.com/problems/merge-k-sorted-lists/) 🔴 Hard</p>
+<p>📹 [NeetCode Video](https://neetcode.io/problems/merge-k-sorted-linked-lists)</p>
+
+<p>给你 <code>k</code> 个有序链表，合并成一个有序链表并返回。</p>
+
+<p><em>Given <code>k</code> sorted linked lists, merge them into one sorted linked list.</em></p>
+
+<pre><code>
+Input: lists = [[1,4,5],[1,3,4],[2,6]]
+Output: [1,1,2,3,4,4,5,6]
+</code></pre>
+
+<hr/>
+
+<h2>真实类比 / Real-World Analogy</h2>
+
+<p>想象你是外卖平台的调度员，手上有 K 条送餐队列，每条队列按预计到达时间排好序。你需要给客户一个统一的&quot;全局最早到达&quot;顺序。每次你要从 K 个队列的<strong>队头</strong>里，挑出时间最早的那个。</p>
+
+<p><em>Imagine you&#x27;re a delivery dispatcher with K sorted queues of orders (sorted by ETA). You need to output a single global earliest-first stream. At each step, you pick the earliest head across all K queues.</em></p>
+
+<hr/>
+
+<h2>解法：最小堆 / Min-Heap Approach</h2>
+
+<h3>思路 / Intuition</h3>
+
+<p>每次我们需要找&quot;K 个链表头节点中最小的那个&quot;。暴力法每次 O(K)，K 个节点总共 O(N*K)。用最小堆可以把每次选最小降到 O(log K)，总时间 O(N log K)。</p>
+
+<pre><code>
+import heapq
+from typing import Optional, List
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def mergeKLists(lists: List[Optional[ListNode]]) -&gt; Optional[ListNode]:
+    # Min-heap: (value, index, node)
+    # index is tie-breaker (ListNode not comparable)
+    heap = []
+    
+    # Initialize heap with head of each list
+    for i, node in enumerate(lists):
+        if node:
+            heapq.heappush(heap, (node.val, i, node))
+    
+    # Dummy head simplifies edge cases
+    dummy = ListNode(0)
+    curr = dummy
+    
+    while heap:
+        val, i, node = heapq.heappop(heap)
+        curr.next = node        # attach smallest node
+        curr = curr.next
+        
+        if node.next:           # push next from same list
+            heapq.heappush(heap, (node.next.val, i, node.next))
+    
+    return dummy.next
+</code></pre>
+
+<h3>执行追踪 / Trace</h3>
+
+<pre><code>
+lists = [[1,4,5], [1,3,4], [2,6]]
+
+Initial heap: [(1,0,L0), (1,1,L1), (2,2,L2)]
+
+Step 1: pop (1,0,L0→4) → output 1, push (4,0,L0→4)
+Step 2: pop (1,1,L1→3) → output 1, push (3,1,L1→3)
+Step 3: pop (2,2,L2→6) → output 2, push (6,2,L2→6)
+Step 4: pop (3,1,L1→4) → output 3, push (4,1,L1→4)
+Step 5: pop (4,0,L0→5) → output 4, push (5,0,L0→5)
+Step 6: pop (4,1,None) → output 4, no push
+Step 7: pop (5,0,None) → output 5, no push
+Step 8: pop (6,2,None) → output 6, no push
+
+Result: 1→1→2→3→4→4→5→6 ✅
+</code></pre>
+
+<h3>复杂度 / Complexity</h3>
+<p>- <strong>Time:</strong> O(N log K) where N = total nodes, K = number of lists</p>
+<p>- <strong>Space:</strong> O(K) for the heap</p>
+
+<hr/>
+
+<h2>与模版的关联 / Connection to Template</h2>
+
+<p>我们的链表模版是快慢指针 — 今天没有用。但这道题展示了链表问题有时需要<strong>其他数据结构辅助</strong>：</p>
+<p>- 单链表操作 → 快慢指针</p>
+<p>- 多路归并 → Min-Heap</p>
+<p>- 两两合并 → Divide &amp; Conquer (也可解此题，见下)</p>
+
+<p><strong>备选：Divide &amp; Conquer</strong></p>
+<pre><code>
+def mergeKLists(lists):
+    if not lists: return None
+    if len(lists) == 1: return lists[0]
+    
+    mid = len(lists) // 2
+    left = mergeKLists(lists[:mid])
+    right = mergeKLists(lists[mid:])
+    return mergeTwoLists(left, right)  # same as Day 42 #21
+</code></pre>
+<p>同样 O(N log K)，且复用了 Day 42 的 mergeTwoLists！</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p>本块其他题对比：</p>
+<p>| 题目 | 技巧 | 关键点 |</p>
+<p>|------|------|--------|</p>
+<p>| #21 Merge Two Sorted Lists | 双指针 | K=2 的特殊情况 |</p>
+<p>| #23 Merge K Sorted Lists (今天) | Min-Heap / D&amp;C | K 路归并 |</p>
+<p>| #25 Reverse Nodes in K-Group (明天) | 递归 / 迭代 | 本块压轴 |</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [LeetCode #23 Solutions](https://leetcode.com/problems/merge-k-sorted-lists/solutions/)</p>
+<p>- [NeetCode — Merge K Sorted Lists](https://neetcode.io/problems/merge-k-sorted-linked-lists)</p>
+<p>- [Python heapq documentation](https://docs.python.org/3/library/heapq.html)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>有 K 个已经排好序的队伍，你要把他们合成一个大队伍。聪明的办法：用一个&quot;魔法盒子&quot;（最小堆），每次把 K 个队伍的<strong>排头兵</strong>放进去，自动帮你找出谁最小，让那个人先走，然后再从他的队伍里叫下一个人进来。</p>
+
+<p><em>You have K sorted lines of people and need to merge them into one line. Smart way: use a magic box (min-heap). Put the front person from each line in the box. The box always tells you who&#x27;s shortest. That person leaves, and you bring in the next person from their original line.</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Architecture Conflict Resolution</h2>
+<p><em>Day 52 · Expert Phase · ~2 min read</em></p>
+
+<hr/>
+
+<h2>问题 / Question</h2>
+
+<p><strong>&quot;Describe a time you disagreed with a peer on architecture. How did you reach resolution?&quot;</strong></p>
+<p><em>&quot;描述一次你和同事在架构上产生分歧的经历。你是如何解决的？&quot;</em></p>
+
+<hr/>
+
+<h2>为什么面试官问这个 / Why This Matters</h2>
+
+<p>架构分歧在工程团队中非常普遍。面试官想知道的不是谁&quot;赢了&quot;，而是：</p>
+<p>1. 你能否<strong>客观评估</strong>技术权衡，而非固执己见</p>
+<p>2. 你是否能在<strong>保持关系</strong>的同时推进正确的技术决策</p>
+<p>3. Senior/Staff 工程师必须能在<strong>没有权威</strong>的情况下影响他人</p>
+
+<p><em>Architecture disagreements are universal. Interviewers want to know: can you objectively evaluate tradeoffs vs. being defensive? Can you advance the right decision while preserving relationships?</em></p>
+
+<hr/>
+
+<h2>STAR 框架 / STAR Breakdown</h2>
+
+<p><strong>Situation（情境）:</strong> 我们的团队在讨论新的通知服务架构。我倾向于用消息队列（Kafka）做异步处理，同事认为应该直接 HTTP 同步调用，更简单。</p>
+
+<p><strong>Task（任务）:</strong> 在不影响团队关系的前提下，推动一个技术上更合理的决定。</p>
+
+<p><strong>Action（行动）:</strong></p>
+<p>1. <strong>先倾听，不急于反驳</strong> — 我先请同事完整解释他的方案，找出合理之处（降低复杂度确实是有效考量）</p>
+<p>2. <strong>数据说话</strong> — 我整理了具体场景：如果通知服务宕机，同步调用会导致上游服务超时；异步队列可以做到故障隔离</p>
+<p>3. <strong>提出折中</strong> — 我们最终采用了消息队列，但同意先用 Amazon SQS 而非 Kafka，降低运维复杂度（部分采纳了他的顾虑）</p>
+<p>4. <strong>写下决策文档</strong> — 记录了两个方案的权衡，未来有新人加入时可以理解背景</p>
+
+<p><strong>Result（结果）:</strong> 通知服务上线后，主服务的 P99 延迟降低了 40%（因为解耦了慢通知路径），同事也认可了这个方案。</p>
+
+<hr/>
+
+<h2>❌ 坏回答 vs ✅ 好回答</h2>
+
+<p>❌ <strong>&quot;我坚持了自己的方案，因为我是对的，最后他接受了。&quot;</strong></p>
+<p>→ 听起来傲慢，无法展示影响力和协作能力</p>
+
+<p>❌ <strong>&quot;我们让经理来决定。&quot;</strong></p>
+<p>→ 逃避，Senior 工程师不该总是上升到管理层</p>
+
+<p>✅ <strong>&quot;我先理解了他的顾虑，发现有部分是合理的，找到了技术上更优但运维上更简单的折中方案。&quot;</strong></p>
+<p>→ 展示了技术深度 + 协作能力 + 成熟度</p>
+
+<hr/>
+
+<h2>Senior / Staff 加分点 / Advanced Tips</h2>
+
+<p><strong>如果对方是更资深的人：</strong></p>
+<p>&gt; &quot;我会准备书面分析，列出两个方案的具体权衡（成本、风险、可维护性），而不是口头争辩。让数据做裁判。&quot;</p>
+
+<p><strong>如果团队陷入僵局：</strong></p>
+<p>&gt; 提出 <strong>proof of concept</strong> — &quot;我们花两天分别实现，看看哪个在我们的约束下更合适&quot;</p>
+
+<p><strong>关键原则：</strong></p>
+<p>- 分离技术判断和个人情绪</p>
+<p>- 聚焦<strong>系统目标</strong>而非个人偏好</p>
+<p>- 记录决策，避免未来再争同一个问题</p>
+
+<hr/>
+
+<h2>关键收获 / Key Takeaways</h2>
+
+<p>1. 架构分歧要<strong>先倾听再回应</strong>，找出对方方案的合理之处</p>
+<p>2. 用<strong>具体数据和场景</strong>论证，而不是&quot;我觉得&quot;</p>
+<p>3. 寻找<strong>技术上更优但兼顾对方顾虑</strong>的折中方案</p>
+<p>4. 把决策<strong>写下来</strong> — 这本身就是 Senior 工程师的标志</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [Staff Engineer: Leadership beyond the management track — Will Larson](https://staffeng.com/book)</p>
+<p>- [How to Disagree and Commit (Amazon Leadership Principle)](https://www.amazon.jobs/content/en/our-workplace/leadership-principles)</p>
+<p>- [The Architecture Decision Record (ADR) pattern](https://adr.github.io/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>两个工程师争架构，就像两个厨师争怎么做汤。聪明的做法不是谁嗓门大谁赢，而是：先尝对方的汤，找到好的部分，然后提议合并两个食谱里最好的地方，最后把这个&quot;最终食谱&quot;写下来，下次就不用再争了。</p>
+
+<p><em>Two engineers arguing about architecture is like two chefs arguing about a recipe. The smart move: taste each other&#x27;s soup first, find the good parts, propose combining the best of both, then write down the final recipe so you never have to argue about it again.</em></p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — concurrent.futures: ThreadPool vs ProcessPool</h2>
+<p><em>Day 52 · Expert Phase · Week 2 Concurrency · ~2 min read</em></p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<p>你需要并发处理 100 个任务 — 可能是爬取 100 个网页，或者并行处理 100 个图片。Python 给了你两个工具：<code>ThreadPoolExecutor</code> 和 <code>ProcessPoolExecutor</code>。选错了，要么没效果，要么程序崩溃。</p>
+
+<p><em>You need to run 100 tasks concurrently — maybe scraping 100 URLs, or processing 100 images. Python offers two tools: <code>ThreadPoolExecutor</code> and <code>ProcessPoolExecutor</code>. Pick wrong and you either get no speedup or a crash.</em></p>
+
+<hr/>
+
+<h2>核心区别 / Core Difference</h2>
+
+<pre><code>
+ThreadPoolExecutor          ProcessPoolExecutor
+───────────────────         ──────────────────────
+同一个进程，多个线程          多个进程，各自独立
+受 GIL 限制                  绕过 GIL
+适合 I/O 密集型               适合 CPU 密集型
+内存共享（注意竞争）           内存隔离（需序列化传输）
+启动快                        启动慢（fork overhead）
+</code></pre>
+
+<hr/>
+
+<h2>代码对比 / Code Comparison</h2>
+
+<pre><code>
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+import time
+import requests
+
+# ─── I/O Bound: Use ThreadPoolExecutor ───
+# Fetching URLs — most time is waiting for network
+def fetch_url(url: str) -&gt; str:
+    response = requests.get(url, timeout=5)
+    return f&quot;{url}: {response.status_code}&quot;
+
+urls = [&quot;https://httpbin.org/delay/1&quot;] * 10
+
+# Sequential: ~10s
+# Threaded: ~1s (all wait in parallel)
+with ThreadPoolExecutor(max_workers=10) as executor:
+    futures = [executor.submit(fetch_url, url) for url in urls]
+    for future in as_completed(futures):
+        print(future.result())
+
+# ─── CPU Bound: Use ProcessPoolExecutor ───
+# Number crunching — GIL blocks threads from real parallelism
+def compute_heavy(n: int) -&gt; int:
+    # Simulate CPU work: count primes up to n
+    return sum(1 for i in range(2, n) if all(i % j != 0 for j in range(2, i)))
+
+numbers = [50000] * 8
+
+# Threads: no speedup (GIL)
+# Processes: near-linear speedup with CPU cores
+with ProcessPoolExecutor(max_workers=4) as executor:
+    results = list(executor.map(compute_heavy, numbers))
+    print(f&quot;Results: {results}&quot;)
+
+# ─── map() vs submit() ───
+# map(): simpler, blocks until all done, results in order
+results = list(executor.map(compute_heavy, numbers))
+
+# submit(): more control, get results as they complete
+futures = {executor.submit(compute_heavy, n): n for n in numbers}
+for future in as_completed(futures):
+    n = futures[future]
+    print(f&quot;compute_heavy({n}) = {future.result()}&quot;)
+</code></pre>
+
+<hr/>
+
+<h2>实际决策框架 / Decision Framework</h2>
+
+<pre><code>
+任务类型判断:
+├── 等网络/文件/数据库响应? → ThreadPoolExecutor
+│   ├── max_workers: 10-50 (I/O 等待时间越长，可以更多)
+│   └── 例: requests, boto3, sqlalchemy queries
+│
+└── 计算密集型 (数学/图像处理/解析)? → ProcessPoolExecutor
+    ├── max_workers: os.cpu_count() 或更少
+    ├── 注意: 传入参数必须可 pickle（不能是 lambda、本地函数）
+    └── 例: PIL image processing, numpy heavy math, parsing
+</code></pre>
+
+<p><strong>常见陷阱：</strong></p>
+
+<p>❌ 对 CPU 密集任务用 ThreadPoolExecutor → GIL 导致完全没有加速</p>
+<p>❌ ProcessPoolExecutor 传入不可序列化对象 → <code>PicklingError</code></p>
+<p>❌ 忘记处理 <code>future.exception()</code> → 静默失败</p>
+
+<pre><code>
+# ✅ Always handle exceptions
+for future in as_completed(futures):
+    try:
+        result = future.result()
+    except Exception as e:
+        print(f&quot;Task failed: {e}&quot;)
+</code></pre>
+
+<hr/>
+
+<h2>与前几天的关联 / Connection to Previous Days</h2>
+
+<p>| Day | 主题 | 关系 |</p>
+<p>|-----|------|------|</p>
+<p>| Day 50 | threading — GIL, Lock | concurrent.futures 的 Thread 底层是 threading |</p>
+<p>| Day 51 | multiprocessing | concurrent.futures Process 底层是 multiprocessing |</p>
+<p>| Day 52 (今天) | concurrent.futures | 高层抽象，两者统一接口 |</p>
+<p>| 下一步 | asyncio | 单线程并发，另一条路 |</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [Python docs — concurrent.futures](https://docs.python.org/3/library/concurrent.futures.html)</p>
+<p>- [Real Python — ThreadPoolExecutor tutorial](https://realpython.com/python-concurrency/)</p>
+<p>- [Python GIL explained — David Beazley](https://dabeaz.com/python/GIL.pdf)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>ThreadPool 像一个餐厅服务员团队：多个服务员同时服务多桌，大部分时间都在等客人点单（I/O等待），所以多人有用。ProcessPool 像开了多个独立的餐厅分店：每家店完全独立运营，适合每家店都需要大量准备工作（CPU计算）的情况。</p>
+
+<p><em>ThreadPool is like a restaurant with multiple waiters: they serve multiple tables at once, spending most time waiting for customers (I/O). ProcessPool is like opening multiple independent restaurant locations: each runs completely independently, good when each needs heavy prep work (CPU computation).</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Evaluation: How to Measure AI Quality</h2>
+<p><em>Day 52 · Expert Phase · CONCEPT Mode · ~2 min read</em></p>
+
+<hr/>
+
+<h2>核心问题 / The Core Problem</h2>
+
+<p>你怎么知道一个 AI 模型&quot;好不好&quot;？准确率 95%？听起来很棒 — 但如果测试集被污染了呢？如果模型&quot;背题&quot;了呢？如果你的任务在测试集上根本没有出现呢？</p>
+
+<p><strong>AI 评估是 AI 开发中最难的问题之一。</strong></p>
+
+<p><em>How do you know if an AI model is &quot;good&quot;? 95% accuracy sounds great — but what if the test set was contaminated? What if the model memorized answers? What if your real task never appeared in the benchmark?</em></p>
+
+<hr/>
+
+<h2>三层评估框架 / Three Evaluation Layers</h2>
+
+<pre><code>
+Layer 3: Production Monitoring (最终真相)
+─────────────────────────────────────────
+  Real user traffic → live feedback → drift detection
+  &quot;Did users actually like the output?&quot;
+
+Layer 2: Offline Evaluation (发布前)
+─────────────────────────────────────
+  ┌─────────────────┬─────────────────┬─────────────────┐
+  │  Automatic      │  LLM-as-Judge   │  Human Eval     │
+  │  Metrics        │                 │                 │
+  │  (BLEU, ROUGE,  │  GPT-4 rates    │  Human raters   │
+  │  Exact Match,   │  outputs, 80-   │  Gold standard  │
+  │  F1, Perplexity)│  90% agree w/   │  but expensive  │
+  │                 │  humans         │                 │
+  └─────────────────┴─────────────────┴─────────────────┘
+
+Layer 1: Benchmarks (能力基线)
+────────────────────────────────
+  MMLU, HumanEval, GPQA, SWE-bench...
+  Public, reproducible, but can be gamed
+</code></pre>
+
+<hr/>
+
+<h2>关键评估指标 / Key Metrics</h2>
+
+<h3>分类任务</h3>
+<pre><code>
+from sklearn.metrics import classification_report
+# Precision, Recall, F1 per class
+# Use when: spam detection, sentiment, intent classification
+</code></pre>
+
+<h3>生成任务 (RAG / QA)</h3>
+<pre><code>
+# pip install ragas
+from ragas import evaluate
+from ragas.metrics import faithfulness, answer_relevancy
+
+# faithfulness: does answer match retrieved context?
+# answer_relevancy: does answer address the question?
+results = evaluate(dataset, metrics=[faithfulness, answer_relevancy])
+</code></pre>
+
+<h3>LLM-as-Judge 模式</h3>
+<pre><code>
+# pip install openai
+from openai import OpenAI
+
+def llm_judge(question: str, answer: str, reference: str) -&gt; dict:
+    client = OpenAI()
+    prompt = f&quot;&quot;&quot;
+    Rate this answer on a scale of 1-5 for:
+    1. Correctness (matches reference)
+    2. Completeness (covers all key points)
+    3. Clarity (easy to understand)
+    
+    Question: {question}
+    Answer: {answer}
+    Reference: {reference}
+    
+    Return JSON: {{&quot;correctness&quot;: N, &quot;completeness&quot;: N, &quot;clarity&quot;: N, &quot;reasoning&quot;: &quot;...&quot;}}
+    &quot;&quot;&quot;
+    response = client.chat.completions.create(
+        model=&quot;gpt-4o&quot;,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}],
+        response_format={&quot;type&quot;: &quot;json_object&quot;}
+    )
+    return response.choices[0].message.content
+</code></pre>
+
+<hr/>
+
+<h2>基准污染问题 / Benchmark Contamination</h2>
+
+<p>传统 MMLU 已被大量模型&quot;背熟&quot; — 模型的训练数据包含了测试集。这导致：</p>
+
+<pre><code>
+MMLU 2024: GPT-4 = 86% ← &quot;amazing!&quot;
+MMLU-Pro 2025: GPT-4 = 72% ← harder, less contaminated
+Humanity&#x27;s Last Exam (2025): Best models ~45% ← expert-level, hard to game
+</code></pre>
+
+<p><strong>解决方案：</strong></p>
+<p>- 使用<strong>动态基准</strong> — 每次评测随机生成题目</p>
+<p>- 使用<strong>私有测试集</strong> — 不公开，防止训练数据泄漏</p>
+<p>- <strong>SWE-bench</strong> — 用真实 GitHub issues 测代码能力，难以&quot;背&quot;</p>
+
+<hr/>
+
+<h2>生产环境监控 / Production Monitoring</h2>
+
+<pre><code>
+# Real evaluation: track what actually matters in production
+metrics_to_monitor = {
+    &quot;user_thumbs_up_rate&quot;: &quot;&gt; 80%&quot;,      # direct user feedback
+    &quot;hallucination_rate&quot;: &quot;&lt; 5%&quot;,         # factual errors
+    &quot;latency_p99&quot;: &quot;&lt; 2000ms&quot;,            # user experience
+    &quot;refusal_rate&quot;: &quot;1-5%&quot;,               # too high = over-cautious
+    &quot;context_relevance&quot;: &quot;&gt; 0.85&quot;,        # RAG quality
+}
+# Tools: Langfuse, Arize AI, W&amp;B Weave, Humanloop
+</code></pre>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [RAGAS — RAG Evaluation Framework](https://docs.ragas.io/) — open source, widely used</p>
+<p>- [SWE-bench — Real-world code evaluation](https://www.swebench.com/) — GitHub issues benchmark</p>
+<p>- [Kili Technology — AI Benchmarks Guide 2026](https://kili-technology.com/blog/ai-benchmarks-guide-the-top-evaluations-in-2026-and-why-theyre-not-enough)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>衡量 AI 好不好，就像评分一个学生的期末考试。问题是：如果这个学生提前看到了考题（数据污染），成绩就不可信了。所以现在大家开始用&quot;每次临时出题&quot;（动态基准），或者直接看这个学生在真实工作中表现如何（生产环境监控）。</p>
+
+<p><em>Measuring AI quality is like grading a student&#x27;s final exam. The problem: if the student saw the questions ahead of time (data contamination), their score is meaningless. So now we use &quot;dynamically generated questions&quot; (dynamic benchmarks) or just watch how the student performs in their real job (production monitoring).</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-26</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
