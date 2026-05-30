@@ -5,8 +5,520 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 29 May 2026 15:40:56 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 30 May 2026 15:08:35 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-05-30</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-05-30</guid>
+      <pubDate>Sat, 30 May 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Merge K Sorted Lists（合并 K 个排序链表）(18 min read)</strong></p>
+<p>📊 NeetCode: 46/150 · SysDesign: 45/40 · Behavioral: 45/40 · Frontend: 37/50 · AI: 22/30</p>
+<p>🔥 54-day streak!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>合并 K 个排序链表是一道经典的 Hard 难度题，频繁出现在 Google、Meta、Amazon 等大厂面试中。它考察你能否将多个已排序的序列高效地合并成一个。表面上看是道链表题，核心却是<strong>优先队列（最小堆）</strong>的应用——这是面试官真正想看到的思维跳跃。掌握这道题，你同时掌握了堆、链表操作、分治三种核心模式。</p>
+
+<p><strong>English：</strong></p>
+<p>Merge K Sorted Lists is a canonical Hard problem that shows up constantly at FAANG. It asks: given K sorted linked lists, produce one sorted linked list. On the surface it&#x27;s a linked list problem; at its core it&#x27;s about <strong>min-heap / priority queue</strong> — that&#x27;s the insight interviewers are really probing for. Solving this deeply means you also internalize heap operations, linked list pointer manipulation, and divide-and-conquer.</p>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/merge-k-sorted-lists/</p>
+<p>📹 NeetCode: https://www.youtube.com/watch?v=q5a5OiGbT6Q</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>为什么这道题难？/ Why is this hard?</h3>
+
+<p><strong>中文：</strong></p>
+<p>合并 2 个排序链表很简单：两个指针，谁小移谁。但 K 个链表的问题在于——每次你要从 K 个&quot;候选头节点&quot;中找最小值。如果 K = 1000，每次线性扫描是 O(K)，整体就是 O(NK)，太慢了。</p>
+
+<p>核心洞察：<strong>我们只关心每条链表当前的头节点</strong>。维护一个大小为 K 的最小堆，每次 pop 出最小节点，append 到结果链表，再把该节点的 next（如果有）push 回堆中。</p>
+
+<p><strong>English：</strong></p>
+<p>Merging 2 sorted lists is easy — two pointers, advance the smaller one. But with K lists the problem is: every step you need the minimum among K candidate heads. Naive linear scan per step = O(NK) total. Too slow.</p>
+
+<p>The key insight: <strong>we only care about the current head of each list</strong>. Keep a min-heap of size K. Each iteration: pop the global minimum, append it to the result, push that node&#x27;s <code>.next</code> back into the heap (if it exists).</p>
+
+<hr/>
+
+<h3>心智模型 / Mental Model</h3>
+
+<p>想象 K 条赛道上各有一队运动员按速度排好队，每次你要找出所有&quot;队首&quot;中跑得最慢的（最小值），让他出列加入总排名，然后他让出位置给下一个队友。最小堆就是这个&quot;找最小值&quot;操作的数据结构。</p>
+
+<p>Imagine K running lanes, each sorted by speed. Each round you pick the slowest among all K front-runners, add them to the final ranking, and let the next runner step up in their lane. The min-heap <em>is</em> this &quot;find the minimum among K elements&quot; operation.</p>
+
+<hr/>
+
+<h3>复杂度分析 / Complexity</h3>
+
+<p>| Approach | Time | Space | Notes |</p>
+<p>|---|---|---|---|</p>
+<p>| Brute force (collect + sort) | O(N log N) | O(N) | N = total nodes |</p>
+<p>| Sequential merge (one by one) | O(NK) | O(1) | K merges × N/K avg length each |</p>
+<p>| <strong>Min-Heap</strong> | <strong>O(N log K)</strong> | <strong>O(K)</strong> | <strong>Optimal — log K per node</strong> |</p>
+<p>| Divide &amp; Conquer | O(N log K) | O(log K) | Same time, less space for recursion |</p>
+
+<p><strong>中文：</strong> 堆的大小始终是 K，每次 push/pop 是 O(log K)，总共 N 个节点，所以是 O(N log K)。当 K &lt;&lt; N 时，这比 O(N log N) 快得多。</p>
+
+<p><strong>English:</strong> Heap size stays K; each push/pop is O(log K); we process N nodes total → O(N log K). When K &lt;&lt; N, this is substantially faster than O(N log N).</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Approach 1: Brute Force — 暴力解法</h3>
+
+<p><strong>中文：</strong> 把所有节点值收集到数组，排序，重建链表。简单但浪费空间，面试中用来建立 baseline。</p>
+
+<pre><code>
+from typing import Optional, List
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def merge_k_brute(lists: List[Optional[ListNode]]) -&gt; Optional[ListNode]:
+    &quot;&quot;&quot;
+    Brute force: collect all values, sort, rebuild.
+    Time: O(N log N)  Space: O(N)
+    &quot;&quot;&quot;
+    all_vals = []
+    
+    # Step 1: Collect all node values into a flat list
+    for head in lists:
+        while head:
+            all_vals.append(head.val)
+            head = head.next
+    
+    # Step 2: Sort
+    all_vals.sort()
+    
+    # Step 3: Rebuild linked list using a dummy head
+    dummy = ListNode(0)
+    curr = dummy
+    for val in all_vals:
+        curr.next = ListNode(val)
+        curr = curr.next
+    
+    return dummy.next
+</code></pre>
+
+<hr/>
+
+<h3>Approach 2: Sequential Merge — 逐一合并</h3>
+
+<p><strong>中文：</strong> 先合并 list[0] 和 list[1]，结果再和 list[2] 合并……直到处理完所有链表。代码简单，但最坏情况是 O(NK)（当每次合并的结果越来越长时）。</p>
+
+<pre><code>
+def merge_two(l1: Optional[ListNode], l2: Optional[ListNode]) -&gt; Optional[ListNode]:
+    &quot;&quot;&quot;
+    Classic two-pointer merge of two sorted linked lists.
+    Time: O(m + n)  Space: O(1)
+    &quot;&quot;&quot;
+    dummy = ListNode(0)
+    curr = dummy
+    
+    while l1 and l2:
+        if l1.val &lt;= l2.val:
+            curr.next = l1
+            l1 = l1.next
+        else:
+            curr.next = l2
+            l2 = l2.next
+        curr = curr.next
+    
+    # Attach remaining nodes (at most one of l1/l2 is non-null)
+    curr.next = l1 if l1 else l2
+    return dummy.next
+
+def merge_k_sequential(lists: List[Optional[ListNode]]) -&gt; Optional[ListNode]:
+    &quot;&quot;&quot;
+    Merge lists one by one. Time: O(NK)  Space: O(1)
+    &quot;&quot;&quot;
+    if not lists:
+        return None
+    
+    result = lists[0]
+    for i in range(1, len(lists)):
+        result = merge_two(result, lists[i])
+    
+    return result
+</code></pre>
+
+<hr/>
+
+<h3>Approach 3: Min-Heap — 最优解法 ✅</h3>
+
+<p><strong>中文：</strong> 用 Python 的 <code>heapq</code> 维护一个大小为 K 的最小堆，堆中每个元素是 <code>(node.val, index, node)</code> 三元组。<code>index</code> 是为了打破 <code>val</code> 相同时的平局（<code>ListNode</code> 对象不支持直接比较）。</p>
+
+<pre><code>
+import heapq
+
+def merge_k_lists(lists: List[Optional[ListNode]]) -&gt; Optional[ListNode]:
+    &quot;&quot;&quot;
+    Min-heap approach.
+    Time: O(N log K)  Space: O(K) for the heap
+    
+    Key trick: store (val, index, node) in heap.
+    - val: for comparison (heapq is a min-heap by default)
+    - index: tiebreaker when two nodes have equal val (ListNode isn&#x27;t comparable)
+    - node: the actual ListNode we need
+    &quot;&quot;&quot;
+    dummy = ListNode(0)
+    curr = dummy
+    
+    heap = []
+    
+    # Step 1: Initialize heap with the head of each list
+    for i, node in enumerate(lists):
+        if node:
+            # Push (value, unique_index, actual_node)
+            heapq.heappush(heap, (node.val, i, node))
+    
+    # Step 2: Process until heap is empty
+    while heap:
+        val, i, node = heapq.heappop(heap)  # Get global minimum
+        
+        curr.next = node          # Append to result list
+        curr = curr.next
+        
+        if node.next:
+            # Push the next node from the same list back into the heap
+            heapq.heappush(heap, (node.next.val, i, node.next))
+    
+    return dummy.next
+
+
+# ─── Test it ───────────────────────────────────────────────────────────────
+def build_list(vals):
+    &quot;&quot;&quot;Helper: build a linked list from a Python list.&quot;&quot;&quot;
+    dummy = ListNode(0)
+    curr = dummy
+    for v in vals:
+        curr.next = ListNode(v)
+        curr = curr.next
+    return dummy.next
+
+def to_python_list(head):
+    &quot;&quot;&quot;Helper: convert linked list back to Python list for easy assertion.&quot;&quot;&quot;
+    result = []
+    while head:
+        result.append(head.val)
+        head = head.next
+    return result
+
+if __name__ == &quot;__main__&quot;:
+    # Test case 1: standard case
+    lists = [
+        build_list([1, 4, 5]),
+        build_list([1, 3, 4]),
+        build_list([2, 6]),
+    ]
+    result = merge_k_lists(lists)
+    assert to_python_list(result) == [1, 1, 2, 3, 4, 4, 5, 6]
+    print(&quot;Test 1 passed:&quot;, to_python_list(result))
+    
+    # Test case 2: empty input
+    assert merge_k_lists([]) is None
+    print(&quot;Test 2 passed: empty input returns None&quot;)
+    
+    # Test case 3: single empty list
+    assert merge_k_lists([None]) is None
+    print(&quot;Test 3 passed: [None] returns None&quot;)
+    
+    # Test case 4: single list
+    single = [build_list([1, 2, 3])]
+    result = merge_k_lists(single)
+    assert to_python_list(result) == [1, 2, 3]
+    print(&quot;Test 4 passed:&quot;, to_python_list(result))
+</code></pre>
+
+<hr/>
+
+<h3>Approach 4: Divide &amp; Conquer — 分治法</h3>
+
+<p><strong>中文：</strong> 和归并排序一样，把 K 个链表分成两组，各自递归合并，再合并两组的结果。时间复杂度和堆相同，但空间复杂度更好（只有 O(log K) 的递归栈）。</p>
+
+<pre><code>
+def merge_k_divide_conquer(lists: List[Optional[ListNode]]) -&gt; Optional[ListNode]:
+    &quot;&quot;&quot;
+    Divide &amp; conquer — like merge sort on lists.
+    Time: O(N log K)  Space: O(log K) recursion stack
+    
+    Round 1: merge pairs  [0+1, 2+3, 4+5, ...]  → K/2 lists
+    Round 2: merge pairs  [0+1, 2+3, ...]        → K/4 lists
+    ...
+    log2(K) rounds total, each round processes N nodes → O(N log K)
+    &quot;&quot;&quot;
+    if not lists:
+        return None
+    
+    def helper(left: int, right: int) -&gt; Optional[ListNode]:
+        if left == right:
+            return lists[left]         # Base case: single list
+        if left + 1 == right:
+            return merge_two(lists[left], lists[right])  # Base: merge pair
+        
+        mid = (left + right) // 2
+        l = helper(left, mid)          # Recurse on left half
+        r = helper(mid + 1, right)     # Recurse on right half
+        return merge_two(l, r)         # Merge results
+    
+    return helper(0, len(lists) - 1)
+</code></pre>
+
+<hr/>
+
+<h3>代码执行追踪 / Execution Trace (Min-Heap)</h3>
+
+<p>Input: <code>[[1,4,5], [1,3,4], [2,6]]</code></p>
+
+<pre><code>
+Initial heap: [(1,0,→1), (1,1,→1), (2,2,→2)]
+
+Step 1: pop (1,0,node1) → result: [1]  push (4,0,→4)
+  Heap: [(1,1,→1), (2,2,→2), (4,0,→4)]
+
+Step 2: pop (1,1,node1) → result: [1,1]  push (3,1,→3)
+  Heap: [(2,2,→2), (3,1,→3), (4,0,→4)]
+
+Step 3: pop (2,2,node2) → result: [1,1,2]  push (6,2,→6)
+  Heap: [(3,1,→3), (4,0,→4), (6,2,→6)]
+
+Step 4: pop (3,1,node3) → result: [1,1,2,3]  push (4,1,→4)
+  Heap: [(4,0,→4), (4,1,→4), (6,2,→6)]
+
+Step 5: pop (4,0,node4) → result: [1,1,2,3,4]  push (5,0,→5)
+  Heap: [(4,1,→4), (5,0,→5), (6,2,→6)]
+
+Step 6: pop (4,1,node4) → result: [1,1,2,3,4,4]  (no next)
+  Heap: [(5,0,→5), (6,2,→6)]
+
+Step 7: pop (5,0,node5) → result: [1,1,2,3,4,4,5]  (no next)
+  Heap: [(6,2,→6)]
+
+Step 8: pop (6,2,node6) → result: [1,1,2,3,4,4,5,6]  (no next)
+  Heap: []
+
+Final: 1→1→2→3→4→4→5→6 ✓
+</code></pre>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>1. <strong>空输入 <code>lists = []</code></strong> → 直接返回 <code>None</code>。忘记这个会导致堆初始化空循环或越界。</p>
+
+<p>2. <strong><code>lists</code> 中有 <code>None</code> 元素</strong> → 初始化堆时跳过 <code>None</code>（<code>if node:</code> 保护）。常见错误：直接 push None。</p>
+
+<p>3. <strong>重复值</strong> → Python 的 <code>heapq</code> 比较元组时，如果第一个元素相等会比较第二个。<code>(val, i, node)</code> 中 <code>i</code> 是唯一的，所以不会尝试比较 <code>ListNode</code> 对象（<code>ListNode</code> 没有实现 <code>__lt__</code>，会报 <code>TypeError</code>）。<strong>这是最经典的面试 bug！</strong></p>
+
+<p>4. <strong>K = 1</strong> → 直接返回该链表，代码应该自然处理。</p>
+
+<p>5. <strong>所有链表只有一个节点</strong> → 堆操作正常，只是每次 push 后 <code>node.next</code> 为 None，不会再 push。</p>
+
+<p><strong>English:</strong></p>
+
+<p>1. <strong>Empty input</strong> → guard at start, return <code>None</code>.</p>
+
+<p>2. <strong><code>None</code> nodes in <code>lists</code></strong> → skip with <code>if node:</code> during init; don&#x27;t push <code>None</code> to heap.</p>
+
+<p>3. <strong>Duplicate values</strong> → <strong>this is the most common bug</strong>: you <em>must</em> use <code>(val, i, node)</code> not <code>(val, node)</code>. Python will try to compare <code>ListNode</code> objects as a tiebreaker when values are equal, raising <code>TypeError: &#x27;&lt;&#x27; not supported between instances of &#x27;ListNode&#x27; and &#x27;ListNode&#x27;</code>. The index <code>i</code> breaks ties safely.</p>
+
+<p>4. <strong>Single list</strong> → handled naturally, no special case needed.</p>
+
+<p>5. <strong>Very large K with short lists</strong> → heap overhead dominates; divide &amp; conquer may be more cache-friendly in practice.</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>这个模式在生产系统中无处不在：</p>
+
+<p>1. <strong>日志聚合 (Log Aggregation):</strong> Elasticsearch、Splunk 在合并来自多个分片的有序搜索结果时，底层就是 K-way merge。每个分片返回按分数排序的结果，merge 出全局 top-K。</p>
+
+<p>2. <strong>数据库外排序 (External Sort):</strong> MySQL/PostgreSQL 在内存不够时，会把数据分成 K 个已排序的&quot;run&quot;写到磁盘，最终用 K-way merge 合并。这就是 <code>SORT</code> 操作慢的本质原因之一。</p>
+
+<p>3. <strong>时间序列数据库 (Time-Series DB):</strong> InfluxDB、Prometheus 在查询跨多个时间分区的数据时，需要 merge K 个按时间戳排序的序列——完全相同的问题。</p>
+
+<p>4. <strong>流处理 (Stream Processing):</strong> Kafka consumer 从多个 partition 读取消息，如果需要全局有序处理，底层也是 K-way merge。</p>
+
+<p><strong>English:</strong></p>
+
+<p>This exact pattern appears constantly in production:</p>
+
+<p>1. <strong>Log aggregation:</strong> Elasticsearch merges per-shard sorted results via K-way merge to produce global top-K hits.</p>
+
+<p>2. <strong>External sort:</strong> When DB sort operations spill to disk, K sorted &quot;runs&quot; are merged back — this is the root cause of slow ORDER BY on large tables.</p>
+
+<p>3. <strong>Time-series DBs:</strong> InfluxDB and Prometheus merge K time-ordered segments when querying across partitions.</p>
+
+<p>4. <strong>Stream processing:</strong> Global ordering across Kafka partitions requires K-way merge of per-partition ordered streams.</p>
+
+<p>The key abstraction: <strong>anytime you have K pre-sorted streams and need one globally sorted output, min-heap K-way merge is your tool</strong>.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p>&gt; 以下是面试官最常追问的 5 个问题，每题附简短答案。/ These are the 5 most common follow-up questions with brief answers.</p>
+
+<hr/>
+
+<p><strong>Q1: 你为什么在堆里存 <code>(val, i, node)</code> 而不是 <code>(val, node)</code>？</strong></p>
+<p><strong>Why store <code>(val, i, node)</code> and not <code>(val, node)</code>?</strong></p>
+
+<p><strong>A:</strong> Python&#x27;s tuple comparison is lexicographic. When two <code>val</code>s are equal, Python tries to compare the next element. <code>ListNode</code> doesn&#x27;t implement <code>__lt__</code>, so it raises <code>TypeError</code>. The unique index <code>i</code> ensures the comparison stops there and never reaches the node object.</p>
+
+<hr/>
+
+<p><strong>Q2: 能不能不用 dummy head，直接操作 <code>curr</code>？</strong></p>
+<p><strong>Can you avoid the dummy head node?</strong></p>
+
+<p><strong>A:</strong> Technically yes, but it requires special-casing the first node (check if <code>curr</code> is None before assigning <code>curr.next</code>). The dummy head pattern eliminates that branch and is idiomatic. In interviews, mentioning this tradeoff shows maturity.</p>
+
+<hr/>
+
+<p><strong>Q3: 堆方案和分治方案，你在生产中更倾向哪个？</strong></p>
+<p><strong>Heap vs divide &amp; conquer — which do you prefer in production?</strong></p>
+
+<p><strong>A:</strong> Same asymptotic complexity. Heap is simpler to implement iteratively and uses O(K) space. Divide &amp; conquer uses O(log K) stack space and may have better cache behavior for large K. In practice, I&#x27;d use the heap for clarity and D&amp;C if K is enormous and memory is tight. The real answer: measure it.</p>
+
+<hr/>
+
+<p><strong>Q4: 如果链表本身是无限流（比如从 Kafka 实时消费），怎么处理？</strong></p>
+<p><strong>What if the lists are infinite streams (e.g., Kafka partitions)?</strong></p>
+
+<p><strong>A:</strong> The heap approach generalizes perfectly — you never need to hold all N nodes in memory. Just hold K nodes (one per stream) in the heap. As each is consumed, fetch the next element from that stream. This is exactly how stream processors implement ordered merge. Space remains O(K) regardless of stream length.</p>
+
+<hr/>
+
+<p><strong>Q5: 如果要合并 K 个降序链表怎么改？</strong></p>
+<p><strong>How would you handle K lists sorted in descending order?</strong></p>
+
+<p><strong>A:</strong> Two options: (1) Use a max-heap by negating values <code>heapq.heappush(heap, (-node.val, i, node))</code>. (2) Reverse each list first (O(N) total), merge ascending, reverse result. Option 1 is cleaner. In an interview, mention both and note that Python&#x27;s <code>heapq</code> is always a min-heap, so negation is the idiomatic workaround.</p>
+
+<hr/>
+
+<h2>总结 / Summary</h2>
+
+<p>| 维度 | 要点 |</p>
+<p>|---|---|</p>
+<p>| 核心思路 | Min-heap 维护 K 个候选头节点，每次取最小 |</p>
+<p>| 时间复杂度 | O(N log K)，N = 总节点数 |</p>
+<p>| 空间复杂度 | O(K) heap |</p>
+<p>| 最常见 bug | <code>(val, node)</code> 在 val 相同时触发 TypeError；应用 <code>(val, i, node)</code> |</p>
+<p>| 进阶变体 | 分治法 O(log K) 空间；无限流；降序处理 |</p>
+<p>| 生产场景 | 日志聚合、外排序、时序数据库、流处理 |</p>
+
+<p><strong>一句话记住：</strong> 堆让你在 O(log K) 时间内找到 K 个已知候选中的最小值——这是 K-way merge 一切变体的核心。</p>
+
+<p><strong>One-liner:</strong> The heap gives you O(log K) minimum extraction among K known candidates — that&#x27;s the core of every K-way merge variant you&#x27;ll ever see.</p>
+
+<hr/>
+<h1>Review</h1>
+<h2>🔄 复习日 Day 55 / Review Day 55</h2>
+
+<p>📊 NeetCode: 46/150 · SysDesign: 45/40 · Behavioral: 45/40 · Frontend: 37/50 · AI: 22/30</p>
+<p>🔥 54-day streak!</p>
+
+<p>今天是复习日！回顾 Day 51–54 的内容。</p>
+<p>Today is a review day! Let&#x27;s revisit Days 51–54.</p>
+
+<hr/>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+
+<hr/>
+
+<p><strong>Q1: [🏗️ System Design]</strong> From Day 51 — Distributed File System (HDFS/GFS)</p>
+
+<p>HDFS 把一个大文件分成多个 chunk 存在不同 DataNode 上。NameNode 挂掉了，会发生什么？Google GFS 是怎么处理这个单点故障问题的？</p>
+
+<p>HDFS splits files into chunks across DataNodes. The NameNode goes down — what happens? How does GFS address this single point of failure?</p>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>NameNode 是 HDFS 的元数据中心，挂掉后整个集群无法读写（因为没人知道数据在哪）。</strong></p>
+
+<p>- <strong>HDFS 方案:</strong> Secondary NameNode 定期做 checkpoint，但它不是热备，故障恢复需要时间。HDFS HA 方案用两个 NameNode (Active/Standby) + ZooKeeper 自动切换。</p>
+<p>- <strong>GFS 方案:</strong> GFS 也是单 Master，但通过 operation log + checkpoint 到多副本持久化来减少恢复时间；同时 chunk lease 机制允许 chunk server 之间直接传输数据，降低 Master 压力。</p>
+<p>- <strong>核心洞察:</strong> 元数据服务的高可用比数据服务更难，因为元数据必须强一致。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [⚙️ Algorithms]</strong> From Day 53 — Reverse Nodes in K-Group</p>
+
+<p>给你一个链表和整数 K，每 K 个节点翻转一组，不足 K 个的保持原样。这道题和&quot;翻转整个链表&quot;有什么关键区别？空间复杂度能做到 O(1) 吗？</p>
+
+<p>Given a linked list and integer K, reverse every K-group; leave the tail as-is if fewer than K nodes remain. What&#x27;s the key difference from reversing the whole list? Can you achieve O(1) space?</p>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>关键区别：需要先&quot;看前方&quot;确认剩余节点 ≥ K 才翻转，否则保留。</strong></p>
+
+<pre><code>
+核心步骤：
+1. 先检查从当前位置往后是否还有 K 个节点（不够就停止）
+2. 翻转这 K 个节点（标准链表翻转）
+3. 将翻转后的头接到上一组的尾部
+4. 将这组的尾部（原头部）连到下一组
+5. 前进到下一组起点，重复
+</code></pre>
+
+<p><strong>空间复杂度:</strong> 迭代实现可以做到 O(1)；递归实现是 O(N/K) 栈空间。面试中首选迭代。</p>
+
+<p><strong>最容易出 bug 的地方:</strong> 翻转前忘记断开与后续节点的连接，导致成环。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [🐍 Python Craft]</strong> From Day 54 — GIL Deep Dive</p>
+
+<p>Python 的 GIL 到底保护的是什么？为什么 I/O 密集型任务用多线程有效，而 CPU 密集型任务无效？什么时候应该用 multiprocessing 代替 threading？</p>
+
+<p>What exactly does Python&#x27;s GIL protect? Why does multi-threading work for I/O-bound but not CPU-bound tasks? When should you reach for multiprocessing instead?</p>
+
+<p>&lt;details&gt;</p>
+<p>&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>GIL (Global Interpreter Lock) 保护的是 CPython 解释器内部的引用计数机制，防止多线程同时修改对象引用计数导致内存损坏。</strong></p>
+
+<p>- <strong>I/O 密集型有效的原因:</strong> 线程在等待 I/O（网络、磁盘）时会主动释放 GIL，让其他线程运行。所以 10 个线程各自等待网络请求，总体吞吐量是单线程的 ~10x。</p>
+<p>- <strong>CPU 密集型无效的原因:</strong> 纯计算不需要等待外部，GIL 每隔 ~5ms 才强制切换一次。多线程 Python 在 CPU 密集任务上实际上是串行的，切换开销反而更慢。</p>
+<p>- <strong>什么时候用 multiprocessing:</strong> 需要并行 CPU 计算时——每个进程有独立的 GIL，可以真正并行。代价是进程间通信开销 + 内存不共享（需要序列化）。</p>
+<p>- <strong>实用规则:</strong> I/O 密集 → threading 或 asyncio；CPU 密集 → multiprocessing 或 C 扩展。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>🎯 本周主题 / This Week&#x27;s Theme</h3>
+
+<p>Days 51–54 深入 <strong>Expert 阶段</strong>的核心挑战：分布式系统的边界情况（多区域、分布式文件系统）、链表的高级操作（K 组翻转、合并 K 个链表）、以及 Python 并发的底层原理。</p>
+
+<p>这些话题的共同点是：<strong>答案不只是&quot;怎么做&quot;，而是&quot;为什么这样做，有什么代价&quot;</strong>——这正是 Senior/Staff 面试的核心考查维度。</p>
+
+<p>Days 51–54 pushed deep into <strong>Expert-level</strong> territory: distributed systems edge cases (multi-region, distributed file systems), advanced linked list ops (K-group reversal, K-way merge), and Python concurrency internals. The common thread: <strong>the answer isn&#x27;t just &quot;how&quot; but &quot;why this approach, and at what cost&quot;</strong> — that&#x27;s the Senior/Staff interview lens.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-29</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
