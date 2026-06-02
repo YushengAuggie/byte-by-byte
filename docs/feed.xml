@@ -5,8 +5,1380 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 31 May 2026 15:08:44 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 02 Jun 2026 15:55:55 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-02</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-02</guid>
+      <pubDate>Tue, 02 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 47</h2>
+<p><strong>设计地理空间系统 / Design a Geospatial System (Yelp / Nearby Friends)</strong></p>
+<p><em>2026-06-02 | Expert Phase</em></p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<p>想象你在设计 Yelp 的&quot;附近餐厅&quot;功能，或者 Facebook 的&quot;附近朋友&quot;。用户打开 App，瞬间看到 5km 范围内的所有餐厅——背后是什么魔法？</p>
+
+<p><em>Imagine you&#x27;re building Yelp&#x27;s &quot;nearby restaurants&quot; feature or Facebook&#x27;s &quot;Nearby Friends.&quot; The user opens the app and instantly sees all restaurants within 5km. What&#x27;s the magic behind it?</em></p>
+
+<hr/>
+
+<h2>架构图 / Architecture</h2>
+
+<pre><code>
+Client (Mobile)
+       │
+       ▼
+  API Gateway
+       │
+  ┌────┴────┐
+  │ Location │
+  │ Service │
+  └────┬────┘
+       │ Query: (lat, lng, radius)
+       │
+  ┌────▼──────────────────────────┐
+  │        Geo Index Layer        │
+  │                               │
+  │  ┌──────────┐  ┌───────────┐  │
+  │  │ Geohash  │  │  Quadtree │  │
+  │  │  Index   │  │  (memory) │  │
+  │  └────┬─────┘  └─────┬─────┘  │
+  │       └──────┬────────┘        │
+  │          Redis / PostGIS       │
+  └────────────────────────────────┘
+       │
+  ┌────▼────┐
+  │  Place   │  ← metadata (name, rating, hours)
+  │    DB    │
+  │(Postgres)│
+  └──────────┘
+
+[Nearby Friends variant]
+  User Location → Write path:
+  Client → Location Service → Redis GeoSet (GEOADD)
+  
+  Read path:
+  Client → Location Service → GEORADIUS → User IDs → Profile Service
+</code></pre>
+
+<hr/>
+
+<h2>核心算法 / Core Algorithms</h2>
+
+<h3>方案 1：Geohash（静态 POI，如 Yelp）</h3>
+<p>- 将地球表面编码成层级网格字符串：<code>9q8yy</code> → <code>9q8yy4</code> → <code>9q8yy4j</code></p>
+<p>- 精度 6 = ~1.2km 格子；精度 7 = ~150m</p>
+<p>- <strong>查询</strong>：取当前 geohash + 8 个邻格，IN 查询</p>
+<p>- <strong>优点</strong>：可存 DB/Redis，水平扩展容易</p>
+<p>- <strong>坑</strong>：边界问题！两个相邻点可能 geohash 完全不同</p>
+
+<pre><code>
+# Using geohash2 library
+import geohash2
+
+def nearby_places(lat, lng, radius_km, precision=6):
+    center = geohash2.encode(lat, lng, precision)
+    neighbors = geohash2.neighbors(center)  # 8 neighbors
+    search_cells = [center] + neighbors
+    
+    # Query DB: SELECT * FROM places WHERE geohash LIKE ANY(search_cells)
+    return search_cells
+</code></pre>
+
+<h3>方案 2：Redis GEO（实时位置，如 Nearby Friends）</h3>
+<pre><code>
+# Write: user updates location
+GEOADD user_locations 116.3974 39.9093 &quot;user:1234&quot;
+
+# Read: find users within 5km
+GEORADIUS user_locations 116.3974 39.9093 5 km WITHCOORD COUNT 100
+</code></pre>
+<p>Redis 底层用 <strong>52-bit Geohash</strong> 存储，O(N+log(M)) 查询复杂度。</p>
+
+<h3>方案 3：Quadtree（高密度区域）</h3>
+<p>- 递归四分空间，叶节点存 POI 列表</p>
+<p>- 适合密度不均匀（城区 vs 郊区）</p>
+<p>- 通常 in-memory，需要 periodic rebuild</p>
+
+<hr/>
+
+<h2>关键权衡 / Key Tradeoffs</h2>
+
+<p>| 维度 | Geohash + DB | Redis GEORADIUS | Quadtree |</p>
+<p>|------|-------------|----------------|----------|</p>
+<p>| 适合场景 | 静态 POI | 实时位置 | 复杂多边形 |</p>
+<p>| 写频率 | 低 | 高（每隔 30s 更新） | 低 |</p>
+<p>| 精度控制 | 通过精度位数 | 半径参数 | 递归深度 |</p>
+<p>| 扩展性 | 水平分片 | Redis Cluster | 难分片 |</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>直接用经纬度算距离</strong>：<code>sqrt((lat1-lat2)² + (lng1-lng2)²)</code> — 经纬度不是欧氏空间，赤道 1° ≠ 极地 1°</p>
+<p>✅ 用 <strong>Haversine 公式</strong> 或数据库内置 ST_Distance</p>
+
+<p>❌ <strong>不考虑边界情况</strong>：geohash 精度 6 的格子，用户在边缘可能漏掉 50m 外的餐厅</p>
+<p>✅ 查询中心格子 + 8 个邻格</p>
+
+<p>❌ <strong>Nearby Friends 每次全量查询所有用户</strong></p>
+<p>✅ 只查询 <strong>active users</strong>（最近 5min 有位置更新的）+ Redis TTL 自动清理离线用户</p>
+
+<p>❌ <strong>实时位置写入过于频繁</strong></p>
+<p>✅ 客户端：移动超过 50m 才上报；后端：写 Redis 而非 DB（DB 异步存历史轨迹）</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Geohash Wikipedia](https://en.wikipedia.org/wiki/Geohash)</p>
+<p>- [Redis GEO Commands](https://redis.io/docs/data-types/geo/)</p>
+<p>- [System Design: Proximity Service — Alex Xu](https://bytebytego.com/courses/system-design-interview/proximity-service)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>把城市地图分成很多个小格子，给每个格子取一个名字（geohash）。找附近餐厅就是：先找你所在的格子和旁边 8 个格子，然后在这 9 个格子里找餐厅——比扫描整张地图快多了！</p>
+
+<p><em>Imagine dividing a city map into little squares, each with a name (geohash). Finding nearby restaurants means: look in your square and the 8 squares around it. Much faster than checking the whole map!</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 48</h2>
+<p><strong>#543 Diameter of Binary Tree (Easy) — Trees</strong></p>
+<p><em>2026-06-02 | Expert Phase</em></p>
+
+<hr/>
+
+<h2>🧩 树遍历模式 (3/15) — 延续上一次的模版</h2>
+
+<p>接续第 1 题（Invert Binary Tree）和第 2 题（Maximum Depth），今天的 <strong>Diameter</strong> 是模版的第一个&quot;变奏&quot;——DFS 返回值不再是节点值，而是<strong>路径长度</strong>，但核心骨架完全相同。</p>
+
+<p><em>Building on Invert Binary Tree (Day 1 of block) and Maximum Depth (Day 2), today&#x27;s Diameter is the first &quot;variation&quot; — the DFS return value is no longer the node value but a path length. The skeleton is identical.</em></p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 [LeetCode #543](https://leetcode.com/problems/diameter-of-binary-tree/) 🟢 Easy</p>
+<p>📹 [NeetCode Video](https://neetcode.io/problems/binary-tree-diameter)</p>
+
+<p>给定一棵二叉树的根节点，返回这棵树的<strong>直径</strong>（任意两节点之间最长路径的边数）。路径<strong>不一定</strong>经过根节点。</p>
+
+<p><em>Given the root of a binary tree, return the length of the diameter — the longest path between any two nodes (measured in edges). The path may or may not pass through the root.</em></p>
+
+<hr/>
+
+<h2>🌍 现实类比 / Real-World Analogy</h2>
+
+<p>想象一个公司的汇报链（树形结构）。直径 = 公司里距离最远的两名员工之间需要经过多少层级。可能路径是：前端工程师 → 前端 Lead → CTO → 后端 Lead → 数据库工程师。</p>
+
+<p><em>Think of a company org chart. Diameter = the maximum number of levels between any two employees. The longest path might go: Frontend Dev → Frontend Lead → CTO → Backend Lead → DB Engineer.</em></p>
+
+<hr/>
+
+<h2>💡 映射到模版 / Mapping to the Template</h2>
+
+<pre><code>
+# General Tree DFS Template:
+def dfs(node):
+    if not node: return BASE_CASE
+    left = dfs(node.left)
+    right = dfs(node.right)
+    return COMBINE(node.val, left, right)
+</code></pre>
+
+<p>对于 Diameter 问题：</p>
+<p>- <code>BASE_CASE</code> = <code>0</code>（空节点贡献 0 条边）</p>
+<p>- <code>dfs(node)</code> 返回：从当前节点往下最多能延伸多少条边（= depth）</p>
+<p>- <code>COMBINE</code>：<strong>当前节点的直径候选</strong> = <code>left + right</code>，用 nonlocal 变量 <code>res</code> 收集全局最大值</p>
+<p>- 最终 <code>return max(left, right) + 1</code>（向父节点报告深度）</p>
+
+<p><strong>关键洞察 / Key Insight</strong>：<code>dfs</code> 的返回值（深度）和我们要求的答案（直径）是<strong>不同概念</strong>！用一个外部变量 <code>res</code> 在每个节点&quot;路过时&quot;更新最大直径。</p>
+
+<hr/>
+
+<h2>Python 解法 / Python Solution</h2>
+
+<pre><code>
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def diameterOfBinaryTree(root: Optional[TreeNode]) -&gt; int:
+    res = 0  # Track the global maximum diameter
+    
+    def dfs(node) -&gt; int:
+        nonlocal res
+        if not node:
+            return 0          # Base case: empty node has depth 0
+        
+        left = dfs(node.left)   # Max depth going left
+        right = dfs(node.right) # Max depth going right
+        
+        # At this node, the diameter candidate = left + right edges
+        res = max(res, left + right)
+        
+        # Return depth (for parent&#x27;s calculation)
+        return 1 + max(left, right)
+    
+    dfs(root)
+    return res
+</code></pre>
+
+<h3>执行追踪 / Trace</h3>
+<pre><code>
+Tree:   1
+       / \
+      2   3
+     / \
+    4   5
+
+dfs(4) → return 1
+dfs(5) → return 1
+dfs(2): left=1, right=1 → res = max(0, 1+1) = 2, return 2
+dfs(3) → return 1
+dfs(1): left=2, right=1 → res = max(2, 2+1) = 3, return 3
+
+Answer: 3  (path: 4 → 2 → 1 → 3)
+</code></pre>
+
+<h3>复杂度 / Complexity</h3>
+<p>- <strong>Time</strong>: O(n) — visit every node once</p>
+<p>- <strong>Space</strong>: O(h) — recursion stack, h = tree height</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p>同一 Trees 模版块中的变体规律：</p>
+
+<p>| 问题 | dfs 返回值 | 全局变量 | 返回语义 |</p>
+<p>|------|-----------|---------|---------|</p>
+<p>| #104 Max Depth | 无需 | 无 | 深度 |</p>
+<p>| <strong>#543 Diameter</strong> | 深度 | <code>res</code>(直径) | 深度 |</p>
+<p>| #110 Balanced Tree (下一题) | 深度/-1 | 无 | 深度或-1标记失衡 |</p>
+<p>| #124 Max Path Sum (Hard) | 单侧最大和 | <code>res</code>(路径和) | 单侧最大和 |</p>
+
+<p><strong>规律</strong>：当答案是&quot;跨越某节点的左右子树&quot;时，用 nonlocal 变量收集；返回值只向父汇报单侧信息。</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+<pre><code>
+{&quot;question&quot;:&quot;In diameterOfBinaryTree, what does the dfs function RETURN vs what goes into &#x27;res&#x27;?&quot;,&quot;options&quot;:[&quot;Both return the diameter&quot;,&quot;dfs returns depth; res tracks max(left+right)&quot;,&quot;dfs returns diameter; res tracks depth&quot;,&quot;dfs returns node count; res tracks edge count&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [LeetCode #543 Official](https://leetcode.com/problems/diameter-of-binary-tree/editorial/)</p>
+<p>- [NeetCode Trees Playlist](https://neetcode.io/courses/dsa-for-beginners/27)</p>
+<p>- [Visualgo Binary Tree](https://visualgo.net/en/bst)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>树的直径就是树里最长的一条路。聪明的做法是：每到一个节点，就看左边最深有多深、右边最深有多深，两个加起来就是经过这个节点的最长路。记下所有节点的&quot;最长路&quot;里面最大的那个。</p>
+
+<p><em>The diameter is the longest path in the tree. The trick: at each node, check how deep it goes left and right, add them together (that&#x27;s the path through this node), and track the maximum across all nodes.</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 47</h2>
+<p><strong>&quot;Tell me about a time you had to balance shipping fast vs. doing it right&quot;</strong></p>
+<p><em>2026-06-02 | Expert Phase | Category: Decision Making</em></p>
+
+<hr/>
+
+<h2>为什么面试官问这个 / Why This Question</h2>
+
+<p>这是 Senior/Staff 工程师面试的高频题。面试官想知道：你是否理解<strong>技术债务的本质是时间借贷</strong>，以及你如何在商业压力和工程质量之间做出有理有据的权衡——而不是无脑选一边。</p>
+
+<p><em>This is a top question for Senior/Staff interviews. The interviewer wants to know: do you understand that tech debt is essentially borrowing time from your future self, and can you make a reasoned tradeoff between business pressure and engineering quality — rather than blindly choosing one side.</em></p>
+
+<hr/>
+
+<h2>STAR 结构拆解 / STAR Breakdown</h2>
+
+<h3>Situation — 设置张力</h3>
+<p>描述一个有<strong>真实压力</strong>的场景：产品 deadline、竞争对手、客户承诺。</p>
+<p>- ✅ &quot;季度末发布，产品已承诺 demo 给客户&quot;</p>
+<p>- ✅ &quot;竞争对手刚上线类似功能，CEO 希望一周内跟上&quot;</p>
+<p>- ❌ 避免&quot;我们有一个功能要做&quot; — 太平淡，没有张力</p>
+
+<h3>Task — 你的角色和决策权</h3>
+<p>明确说明<strong>为什么是你</strong>来做这个决定。</p>
+<p>- &quot;我是负责这个模块的 Tech Lead&quot;</p>
+<p>- &quot;PM 来找我，希望我评估风险&quot;</p>
+
+<h3>Action — 这是核心！</h3>
+<p>这部分需要展示<strong>结构化思考</strong>，不是感性选择：</p>
+
+<p><strong>框架 / Framework: Risk-Weighted Decision</strong></p>
+
+<pre><code>
+1. 量化风险
+   - 如果&quot;快&quot;上线：有哪些具体技术风险？发生概率？影响范围？
+   - 例：没有限流 → 流量高峰宕机 (P30 likelihood, P1 impact)
+
+2. 量化收益
+   - 晚一周上线的业务损失？（客户流失？竞争劣势？）
+
+3. 找折中方案（往往存在！）
+   - 先上线核心路径（happy path）+ 降级策略
+   - 做&quot;足够好&quot;的方案，同时立即创建 tech debt ticket
+   - 设置 kill switch / feature flag 以便快速回滚
+
+4. 对齐利益相关方
+   - 明确告知 PM/stakeholder：我们在借什么债，还债计划是什么
+</code></pre>
+
+<h3>Result — 双维度结果</h3>
+<p>不只说&quot;成功上线&quot;，要说明：</p>
+<p>- 业务结果：准时交付，满足了什么</p>
+<p>- 工程结果：后续如何还了技术债</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good Answers</h2>
+
+<p><strong>❌ Bad:</strong></p>
+<p>&gt; &quot;我们有时间压力，所以我选择了快速上线，但后来有一些 bug，我们就修了。&quot;</p>
+
+<p>问题：没有框架，没有权衡，没有主动性，结果模糊。</p>
+
+<p><strong>✅ Good:</strong></p>
+<p>&gt; &quot;Q3 末，我们承诺给大客户演示一个实时协作功能。距演示只有 9 天，但完整实现需要 3 周。</p>
+<p>&gt;</p>
+<p>&gt; 我做了一个风险矩阵：完整方案包括 OT（Operational Transformation）算法处理冲突，但 demo 场景是 2 人同时编辑。我评估了最高并发冲突率低于 5%，且 demo 环境可控。</p>
+<p>&gt;</p>
+<p>&gt; 我的决策：用 <strong>last-write-wins</strong> 临时替代 OT，加 feature flag 隔离，同时创建 Sprint+2 的 tech debt ticket，并在内部 runbook 里标注这个模块不能在正式 GA 前开放。</p>
+<p>&gt;</p>
+<p>&gt; 我主动向 PM 和 Eng Manager 说明了这个 tradeoff，他们知情并同意。Demo 顺利，客户签约。3 周后我们完整实现了 OT，并做了 A/B 测试验证。&quot;</p>
+
+<hr/>
+
+<h2>Senior / Staff 加分项</h2>
+
+<p>- <strong>主动管理 stakeholder 预期</strong>：别等他们来问，主动说明&quot;我们在借技术债&quot;</p>
+<p>- <strong>有还债计划</strong>：立即创建 ticket，设置 Sprint N+X 的时间盒</p>
+<p>- <strong>量化风险</strong>：说 &quot;P30/P1&quot; 而不是 &quot;can happen&quot;</p>
+<p>- <strong>知道什么时候必须说&quot;不&quot;</strong>：如果风险是数据丢失、安全漏洞、合规问题——这条线不能过</p>
+
+<hr/>
+
+<h2>Key Takeaways / 关键要点</h2>
+
+<p>1. <strong>技术债 = 时间借贷，要利滚利</strong>——短期可以，但要知情、要有计划</p>
+<p>2. <strong>找折中方案</strong>：快 vs 好 往往不是二选一，feature flag / degraded mode 是你的朋友</p>
+<p>3. <strong>主动沟通</strong>：让团队和 stakeholder 知道你在做什么权衡</p>
+<p>4. <strong>关键底线</strong>：安全、数据完整性、监管合规 — 这些不能为了速度牺牲</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [The Technical Debt Quadrant — Martin Fowler](https://martinfowler.com/bliki/TechnicalDebtQuadrant.html)</p>
+<p>- [Ship It vs. Do It Right — Google SRE Book](https://sre.google/sre-book/table-of-contents/)</p>
+<p>- [STAR Method Guide — interviewing.io](https://interviewing.io/blog/star-method)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>就像用信用卡买东西——你可以先用，但要知道要还，还要付利息。&quot;快速上线&quot;就是刷卡，你得知道刷了多少、什么时候还、利息是多少。不能当作没有账单。</p>
+
+<p><em>It&#x27;s like using a credit card — you can buy now, but you need to know what you owe and have a plan to pay it back. &quot;Ship fast&quot; is swiping the card. Just don&#x27;t pretend the bill doesn&#x27;t exist.</em></p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 10 (Week 3)</h2>
+<p><strong>Observer Pattern — Event Systems</strong></p>
+<p><em>2026-06-02 | Expert Phase | Design Patterns</em></p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<p>你在构建一个监控系统：某个指标超过阈值，需要同时触发 Slack 通知、PagerDuty 报警、写入日志。如果用 if-else 硬编码，每加一个新的通知渠道都要改核心代码——这违反了开闭原则。</p>
+
+<p><em>You&#x27;re building a monitoring system: when a metric exceeds a threshold, you need to trigger Slack, PagerDuty, and logging simultaneously. If you hard-code if-else, every new channel requires touching core logic — violating Open/Closed Principle.</em></p>
+
+<hr/>
+
+<h2>Observer Pattern 核心思路 / Core Idea</h2>
+
+<p><strong>发布者（Subject）</strong> 不知道谁在监听；<strong>订阅者（Observer）</strong> 不需要知道其他订阅者存在。解耦！</p>
+
+<pre><code>
+Subject → notify() → [Observer1, Observer2, Observer3]
+          (broadcasts)
+</code></pre>
+
+<hr/>
+
+<h2>Python 实现 / Implementation</h2>
+
+<h3>方式 1：经典面向对象 / Classic OOP</h3>
+
+<pre><code>
+from abc import ABC, abstractmethod
+from typing import Any
+
+class Observer(ABC):
+    @abstractmethod
+    def update(self, event: str, data: Any) -&gt; None:
+        pass
+
+class EventBus:
+    &quot;&quot;&quot;Simple synchronous event bus.&quot;&quot;&quot;
+    
+    def __init__(self):
+        self._listeners: dict[str, list[Observer]] = {}
+    
+    def subscribe(self, event: str, observer: Observer) -&gt; None:
+        self._listeners.setdefault(event, []).append(observer)
+    
+    def unsubscribe(self, event: str, observer: Observer) -&gt; None:
+        self._listeners.get(event, []).remove(observer)
+    
+    def publish(self, event: str, data: Any = None) -&gt; None:
+        for observer in self._listeners.get(event, []):
+            observer.update(event, data)
+
+# Concrete observers
+class SlackNotifier(Observer):
+    def update(self, event: str, data: Any) -&gt; None:
+        print(f&quot;[Slack] 🔔 {event}: {data}&quot;)
+
+class PagerDutyNotifier(Observer):
+    def update(self, event: str, data: Any) -&gt; None:
+        print(f&quot;[PagerDuty] 🚨 ALERT {event}: {data}&quot;)
+
+class AuditLogger(Observer):
+    def update(self, event: str, data: Any) -&gt; None:
+        print(f&quot;[Log] {event} | {data}&quot;)
+
+# Usage
+bus = EventBus()
+bus.subscribe(&quot;metric.threshold.exceeded&quot;, SlackNotifier())
+bus.subscribe(&quot;metric.threshold.exceeded&quot;, PagerDutyNotifier())
+bus.subscribe(&quot;metric.threshold.exceeded&quot;, AuditLogger())
+
+bus.publish(&quot;metric.threshold.exceeded&quot;, {&quot;metric&quot;: &quot;cpu&quot;, &quot;value&quot;: 95, &quot;threshold&quot;: 90})
+# [Slack] 🔔 metric.threshold.exceeded: {&#x27;metric&#x27;: &#x27;cpu&#x27;, ...}
+# [PagerDuty] 🚨 ALERT ...
+# [Log] ...
+</code></pre>
+
+<h3>方式 2：函数式 / Functional (更 Pythonic)</h3>
+
+<pre><code>
+from collections import defaultdict
+from typing import Callable
+
+class EventEmitter:
+    def __init__(self):
+        self._handlers: dict[str, list[Callable]] = defaultdict(list)
+    
+    def on(self, event: str, handler: Callable) -&gt; None:
+        self._handlers[event].append(handler)
+    
+    def off(self, event: str, handler: Callable) -&gt; None:
+        self._handlers[event].remove(handler)
+    
+    def emit(self, event: str, **kwargs) -&gt; None:
+        for handler in self._handlers[event]:
+            handler(**kwargs)
+
+# Cleaner usage with plain functions
+emitter = EventEmitter()
+
+# Register handlers
+def send_welcome_email(user_id: str, email: str):
+    print(f&quot;Sending welcome email to {email}&quot;)
+
+emitter.on(&quot;user.signup&quot;, send_welcome_email)  # emitter.on(event, handler)
+
+def track_analytics(user_id: str, **kwargs):
+    print(f&quot;Tracking signup for {user_id}&quot;)
+
+emitter.on(&quot;user.signup&quot;, track_analytics)
+emitter.emit(&quot;user.signup&quot;, user_id=&quot;u123&quot;, email=&quot;alice@example.com&quot;)
+</code></pre>
+
+<hr/>
+
+<h2>❌ 常见坑 / Common Mistakes</h2>
+
+<p><strong>❌ 忘记取消订阅导致内存泄漏</strong></p>
+<pre><code>
+# Bad: widget subscribes but never unsubscribes
+class Widget:
+    def __init__(self, bus):
+        bus.subscribe(&quot;resize&quot;, self)  # Widget can&#x27;t be GC&#x27;d!
+
+# Good: implement __del__ or use weakref
+import weakref
+
+class WeakEventBus:
+    def subscribe(self, event, observer):
+        self._listeners.setdefault(event, []).append(weakref.ref(observer))
+</code></pre>
+
+<p><strong>❌ Observer 抛异常导致后续 Observer 不执行</strong></p>
+<pre><code>
+# Good: wrap each handler
+def publish(self, event, data):
+    for observer in self._listeners.get(event, []):
+        try:
+            observer.update(event, data)
+        except Exception as e:
+            logging.error(f&quot;Observer {observer} failed: {e}&quot;)
+</code></pre>
+
+<hr/>
+
+<h2>与 Strategy Pattern 的区别 / vs Strategy</h2>
+
+<p>- <strong>Strategy</strong>：封装<strong>算法</strong>，一次只用一个（换引擎）</p>
+<p>- <strong>Observer</strong>：封装<strong>反应</strong>，一次触发多个（广播）</p>
+
+<hr/>
+
+<h2>实战场景 / Real-World Usage</h2>
+
+<p>| 场景 | 框架实现 |</p>
+<p>|------|---------|</p>
+<p>| Django signals | <code>post_save.connect(handler, sender=MyModel)</code> |</p>
+<p>| Vue 3 reactive | <code>watch(() =&gt; state.count, handler)</code> |</p>
+<p>| Python logging | <code>logger.addHandler(handler)</code> |</p>
+<p>| Node.js EventEmitter | <code>emitter.on(&#x27;data&#x27;, callback)</code> |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Observer Pattern — Refactoring Guru](https://refactoring.guru/design-patterns/observer/python/example)</p>
+<p>- [Django Signals Docs](https://docs.djangoproject.com/en/5.0/topics/signals/)</p>
+<p>- [Python Design Patterns — Brandon Rhodes](https://python-patterns.guide/gang-of-four/observer/)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>观察者模式就像订报纸：你跟报社说&quot;每天送报给我&quot;，报社不用知道你是谁，有新报纸了就送；你也不用每天去问&quot;今天有报纸吗？&quot;。新增或取消订阅互不影响。</p>
+
+<p><em>Observer is like subscribing to a newspaper: you tell the publisher &quot;deliver to me daily,&quot; the publisher doesn&#x27;t need to know you personally, and every new subscriber just gets added to the list. Everyone gets notified automatically, no polling needed.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 57</h2>
+<p><strong>AI 新闻速递 / AI News Roundup</strong></p>
+<p><em>2026-06-02 | Expert Phase</em></p>
+
+<hr/>
+
+<h2>本周 AI 大事 / This Week in AI</h2>
+
+<h3>1. 🧠 Google 宣布 Gemini Spark：24/7 个人 AI 代理</h3>
+
+<p>Google 在 2026 年 I/O 系列活动中宣布了 <strong>Gemini Spark</strong>，定位为一个 24/7 运行的个人 AI 代理，能主动提醒日程、跨应用完成任务，并与 Google Stitch（AI 辅助设计部署工具）协同工作。据报道，这是 Google 向&quot;主动 AI&quot;（agentic AI）战略全面转型的标志性产品。</p>
+
+<p>[Source: buildingcreativemachines.com](https://www.buildingcreativemachines.com/p/ai-and-creativity-monthly-brief-june)</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> 从&quot;问答式 AI&quot;到&quot;主动代理&quot;是 AI 应用的下一个范式。Gemini Spark 与 OpenAI 合并 ChatGPT + Atlas + Codex 的&quot;超级应用&quot;战略直接竞争——两家都在押注 AI 成为你的&quot;数字操作系统&quot;。</p>
+
+<hr/>
+
+<h3>2. 🤖 Anthropic 发布 Claude Opus 4.8</h3>
+
+<p>Anthropic 于 2026 年 6 月初发布 <strong>Claude Opus 4.8</strong>，据报道新增了&quot;effort controls&quot;（控制推理深度）和&quot;dynamic workflows&quot;功能，面向大型 agentic 任务的场景进行了优化。</p>
+
+<p>[Source: aidrivensucess.substack.com](https://aidrivensucess.substack.com/p/ai-weekly-for-leaders-june-1-2026)</p>
+
+<p><strong>技术视角 / Technical Take:</strong> &quot;Effort controls&quot; 本质上是让用户/程序显式控制模型的 chain-of-thought 深度——类比于 GPU 的&quot;功耗模式&quot;。这对需要兼顾成本与质量的 agentic pipeline 极有价值。</p>
+
+<hr/>
+
+<h3>3. ⚖️ Connecticut 通过 AI 责任透明法案</h3>
+
+<p>美国康涅狄格州通过了《人工智能责任与透明度法案》（AI Responsibility and Transparency Act），对聊天机器人、合成媒体等多类 AI 应用设定了针对性要求。与此同时，科罗拉多州则修订缩减了其 2024 年 AI 法案。</p>
+
+<p>[Source: wiley.law](https://www.wiley.law/alert-Connecticut-Enacts-AI-Framework-While-Colorado-Scales-Back-Landmark-AI-Law)</p>
+
+<p><strong>工程师视角 / Engineer&#x27;s Take:</strong> 状态级监管分裂正在加速——美国 50 个州可能最终有 50 套 AI 合规要求。对于构建 AI 产品的工程团队，合规层（compliance layer）设计将成为架构考量，而不只是法务问题。</p>
+
+<hr/>
+
+<h3>4. 🔬 DARPA + NSF 联合启动 AI Forge 项目</h3>
+
+<p>美国 DARPA 和 NSF 联合推出 <strong>AI Forge</strong> 计划，聚焦 AI 可解释性与控制能力的突破，服务国家安全应用。</p>
+
+<p>[Source: darpa.mil](https://www.darpa.mil/news/2026/ai-forge-accelerating-ai-breakthroughs-national-security)</p>
+
+<p><strong>背景 / Context:</strong> 可解释性（Interpretability）一直是 AI 安全的核心难题。DARPA 的参与意味着政府层面开始认真投资&quot;理解黑盒&quot;——这不只是学术问题，而是影响 AI 在高风险决策中部署的关键。</p>
+
+<hr/>
+
+<h2>🔭 趋势观察 / Trend to Watch</h2>
+
+<p>据 Galorath 2026 行业报告：<strong>79% 的组织增加了 AI 投入，但只有 1/4 有明确的 AI 政策</strong>。这个&quot;治理赤字&quot;将是未来 12 个月的巨大风险。工程师需要推动团队建立 AI 使用规范，而不是等着法规来约束。</p>
+
+<p>[Source: eqs-news.com](https://www.eqs-news.com/news/corporate/galoraths-2026-state-of-the-industry-report-finds-79-of-organizations-increased-ai-spending-on-estimation-while-only-1-in-4-have-clear-ai-policies/655d6c8c-a3df-4ef7-a41c-39cb52dddf98_en)</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Google Gemini Spark Announcement Context](https://www.buildingcreativemachines.com/p/ai-and-creativity-monthly-brief-june)</p>
+<p>- [Claude Opus 4.8 &amp; AI Weekly](https://aidrivensucess.substack.com/p/ai-weekly-for-leaders-june-1-2026)</p>
+<p>- [Connecticut AI Act](https://www.wiley.law/alert-Connecticut-Enacts-AI-Framework-While-Colorado-Scales-Back-Landmark-AI-Law)</p>
+<p>- [DARPA AI Forge](https://www.darpa.mil/news/2026/ai-forge-accelerating-ai-breakthroughs-national-security)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>本周 AI 圈：Google 出了一个会主动帮你做事的 AI 助手，Anthropic 升级了 Claude，美国一个州通过了管 AI 的法律，政府还拨款研究怎么让 AI &quot;说清楚自己在想什么&quot;。AI 行业正从&quot;炫技&quot;走向&quot;负责任落地&quot;。</p>
+
+<p><em>This week: Google launched an always-on AI agent, Anthropic upgraded Claude, a US state passed AI rules, and the government funded research into AI explainability. The AI industry is shifting from &quot;look what it can do&quot; to &quot;let&#x27;s do this responsibly.&quot;</em></p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-06-01</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-01</guid>
+      <pubDate>Mon, 01 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>系统设计：设计 A/B 测试平台 / Design an A/B Testing Platform</h2>
+
+<p>&gt; 📅 Day 56 · 🎯 Expert Phase · ⏱️ 3 min read</p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design</h2>
+
+<h3>想象你在设计...</h3>
+
+<p>你是某大型电商的平台工程师。产品经理想同时测试 <strong>10 个不同的按钮颜色</strong>，数据科学家想测试 <strong>新推荐算法</strong>，增长团队想测试 <strong>注册流程</strong>。所有实验都需要统计显著性、样本隔离、实时监控。你怎么设计这个系统？</p>
+
+<p><em>You&#x27;re a platform engineer at a large e-commerce company. Product managers want to test 10 different button colors simultaneously, data scientists want to test a new recommendation algorithm, and the growth team wants to test the registration flow. All experiments need statistical significance, sample isolation, and real-time monitoring. How do you design this system?</em></p>
+
+<hr/>
+
+<h3>核心需求 / Core Requirements</h3>
+
+<p><strong>功能需求 / Functional:</strong></p>
+<p>- 创建/管理实验 (experiment CRUD)</p>
+<p>- 用户分桶 (user bucketing / traffic splitting)</p>
+<p>- 事件追踪 (event tracking &amp; metrics collection)</p>
+<p>- 结果分析 + 统计显著性 (statistical significance)</p>
+<p>- 实验互斥 / 互相影响检测</p>
+
+<p><strong>非功能需求 / Non-functional:</strong></p>
+<p>- 低延迟分桶: &lt; 5ms p99</p>
+<p>- 高吞吐: 1M events/sec</p>
+<p>- 实验隔离: 修改一个不影响另一个</p>
+<p>- 数据一致性: 同一用户永远进同一个桶</p>
+
+<hr/>
+
+<h3>ASCII 架构图</h3>
+
+<pre><code>
+┌──────────────────────────────────────────────────────────┐
+│                     Client (Web/App)                      │
+└────────────────────────┬─────────────────────────────────┘
+                         │  1. GET /assign?userId=xxx&amp;expKey=btn_color
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│              Assignment Service (stateless)              │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │  Hash(userId + salt) % 100 → bucket → variant   │    │
+│  │  Cache: Redis (experiment config TTL=60s)        │    │
+│  └─────────────────────────────────────────────────┘    │
+└──────────┬──────────────────────────┬───────────────────┘
+           │                          │
+    2. Read config               3. Return variant
+           │
+    ┌──────▼──────┐
+    │  Config DB  │  (Postgres — experiments, variants, allocation %)
+    │  + Redis    │  (hot path: cached config)
+    └─────────────┘
+
+                         │  4. User sees variant → clicks
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│              Event Collection Service                    │
+│         Kafka → Flink/Spark → Data Warehouse            │
+│         (ClickHouse / BigQuery for OLAP queries)        │
+└──────────────────────────┬──────────────────────────────┘
+                           │
+                    ┌──────▼───────┐
+                    │ Stats Engine │  (T-test, Chi-squared,
+                    │              │   Bayesian inference)
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │  Dashboard   │  (Real-time p-values,
+                    │  (Grafana)   │   sample sizes, CI)
+                    └──────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>关键设计决策 / Key Design Decisions</h3>
+
+<p>#### 1. 分桶策略 (Bucketing Strategy)</p>
+
+<pre><code>
+def assign_variant(user_id: str, experiment_key: str, variants: list) -&gt; str:
+    # Deterministic: same user always gets same variant
+    # Salt per-experiment prevents correlation between experiments
+    salt = f&quot;{experiment_key}:{user_id}&quot;
+    bucket = int(hashlib.md5(salt.encode()).hexdigest(), 16) % 100
+    
+    # variants = [{&quot;name&quot;: &quot;control&quot;, &quot;weight&quot;: 50}, {&quot;name&quot;: &quot;treatment&quot;, &quot;weight&quot;: 50}]
+    cumulative = 0
+    for variant in variants:
+        cumulative += variant[&quot;weight&quot;]
+        if bucket &lt; cumulative:
+            return variant[&quot;name&quot;]
+    return variants[-1][&quot;name&quot;]  # fallback
+</code></pre>
+
+<p><strong>为什么用 MD5 hash？</strong></p>
+<p>- 均匀分布 (uniform distribution)</p>
+<p>- 确定性：同一 userId 永远同一结果</p>
+<p>- 快速：&lt; 1μs</p>
+
+<p>#### 2. 实验互斥 (Mutual Exclusion)</p>
+
+<pre><code>
+Experiment Layer Architecture:
+┌──────────────────────────────────────────┐
+│  Layer 1: UI Experiments (20% traffic)   │
+│    ├── Exp A: Button Color (50/50)        │
+│    └── Exp B: Font Size (33/33/33)       │
+├──────────────────────────────────────────┤
+│  Layer 2: Algo Experiments (100% traffic)│
+│    └── Exp C: Ranking Algorithm (50/50)  │
+├──────────────────────────────────────────┤
+│  Layer 3: Onboarding (New Users Only)    │
+│    └── Exp D: Signup Flow (50/50)        │
+└──────────────────────────────────────────┘
+</code></pre>
+
+<p>同一 Layer 内互斥；不同 Layer 可正交叠加。<em>(Mutual exclusion within a layer; different layers are orthogonal — user can be in Exp A and Exp C simultaneously without interference.)</em></p>
+
+<p>#### 3. 指标收集 (Metrics Collection)</p>
+
+<p><strong>Guardrail Metrics (护栏指标):</strong> 不能降低的指标 (latency, error rate, revenue)</p>
+<p><strong>Primary Metric:</strong> 实验的核心目标 (CTR, conversion rate)</p>
+<p><strong>Secondary Metrics:</strong> 了解副作用</p>
+
+<hr/>
+
+<h3>为什么这样设计？/ Key Tradeoffs</h3>
+
+<p>| 方案 | 优点 | 缺点 |</p>
+<p>|------|------|------|</p>
+<p>| Client-side assignment | 无网络延迟 | 配置泄露，A/B 不一致 |</p>
+<p>| Server-side (our approach) | 安全，可审计 | 需要 API call |</p>
+<p>| Edge assignment (CDN) | 极低延迟 | 复杂，有限逻辑 |</p>
+
+<p><strong>统计方法:</strong> Frequentist (T-test) vs Bayesian — Bayesian 允许提前停止实验，但需要先验知识。大多数平台两者都提供。</p>
+
+<hr/>
+
+<h3>别踩这个坑 / Common Mistakes</h3>
+
+<p>🚫 <strong>网络效应 (Network Effects):</strong> 社交产品中，用户 A 的行为会影响用户 B，违反实验独立性假设 → 解决：按 cluster/group 分桶而非个人</p>
+
+<p>🚫 <strong>过早停止实验 (Peeking Problem):</strong> 每天看 p-value，看到 p &lt; 0.05 就停 → 造成 false positive → 解决：预先计算样本量，用 Sequential Testing 或 Bonferroni correction</p>
+
+<p>🚫 <strong>新奇效应 (Novelty Effect):</strong> 用户对新设计有短暂兴趣，长期效果未必好 → 解决：运行足够长时间（至少 1-2 周）</p>
+
+<p>🚫 <strong>SRM (Sample Ratio Mismatch):</strong> 分配比例与实际进入比例不符，说明实验实现有 bug → 每次实验开始时做 SRM check</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [Trustworthy Online Controlled Experiments (Kohavi et al.)](https://experimentguide.com/)</p>
+<p>- [Airbnb Experimentation Platform](https://medium.com/airbnb-engineering/experimentation-measurement-at-airbnb-8ee2f5c89bde)</p>
+<p>- [Netflix Experimentation Platform](https://netflixtechblog.com/its-all-a-bout-testing-the-netflix-experimentation-platform-4e1ca458c15b)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象你开了一家冰淇淋店，想知道巧克力口味还是草莓口味更受欢迎。你让单号桌的客人选巧克力，双号桌的客人选草莓，然后数哪边的客人吃得更开心。这就是 A/B 测试！关键是要保证每张桌子的客人是随机分配的。</p>
+
+<p><em>Imagine you run an ice cream shop and want to know if chocolate or strawberry is more popular. You give odd-numbered tables chocolate, even-numbered tables strawberry, then count who&#x27;s happier. That&#x27;s A/B testing! The key is making sure customers are randomly assigned to tables.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>算法：二叉树最大深度 / Maximum Depth of Binary Tree</h2>
+
+<p>&gt; 📅 Day 56 · 💻 LeetCode #104 · 🟢 Easy · Expert Phase</p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms</h2>
+
+<p>🧩 <strong>树遍历模式 (2/15)</strong> — building on the template from Day 55 (Invert Binary Tree)</p>
+
+<p>今天是树遍历 Pattern Block 的第 2 题。上一题 Invert Binary Tree 教会我们：<strong>后序遍历 + 返回处理好的节点</strong>。今天我们换一种返回值语义：<strong>返回数值（深度）而不是节点</strong>。</p>
+
+<p><em>This is problem 2/15 in the Trees pattern block. Yesterday&#x27;s Invert Binary Tree taught us: post-order traversal + return processed node. Today we change the return type: return a number (depth) instead of a node.</em></p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+<p>- 📝 [LeetCode #104](https://leetcode.com/problems/maximum-depth-of-binary-tree/) 🟢 Easy</p>
+<p>- 📹 [NeetCode Video](https://neetcode.io/problems/depth-of-binary-tree)</p>
+
+<hr/>
+
+<h3>现实类比 / Real-World Analogy</h3>
+
+<p>想象你是一个侦察员，要测量一棵树的高度。你的策略：<strong>先让左右两个助手各自测量子树高度，然后取最大值 +1（加上你站的这一层）</strong>。你不需要知道整棵树的结构，只需要递归地信任你的助手。</p>
+
+<p><em>Imagine you&#x27;re a scout measuring a tree&#x27;s height. Your strategy: send left and right assistants to measure sub-tree heights, then take the max + 1 (for your current level). You don&#x27;t need to know the full tree structure — just recursively trust your assistants.</em></p>
+
+<hr/>
+
+<h3>模版映射 / Template Mapping</h3>
+
+<pre><code>
+# 通用模版 / Universal template:
+def dfs(node):
+    if not node: return BASE_CASE
+    left = dfs(node.left)
+    right = dfs(node.right)
+    return COMBINE(node.val, left, right)
+
+# 今天的映射 / Today&#x27;s mapping:
+# BASE_CASE = 0       (空节点深度为0)
+# COMBINE = max(left, right) + 1   (取最大子深度 + 当前层)
+</code></pre>
+
+<hr/>
+
+<h3>Python 解法 / Solution</h3>
+
+<pre><code>
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def maxDepth(root: Optional[TreeNode]) -&gt; int:
+    # Base case: empty tree has depth 0
+    if not root:
+        return 0
+    
+    # Recursively get depth of left and right subtrees
+    left_depth = maxDepth(root.left)
+    right_depth = maxDepth(root.right)
+    
+    # Current depth = max of children + 1 (for current node)
+    return max(left_depth, right_depth) + 1
+
+# Alternative: BFS (level-order) approach
+from collections import deque
+
+def maxDepthBFS(root: Optional[TreeNode]) -&gt; int:
+    if not root:
+        return 0
+    
+    queue = deque([root])
+    depth = 0
+    
+    while queue:
+        depth += 1
+        # Process entire level at once
+        for _ in range(len(queue)):
+            node = queue.popleft()
+            if node.left:
+                queue.append(node.left)
+            if node.right:
+                queue.append(node.right)
+    
+    return depth
+</code></pre>
+
+<hr/>
+
+<h3>执行追踪 / Trace</h3>
+
+<pre><code>
+Tree:       3
+           / \
+          9   20
+             /  \
+            15    7
+
+maxDepth(3):
+  left  = maxDepth(9)
+            left  = maxDepth(None) → 0
+            right = maxDepth(None) → 0
+            → max(0, 0) + 1 = 1
+  right = maxDepth(20)
+            left  = maxDepth(15)
+                        → max(0, 0) + 1 = 1
+            right = maxDepth(7)
+                        → max(0, 0) + 1 = 1
+            → max(1, 1) + 1 = 2
+  → max(1, 2) + 1 = 3 ✅
+</code></pre>
+
+<hr/>
+
+<h3>复杂度 / Complexity</h3>
+
+<p>| | DFS | BFS |</p>
+<p>|--|-----|-----|</p>
+<p>| Time | O(n) — visit every node once | O(n) |</p>
+<p>| Space | O(h) — call stack, h = height | O(w) — queue, w = max width |</p>
+
+<p><strong>DFS vs BFS 选哪个？</strong></p>
+<p>- 平衡树：DFS space O(log n)，BFS O(n/2) → 用 DFS</p>
+<p>- 极度倾斜树 (skewed)：DFS space O(n)（相当于链表），BFS O(1) → 用 BFS</p>
+<p>- 实际面试：DFS 更简洁，通常优先</p>
+
+<hr/>
+
+<h3>🔄 Pattern 变体 / Pattern Variations</h3>
+
+<p>与同一 Block 的其他题对比 — <strong>同样的模板，不同的 COMBINE 函数</strong>：</p>
+
+<p>| 题目 | BASE_CASE | COMBINE |</p>
+<p>|------|-----------|---------|</p>
+<p>| #226 Invert | None | swap left/right, return node |</p>
+<p>| <strong>#104 Max Depth</strong> | <strong>0</strong> | <strong>max(left, right) + 1</strong> |</p>
+<p>| #543 Diameter | 0 | diameter = max(diameter, left+right); return max(left,right)+1 |</p>
+<p>| #110 Balanced | 0 | if abs(left-right)&gt;1: return -1; else return max+1 |</p>
+
+<p>看到规律了吗？<strong>模板不变，只改 COMBINE 逻辑。</strong> 这就是模式学习的威力。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [LeetCode #104](https://leetcode.com/problems/maximum-depth-of-binary-tree/)</p>
+<p>- [NeetCode Solution](https://neetcode.io/problems/depth-of-binary-tree)</p>
+<p>- [Visualize tree recursion](https://visualgo.net/en/bst)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>问树有多高？让左边的小助手量左边，右边的小助手量右边，然后取最高的那个 +1（加上你自己这一层）。空树高度是 0。就这么简单！</p>
+
+<p><em>Asking how tall a tree is? Let your left helper measure the left side, right helper measure the right side, then take the taller one + 1 (for your current level). Empty tree = height 0. That&#x27;s it!</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>软技能：快速上手陌生代码库 / Ramping Up on an Unfamiliar Codebase</h2>
+
+<p>&gt; 📅 Day 56 · 🗣️ Soft Skills · Expert Phase · Category: Adaptability</p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills</h2>
+
+<p><strong>面试题：</strong> 描述一次你需要快速上手陌生代码库并交付的经历。</p>
+<p><strong>Question:</strong> Describe a time you had to ramp up on an unfamiliar codebase quickly to deliver.</p>
+
+<hr/>
+
+<h3>为什么这个题重要 / Why This Matters</h3>
+
+<p>在 Senior/Staff 级别，面试官想看的不是&quot;你花了多少时间学习&quot;，而是<strong>你有没有系统性地降低不确定性的方法论</strong>。这道题测试的是：</p>
+<p>- 自主学习能力 (self-directed learning)</p>
+<p>- 如何在缺乏上下文时优先级排序</p>
+<p>- 如何不打扰别人的情况下快速建立心智模型</p>
+
+<p><em>At Senior/Staff level, interviewers don&#x27;t want to hear how hard you studied — they want to see a systematic methodology for reducing uncertainty. This question tests: self-directed learning, prioritization without context, and building mental models without being a burden.</em></p>
+
+<hr/>
+
+<h3>STAR 拆解 / STAR Breakdown</h3>
+
+<p><strong>Situation（情境）:</strong></p>
+<p>&gt; &quot;我加入团队后第三周，原负责人突然离职，我需要在两周内独立完成一个关键的支付服务迁移。这个服务有 5 年历史，没有文档，原开发者已不在。&quot;</p>
+<p>&gt;</p>
+<p>&gt; <em>&quot;Three weeks after joining the team, the original owner suddenly left. I needed to independently complete a critical payment service migration in two weeks. The service was 5 years old, had no documentation, and the original developer was gone.&quot;</em></p>
+
+<p><strong>Task（任务）:</strong></p>
+<p>&gt; &quot;在不中断线上服务的情况下，将支付处理从 Stripe v2 迁移到 v3，同时理解现有系统的所有边缘情况。&quot;</p>
+
+<p><strong>Action（行动）:</strong></p>
+<p>&gt; 我采用了三层理解框架：</p>
+<p>&gt;</p>
+<p>&gt; <strong>第一层：数据流（Day 1-2）</strong> — 不看代码，先看日志和监控。用 <code>grep</code> 找到所有 Stripe API 调用点，画出完整的数据流图。理解&quot;系统做什么&quot;比&quot;代码怎么写&quot;更重要。</p>
+<p>&gt;</p>
+<p>&gt; <strong>第二层：测试反向工程（Day 2-3）</strong> — 读所有现有测试，测试是最诚实的文档。从测试中提炼出隐含的业务规则。</p>
+<p>&gt;</p>
+<p>&gt; <strong>第三层：关键路径（Day 3-5）</strong> — 找到最容易出问题的路径（失败支付、退款、webhook），重点深挖这些。其余 80% 的代码可以后补理解。</p>
+<p>&gt;</p>
+<p>&gt; 同时我建立了&quot;未知清单&quot;——把所有不确定的地方记录下来，按影响排序，然后集中 1 次 30 分钟和最了解系统的人对齐，而不是持续打扰。</p>
+
+<p><em>I used a three-layer understanding framework: <strong>Layer 1: Data flow</strong> (logs &amp; monitoring first, map all Stripe API call sites). <strong>Layer 2: Test reverse engineering</strong> (tests are the most honest documentation). <strong>Layer 3: Critical paths</strong> (focus on failure scenarios — failed payments, refunds, webhooks). I also maintained an &quot;unknowns list&quot; — documented all uncertainties, ranked by impact, then batched them into one 30-min sync with the most knowledgeable person.</em></p>
+
+<p><strong>Result（结果）:</strong></p>
+<p>&gt; 按时完成迁移，零线上事故。迁移完成后，我写了这个服务的第一份架构文档，让下一个人不用重复我的经历。</p>
+
+<hr/>
+
+<h3>❌ 弱回答 vs ✅ 强回答</h3>
+
+<p><strong>❌ 弱回答:</strong></p>
+<p>&gt; &quot;我花了很多时间读代码，遇到不懂的就问同事，慢慢就搞清楚了。&quot;</p>
+
+<p>问题：被动，没有方法论，依赖他人，面试官心里：&quot;你遇到没有同事的情况怎么办？&quot;</p>
+
+<p><strong>✅ 强回答:</strong></p>
+<p>&gt; 展示主动、系统性的学习框架，量化结果，以及你如何<strong>把学到的东西留下来（文档/测试/注释）</strong>让团队受益。</p>
+
+<hr/>
+
+<h3>Senior/Staff 加分项 / Senior/Staff Tips</h3>
+
+<p>1. <strong>时间盒（Timebox）你的不确定性:</strong> 不要无限深挖，设定&quot;Day 2 结束前我必须能解释这个系统的主数据流&quot;</p>
+<p>2. <strong>输出倒推输入:</strong> 先找输出（API response, 数据库写入, 消息发送），再往上追溯，比从入口向下追更高效</p>
+<p>3. <strong>留下痕迹:</strong> 每次理解一个模块，立刻写下来（README, ADR, test comment）。这不仅帮助自己，也建立信誉</p>
+<p>4. <strong>区分&quot;需要知道&quot;vs&quot;好奇想知道&quot;:</strong> 在截止日期前，只深挖关键路径，其余列入后续清单</p>
+
+<hr/>
+
+<h3>关键收获 / Key Takeaways</h3>
+
+<p>- 🔍 <strong>数据流优先，代码逻辑其次</strong> — 理解系统行为比理解实现细节更快</p>
+<p>- 📝 <strong>测试是最好的文档</strong> — 没有文档？先读测试</p>
+<p>- 📋 <strong>未知清单 + 批量对齐</strong> — 减少对同事的打扰，同时确保关键问题得到解答</p>
+<p>- 📖 <strong>学完即文档化</strong> — 把你的理解转化为团队资产</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [The Engineering Manager&#x27;s Book of Answers](https://staffeng.com/guides/work-on-what-matters)</p>
+<p>- [How to onboard to a legacy codebase](https://vadimkravcenko.com/shorts/how-to-quickly-become-effective-when-joining-a-new-team/)</p>
+<p>- [Reading Code Like a Book](https://blog.codinghorror.com/when-understanding-means-rewriting/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像你第一天去新学校，先找厕所在哪（最重要的！），然后找你的教室，最后才慢慢认识每个同学。先搞清楚最关键的事情，其他的慢慢来。</p>
+
+<p><em>It&#x27;s like your first day at a new school — first find the bathroom (most critical!), then find your classroom, then slowly get to know classmates. Tackle the most critical things first, everything else can wait.</em></p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Python Craft: 策略模式 / Strategy Pattern — Pluggable Algorithms</h2>
+
+<p>&gt; 📅 Day 56 · 🐍 Python Craft · Design Patterns Week 3 · Expert Phase</p>
+
+<hr/>
+
+<h2>🎨 前端 / Python Craft</h2>
+
+<p><strong>今日话题:</strong> 策略模式 — 让算法可插拔</p>
+<p><strong>Topic:</strong> Strategy Pattern — Making Algorithms Swappable at Runtime</p>
+
+<hr/>
+
+<h3>真实场景 / Real Scenario</h3>
+
+<p>你在做一个电商平台，需要支持多种<strong>支付方式</strong>（信用卡、PayPal、加密货币），多种<strong>运费计算方式</strong>（标准、快递、免邮），以及多种<strong>折扣策略</strong>（VIP折扣、季节折扣、批量折扣）。</p>
+
+<p>最烂的做法：一个巨大的 <code>if/elif/else</code> 链。策略模式让你<strong>把算法封装成可互换的对象</strong>。</p>
+
+<p><em>You&#x27;re building an e-commerce platform supporting multiple payment methods, shipping calculations, and discount strategies. The worst approach: a giant if/elif/else chain. Strategy Pattern lets you encapsulate algorithms as interchangeable objects.</em></p>
+
+<hr/>
+
+<h3>代码示例 / Code Example</h3>
+
+<pre><code>
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Protocol
+
+# ── Approach 1: ABC (classic OOP) ────────────────────────────
+class DiscountStrategy(ABC):
+    @abstractmethod
+    def apply(self, price: float) -&gt; float:
+        ...
+
+class NoDiscount(DiscountStrategy):
+    def apply(self, price: float) -&gt; float:
+        return price
+
+class VIPDiscount(DiscountStrategy):
+    def __init__(self, percentage: float = 0.20):
+        self.percentage = percentage
+    
+    def apply(self, price: float) -&gt; float:
+        return price * (1 - self.percentage)
+
+class BulkDiscount(DiscountStrategy):
+    &quot;&quot;&quot;10% off for orders over $100&quot;&quot;&quot;
+    def apply(self, price: float) -&gt; float:
+        return price * 0.90 if price &gt; 100 else price
+
+# ── Approach 2: Protocol (duck typing, more Pythonic) ─────────
+class Discountable(Protocol):
+    def apply(self, price: float) -&gt; float:
+        ...
+
+# Any callable with the right signature works — no inheritance needed
+def seasonal_discount(price: float) -&gt; float:
+    return price * 0.85  # 15% off
+
+# ── Context: The object that USES a strategy ──────────────────
+@dataclass
+class ShoppingCart:
+    items: list[tuple[str, float]]  # (name, price)
+    discount_strategy: DiscountStrategy = None
+    
+    def total(self) -&gt; float:
+        raw_total = sum(price for _, price in self.items)
+        if self.discount_strategy:
+            return self.discount_strategy.apply(raw_total)
+        return raw_total
+    
+    def checkout_with(self, strategy: DiscountStrategy) -&gt; float:
+        &quot;&quot;&quot;Swap strategy at runtime — the key power of this pattern&quot;&quot;&quot;
+        self.discount_strategy = strategy
+        return self.total()
+
+# ── Usage ─────────────────────────────────────────────────────
+cart = ShoppingCart(items=[(&quot;Laptop&quot;, 999), (&quot;Mouse&quot;, 29)])
+
+print(cart.total())                              # 1028.0 (no discount)
+print(cart.checkout_with(VIPDiscount(0.20)))     # 822.4
+print(cart.checkout_with(BulkDiscount()))        # 925.2
+print(cart.checkout_with(NoDiscount()))          # 1028.0
+
+# Even simpler: use a plain function as strategy (duck typing)
+cart.discount_strategy = seasonal_discount  # type: ignore
+print(cart.total())                              # 873.8
+</code></pre>
+
+<hr/>
+
+<h3>猜猜输出 / Guess the Output</h3>
+
+<pre><code>
+strategies = [NoDiscount(), VIPDiscount(0.10), BulkDiscount()]
+cart = ShoppingCart(items=[(&quot;Item&quot;, 120)])
+
+results = [cart.checkout_with(s) for s in strategies]
+print(results)
+</code></pre>
+
+<p><strong>A)</strong> <code>[120.0, 108.0, 108.0]</code></p>
+<p><strong>B)</strong> <code>[120.0, 108.0, 120.0]</code></p>
+<p><strong>C)</strong> <code>[120.0, 120.0, 108.0]</code></p>
+<p><strong>D)</strong> 报错 — 无法重用同一个 cart</p>
+
+<p>&lt;details&gt;&lt;summary&gt;查看答案&lt;/summary&gt;</p>
+
+<p><strong>A) <code>[120.0, 108.0, 108.0]</code></strong></p>
+
+<p>- NoDiscount: 120 → 120.0</p>
+<p>- VIPDiscount(0.10): 120 × 0.90 = 108.0</p>
+<p>- BulkDiscount: 120 &gt; 100, so 120 × 0.90 = 108.0</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>❌ vs ✅ 对比</h3>
+
+<pre><code>
+# ❌ Bad: Giant if/elif — hard to test, extend, or swap at runtime
+def calculate_total(price, discount_type):
+    if discount_type == &quot;vip&quot;:
+        return price * 0.80
+    elif discount_type == &quot;bulk&quot;:
+        return price * 0.90 if price &gt; 100 else price
+    elif discount_type == &quot;seasonal&quot;:
+        return price * 0.85
+    else:
+        return price
+
+# ✅ Good: Strategy Pattern — each strategy independently testable
+# Adding a new strategy = new class, zero changes to existing code
+class FlashSaleDiscount(DiscountStrategy):
+    def apply(self, price: float) -&gt; float:
+        return price * 0.50  # 50% off — hot!
+</code></pre>
+
+<hr/>
+
+<h3>何时用 / 何时不用 / When to Use / Avoid</h3>
+
+<p><strong>✅ 用 (Use when):</strong></p>
+<p>- 同一操作有多种变体，且变体可能在运行时切换</p>
+<p>- 想对每种变体独立测试</p>
+<p>- 算法变体会频繁增减（开放-封闭原则）</p>
+
+<p><strong>❌ 不用 (Avoid when):</strong></p>
+<p>- 只有 2-3 种固定变体，且不会扩展 → 简单 if/else 更清晰</p>
+<p>- 算法变体只在初始化时确定，且永不改变 → 工厂模式更合适</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Refactoring Guru: Strategy Pattern](https://refactoring.guru/design-patterns/strategy)</p>
+<p>- [Python Patterns - Strategy](https://python-patterns.guide/gang-of-four/strategy/)</p>
+<p>- [Real Python - Duck Typing](https://realpython.com/duck-typing-python/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像去餐厅，你可以选择&quot;筷子&quot;、&quot;叉子&quot;或&quot;汤匙&quot;——都是吃东西的工具，随时可以换，但餐厅本身不需要改变。策略模式就是把&quot;怎么做&quot;和&quot;做什么&quot;分开。</p>
+
+<p><em>Like choosing chopsticks, fork, or spoon at a restaurant — they&#x27;re all eating tools, swappable anytime, but the restaurant itself doesn&#x27;t change. Strategy Pattern separates &quot;how to do&quot; from &quot;what to do.&quot;</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>AI：知识蒸馏 / Knowledge Distillation — Small Models, Big Knowledge</h2>
+
+<p>&gt; 📅 Day 56 · 🤖 AI · Concept Mode · Expert Phase</p>
+
+<hr/>
+
+<h2>🤖 AI — Knowledge Distillation</h2>
+
+<p><strong>今日概念:</strong> 知识蒸馏 — 让小模型继承大模型的智慧</p>
+<p><strong>Topic:</strong> Knowledge Distillation — How Small Models Learn from Big Ones</p>
+
+<hr/>
+
+<h3>直觉理解 / Intuitive Explanation</h3>
+
+<p>GPT-4 很强，但部署成本高、延迟大。能不能有一个&quot;小 GPT-4&quot;，既快又便宜，但效果接近？</p>
+
+<p><strong>知识蒸馏</strong>就是解法：用大模型（Teacher）来训练小模型（Student）。关键洞察：</p>
+
+<p>&gt; <strong>大模型的&quot;软标签&quot;比真实标签包含更多信息。</strong></p>
+
+<p>比如一张猫的图片，真实标签是 <code>[猫:1, 狗:0, 汽车:0]</code>。但大模型输出的是 <code>[猫:0.9, 狗:0.09, 汽车:0.01]</code>。这个软标签告诉我们：猫更像狗，而不像汽车——这是真实标签无法传递的<strong>相对相似性信息</strong>。</p>
+
+<p><em>GPT-4 is powerful but expensive and slow. Can we have a &quot;small GPT-4&quot; that&#x27;s fast, cheap, but nearly as capable? Knowledge Distillation is the answer: use a large Teacher model to train a small Student model. Key insight: the Teacher&#x27;s &quot;soft labels&quot; contain more information than ground truth labels.</em></p>
+
+<hr/>
+
+<h3>工作原理 / How It Works</h3>
+
+<pre><code>
+┌─────────────────────────────────────────────────────────┐
+│  Training Data  →  Teacher Model (Large)  →  Soft Labels│
+│                         ↓                               │
+│                    (freeze weights)                      │
+│                         ↓                               │
+│  Training Data  →  Student Model (Small)                 │
+│                         ↓                               │
+│              Loss = α × Hard Loss (ground truth)        │
+│                   + (1-α) × Soft Loss (KL divergence    │
+│                              from teacher output)        │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+
+<p><strong>温度参数 T (Temperature):</strong> 控制软标签的&quot;软度&quot;</p>
+<p>- T = 1: 正常 softmax</p>
+<p>- T &gt; 1: 分布更平滑，更多信息传递</p>
+<p>- T &lt; 1: 分布更尖锐，趋向 hard labels</p>
+
+<hr/>
+
+<h3>真实案例 / Real-World Examples</h3>
+
+<p>| 产品 | Teacher | Student | 用途 |</p>
+<p>|------|---------|---------|------|</p>
+<p>| DistilBERT | BERT-base | 40% smaller | NLP任务，移动端 |</p>
+<p>| TinyBERT | BERT-large | 7.5x smaller | 边缘设备 |</p>
+<p>| DistilGPT2 | GPT-2 | ~33% smaller | 低资源生成 |</p>
+<p>| DeepSeek-R1 | R1 (671B) | R1-Distill-7B | 推理能力蒸馏 |</p>
+
+<hr/>
+
+<h3>可运行 Python 代码 / Runnable Code</h3>
+
+<pre><code>
+# pip install torch transformers datasets
+import torch
+import torch.nn.functional as F
+
+def distillation_loss(
+    student_logits: torch.Tensor,   # Student model output
+    teacher_logits: torch.Tensor,   # Teacher model output  
+    true_labels: torch.Tensor,      # Ground truth
+    temperature: float = 4.0,
+    alpha: float = 0.7
+) -&gt; torch.Tensor:
+    &quot;&quot;&quot;
+    Combined distillation loss.
+    alpha controls weight: higher alpha = more reliance on teacher.
+    &quot;&quot;&quot;
+    # Soft targets from teacher (with temperature scaling)
+    soft_teacher = F.softmax(teacher_logits / temperature, dim=-1)
+    soft_student = F.log_softmax(student_logits / temperature, dim=-1)
+    
+    # KL divergence loss (student learns from teacher&#x27;s distribution)
+    # Multiply by T^2 to preserve gradient magnitudes (Hinton et al.)
+    soft_loss = F.kl_div(soft_student, soft_teacher, reduction=&#x27;batchmean&#x27;) * (temperature ** 2)
+    
+    # Hard loss (standard cross-entropy with ground truth)
+    hard_loss = F.cross_entropy(student_logits, true_labels)
+    
+    # Combined loss
+    return alpha * soft_loss + (1 - alpha) * hard_loss
+
+# Example usage
+batch_size, num_classes = 4, 10
+student_logits = torch.randn(batch_size, num_classes)
+teacher_logits = torch.randn(batch_size, num_classes)
+labels = torch.randint(0, num_classes, (batch_size,))
+
+loss = distillation_loss(student_logits, teacher_logits, labels)
+print(f&quot;Distillation loss: {loss.item():.4f}&quot;)
+# Distillation loss: ~2.3 (varies)
+</code></pre>
+
+<hr/>
+
+<h3>蒸馏的变体 / Variants</h3>
+
+<p>1. <strong>Response-based Distillation（响应蒸馏）:</strong> 仅蒸馏最终输出（上述方法）</p>
+<p>2. <strong>Feature-based Distillation（特征蒸馏）:</strong> 蒸馏中间层特征，信息更丰富</p>
+<p>3. <strong>Relation-based Distillation（关系蒸馏）:</strong> 蒸馏样本之间的关系（相似性矩阵）</p>
+<p>4. <strong>Chain-of-Thought Distillation（CoT蒸馏）:</strong> DeepSeek-R1 的方法——蒸馏推理链，不只是答案</p>
+
+<hr/>
+
+<h3>局限性 / Limitations</h3>
+
+<p>- 🚫 <strong>容量上限:</strong> 学生模型太小时，无法吸收所有知识（压缩极限）</p>
+<p>- 🚫 <strong>领域迁移:</strong> 教师在特定域训练，蒸馏出的学生泛化性有限</p>
+<p>- 🚫 <strong>错误传播:</strong> 教师的偏见和错误也会被蒸馏进学生</p>
+<p>- ⚠️ <strong>推理能力蒸馏仍是研究热点:</strong> 复杂推理比知识更难蒸馏</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Hinton et al. 2015 - Distilling the Knowledge in a Neural Network](https://arxiv.org/abs/1503.02531)</p>
+<p>- [DistilBERT (Hugging Face)](https://arxiv.org/abs/1910.01108)</p>
+<p>- [DeepSeek-R1 Distillation](https://github.com/deepseek-ai/DeepSeek-R1)</p>
+<p>- [Knowledge Distillation Survey](https://arxiv.org/abs/2006.05525)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象一位经验丰富的老师（大模型）和一个新学生（小模型）。学生直接背答案（真实标签）不太好，但如果老师解释&quot;为什么猫更像狗而不像汽车&quot;（软标签），学生就能学到更深的理解。知识蒸馏就是让小模型向大模型学习&quot;思维过程&quot;，而不只是&quot;答案&quot;。</p>
+
+<p><em>Imagine an experienced teacher (large model) and a new student (small model). The student just memorizing answers (ground truth labels) isn&#x27;t great — but if the teacher explains &quot;why a cat looks more like a dog than a car&quot; (soft labels), the student gains deeper understanding. Knowledge Distillation teaches small models the teacher&#x27;s &quot;reasoning process,&quot; not just the answers.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-05-31</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

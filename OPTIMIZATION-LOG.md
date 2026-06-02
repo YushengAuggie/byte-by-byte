@@ -450,3 +450,47 @@
 2. **Investigate 5/26 late send (12:33 PT)**: confirm whether morning run failed or was deferred. The `backup-send` cron (if scheduled later) may have rescued it — verify that's the intended path.
 3. **Pattern**: 5/19 and 5/25 misses fall ~6 days apart (Tue and Mon). Worth checking if any weekly maintenance window or system event correlates.
 4. **Telemetry**: `openclaw cron list --json` returns `lastRunAt=''` for byte-by-byte jobs. Check if cron state is being persisted properly — without it, optimizer can't diagnose silent failures.
+
+## 2026-05-31 Optimization Run
+
+### Issues Found
+- **P0**: Missed delivery on **2026-05-27 (Wed)**. No entry in `email-send-log.json` for 5/27. Git history confirms no Day-N commit on 5/27 — last prior was Day 53 on 5/28, prior to that Day 51 on 5/26. One full day skipped.
+- **P0 (recurring pattern)**: This is the **3rd missed day in 3 consecutive optimizer cycles** (5/19, 5/25, 5/27). Misses are clustering on weekdays (Tue/Mon/Wed). Not a one-off — looks like a systemic intermittent failure in the morning generate→send pipeline.
+- **P0 (cron self)**: `byte-by-byte optimizer` cron itself reports `status=error consecErr=1` with empty `lastError` string. The optimizer is being flagged as failing even though it produces output — likely the previous run exited non-zero or didn't write the expected ready signal. Cosmetic but should be cleaned up so failureAlert doesn't fire spuriously.
+- **P1**: None observed in delivered content this cycle.
+- **P2**: `state.json` shows `lastSentDate=2026-05-30` while `email-send-log.json` already has a 2026-05-31 entry and git has the 5/31 commit. Mild telemetry drift — `lastSentDate` is being updated at a different point than the email log. Not critical, but means `state.lastSentDate` can't be trusted as a freshness signal.
+- **P2**: Cron telemetry: only the optimizer job has a non-ok status; all other byte-by-byte jobs report `delivered`. So nothing in cron state explains the 5/27 miss — failure must have happened *inside* the job (generator returned no content, or send step swallowed an error) without surfacing to the cron runner.
+
+### Metrics
+- Delivery rate (7d): **5/7** (missed 2026-05-25, 2026-05-27)
+- Cron errors: 1 (`byte-by-byte optimizer` consecErr=1, empty lastError)
+- All content/send jobs: status=ok, delivery=delivered
+- State: currentDay=55, lastSentDate=2026-05-30 (stale — actual last send 2026-05-31), lastReviewDay=55, reviewDays through Day 55 ✅
+- Day advancement: 51→55 across 7 days = correct given 2 misses + Day 55 review
+
+### Suggested Manual Follow-ups
+1. **Root-cause the recurring weekday misses (5/19, 5/25, 5/27).** All three crons report `ok` after the fact, so failures are silent. Recommend: add a post-send verification step that re-checks `email-send-log.json` was updated for today's date and alerts if not. Without this, misses are only caught 3 days later by the optimizer.
+2. **Audit the generate→review→send chain on a missed day.** Pull gateway logs for 2026-05-27 around 07:00–08:30 PT to see whether: (a) generation never ran, (b) generation ran but produced no archive files, (c) send step ran but got rate-limited/skipped. Each path needs a different fix.
+3. **Fix optimizer's own cron status.** It's reporting `error` with empty `lastError`. Check the optimizer cron's exit handling — likely the prompt/script returns non-zero or a non-string error somewhere.
+4. **Sync `state.lastSentDate` with actual send.** Either update it in the same step that writes to `email-send-log.json`, or stop using it as a freshness indicator.
+
+## 2026-06-01 Optimization Run
+
+### Issues Found
+- **P0 (NEW cron error)**: `byte-by-byte review-and-send` is currently in `status=error` with `consecutiveErrors=1` and `lastError = "cron: job execution timed out (last phase: model-call-started)"`. The job timed out during a model call before completing. Today's send (2026-06-01) still landed in `email-send-log.json` at 08:0X — so either a retry succeeded or `backup-send` covered it. Need to confirm which path delivered, and whether this is the same silent-miss pattern catching us at a different stage.
+- **P0 (recurring) — no new miss since last cycle**: 7-day window includes the previously-flagged 2026-05-27 miss. No additional misses on 5/28–6/01. So pattern hasn't recurred *this* cycle, but the model-call timeout above is a leading indicator that the send pipeline is fragile.
+- **P1**: None observed in delivered content this cycle.
+- **P2**: `state.lastSentDate=2026-06-01` now matches today's email log entry — drift from last cycle has resolved on its own (probably because today's run was the one that wrote both). Suggests the drift is timing-dependent rather than a real bug.
+- **P2**: New `pythonCraftIndex: 9` field appeared in `state.json` since last optimizer run. Confirms a section/index was added recently — worth verifying the prompt/generator references it correctly so it doesn't silently stop advancing.
+
+### Metrics
+- Delivery rate (7d): **6/7** (missed 2026-05-27 — same miss as last cycle, no new misses)
+- Cron errors: 1 — `byte-by-byte review-and-send` status=error, consecErr=1, lastError="cron: job execution timed out (last phase: model-call-started)"
+- Other byte-by-byte jobs: ok / delivered (weekday, saturday, sunday, backup-send, optimizer)
+- State: currentDay=56, lastSentDate=2026-06-01 (synced ✅), lastReviewDay=55, reviewDaysCompleted through Day 55, pythonCraftIndex=9 (new field)
+- Day advancement: 55→56 since last cycle = correct (1 day, no review).
+
+### Suggested Manual Follow-ups
+1. **Investigate the review-and-send timeout.** It timed out during `model-call-started`. Check the model used by that cron and its `payload.timeoutSeconds` — if the model call regularly approaches the cron timeout, increase the budget or split the QA pass into smaller steps. Today's content still got delivered, so confirm whether `backup-send` rescued it (if so, that's working as designed; if not, document the actual save path).
+2. **Add a watchdog for review-and-send timeouts.** Since today's failure was caught by cron state (unlike the silent 5/27 miss), the failureAlert should have fired. Verify the alert was actually sent to the operator — if not, the alert pipeline itself needs a fix.
+3. **No code changes from this run.** Carry over prior cycle's open items (root-cause weekday misses, fix optimizer's own cron status, post-send verification step). They remain unresolved.
