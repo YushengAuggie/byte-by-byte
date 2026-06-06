@@ -62,7 +62,7 @@ elif [ -f "$ARCHIVE_DIR/${TODAY}-review.md" ] && \
 # Normal weekday — need all 5 sections
 else
   MISSING=""
-  for s in system-design algorithms soft-skills frontend ai; do
+  for s in system-design algorithms soft-skills python-craft ai; do
     FILE="$ARCHIVE_DIR/${TODAY}-${s}.md"
     if [ ! -f "$FILE" ]; then
       MISSING="$MISSING $s(missing)"

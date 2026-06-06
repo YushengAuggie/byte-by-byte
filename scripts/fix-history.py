@@ -194,6 +194,7 @@ def main():
 
     with open(STATE_FILE, 'w') as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
+        f.write('\n')
 
     print(f"✅ Added {len(added)} history entries to state.json")
     print(f"   Total history entries: {len(all_entries)}")

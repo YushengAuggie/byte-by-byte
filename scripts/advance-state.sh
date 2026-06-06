@@ -183,6 +183,7 @@ else:
 
 with open(state_file, 'w') as f:
     json.dump(state, f, indent=2)
+    f.write('\n')
 
 print(f"   History: {[h['day'] for h in state.get('history',[])]}")
 PYEOF
