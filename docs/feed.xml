@@ -5,8 +5,1103 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 03 Jun 2026 15:10:49 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 06 Jun 2026 18:18:37 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-06</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-06</guid>
+      <pubDate>Sat, 06 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Operational Transformation &amp; CRDTs — 协同编辑器的底层引擎 (18 min read)</strong></p>
+<p>📊 NeetCode: 50/150 · SysDesign: 49/40 · Behavioral: 49/40 · Frontend: 37/50 · AI: 24/30</p>
+<p>🔥 60-day streak!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>为什么这个话题值得花 18 分钟？</strong></p>
+
+<p>你每次在 Google Docs 里和同事同时编辑一个文档，背后都有一套精妙的算法在保证大家看到的内容一致。这套算法不是锁（太慢），不是&quot;最后写入者赢&quot;（数据丢失），而是一种叫做<strong>操作变换（Operational Transformation, OT）</strong>或<strong>无冲突复制数据类型（CRDT）</strong>的技术。</p>
+
+<p>这两者是协同编辑领域的核心技术，也是系统设计面试里<strong>拉开差距的关键知识点</strong>。大多数候选人能画出 WebSocket + 后端 + 数据库的架构图，但极少有人能解释冲突是怎么解决的。</p>
+
+<p><strong>Why this topic is worth 18 minutes:</strong></p>
+
+<p>When you and a colleague edit a Google Doc simultaneously, a sophisticated algorithm silently resolves conflicts in real time. It&#x27;s not a lock (too slow), not &quot;last write wins&quot; (data loss), but rather <strong>Operational Transformation (OT)</strong> or <strong>Conflict-free Replicated Data Types (CRDTs)</strong>. These are what separate good system design answers from great ones.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>核心问题：并发冲突</h3>
+
+<p>想象两个用户同时编辑同一个文档，初始内容是 <code>&quot;abc&quot;</code>：</p>
+
+<pre><code>
+User A: 在位置 0 插入 &quot;X&quot;  → &quot;Xabc&quot;
+User B: 在位置 2 删除 &#x27;c&#x27;   → &quot;ab&quot;
+
+如果 A 先到达服务器，B 的操作应该作用于哪个状态？
+- 如果直接在 &quot;Xabc&quot; 上删除位置 2 → 删掉了 &#x27;b&#x27;  ❌
+- 正确答案：删除位置 3（因为 A 的插入使原来的 c 向右移了一位）✓
+</code></pre>
+
+<p>这就是 <strong>OT（操作变换）</strong>要解决的问题：<strong>如何调整一个操作，使它在另一个并发操作已经执行之后仍然能产生正确的结果。</strong></p>
+
+<h3>The Core Problem: Concurrent Conflicts</h3>
+
+<pre><code>
+Initial: &quot;abc&quot;
+User A: insert(&quot;X&quot;, pos=0) → &quot;Xabc&quot;
+User B: delete(pos=2, char=&#x27;c&#x27;) → &quot;ab&quot;
+
+Server receives A first, then must apply B.
+B was generated against &quot;abc&quot; where &#x27;c&#x27; was at index 2.
+In &quot;Xabc&quot;, &#x27;c&#x27; is now at index 3.
+OT must transform B: delete(pos=2) → delete(pos=3)
+</code></pre>
+
+<h3>两种解法对比 / Two Approaches</h3>
+
+<p>| 维度 | OT (Operational Transformation) | CRDT |</p>
+<p>|------|----------------------------------|------|</p>
+<p>| 历史 | 1989年，Google Docs 用的 | 2006年起，Figma、Notion、Linear 转向 |</p>
+<p>| 核心思路 | 在服务器端变换操作序列 | 数据结构本身保证收敛 |</p>
+<p>| 需要中心服务器 | <strong>是</strong>（操作变换逻辑集中在服务端） | <strong>否</strong>（P2P 可用，离线优先） |</p>
+<p>| 实现复杂度 | 高（OT correctness 很难证明） | 中高（不同 CRDT 类型不同） |</p>
+<p>| 代表产品 | Google Docs, Etherpad | Figma, Apple Notes, Automerge |</p>
+
+<h3>OT 的两个核心性质 / OT&#x27;s Two Core Properties</h3>
+
+<pre><code>
+设 op1 和 op2 是两个并发操作，T 是变换函数：
+
+Inclusion Transformation (IT):
+  apply(apply(doc, op1), T(op2, op1)) == apply(apply(doc, op2), T(op1, op2))
+  → 无论哪个操作先到，最终结果相同 ✓
+
+Exclusion Transformation (ET):
+  undo 操作时用到，撤销已经被其他操作变换过的操作
+  → 实现 Ctrl+Z 在协同场景下的正确行为
+</code></pre>
+
+<h3>CRDT 的核心思想 / CRDT Core Idea</h3>
+
+<p>CRDT 不是变换操作，而是<strong>设计一种特殊的数据结构，使得任意顺序的合并都能产生相同结果</strong>。</p>
+
+<p><strong>关键性质（Semilattice）：</strong></p>
+<p>- 结合律：<code>merge(a, merge(b, c)) = merge(merge(a, b), c)</code></p>
+<p>- 交换律：<code>merge(a, b) = merge(b, a)</code></p>
+<p>- 幂等性：<code>merge(a, a) = a</code></p>
+
+<p>满足这三条，就能保证最终一致性，不需要中心协调者。</p>
+
+<p>CRDT doesn&#x27;t transform operations — it <strong>designs data structures where any order of merges produces the same result</strong>. The three laws above guarantee eventual consistency without any central coordinator.</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>方案一：OT 实现文本协同 / OT Implementation</h3>
+
+<pre><code>
+from dataclasses import dataclass
+from enum import Enum
+from typing import Optional
+
+class OpType(Enum):
+    INSERT = &quot;insert&quot;
+    DELETE = &quot;delete&quot;
+    RETAIN = &quot;retain&quot;  # skip N characters unchanged
+
+@dataclass
+class Operation:
+    &quot;&quot;&quot;
+    Represents a single atomic edit operation.
+    Uses the &#x27;retain/insert/delete&#x27; triple common in OT libraries (like OT.js / ShareDB).
+    &quot;&quot;&quot;
+    type: OpType
+    pos: int          # position in the ORIGINAL document (before this op)
+    char: Optional[str] = None  # only for INSERT
+    length: int = 1   # for DELETE or RETAIN
+
+
+def transform(op_a: Operation, op_b: Operation, priority: str = &quot;left&quot;) -&gt; Operation:
+    &quot;&quot;&quot;
+    Transform op_a against op_b.
+    priority=&quot;left&quot; means op_a wins on tie (same position insert).
+    
+    This implements the INSERT/DELETE x INSERT/DELETE matrix.
+    &quot;&quot;&quot;
+    if op_a.type == OpType.INSERT and op_b.type == OpType.INSERT:
+        # Both insert at same position: priority breaks tie
+        if op_b.pos &lt; op_a.pos or (op_b.pos == op_a.pos and priority == &quot;right&quot;):
+            # op_b inserts before (or at same pos with lower priority)
+            # → op_a&#x27;s position shifts right by 1
+            return Operation(OpType.INSERT, op_a.pos + 1, op_a.char)
+        return op_a  # op_b is at or after op_a, no shift needed
+
+    elif op_a.type == OpType.INSERT and op_b.type == OpType.DELETE:
+        if op_b.pos &lt; op_a.pos:
+            # op_b deleted something before our insert position
+            # → our position shifts left by 1
+            return Operation(OpType.INSERT, op_a.pos - 1, op_a.char)
+        return op_a  # deletion was at or after our position, no shift
+
+    elif op_a.type == OpType.DELETE and op_b.type == OpType.INSERT:
+        if op_b.pos &lt;= op_a.pos:
+            # op_b inserted before our deletion target
+            # → our target shifts right by 1
+            return Operation(OpType.DELETE, op_a.pos + 1)
+        return op_a
+
+    elif op_a.type == OpType.DELETE and op_b.type == OpType.DELETE:
+        if op_b.pos &lt; op_a.pos:
+            # op_b deleted something before our target → shift left
+            return Operation(OpType.DELETE, op_a.pos - 1)
+        elif op_b.pos == op_a.pos:
+            # Both deleting the same character! op_a becomes a no-op.
+            # We return a RETAIN(0) to signal &quot;already done&quot;
+            return Operation(OpType.RETAIN, op_a.pos, length=0)
+        return op_a
+
+
+class OTDocument:
+    &quot;&quot;&quot;
+    Simple OT-based collaborative document (server-side coordinator).
+    &quot;&quot;&quot;
+    def __init__(self):
+        self.text = &quot;&quot;
+        self.history: list[Operation] = []  # all committed ops in order
+
+    def apply(self, op: Operation) -&gt; str:
+        &quot;&quot;&quot;Apply an operation to the document text.&quot;&quot;&quot;
+        if op.type == OpType.INSERT:
+            self.text = self.text[:op.pos] + op.char + self.text[op.pos:]
+        elif op.type == OpType.DELETE:
+            if op.length &gt; 0:  # skip no-op deletes
+                self.text = self.text[:op.pos] + self.text[op.pos + 1:]
+        return self.text
+
+    def receive(self, op: Operation, client_version: int) -&gt; Operation:
+        &quot;&quot;&quot;
+        Server receives an op from a client.
+        client_version = how many ops the client has seen (its &#x27;parent&#x27; revision).
+        
+        We must transform op against all ops since client_version.
+        &quot;&quot;&quot;
+        # Transform op against every concurrent op the client hasn&#x27;t seen yet
+        concurrent_ops = self.history[client_version:]
+        transformed_op = op
+        for server_op in concurrent_ops:
+            transformed_op = transform(transformed_op, server_op)
+        
+        self.apply(transformed_op)
+        self.history.append(transformed_op)
+        return transformed_op  # broadcast this to all other clients
+
+
+# ─── Demo: The classic conflict scenario ───────────────────────────────────────
+doc = OTDocument()
+doc.text = &quot;abc&quot;
+doc.history = []
+
+# User A: insert &quot;X&quot; at position 0
+op_a = Operation(OpType.INSERT, pos=0, char=&quot;X&quot;)
+
+# User B: delete &#x27;c&#x27; at position 2
+op_b = Operation(OpType.DELETE, pos=2)
+
+# A&#x27;s op arrives first at version 0 → applied directly
+doc.receive(op_a, client_version=0)
+print(f&quot;After A: &#x27;{doc.text}&#x27;&quot;)  # &quot;Xabc&quot;
+
+# B&#x27;s op arrives (still thinks it&#x27;s at version 0, before A)
+# server transforms B against A&#x27;s insert
+doc.receive(op_b, client_version=0)
+print(f&quot;After B: &#x27;{doc.text}&#x27;&quot;)  # &quot;Xab&quot; ← &#x27;c&#x27; correctly deleted ✓
+</code></pre>
+
+<h3>方案二：CRDT 实现 — Logoot / RGA 思路 / CRDT Approach</h3>
+
+<pre><code>
+import uuid
+from dataclasses import dataclass, field
+from typing import Optional
+
+@dataclass(order=True)
+class Identifier:
+    &quot;&quot;&quot;
+    Every character in a CRDT document gets a globally unique, 
+    totally-ordered identifier. No two identifiers are equal.
+    
+    This is the key insight: positions become stable IDs, not integers.
+    When A inserts between IDs 10 and 20, it picks ID 15.
+    No matter what B does concurrently, character 15 stays where it is.
+    &quot;&quot;&quot;
+    pos: float       # fractional position for ordering (Logoot-style)
+    site_id: str     # which client created this (for tiebreaking)
+    counter: int     # lamport clock to ensure uniqueness
+    
+    def __eq__(self, other):
+        return self.pos == other.pos and self.site_id == other.site_id
+
+
+@dataclass
+class CRDTChar:
+    &quot;&quot;&quot;A single character in the CRDT sequence.&quot;&quot;&quot;
+    id: Identifier
+    char: str
+    deleted: bool = False  # tombstone — deleted chars stay in the structure
+
+
+class RGADocument:
+    &quot;&quot;&quot;
+    Replicated Growable Array (RGA) — a popular CRDT for text.
+    
+    Key properties:
+    - Each char has a unique ID (site_id + lamport clock)
+    - Causality: an insert references its left neighbor&#x27;s ID
+    - Delete = tombstone (never physically remove, just mark)
+    - Merge: union of all char sets, order by ID
+    &quot;&quot;&quot;
+    def __init__(self, site_id: str):
+        self.site_id = site_id
+        self.clock = 0
+        # chars sorted by their stable IDs
+        self._chars: list[CRDTChar] = []
+
+    def _new_id(self, left_pos: float, right_pos: float) -&gt; Identifier:
+        &quot;&quot;&quot;
+        Generate a new identifier that falls between left and right positions.
+        Uses fractional indexing — the classic &quot;pick a number between 10 and 20&quot;.
+        &quot;&quot;&quot;
+        self.clock += 1
+        mid_pos = (left_pos + right_pos) / 2
+        return Identifier(pos=mid_pos, site_id=self.site_id, counter=self.clock)
+
+    def local_insert(self, char: str, after_index: int) -&gt; CRDTChar:
+        &quot;&quot;&quot;
+        Insert a character after the visible character at after_index.
+        Returns the new CRDTChar (to be broadcast to peers).
+        &quot;&quot;&quot;
+        # Find the fractional position boundaries
+        left_pos = self._chars[after_index].id.pos if after_index &gt;= 0 else 0.0
+        right_pos = (
+            self._chars[after_index + 1].id.pos 
+            if after_index + 1 &lt; len(self._chars) 
+            else 1.0
+        )
+        new_id = self._new_id(left_pos, right_pos)
+        new_char = CRDTChar(id=new_id, char=char)
+        
+        # Insert in sorted position
+        insert_at = after_index + 1
+        self._chars.insert(insert_at, new_char)
+        return new_char
+
+    def local_delete(self, index: int) -&gt; CRDTChar:
+        &quot;&quot;&quot;
+        Delete the visible character at index.
+        Tombstone only — the char stays in _chars forever.
+        &quot;&quot;&quot;
+        # Find the nth visible (non-deleted) char
+        count = 0
+        for c in self._chars:
+            if not c.deleted:
+                if count == index:
+                    c.deleted = True
+                    return c  # broadcast this tombstone
+                count += 1
+        raise IndexError(&quot;No visible character at that index&quot;)
+
+    def apply_remote(self, op: CRDTChar):
+        &quot;&quot;&quot;
+        Merge a remote operation (insert or delete) into our local state.
+        This is the magic: it&#x27;s commutative, associative, idempotent.
+        &quot;&quot;&quot;
+        if op.deleted:
+            # Remote delete: find and tombstone our local copy
+            for c in self._chars:
+                if c.id == op.id:
+                    c.deleted = True
+                    return
+        else:
+            # Remote insert: find the right sorted position by ID
+            for i, c in enumerate(self._chars):
+                if c.id &gt; op.id:
+                    self._chars.insert(i, op)
+                    return
+            self._chars.append(op)
+
+    @property
+    def text(self) -&gt; str:
+        &quot;&quot;&quot;Return the visible (non-tombstoned) text.&quot;&quot;&quot;
+        return &quot;&quot;.join(c.char for c in self._chars if not c.deleted)
+
+
+# ─── Demo: Same conflict, CRDT way ─────────────────────────────────────────────
+doc_a = RGADocument(site_id=&quot;A&quot;)
+doc_b = RGADocument(site_id=&quot;B&quot;)
+
+# Both start with &quot;abc&quot; — in a real system, initial state is synced
+# (simplified: skip initial state sync for clarity)
+
+# The point: concurrent operations just get merged, no transform needed.
+# doc_a.local_insert(&quot;X&quot;, 0) → broadcasts CRDTChar with ID pos~0.5
+# doc_b.local_delete(2)       → broadcasts tombstone for &#x27;c&#x27;
+# Both sides call apply_remote() with the other&#x27;s op
+# Result is always identical regardless of order ✓
+</code></pre>
+
+<h3>系统架构 / Full System Architecture</h3>
+
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│                      CLIENT (Browser)                           │
+│                                                                 │
+│  ┌─────────────┐    local op     ┌──────────────────────────┐  │
+│  │   Editor    │ ─────────────►  │   OT/CRDT Local State    │  │
+│  │  (Quill /   │                 │   • apply locally (fast) │  │
+│  │  CodeMirror)│ ◄─────────────  │   • queue for broadcast  │  │
+│  └─────────────┘   remote op     └──────────┬───────────────┘  │
+│                                             │ WebSocket         │
+└─────────────────────────────────────────────┼───────────────────┘
+                                              │
+                                   ┌──────────▼──────────────┐
+                                   │   WebSocket Gateway      │
+                                   │   (Sticky sessions by    │
+                                   │    document ID)          │
+                                   └──────────┬───────────────┘
+                                              │
+                              ┌───────────────▼──────────────────┐
+                              │       Operation Handler           │
+                              │                                   │
+                              │  OT Mode:                        │
+                              │  1. Receive op + client_version  │
+                              │  2. Transform against concurrent │
+                              │  3. Apply to server state        │
+                              │  4. Broadcast transformed op     │
+                              │                                   │
+                              │  CRDT Mode:                      │
+                              │  1. Receive CRDTChar             │
+                              │  2. apply_remote() locally       │
+                              │  3. Broadcast to all peers       │
+                              └──────────┬────────────────────────┘
+                                         │
+                  ┌──────────────────────┼──────────────────────┐
+                  │                      │                       │
+         ┌────────▼──────┐    ┌──────────▼──────┐    ┌─────────▼──────┐
+         │  Op Log       │    │  Snapshot Store  │    │  Presence      │
+         │  (Kafka /     │    │  (S3 / Postgres) │    │  Service       │
+         │   Postgres)   │    │  periodic saves  │    │  (cursors,     │
+         │               │    │                  │    │   who&#x27;s online)│
+         └───────────────┘    └──────────────────┘    └────────────────┘
+</code></pre>
+
+<p><strong>架构请求流 / Request Trace:</strong></p>
+
+<pre><code>
+User A types &quot;X&quot; at position 0
+    │
+    ▼ Editor sends WebSocket frame
+    │  { op: &quot;insert&quot;, char: &quot;X&quot;, pos: 0, version: 42 }
+    │
+    ▼ Operation Handler receives
+    │  concurrent_ops = history[42:]   ← ops A hasn&#x27;t seen
+    │  transformed = transform(op, concurrent_ops)
+    │  apply(transformed) to server doc
+    │  append to Op Log
+    │
+    ▼ Broadcast to all other clients in document room
+       { op: &quot;insert&quot;, char: &quot;X&quot;, pos: 1, version: 43 }  ← transformed!
+       (User B&#x27;s client applies this on top of its local state)
+</code></pre>
+
+<p>This matches the architecture diagram: Editor → WebSocket Gateway → Operation Handler → Op Log → broadcast back.</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<h3>1. Tombstone 积累 / Tombstone Accumulation (CRDT)</h3>
+
+<pre><code>
+# 问题：大量删除后，_chars 越来越大
+# &quot;Hello World&quot; typed then deleted → 11 tombstones remain in memory
+# 
+# 解法：定期 Compaction（需要全局协调）
+# 只有当所有客户端都 &gt;= 某个版本时，才能安全清除 tombstone
+# Google Docs 通过定期 snapshot + log replay 解决这个问题
+</code></pre>
+
+<h3>2. OT 的 TP2 问题 / OT&#x27;s TP2 Property</h3>
+
+<p>Jupiter protocol (Google Docs) uses a simpler &quot;server as single source of truth&quot; model that only requires TP1 (inclusion transformation). TP2 (handling three concurrent ops) is notoriously hard to implement correctly — that&#x27;s why peer-to-peer OT was abandoned.</p>
+
+<h3>3. 网络分区 / Network Partition</h3>
+
+<pre><code>
+CRDT wins here: offline edits accumulate as local ops.
+On reconnect, just apply_remote() all the remote ops.
+No conflict — the math guarantees convergence.
+
+OT requires the server version number, so offline OT is tricky.
+Google Docs handles this by queuing ops locally and replaying on reconnect.
+</code></pre>
+
+<h3>4. 意图保留 / Intention Preservation</h3>
+
+<pre><code>
+# 用户意图：&quot;删除第二个词&quot;
+# 并发操作可能在删除之前插入了一堆内容
+# OT 变换后删除了&quot;正确位置&quot;的字符，但可能不是用户想删的那个词
+#
+# 这是 OT 最深的哲学问题，没有完美解法
+# 实践中：用光标 heuristics + 用户 undo 来缓解
+</code></pre>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<h3>谁用什么 / Who Uses What</h3>
+
+<p>| 产品 | 技术 | 原因 |</p>
+<p>|------|------|------|</p>
+<p>| Google Docs | OT (Jupiter Protocol) | 2006年设计，OT成熟时期 |</p>
+<p>| Figma | CRDT | 设计工具的操作天然适合 CRDT（移动、颜色等） |</p>
+<p>| Notion | CRDT (Yjs) | 离线优先，块结构适合 CRDT |</p>
+<p>| Linear | CRDT | 现代架构，P2P 同步 |</p>
+<p>| VS Code Live Share | OT | 代码编辑器，服务端协调更可控 |</p>
+<p>| CouchDB | CRDT-style MVCC | 文档级别合并 |</p>
+
+<h3>面试时如何谈论 / How to Talk About This in Interviews</h3>
+
+<p>&gt; &quot;For a collaborative editor, the hardest problem isn&#x27;t transport — it&#x27;s conflict resolution. I&#x27;d choose OT if we need a central server anyway (simpler ops, proven at scale by Google), or CRDT if we want offline-first or P2P capability. Either way, the client applies ops locally immediately for responsiveness, and reconciles with the server in the background.&quot;</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Q1: 如果两个用户同时在同一位置插入字符，谁的字符应该排在前面？</strong></p>
+
+<p><strong>A1:</strong> This is the &quot;tie-breaking&quot; problem. In OT, server assigns a timestamp or priority based on connection order — whichever op the server receives first wins. In CRDT, each site has a unique ID used for deterministic tiebreaking (e.g., site_id lexicographic order). Neither is &quot;correct&quot; UX-wise; it&#x27;s a deliberate consistency choice. Some systems let the cursor position communicate intent.</p>
+
+<hr/>
+
+<p><strong>Q2: 为什么 Google Docs 不用 CRDT？</strong></p>
+
+<p><strong>A2:</strong> Google Docs predates modern CRDT research (Jupiter Protocol is from 1995/2006). Also, for a centralized product, OT&#x27;s server-centric model is simpler to reason about for correctness. CRDTs have their own complexity (tombstone management, fractional indexing precision). Google has no strong reason to migrate a system that works at massive scale.</p>
+
+<hr/>
+
+<p><strong>Q3: 如何处理用户离线编辑后重新上线？</strong></p>
+
+<p><strong>A3:</strong></p>
+<p>- <strong>OT approach:</strong> Client stores ops with the last-known server version. On reconnect, sends all queued ops with their original version. Server replays the transform chain. Risky if offline too long (version gap too large) — some systems cap offline time.</p>
+<p>- <strong>CRDT approach:</strong> Client accumulates CRDTChar objects locally. On reconnect, exchange ops with server (gossip or vector clock-based sync). apply_remote() handles everything — guaranteed convergence regardless of offline duration.</p>
+
+<hr/>
+
+<p><strong>Q4: 协同编辑系统如何做 Undo/Redo？</strong></p>
+
+<p><strong>A4:</strong> This is where things get tricky. Local undo in a collaborative context can &quot;undo&quot; someone else&#x27;s concurrent work accidentally. Modern systems implement <strong>selective undo</strong>: undo only your own operations, using Exclusion Transformation (ET) to &quot;remove&quot; your past op from the history without affecting others&#x27;. Some systems (Figma) implement per-user undo stacks tracked on the server.</p>
+
+<hr/>
+
+<p><strong>Q5: 系统设计面试中，如何在 OT 和 CRDT 之间选择？</strong></p>
+
+<p><strong>A5:</strong> Ask these questions:</p>
+<p>1. <strong>Need offline-first / P2P?</strong> → CRDT</p>
+<p>2. <strong>Central server anyway, proven ops needed?</strong> → OT</p>
+<p>3. <strong>Rich text with complex formatting?</strong> → Yjs (CRDT library) handles this well</p>
+<p>4. <strong>Simple shared state (not text)?</strong> → CRDT variants like G-Counter, LWW-Register</p>
+<p>5. <strong>Scale?</strong> → Both scale; OT&#x27;s server bottleneck is the bigger concern at extreme scale</p>
+
+<p>In an interview, showing you know both and can articulate the tradeoffs is more impressive than picking one confidently.</p>
+
+<hr/>
+
+<p><strong>Further Reading / 延伸阅读:</strong></p>
+<p>- 🔗 [Operational Transformation (Wikipedia)](https://en.wikipedia.org/wiki/Operational_transformation)</p>
+<p>- 🔗 [CRDT.tech — A comprehensive CRDT resource](https://crdt.tech/)</p>
+<p>- 🔗 [Yjs — Production CRDT library used by many apps](https://github.com/yjs/yjs)</p>
+<p>- 🔗 [ShareDB — OT framework powering many editors](https://github.com/share/sharedb)</p>
+<p>- 🔗 [Figma&#x27;s multiplayer post](https://www.figma.com/blog/how-figmas-multiplayer-technology-works/)</p>
+<p>- 🔗 [Google Wave OT paper (Jupiter Protocol)](https://dl.acm.org/doi/10.1145/215585.215706)</p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-06-05</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-05</guid>
+      <pubDate>Fri, 05 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 49</h2>
+<h2>设计协同编辑器 / Design a Collaborative Editor (Google Docs)</h2>
+<p>&gt; ⏱️ 预计阅读时间 / Est. read time: 3 min | 难度 / Difficulty: Expert</p>
+
+<hr/>
+
+<h2>想象你在设计... / The Scenario</h2>
+
+<p>想象你在设计 Google Docs：两个人同时编辑同一份文档，双方的更改应该<strong>实时同步</strong>，不能覆盖对方的内容。</p>
+
+<p>Imagine you&#x27;re building Google Docs: two users editing the same doc simultaneously, changes must sync <strong>in real time</strong> without overwriting each other.</p>
+
+<p>这是分布式系统里最难的问题之一——<strong>并发冲突解决</strong>。</p>
+
+<p>This is one of the hardest distributed systems problems: <strong>concurrent conflict resolution</strong>.</p>
+
+<hr/>
+
+<h2>核心挑战 / Core Challenge: Operational Transformation vs CRDT</h2>
+
+<p>协同编辑的本质问题：用户 A 和用户 B <strong>同时</strong>操作同一文档，服务器收到两个冲突的变更，怎么合并？</p>
+
+<p>The core problem: Users A and B make <strong>concurrent</strong> changes, server receives two conflicting ops. How to merge?</p>
+
+<p><strong>两种主流方案 / Two Main Approaches:</strong></p>
+
+<p>| 方案 | OT (Operational Transformation) | CRDT (Conflict-free Replicated Data Type) |</p>
+<p>|------|----------------------------------|-------------------------------------------|</p>
+<p>| 代表 | Google Docs | Figma, Linear, Notion |</p>
+<p>| 原理 | 变换操作以适应其他操作 | 数学上保证自动合并 |</p>
+<p>| 复杂度 | 实现复杂，服务器有序 | 实现较简单，去中心化 |</p>
+
+<hr/>
+
+<h2>架构图 / Architecture</h2>
+
+<pre><code>
+Client A                  Server                   Client B
+  │                         │                         │
+  │──Op: insert(&quot;H&quot;,0)─────&gt;│                         │
+  │                         │──Op: insert(&quot;H&quot;,0)─────&gt;│
+  │&lt;────────────────────────│&lt;──Op: insert(&quot;W&quot;,0)─────│
+  │                         │                         │
+  │                   [OT Engine]                     │
+  │                  transform ops                    │
+  │                  → final order                    │
+  │                         │                         │
+  │&lt;──broadcast final op────│──broadcast final op────&gt;│
+
+┌─────────────────────────────────────────────────────┐
+│                   Architecture                      │
+│                                                     │
+│  WebSocket Gateway ──► Op Queue (Kafka)             │
+│       │                    │                        │
+│  Presence Service     OT/CRDT Engine                │
+│  (who&#x27;s editing)           │                        │
+│                      Document Store                 │
+│                      (PostgreSQL + snapshots)       │
+│                            │                        │
+│                      Version History                │
+│                      (immutable log)                │
+└─────────────────────────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>关键设计决策 / Key Design Decisions</h2>
+
+<h3>1. OT 的工作原理</h3>
+<pre><code>
+初始状态: &quot;HELLO&quot;
+
+用户A: delete(0, 1)  → &quot;ELLO&quot;
+用户B: insert(&quot;!&quot;, 5) → &quot;HELLO!&quot;
+
+同时到达服务器，需要 transform:
+  A 先执行: &quot;ELLO&quot;
+  B 的 insert(5) → transform → insert(4): &quot;ELLO!&quot;  ✅
+</code></pre>
+
+<h3>2. 文档存储策略</h3>
+<p>- <strong>不存最终状态</strong>，而是存<strong>操作日志 (operation log)</strong></p>
+<p>- 定期生成<strong>快照 (checkpoint)</strong>，加速重建</p>
+<p>- 版本 = <code>(clientId, clock)</code> — 逻辑时钟，非物理时间</p>
+
+<h3>3. 实时传输: WebSocket</h3>
+<p>- HTTP 轮询延迟太高，Server-Sent Events 单向</p>
+<p>- WebSocket 双向，持久连接，适合协作场景</p>
+
+<hr/>
+
+<h2>为什么这样设计 / Why This Design?</h2>
+
+<p><strong>OT vs CRDT 选择</strong>：</p>
+<p>- Google Docs 用 OT，需要中央服务器做变换 — 简化客户端逻辑</p>
+<p>- CRDT 允许离线操作后合并 — Figma 和 Linear 用它，支持离线/弱网</p>
+
+<p><strong>操作日志 vs 状态快照</strong>：</p>
+<p>- 存操作日志 = 完整历史，可以实现&quot;任意版本回滚&quot;</p>
+<p>- 只存最新状态会丢失协作上下文</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>用时间戳排序并发操作</strong> — 分布式系统时钟不可靠，两台机器的&quot;同时&quot;可能差几百毫秒</p>
+
+<p>✅ <strong>用逻辑时钟 / Lamport Clock</strong> 或向量时钟建立因果顺序</p>
+
+<p>❌ <strong>直接用数据库乐观锁</strong> — &quot;最后写入者获胜&quot;(LWW) 会丢失数据</p>
+
+<p>✅ <strong>OT 或 CRDT</strong>，确保所有操作都被保留并正确合并</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Google&#x27;s Operational Transformation paper](https://research.google/pubs/pub35605/)</p>
+<p>- [CRDT explained](https://crdt.tech/)</p>
+<p>- [Building a real-time collaborative editor](https://www.smashingmagazine.com/2020/07/practical-guide-to-crdt/)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>两个人同时改同一个 Google Doc，就像两个人同时在一张纸上写字。OT 就像一个裁判，看到两个人都写了东西，想办法把两份更改都保存下来，谁的也不丢。</p>
+
+<p>Two people editing the same doc is like two people writing on the same piece of paper at once. OT is like a referee who sees both changes and figures out how to keep both without losing either.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 50</h2>
+<h2>#100 Same Tree — Easy 🟢 | Trees Pattern (5/15)</h2>
+<p>&gt; ⏱️ 预计阅读时间 / Est. read time: 4 min</p>
+
+<hr/>
+
+<p>🧩 <strong>Trees 模式 (5/15)</strong> — 复用 Day 54 引入的树遍历模板</p>
+
+<p>Building on the <strong>树遍历模式</strong> template from the start of this block.</p>
+
+<p><strong>模版回顾 / Template Recap:</strong></p>
+<pre><code>
+def dfs(node):
+    if not node: return BASE_CASE
+    left = dfs(node.left)
+    right = dfs(node.right)
+    return COMBINE(node.val, left, right)
+</code></pre>
+
+<hr/>
+
+<h2>🔗 Links</h2>
+<p>- LeetCode: https://leetcode.com/problems/same-tree/ 🟢</p>
+<p>- NeetCode: https://www.youtube.com/watch?v=vRbbcKXCxOw</p>
+
+<hr/>
+
+<h2>真实场景类比 / Real-World Analogy</h2>
+
+<p>你在做文件系统<strong>差异比较</strong> (diff)：两棵目录树是否完全相同？每个节点（文件/文件夹）的名字、位置都必须一样。</p>
+
+<p>You&#x27;re doing a <strong>file system diff</strong>: are two directory trees exactly identical? Every node&#x27;s name and position must match.</p>
+
+<hr/>
+
+<h2>问题分析 / Problem</h2>
+
+<p>给定两棵二叉树，判断它们是否<strong>结构相同且节点值相同</strong>。</p>
+
+<p>Given two binary trees, determine if they are <strong>structurally identical and nodes have the same values</strong>.</p>
+
+<pre><code>
+    1             1
+   / \           / \
+  2   3         2   3
+p = q → True
+
+    1             1
+   /               \
+  2                 2
+p ≠ q → False
+</code></pre>
+
+<hr/>
+
+<h2>映射到模版 / Map to Template</h2>
+
+<p>这道题是<strong>双树同步 DFS</strong> — 模板的自然扩展：</p>
+
+<pre><code>
+BASE_CASE: 两个都是 None → True; 一个是 None → False
+COMBINE: node values 相等 AND 左子树相同 AND 右子树相同
+</code></pre>
+
+<hr/>
+
+<h2>Python 解法 / Solution</h2>
+
+<pre><code>
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def isSameTree(p: TreeNode, q: TreeNode) -&gt; bool:
+    # BASE CASE: both None → structurally equal at this position
+    if not p and not q:
+        return True
+    # one is None, other isn&#x27;t → mismatch
+    if not p or not q:
+        return False
+    # COMBINE: values must match AND both subtrees must match
+    return (p.val == q.val and
+            isSameTree(p.left, q.left) and
+            isSameTree(p.right, q.right))
+
+# Trace example:
+#       1             1
+#      / \           / \
+#     2   3         2   3
+#
+# isSameTree(1, 1):
+#   1 == 1 ✓
+#   isSameTree(2, 2):
+#     2 == 2 ✓, isSameTree(None,None)=True, isSameTree(None,None)=True → True
+#   isSameTree(3, 3):
+#     3 == 3 ✓, ... → True
+#   → True ✅
+</code></pre>
+
+<p><strong>时间复杂度 / Complexity:</strong> O(n) time, O(h) space where h = tree height</p>
+
+<hr/>
+
+<h2>这道题 vs 同系列 / Variation from Block</h2>
+
+<p>| 问题 | 关键变化 | 模版调整 |</p>
+<p>|------|----------|----------|</p>
+<p>| #226 Invert Binary Tree | 改变结构 | COMBINE 交换左右子树 |</p>
+<p>| #104 Max Depth | 返回数值 | COMBINE 取 max |</p>
+<p>| #110 Balanced | 返回高度+是否平衡 | COMBINE 返回元组 |</p>
+<p>| <strong>#100 Same Tree</strong> | <strong>双树同步</strong> | <strong>参数变成两个节点</strong> |</p>
+<p>| #572 Subtree of Another Tree (下一题) | 包含关系 | isSameTree + 递归检查 |</p>
+
+<p><strong>注意</strong>：下一题 #572 直接调用这道题的函数！学好这道，下道题轻松解。</p>
+
+<p><strong>Note:</strong> #572 literally calls <code>isSameTree</code> as a helper! Master this and the next problem is easy.</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p><strong>双指针 DFS 模式</strong> — 两棵树同步遍历：</p>
+<p>- #100 Same Tree → 完全相同</p>
+<p>- #572 Subtree → 包含关系</p>
+<p>- #951 Flip Equivalent → 镜像等价</p>
+<p>- #1367 Linked List in Binary Tree → 链表在树中</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [LeetCode #100](https://leetcode.com/problems/same-tree/)</p>
+<p>- [NeetCode Video](https://www.youtube.com/watch?v=vRbbcKXCxOw)</p>
+<p>- [Tree traversal patterns](https://leetcode.com/discuss/study-guide/1213olo/binary-trees-study-guide)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>判断两棵树是否一样，就像比对两张照片：先看根节点的脸，再看左手，再看右手。每个部位都一样，才算相同。</p>
+
+<p>Checking if two trees are the same is like comparing two photos side by side: check the root&#x27;s face, then left arm, then right arm. Every part must match.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 49</h2>
+<h2>为不可见的工程投资发声 / Advocating for Invisible Engineering Work</h2>
+<p>&gt; ⏱️ 预计阅读时间 / Est. read time: 2 min | Level: Staff</p>
+
+<hr/>
+
+<h2>面试题 / The Question</h2>
+
+<p><strong>&quot;Tell me about a time you had to advocate for engineering investment that wasn&#x27;t user-visible.&quot;</strong></p>
+
+<p><strong>&quot;请讲一个你为不可见的工程投资（如基础设施、技术债务、工具改进）争取资源的经历。&quot;</strong></p>
+
+<hr/>
+
+<h2>为什么这道题重要 / Why This Matters</h2>
+
+<p>Staff+ 工程师的核心价值之一：<strong>看见别人看不见的问题，并说服他人投资解决它</strong>。</p>
+
+<p>用户不会因为你的部署速度快 3 倍而给你发邮件夸你。但如果你不做这件事，6 个月后团队速度会死。</p>
+
+<p>One of the core Staff+ skills: <strong>seeing invisible problems and convincing others to invest</strong>. Users won&#x27;t thank you for faster deploys — but if you don&#x27;t do it, the team dies in 6 months.</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<p><strong>Situation（情境）</strong></p>
+<p>- 描述系统的隐性问题：测试慢、CI 不稳定、数据库缺少索引...</p>
+<p>- 说明为什么没人关注它：产品压力、短期优先</p>
+<p>- &quot;我们的 CI pipeline 平均需要 45 分钟，每天每个工程师浪费 1-2 小时等待。&quot;</p>
+
+<p><strong>Task（任务）</strong></p>
+<p>- 你的目标：让领导相信这值得投资</p>
+<p>- 挑战：没有用户可见的功能交付，ROI 不直观</p>
+
+<p><strong>Action（行动）</strong></p>
+<p>- <strong>量化隐性成本</strong>：45 min × 8 engineers × 5 days = 30 engineer-hours/week</p>
+<p>- <strong>建立 before/after 对比</strong>：跑 POC，证明方案可行</p>
+<p>- <strong>用业务语言讲</strong>：不说&quot;CI 慢&quot;，说&quot;每季度 390 小时工程师时间浪费&quot;</p>
+<p>- <strong>降低感知风险</strong>：提议先做一个 sprint 的试验，可测量</p>
+
+<p><strong>Result（结果）</strong></p>
+<p>- 争取到了 1 sprint 投资 → CI 时间从 45 min 降到 8 min</p>
+<p>- 团队速度提升，加速了未来几个月的功能交付</p>
+
+<hr/>
+
+<h2>❌ 差答案 vs ✅ 好答案</h2>
+
+<p>❌ <strong>&quot;我说服了领导，告诉他们技术债很重要。&quot;</strong></p>
+<p>→ 没有量化，没有业务语言，听起来像抱怨。</p>
+
+<p>✅ <strong>&quot;我做了一个数据分析，发现 CI 瓶颈每季度造成 390 小时的工程损耗。我做了一个 POC 把时间从 45 分钟降到了 8 分钟，然后用这个 demo 加上 ROI 数据获得了一个 sprint 的投资。&quot;</strong></p>
+<p>→ 量化问题 → 证明方案 → 用商业语言 → 争取到资源</p>
+
+<hr/>
+
+<h2>Senior/Staff 差异 / Senior vs Staff Tips</h2>
+
+<p><strong>Senior 思路</strong>：发现问题，解决问题，向团队汇报。</p>
+
+<p><strong>Staff 思路</strong>：</p>
+<p>1. 将技术问题翻译为<strong>商业影响</strong> (business impact)</p>
+<p>2. <strong>主动建立可测量的 KPI</strong> 来追踪投资回报</p>
+<p>3. 识别<strong>力量乘数</strong> (force multipliers)：一次投资，N 倍长期收益</p>
+<p>4. 让这个工作<strong>可见</strong>：写 doc，做 demo，在 all-hands 上分享</p>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+
+<p>1. <strong>量化隐性成本</strong> — 工程时间、事故频率、部署频率都可以换算成 $</p>
+<p>2. <strong>POC 先行</strong> — 证明可行性比光讲道理有力 10 倍</p>
+<p>3. <strong>用业务语言</strong> — PM 和 EM 关心的是速度和成本，不是技术细节</p>
+<p>4. <strong>降低风险感知</strong> — 提议&quot;一个 sprint 试验&quot;比&quot;重构三个月&quot;更容易被批</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Will Larson - Staff Engineer](https://staffeng.com/)</p>
+<p>- [Engineering ROI](https://newsletter.pragmaticengineer.com/p/roi-of-engineering)</p>
+<p>- [STAR method for tech](https://www.levels.fyi/blog/star-method-for-technical-interviews.html)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>这就像你发现家里水管老化了，但没人注意。你去计算&quot;如果水管爆了要花多少修理费&quot;，做个小测试证明换管子不贵，然后用这些数据说服家里人现在就换。</p>
+
+<p>It&#x27;s like discovering the house pipes are old but nobody notices. You calculate &quot;what if they burst?&quot; costs, do a small test to prove fixing it is cheap, then use that data to convince your family to fix it now.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🎨 前端 / Python Craft — Day 12 (Section 4)</h2>
+<h2>Decorator Pattern (OOP) — 对象包装，不是语法糖</h2>
+<p>&gt; ⏱️ 预计阅读时间 / Est. read time: 2 min | Design Patterns Week 3</p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个日志系统：基础 Logger 只写文件，但某些场景需要同时加时间戳、加调用者信息、加颜色。你不想修改 Logger 类，也不想为每种组合创建子类。</p>
+
+<p>You have a base Logger that writes to file. Some cases need timestamps, caller info, and colors added. You don&#x27;t want to modify Logger or create 12 subclass combinations.</p>
+
+<p><strong>Decorator Pattern</strong> 的核心：<strong>动态地给对象添加职责，而不修改类本身。</strong></p>
+
+<p>The core idea: <strong>attach new responsibilities to an object dynamically, without modifying its class.</strong></p>
+
+<hr/>
+
+<h2>代码示例 / Code</h2>
+
+<pre><code>
+from abc import ABC, abstractmethod
+
+# Component interface — 所有对象共享的接口
+class Logger(ABC):
+    @abstractmethod
+    def log(self, message: str) -&gt; None:
+        pass
+
+# Concrete component — 最简单的实现
+class FileLogger(Logger):
+    def log(self, message: str) -&gt; None:
+        print(f&quot;[FILE] {message}&quot;)
+
+# Base decorator — 持有被包装的对象
+class LoggerDecorator(Logger):
+    def __init__(self, logger: Logger):
+        self._logger = logger  # wrap the inner logger
+
+    def log(self, message: str) -&gt; None:
+        self._logger.log(message)  # delegate by default
+
+# Concrete decorator 1: adds timestamp
+class TimestampDecorator(LoggerDecorator):
+    def log(self, message: str) -&gt; None:
+        from datetime import datetime
+        timestamped = f&quot;[{datetime.now().strftime(&#x27;%H:%M:%S&#x27;)}] {message}&quot;
+        self._logger.log(timestamped)
+
+# Concrete decorator 2: adds log level
+class LevelDecorator(LoggerDecorator):
+    def __init__(self, logger: Logger, level: str = &quot;INFO&quot;):
+        super().__init__(logger)
+        self.level = level
+
+    def log(self, message: str) -&gt; None:
+        self._logger.log(f&quot;[{self.level}] {message}&quot;)
+
+# --- Usage ---
+# Simple logger
+logger = FileLogger()
+logger.log(&quot;Server started&quot;)
+# → [FILE] Server started
+
+# Wrap with timestamp
+logger = TimestampDecorator(FileLogger())
+logger.log(&quot;Server started&quot;)
+# → [FILE] [14:30:05] Server started
+
+# Stack multiple decorators (order matters!)
+logger = LevelDecorator(TimestampDecorator(FileLogger()), level=&quot;ERROR&quot;)
+logger.log(&quot;Server crashed&quot;)
+# → [FILE] [14:30:05] [ERROR] Server crashed
+</code></pre>
+
+<hr/>
+
+<h2>❌ vs ✅ 对比 / Common Mistake</h2>
+
+<p>❌ <strong>用继承解决组合问题</strong>:</p>
+<pre><code>
+class TimestampFileLogger(FileLogger): ...
+class LevelTimestampFileLogger(TimestampFileLogger): ...
+# 3 种特性 = 7 个子类！
+</code></pre>
+
+<p>✅ <strong>用 Decorator 自由组合</strong>:</p>
+<pre><code>
+logger = LevelDecorator(TimestampDecorator(FileLogger()))
+# n 种特性 = n 个 decorator，可任意组合
+</code></pre>
+
+<hr/>
+
+<h2>什么时候用 / When to Use</h2>
+
+<p>✅ 需要<strong>动态</strong>给对象添加职责（非编译时继承）</p>
+<p>✅ 特性可以<strong>任意组合</strong>（N 种组合用继承会爆炸）</p>
+<p>✅ 不想修改原始类（开闭原则）</p>
+
+<p>❌ 如果只有 1-2 种固定组合，直接子类更简单</p>
+<p>❌ 过度嵌套会让调试栈很深（每层都是包装）</p>
+
+<hr/>
+
+<h2>Python 标准库中的 Decorator Pattern</h2>
+<p>- <code>io.BufferedWriter(io.FileIO(...))</code> — IO 流包装</p>
+<p>- <code>functools.lru_cache</code> — 虽然是语法糖，本质也是 wrapper</p>
+<p>- <code>logging.Handler</code> — 可以叠加 Formatter、Filter</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Refactoring.Guru - Decorator](https://refactoring.guru/design-patterns/decorator)</p>
+<p>- [Python io module](https://docs.python.org/3/library/io.html) — real-world example</p>
+<p>- [Design Patterns: Elements of Reusable OO Software](https://www.amazon.com/Design-Patterns-Elements-Reusable-Object-Oriented/dp/0201633612)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>Decorator 就像俄罗斯套娃：外层娃娃（Decorator）把内层娃娃（Component）包住，在传球之前加点料。可以套很多层，每层加不同功能。</p>
+
+<p>Decorator is like Russian dolls: the outer doll wraps the inner one, adds something before passing the message through. You can stack as many layers as you want, each adding a different feature.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 59</h2>
+<h2>AI 新闻速递 / AI News Roundup</h2>
+<p>&gt; ⏱️ 预计阅读时间 / Est. read time: 2 min | 本周最热 / This Week&#x27;s Highlights</p>
+
+<hr/>
+
+<h2>📡 本周 AI 大事 / This Week in AI</h2>
+
+<h3>1. 🏢 微软 Build 2026: MAI 模型家族发布</h3>
+<p><strong>Microsoft launches 7 MAI models at Build 2026</strong></p>
+
+<p>微软在 Build 2026 (6月2日) 发布了七款自研 AI 模型，宣告战略转向&quot;长期自给自足&quot;。</p>
+
+<p>Microsoft unveiled seven in-house AI models at Build 2026 (June 2), signaling a strategic pivot toward &quot;long-term self-sufficiency&quot; in AI.</p>
+
+<p>亮点 / Highlights:</p>
+<p>- <strong>MAI-Thinking-1</strong>: 旗舰推理模型，35B 参数，256K 上下文窗口，从头训练，使用商业授权数据。Microsoft&#x27;s flagship reasoning model — 35B active parameters, 256K context window, trained on commercially licensed data.</p>
+<p>- <strong>MAI-Code-1-Flash</strong>: 5B 参数的代码模型，深度集成 GitHub Copilot 和 VS Code。5B parameter coding model, deeply integrated into GitHub Copilot and VS Code.</p>
+<p>- <strong>Frontier Tuning</strong>: 企业可用 RL 在自有工作流上定制 MAI 模型，据报道微软内部 Excel 场景下定制模型媲美 GPT-5.4，效率提升约 10 倍。Enterprise-grade RL-based tuning on custom workflows — reportedly matches GPT-5.4 for Excel use cases at ~10× efficiency.</p>
+
+<p>🔗 来源 / Source: https://microsoft.ai/news/building-a-hillclimbing-machine-launching-seven-new-mai-models/</p>
+
+<hr/>
+
+<h3>2. 🔵 GPT-5.5 成为 ChatGPT 默认模型</h3>
+<p><strong>GPT-5.5 Instant becomes ChatGPT&#x27;s default</strong></p>
+
+<p>OpenAI 推出 GPT-5.5 系列，包含 Pro 和 Instant 变体。GPT-5.5 Instant 据报道已在 6 月成为 ChatGPT 默认模型，主打企业知识工作和编程场景的强化 Agent 能力。</p>
+
+<p>OpenAI released the GPT-5.5 family with Pro and Instant variants. GPT-5.5 Instant reportedly became the default ChatGPT model in June, with enhanced agentic capabilities for enterprise knowledge work and coding.</p>
+
+<p>🔗 来源 / Source: https://augusto.digital/insights/blogs/monthly-llm-news-june-2026/</p>
+
+<hr/>
+
+<h3>3. ✨ Google Gemini 3.5 Flash 正式 GA</h3>
+<p><strong>Gemini 3.5 Flash goes generally available</strong></p>
+
+<p>Google 的 Gemini 3.5 Flash 于 5 月 19 日 GA，成为 Gemini 应用和 AI Search 的默认模型。据报道在编程和 Agent 基准测试上超越 Gemini 3.1 Pro，速度是上一代旗舰的 4 倍。</p>
+
+<p>Google&#x27;s Gemini 3.5 Flash became GA on May 19, now the default in the Gemini app and AI Mode in Search. Reportedly outperforms Gemini 3.1 Pro on coding and agentic benchmarks at 4× the speed of previous flagship.</p>
+
+<p>🔗 来源 / Source: https://blog.mean.ceo/new-ai-model-releases-news-june-2026/</p>
+
+<hr/>
+
+<h2>🔍 工程师视角 / Engineer&#x27;s Take</h2>
+
+<p>这一周的核心主题：<strong>垂直整合 vs 平台开放</strong></p>
+
+<p>The week&#x27;s theme: <strong>vertical integration vs. open platforms</strong></p>
+
+<p>- 微软 MAI = 自建模型 + 深度产品整合（Office, GitHub）</p>
+<p>- OpenAI/Google = 开放 API，生态优先</p>
+
+<p>对你的影响 / What this means for you:</p>
+<p>- MAI-Code-1-Flash 值得关注 — 5B 参数但深度 IDE 集成，可能比大模型更实用</p>
+<p>- Frontier Tuning 让企业用自己的数据精调模型成为主流，RAG 之外的新路径</p>
+<p>- 模型战争打到了&quot;效率&quot;维度，不只是&quot;最强&quot;了</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Microsoft MAI Models](https://microsoft.ai/news/building-a-hillclimbing-machine-launching-seven-new-mai-models/)</p>
+<p>- [June 2026 LLM roundup](https://augusto.digital/insights/blogs/monthly-llm-news-june-2026/)</p>
+<p>- [AI model releases tracker](https://llm-stats.com/llm-updates)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>微软这周说&quot;我要自己造玩具，不靠别人了&quot;，发布了一堆自家 AI 模型。Google 也发了更快的新模型，OpenAI 把更新的模型设为了默认。大家都在比谁更聪明、更快、更便宜。</p>
+
+<p>Microsoft this week said &quot;I&#x27;ll make my own toys,&quot; launching their own AI model family. Google also dropped a faster new model, and OpenAI made their newer model the default. Everyone&#x27;s racing to be smarter, faster, and cheaper.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-03</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
