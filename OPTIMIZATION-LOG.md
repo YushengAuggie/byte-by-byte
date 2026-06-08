@@ -494,3 +494,24 @@
 1. **Investigate the review-and-send timeout.** It timed out during `model-call-started`. Check the model used by that cron and its `payload.timeoutSeconds` — if the model call regularly approaches the cron timeout, increase the budget or split the QA pass into smaller steps. Today's content still got delivered, so confirm whether `backup-send` rescued it (if so, that's working as designed; if not, document the actual save path).
 2. **Add a watchdog for review-and-send timeouts.** Since today's failure was caught by cron state (unlike the silent 5/27 miss), the failureAlert should have fired. Verify the alert was actually sent to the operator — if not, the alert pipeline itself needs a fix.
 3. **No code changes from this run.** Carry over prior cycle's open items (root-cause weekday misses, fix optimizer's own cron status, post-send verification step). They remain unresolved.
+
+## 2026-06-07 Optimization Run
+
+### Issues Found
+- **P0 (recurring)**: 2 missed days in last 7 — **2026-06-04 (Thu)** and **2026-06-05 (Fri)**. No entries in `email-send-log.json`, no Day-N commit for either date. Last commit before the gap was Day 58 on 2026-06-03 08:10 PT; next was Day 59 on 2026-06-06 11:18 PT (Saturday). Two consecutive weekday misses — same silent-failure pattern flagged in previous cycles (5/19, 5/25, 5/27).
+- **P0 (state stuck)**: `currentDay=59` for both 6/6 and 6/7 sends (two commits both labeled "Day 59"). Same thing happened 5/30+5/31 (both "Day 55"). Looks like day advancement is skipped on weekends or when a miss bumps the schedule — needs verification. Either the day counter is correct and the commit message is misleading, or the counter genuinely isn't advancing.
+- **P1**: None observed in delivered content. Weekend short-send pattern (sections=1 on Sat/Sun) is consistent and looks intentional, not a bug.
+- **P2**: `openclaw cron list --json` failed this run — `openclaw` not on PATH in the cron shell. Could not pull cron error/timeout telemetry this cycle. Worth fixing in the optimizer cron (use absolute path or load nvm/env first).
+- **P2 (positive)**: Prevention work shipped on 2026-06-06 (commit `147a113`): added `scripts/health-check.sh`, fixed `backup-send.sh` (frontend→python-craft typo), and normalized `state.json` trailing newline. Good progress on hardening.
+
+### Metrics
+- Delivery rate (7d): **5/7** (missed 2026-06-04, 2026-06-05)
+- Cron errors: **unknown** (CLI lookup failed — `openclaw` not on PATH)
+- State: currentDay=59, lastSentDate=2026-06-05 (stale — actually sent 6/6 and 6/7 since), lastReviewDay=55, reviewDays through 55, pythonCraftIndex=12
+- Day advancement: 58→59 across 7 days = under-advanced if every day should be +1. Either by design (weekend pause) or the same bug as previous "Day 55" double-commit.
+
+### Suggested Manual Follow-ups
+1. **Root-cause the 6/4 + 6/5 misses.** Pull gateway logs for 2026-06-04 and 2026-06-05 around 07:00–08:30 PT. Two consecutive weekday misses is unusual — could indicate a credential/auth issue that started Wed evening and was unblocked Saturday morning. The new `health-check.sh` (added 6/6) might catch the next occurrence if it runs on schedule.
+2. **Verify day-counter behavior.** Check if `currentDay` is supposed to increment on missed days, weekends, or every send. Two pairs of double-"Day N" commits (Day 55 on 5/30+5/31, Day 59 on 6/6+6/7) need a clear answer: is this expected (weekend pause) or a `lastSentDate`-update bug?
+3. **Fix optimizer's PATH.** This cron run couldn't query cron telemetry because `openclaw` wasn't on PATH. Add `source ~/.zshrc` or use the absolute binary path so future runs can pull cron error/timeout data.
+4. **Carry-over open items**: post-send verification step, weekday-miss root-cause, sync `state.lastSentDate` with email-send-log writes. Of these, item #1 may now be partially addressed by `health-check.sh` — worth confirming it's wired into a cron.

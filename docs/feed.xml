@@ -5,8 +5,134 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 07 Jun 2026 15:07:43 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 08 Jun 2026 15:06:28 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-08</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-08</guid>
+      <pubDate>Mon, 08 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 / Review Day — Day 60</h2>
+
+<p>📊 NeetCode: 50/150 · SysDesign: 49/40 · Behavioral: 49/40 · Frontend: 37/50 · AI: 24/30</p>
+<p>🔥 59-day streak!</p>
+
+<hr/>
+
+<p>🔄 <strong>复习日 / Review Day</strong></p>
+<p>今天是复习日！回顾过去4天的内容。</p>
+
+<p>This is Day 60 — let&#x27;s consolidate what you&#x27;ve learned in Days 56–59.</p>
+
+<hr/>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+
+<p>Pick 3 topics from 3 different sections.</p>
+
+<hr/>
+
+<p><strong>Q1: [🏗️ System Design]</strong> — <em>Design a Collaborative Editor (Google Docs)</em></p>
+
+<p>你在设计一个类 Google Docs 的协同编辑器。两个用户同时编辑同一段文字：User A 在位置 5 插入 &quot;hello&quot;，User B 几乎同时删除了位置 3–7 的内容。这两个操作应该如何合并，才能保证两个用户最终看到一致的内容？</p>
+
+<p>You&#x27;re designing a collaborative editor. Two users edit simultaneously: User A inserts &quot;hello&quot; at position 5, User B deletes characters at positions 3–7. How do you merge these operations to reach eventual consistency?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>This is the <strong>Operational Transformation (OT)</strong> problem — the core challenge in collaborative editors.</p>
+
+<p><strong>Key insight:</strong> When User B&#x27;s delete operation arrives at the server <em>after</em> User A&#x27;s insert, the server must <strong>transform</strong> B&#x27;s operation to account for A&#x27;s change. B&#x27;s delete range (3–7) must be shifted to (3–12) because A inserted 5 characters before position 7.</p>
+
+<p><strong>Two main approaches:</strong></p>
+<p>1. <strong>OT (Operational Transformation)</strong> — Google Docs&#x27; original approach. A central server serializes all operations and transforms concurrent ops against each other. Simple client, complex server.</p>
+<p>2. <strong>CRDTs (Conflict-free Replicated Data Types)</strong> — Each character gets a unique ID and tombstone on delete. No coordination needed. Used by Figma, Linear. More complex data structure, simpler convergence.</p>
+
+<p><strong>Common mistake:</strong> Using naive &quot;last write wins&quot; — this causes data loss. The editor must track the <em>intention</em> of each edit, not just its position.</p>
+
+<p><em>The tradeoff: OT requires a central coordinator (single point of failure), CRDTs have higher memory overhead but work peer-to-peer.</em></p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [💻 Algorithms]</strong> — <em>Balanced Binary Tree &amp; Diameter of Binary Tree</em></p>
+
+<p>给定一棵二叉树，如何在 <strong>一次 DFS</strong> 中同时计算：(1) 树是否平衡（任意节点左右子树高度差 ≤ 1），(2) 树的直径（最长路径经过的节点数）？提示：这两道题用了同一个&quot;后序递归&quot;模式。</p>
+
+<p>Given a binary tree, how do you compute both (1) whether it&#x27;s height-balanced and (2) its diameter — in a <strong>single DFS pass</strong>? Hint: both problems share the same post-order recursion pattern.</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>Both problems use <strong>post-order DFS</strong> (process children before parent) and return the <strong>height</strong> from each recursive call.</p>
+
+<p><strong>Balanced Binary Tree:</strong></p>
+<pre><code>
+def isBalanced(root):
+    def height(node):
+        if not node: return 0
+        left = height(node.left)
+        right = height(node.right)
+        if left == -1 or right == -1 or abs(left - right) &gt; 1:
+            return -1  # -1 = &quot;unbalanced&quot; sentinel
+        return 1 + max(left, right)
+    return height(root) != -1
+</code></pre>
+
+<p><strong>Diameter of Binary Tree:</strong></p>
+<pre><code>
+def diameterOfBinaryTree(root):
+    diameter = 0
+    def height(node):
+        nonlocal diameter
+        if not node: return 0
+        left = height(node.left)
+        right = height(node.right)
+        diameter = max(diameter, left + right)  # path through this node
+        return 1 + max(left, right)
+    height(root)
+    return diameter
+</code></pre>
+
+<p><strong>Key insight:</strong> In both, each node returns its <strong>height</strong> to the parent, but also performs local work (balance check or diameter update) at that node. The diameter at any node = <code>left_height + right_height</code>. This is the <strong>&quot;return height, update global&quot;</strong> pattern — reuse it for Maximum Path Sum too!</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [🤖 AI]</strong> — <em>Reinforcement Learning from AI Feedback (RLAIF)</em></p>
+
+<p>RLHF 需要人类标注者给模型输出打分，成本很高。RLAIF 如何解决这个问题？它的核心假设是什么，又有什么局限性？</p>
+
+<p>RLHF requires expensive human annotators to score model outputs. How does RLAIF solve this, what&#x27;s its core assumption, and what are its limitations?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>RLAIF (RL from AI Feedback)</strong> replaces human raters with a <em>larger/stronger AI model</em> (the &quot;judge&quot;) to score the outputs of the model being trained.</p>
+
+<p><strong>How it works:</strong></p>
+<p>1. Sample two responses from the student model for the same prompt</p>
+<p>2. Ask the judge AI: &quot;Which response is better and why?&quot;</p>
+<p>3. Use those AI-generated preference labels to train the reward model</p>
+<p>4. Run PPO/DPO optimization as usual</p>
+
+<p><strong>Core assumption:</strong> The judge AI has better judgment than the student model — i.e., it can reliably distinguish good from bad outputs. This breaks down for tasks where <em>no current model</em> can reliably evaluate quality (e.g., novel math proofs, highly specialized domains).</p>
+
+<p><strong>Real-world use:</strong> Anthropic&#x27;s Constitutional AI uses RLAIF-style self-critique. Google&#x27;s &quot;Gemini trained with RLAIF&quot; paper showed competitive results with human feedback at a fraction of the cost.</p>
+
+<p><strong>Limitations:</strong></p>
+<p>- <strong>Judge bias propagation</strong> — if the judge has systematic biases (prefers verbose answers, favors certain styles), the student inherits them</p>
+<p>- <strong>Evaluation ceiling</strong> — can&#x27;t surpass the judge&#x27;s own capabilities</p>
+<p>- <strong>Reward hacking</strong> — student may learn to fool the judge rather than actually improve</p>
+
+<p><em>The trend: humans set high-level principles → AI generates the feedback at scale. Humans still needed for rare/hard cases.</em></p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。Review sharpens what you&#x27;ve learned — each pass builds stronger mental models.</em></p>
+<p>📅 明天继续新内容！Tomorrow: Day 61 — new content continues.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-07</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
