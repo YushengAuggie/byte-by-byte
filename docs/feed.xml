@@ -5,8 +5,1618 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 08 Jun 2026 15:06:28 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 10 Jun 2026 15:10:18 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-10</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-10</guid>
+      <pubDate>Wed, 10 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>Day 62 — 系统设计 / System Design</h2>
+
+<p>🏗️ <strong>系统设计 / System Design</strong> · Day 62 · Expert Phase</p>
+
+<hr/>
+
+<h2>设计股票交易所 / Design a Stock Exchange &amp; Order Matching Engine</h2>
+
+<hr/>
+
+<h3>真实场景 / Real-World Scenario</h3>
+
+<p>想象你在设计纳斯达克的核心撮合引擎。每天处理数十亿笔订单，延迟要在<strong>微秒级别</strong>，任何一个 bug 都可能造成百万美元损失，还要绝对公平（谁先来谁先成交）。</p>
+
+<p><em>Imagine you&#x27;re building the core matching engine for NASDAQ. Billions of orders per day, sub-microsecond latency, catastrophic bug cost, and strict fairness: first-come, first-served.</em></p>
+
+<hr/>
+
+<h3>核心需求 / Core Requirements</h3>
+
+<p><strong>功能需求 / Functional:</strong></p>
+<p>- 下单（市价单/限价单/止损单）/ Place orders (market/limit/stop)</p>
+<p>- 撮合引擎 / Order matching engine (FIFO per price level)</p>
+<p>- 订单簿 / Order book (real-time bid/ask)</p>
+<p>- 成交回报 / Trade execution &amp; confirmations</p>
+<p>- 行情推送 / Market data feed (level 1 &amp; 2)</p>
+
+<p><strong>非功能需求 / Non-Functional:</strong></p>
+<p>- 吞吐量：1M+ orders/sec / Throughput: 1M+ orders/sec</p>
+<p>- 延迟：&lt; 1ms end-to-end / Latency: sub-millisecond</p>
+<p>- 强一致性（不允许丢单）/ Strong consistency, no lost orders</p>
+<p>- 审计日志 / Full audit trail</p>
+
+<hr/>
+
+<h3>架构图 / Architecture</h3>
+
+<pre><code>
+                         ┌─────────────────────────────────┐
+                         │           Client Layer           │
+                         │  Trading Apps / Market Makers    │
+                         └──────────────┬──────────────────┘
+                                        │ FIX protocol / WebSocket
+                         ┌──────────────▼──────────────────┐
+                         │         Gateway Cluster          │
+                         │  - Auth &amp; Rate Limiting          │
+                         │  - Order validation              │
+                         │  - Sequence numbering            │
+                         └──────────────┬──────────────────┘
+                                        │
+              ┌─────────────────────────▼──────────────────────────┐
+              │              Order Router (by symbol)               │
+              │   AAPL → Engine-1  |  GOOG → Engine-2  | ...       │
+              └─────────┬──────────────────────────┬───────────────┘
+                        │                          │
+         ┌──────────────▼──────┐      ┌────────────▼────────────┐
+         │  Matching Engine 1   │      │  Matching Engine 2      │
+         │  (single-threaded)   │      │  (single-threaded)      │
+         │  Order Book (AAPL)   │      │  Order Book (GOOG)      │
+         │  - Bid: MaxHeap      │      │  - Bid: MaxHeap         │
+         │  - Ask: MinHeap      │      │  - Ask: MinHeap         │
+         └──────────┬──────────┘      └─────────────────────────┘
+                    │ Trades
+         ┌──────────▼──────────────────────────────────────────┐
+         │              Event Bus (Kafka / Chronicle)           │
+         └───┬────────────────────────┬────────────────────────┘
+             │                        │
+    ┌─────────▼─────────┐    ┌────────▼──────────────┐
+    │  Trade Settlement  │    │   Market Data Feed     │
+    │  (clearing house)  │    │   (WebSocket / UDP     │
+    │  DB: PostgreSQL    │    │    multicast)           │
+    └───────────────────┘    └───────────────────────┘
+                    ┌──────────────────────────────────┐
+                    │     Audit Log (append-only)      │
+                    │     WAL / immutable store        │
+                    └──────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>撮合引擎核心 / Matching Engine Core</h3>
+
+<p><strong>订单簿数据结构 / Order Book Data Structure:</strong></p>
+
+<pre><code>
+import heapq
+from collections import deque
+from dataclasses import dataclass, field
+from typing import Optional
+
+@dataclass
+class Order:
+    order_id: str
+    symbol: str
+    side: str        # &quot;BUY&quot; or &quot;SELL&quot;
+    price: float     # 0 for market orders
+    quantity: int
+    timestamp: int   # sequence number for FIFO
+
+@dataclass
+class PriceLevel:
+    price: float
+    orders: deque = field(default_factory=deque)  # FIFO queue at each price
+
+class OrderBook:
+    def __init__(self, symbol: str):
+        self.symbol = symbol
+        # Bids: max-heap (negate price for Python&#x27;s min-heap)
+        self.bids: list[tuple] = []  # (-price, timestamp, PriceLevel)
+        # Asks: min-heap
+        self.asks: list[tuple] = []  # (price, timestamp, PriceLevel)
+        self.price_levels: dict[float, PriceLevel] = {}
+
+    def add_limit_order(self, order: Order) -&gt; list[dict]:
+        &quot;&quot;&quot;Add order, attempt immediate match, return trades.&quot;&quot;&quot;
+        trades = []
+        remaining = order.quantity
+
+        if order.side == &quot;BUY&quot;:
+            # Try to match against asks (lowest ask first)
+            while remaining &gt; 0 and self.asks:
+                best_ask_price = self.asks[0][0]
+                if best_ask_price &gt; order.price:
+                    break  # No match possible
+                # Match!
+                level = self.asks[0][2]
+                remaining, new_trades = self._fill_from_level(
+                    level, order, remaining
+                )
+                trades.extend(new_trades)
+                if not level.orders:
+                    heapq.heappop(self.asks)
+
+        # If unfilled quantity remains, add to book
+        if remaining &gt; 0:
+            order.quantity = remaining
+            self._insert_order(order)
+
+        return trades
+
+    def _fill_from_level(self, level, incoming, remaining):
+        trades = []
+        while level.orders and remaining &gt; 0:
+            resting = level.orders[0]
+            fill_qty = min(remaining, resting.quantity)
+            trades.append({
+                &quot;buyer&quot;: incoming.order_id if incoming.side == &quot;BUY&quot; else resting.order_id,
+                &quot;seller&quot;: resting.order_id if incoming.side == &quot;BUY&quot; else incoming.order_id,
+                &quot;price&quot;: level.price,
+                &quot;quantity&quot;: fill_qty,
+            })
+            resting.quantity -= fill_qty
+            remaining -= fill_qty
+            if resting.quantity == 0:
+                level.orders.popleft()
+        return remaining, trades
+</code></pre>
+
+<p><strong>撮合规则 / Matching Rules:</strong></p>
+<p>- <strong>Price-Time Priority (FIFO):</strong> 同价格下，先到先得</p>
+<p>- <strong>市价单立即撮合</strong> / Market orders match immediately at best available price</p>
+<p>- <strong>限价单可能部分成交</strong> / Limit orders may partially fill</p>
+
+<hr/>
+
+<h3>关键设计决策 / Key Design Decisions</h3>
+
+<p>| 决策 / Decision | 选择 / Choice | 原因 / Reason |</p>
+<p>|---|---|---|</p>
+<p>| 每股票一个引擎 | Shard by symbol | 避免锁竞争；单线程无需同步 |</p>
+<p>| 单线程匹配 | Single-threaded per engine | 无锁 = 最低延迟 |</p>
+<p>| 传输协议 | FIX protocol / UDP multicast | 行业标准；低延迟行情推送 |</p>
+<p>| 持久化 | WAL + event sourcing | 可回放；完整审计 |</p>
+<p>| 队列 | LMAX Disruptor / Chronicle | 避免 GC，ring buffer |</p>
+
+<p><strong>为什么单线程？/ Why single-threaded?</strong></p>
+<p>&gt; 多线程需要锁，锁带来上下文切换，延迟飙升。交易所宁愿用更多机器（按股票分片），也不要锁竞争。NYSE 和 NASDAQ 的核心引擎都是单线程的。</p>
+
+<hr/>
+
+<h3>别踩这个坑 / Common Mistakes</h3>
+
+<p>❌ <strong>用关系数据库存订单簿</strong> — 太慢了！订单簿必须在内存里，持久化靠 WAL。</p>
+
+<p>❌ <strong>忽视时钟同步</strong> — 全球分布式系统里，序列号必须是逻辑时钟（单调递增），不能靠 wall clock。</p>
+
+<p>❌ <strong>市价单不设熔断</strong> — 市场剧烈波动时市价单会以极端价格成交，需要熔断机制（circuit breaker）。</p>
+
+<p>❌ <strong>撮合结果异步确认</strong> — 成交回报必须是同步的，否则客户端可能重复下单。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [LMAX Disruptor — High-performance inter-thread messaging](https://lmax-exchange.github.io/disruptor/)</p>
+<p>- [Martin Fowler — Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html)</p>
+<p>- [FIX Protocol Specification](https://www.fixtrading.org/standards/)</p>
+<p>- [Designing a Matching Engine — Murat Demirbas](https://muratbuffalo.blogspot.com/2024/01/design-of-order-matching-engine.html)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象一个菜市场，买土豆的人说&quot;我出5块钱一斤&quot;，卖土豆的人说&quot;我要6块钱一斤&quot;——没有成交。等卖家说&quot;5.5块也行&quot;，买家的5.5块挂单就立刻成交了。股票交易所就是这个菜市场，只是每秒钟有几百万笔这样的对话。</p>
+
+<p><em>Imagine a marketplace: buyers shout their max price, sellers shout their min price. When they overlap, a trade happens. A stock exchange is just this market running at millions of matches per second, with strict rules about who gets matched first.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>Day 62 — 算法 / Algorithms</h2>
+
+<p>💻 <strong>算法 / Algorithms</strong> · Day 62 · Expert Phase</p>
+
+<hr/>
+
+<h2>🧩 树遍历模式 (7/15) — 在 Day 56 模版基础上进化 / Building on Template from Day 56</h2>
+
+<p>🔗 [LeetCode #235 — Lowest Common Ancestor of a BST](https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/) 🟡 Medium</p>
+<p>📹 [NeetCode Video](https://neetcode.io/solutions/lowest-common-ancestor-of-a-binary-search-tree)</p>
+
+<hr/>
+
+<h3>这道题与模板的关系 / How This Maps to the Tree Template</h3>
+
+<p>通用模板：</p>
+<pre><code>
+def dfs(node):
+    if not node: return BASE_CASE
+    left = dfs(node.left)
+    right = dfs(node.right)
+    return COMBINE(node.val, left, right)
+</code></pre>
+
+<p><strong>今天的变体：利用 BST 性质，不需要遍历两边！</strong></p>
+<p>普通二叉树的 LCA 需要检查两边子树。但 BST 有大小关系，我们可以<strong>直接决定往哪走</strong>，时间从 O(n) 降到 O(h)。</p>
+
+<p><em>Today&#x27;s variation: BST gives us ordering. Instead of blindly recursing both sides, we can navigate with purpose — like binary search on a tree.</em></p>
+
+<hr/>
+
+<h3>真实场景 / Real-World Analogy</h3>
+
+<p>想象公司组织架构树（BST 按员工 ID 排序）。CEO 是根节点，你要找两个员工的最近共同上级——不需要遍历整棵树，只要根据 ID 大小往左或往右走就能找到。</p>
+
+<p><em>A company org chart sorted by employee ID. Finding the lowest common manager for two employees — you don&#x27;t scan everyone, just navigate by ID.</em></p>
+
+<hr/>
+
+<h3>问题描述 / Problem</h3>
+
+<p>给定一棵 BST 和两个节点 <code>p</code>、<code>q</code>，找它们的<strong>最近公共祖先（LCA）</strong>。</p>
+
+<p>LCA 定义：节点 <code>v</code> 是 <code>p</code> 和 <code>q</code> 的 LCA，当且仅当 <code>v</code> 的子树同时包含 <code>p</code> 和 <code>q</code>（节点可以是自身的祖先）。</p>
+
+<p><em>Given a BST and two nodes p, q, find their Lowest Common Ancestor — the deepest node that has both p and q as descendants (a node is a descendant of itself).</em></p>
+
+<hr/>
+
+<h3>BST 的关键洞察 / BST Key Insight</h3>
+
+<pre><code>
+BST property: left &lt; node &lt; right
+
+Three cases when at node curr:
+  1. p.val &lt; curr.val AND q.val &lt; curr.val  →  LCA is in LEFT subtree
+  2. p.val &gt; curr.val AND q.val &gt; curr.val  →  LCA is in RIGHT subtree  
+  3. Otherwise (split point!)               →  curr IS the LCA
+     - includes: p.val &lt;= curr.val &lt;= q.val
+     - or: curr == p or curr == q
+</code></pre>
+
+<hr/>
+
+<h3>Python 解法 + 追踪 / Solution with Trace</h3>
+
+<pre><code>
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+# Recursive approach — maps directly to DFS template
+def lowestCommonAncestor_recursive(root, p, q):
+    # BASE_CASE: if root is None (shouldn&#x27;t happen in valid BST)
+    if not root:
+        return None
+    
+    # BST property: both in left subtree
+    if p.val &lt; root.val and q.val &lt; root.val:
+        return lowestCommonAncestor_recursive(root.left, p, q)
+    
+    # BST property: both in right subtree
+    if p.val &gt; root.val and q.val &gt; root.val:
+        return lowestCommonAncestor_recursive(root.right, p, q)
+    
+    # Split point — current node is the LCA
+    return root  # COMBINE is just: return current node
+
+# Iterative approach — O(1) space (preferred!)
+def lowestCommonAncestor(root, p, q):
+    curr = root
+    while curr:
+        if p.val &lt; curr.val and q.val &lt; curr.val:
+            curr = curr.left        # Both smaller: go left
+        elif p.val &gt; curr.val and q.val &gt; curr.val:
+            curr = curr.right       # Both larger: go right
+        else:
+            return curr             # Split point = LCA
+    return None
+
+# Trace on example:
+#       6
+#      / \
+#     2   8
+#    / \ / \
+#   0  4 7  9
+#     / \
+#    3   5
+# 
+# p=2, q=8: at 6 → 2&lt;6 but 8&gt;6 → SPLIT → return 6  ✓
+# p=2, q=4: at 6 → both &lt; 6 → go left
+#           at 2 → 2==p, 4&gt;2 → SPLIT → return 2  ✓
+# p=7, q=9: at 6 → both &gt; 6 → go right  
+#           at 8 → 7&lt;8 but 9&gt;8 → SPLIT → return 8  ✓
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(h) — h is tree height; O(log n) balanced, O(n) worst case skewed</p>
+<p>- Space: O(1) iterative / O(h) recursive (call stack)</p>
+
+<p><em>Why better than O(n)? We never visit nodes we don&#x27;t need. BST ordering = free navigation.</em></p>
+
+<hr/>
+
+<h3>与同 Pattern 其他题的联系 / Connection to Pattern Block</h3>
+
+<p>| # | 题目 | 用到什么 |</p>
+<p>|---|---|---|</p>
+<p>| #226 Invert Binary Tree | 模板基础：left/right swap | postorder |</p>
+<p>| #104 Max Depth | COMBINE = max(left, right) + 1 | postorder |</p>
+<p>| #543 Diameter | COMBINE = 全局更新 max | postorder |</p>
+<p>| <strong>#235 LCA of BST</strong> | <strong>利用 BST 性质跳过分支</strong> | <strong>iterative / guided</strong> |</p>
+<p>| #98 Validate BST (upcoming) | 利用 BST 范围约束 | inorder / bounds |</p>
+<p>| #230 Kth Smallest (upcoming) | Inorder traversal = sorted order | inorder |</p>
+
+<p><strong>关键进化：</strong> 前面几题都是&quot;盲目递归两边&quot;，这道题利用 BST 性质变成&quot;有目的地导航&quot;——类似二分查找。</p>
+
+<p><em>Evolution: Previous problems blindly recurse both sides. This one uses BST ordering to navigate — like binary search but on a tree.</em></p>
+
+<hr/>
+
+<h3>举一反三 / Generalization</h3>
+
+<p><strong>如果是普通二叉树（非 BST）呢？</strong> → LeetCode #236</p>
+
+<pre><code>
+def lca_generic_tree(root, p, q):
+    if not root or root == p or root == q:
+        return root
+    left = lca_generic_tree(root.left, p, q)
+    right = lca_generic_tree(root.right, p, q)
+    if left and right:
+        return root   # p and q in different subtrees
+    return left or right  # One subtree contains both
+</code></pre>
+
+<p><em>Same template, but no BST optimization — must check both sides. O(n) time.</em></p>
+
+<hr/>
+
+<h3>Quiz</h3>
+
+<pre><code>
+{&quot;question&quot;:&quot;In a BST, when does the current node become the LCA of p and q?&quot;,&quot;options&quot;:[&quot;When p.val == q.val&quot;,&quot;When p and q are in different subtrees (split point)&quot;,&quot;When the current node equals p&quot;,&quot;When the current node is the root&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [LeetCode #235](https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/)</p>
+<p>- [NeetCode Solution](https://neetcode.io/solutions/lowest-common-ancestor-of-a-binary-search-tree)</p>
+<p>- [Binary Search Tree Properties — CS Visualizations](https://visualgo.net/en/bst)</p>
+<p>- [LCA Algorithm Overview — CP-Algorithms](https://cp-algorithms.com/graph/lca.html)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象一棵家谱树，但是按名字字母顺序排列（左边名字小，右边名字大）。你要找 Alice 和 Eve 的最近共同祖先：从根节点开始，如果两人名字都比当前节点小就往左走，都大就往右走，一旦一个在左一个在右，当前节点就是答案！</p>
+
+<p><em>Imagine a family tree sorted alphabetically. To find Alice and Eve&#x27;s nearest common ancestor: start at the root, go left if both names are &quot;smaller,&quot; go right if both are &quot;larger.&quot; The moment they&#x27;d split to different sides — that&#x27;s your answer!</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>Day 62 — 软技能 / Soft Skills</h2>
+
+<p>🗣️ <strong>软技能 / Soft Skills</strong> · Day 62 · Expert Phase · Crisis Management</p>
+
+<hr/>
+
+<h2>Behavioral Question</h2>
+
+<p>&gt; <strong>&quot;Describe a time you led an incident response. What was your role and what did you learn?&quot;</strong></p>
+<p>&gt; <strong>&quot;描述一次你主导事故响应的经历。你的角色是什么？学到了什么？&quot;</strong></p>
+
+<hr/>
+
+<h3>为什么面试官问这个 / Why Interviewers Ask This</h3>
+
+<p>这道题不是在考你技术能力，而是在考：</p>
+<p>1. <strong>你在压力下是否保持清醒</strong> — panic 还是 structured thinking？</p>
+<p>2. <strong>你如何协调多人</strong> — 是英雄主义独自解决，还是有效分工？</p>
+<p>3. <strong>你的复盘能力</strong> — 解决问题之后有没有真正学到东西？</p>
+
+<p>Senior+ 工程师的标志：他们<strong>让危机变得可管理</strong>，而不仅仅是&quot;修了 bug&quot;。</p>
+
+<p><em>Interviewers want to see: calm under pressure, structured coordination, and genuine learning — not just technical heroics.</em></p>
+
+<hr/>
+
+<h3>STAR 框架分解 / STAR Breakdown</h3>
+
+<p><strong>Situation（背景）:</strong> 什么服务？什么规模的影响？多少用户受到影响？</p>
+
+<p><strong>Task（任务）:</strong> 你的角色是什么？是 IC、Tech Lead 还是 IC 之一？你是被分配来的还是主动承担的？</p>
+
+<p><strong>Action（行动）— 这是核心，要细说：</strong></p>
+
+<p>事故响应的标准结构：</p>
+<p>1. <strong>Triage（分类诊断）</strong> — 定性：是部分降级还是全面宕机？影响面有多大？</p>
+<p>2. <strong>Communicate（沟通）</strong> — 立刻同步利益相关方，哪怕你还不知道根因</p>
+<p>3. <strong>Mitigate first（先缓解）</strong> — rollback、feature flag 关闭、限流——不等根因分析</p>
+<p>4. <strong>Root cause（根因）</strong> — 慢慢来，但要彻底</p>
+<p>5. <strong>Fix（修复）</strong> — 临时补丁 vs 永久修复的权衡</p>
+<p>6. <strong>Postmortem（事后复盘）</strong> — blameless，重点在系统不在人</p>
+
+<p><strong>Result（结果）:</strong> 多快恢复？影响多少用户？后续改变了什么？</p>
+
+<hr/>
+
+<h3>❌ 弱回答 vs ✅ 强回答</h3>
+
+<p><strong>❌ 弱（Junior 味道）:</strong></p>
+<p>&gt; &quot;我们的服务挂了，我找到了 bug，修了，上线了，恢复了。&quot;</p>
+
+<p>问题：没有协调，没有沟通，没有系统性思考，没有学到什么。</p>
+
+<p><strong>✅ 强（Senior/Staff 味道）:</strong></p>
+<p>&gt; &quot;我们的支付服务在黑色星期五凌晨 2 点开始报错率飙升。我接到告警后：</p>
+<p>&gt;</p>
+<p>&gt; 首先，<strong>5 分钟内建了一个 War Room</strong>，拉来 on-call、QA、SRE，明确分工——一人挖日志，一人跟踪 DB 指标，我协调并对外沟通。</p>
+<p>&gt;</p>
+<p>&gt; <strong>10 分钟内</strong>，我们决定先回滚昨天的部署——不确定是不是根因，但这是最快降低风险的路径。回滚后错误率立即下降 80%。</p>
+<p>&gt;</p>
+<p>&gt; <strong>45 分钟后</strong>，根因定位：新版本里一个 DB connection pool 的配置在高并发下触发了连接耗尽。</p>
+<p>&gt;</p>
+<p>&gt; <strong>事后</strong>，我主导了 blameless postmortem，发现我们缺少 connection pool 耗尽的告警，缺少回滚 runbook。这两个都在 2 周内上线了。</p>
+<p>&gt;</p>
+<p>&gt; 最重要的学习：<strong>永远先 mitigate，再 investigate</strong>。&quot;</p>
+
+<hr/>
+
+<h3>Senior/Staff 加分点 / Senior/Staff Tips</h3>
+
+<p>- <strong>&quot;我建立了清晰的指挥链&quot;</strong> — 事故中最大的混乱来自多人同时操作</p>
+<p>- <strong>&quot;我更新了状态页面&quot;</strong> — 主动对外沟通，减少内部噪音</p>
+<p>- <strong>&quot;我保护了团队&quot;</strong> — 确保疲惫的队友能交班，而不是 24 小时连轴转</p>
+<p>- <strong>&quot;我们改变了系统&quot;</strong> — 不是修了 bug 就完了，是改变了 observability 或流程</p>
+<p>- <strong>Blameless postmortem</strong> — 这个词会让面试官眼睛一亮</p>
+
+<hr/>
+
+<h3>Key Takeaways / 核心要点</h3>
+
+<p>1. 事故中领导力 ≠ 最快找到 bug。领导力 = 让团队有效协作</p>
+<p>2. &quot;先缓解，再根因&quot; 是 SRE 文化的核心原则</p>
+<p>3. 好的事后复盘比事故本身更能体现工程成熟度</p>
+<p>4. 面试时要给出<strong>数字</strong>：多少 QPS 受影响？多少分钟恢复？</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [Google SRE Book — Managing Incidents](https://sre.google/sre-book/managing-incidents/)</p>
+<p>- [Atlassian — Incident Management Guide](https://www.atlassian.com/incident-management)</p>
+<p>- [Blameless Postmortem Culture — GitHub Engineering](https://github.blog/engineering/engineering-principles/blameless-postmortems/)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像学校里火灾演习：有人喊&quot;着火了&quot;，你不要自己冲过去抢着灭火——你要先通知老师（沟通），让大家按序撤离（缓解影响），然后再找是哪个同学在厕所抽烟（根因）。领导力是让每个人都知道该做什么，而不是自己一个人当消防员。</p>
+
+<p><em>Like a fire drill: don&#x27;t be the lone hero with the extinguisher. First alert others (communicate), evacuate (mitigate), then find the cause. Leadership means everyone knows their role, not one person does everything alone.</em></p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Day 62 — Python Craft / 前端 (Python Craft)</h2>
+
+<p>🎨 <strong>Python Craft</strong> · Day 62 · Design Patterns Week 4</p>
+
+<hr/>
+
+<h2>Command Pattern — Undo/Redo, Task Queues</h2>
+
+<p>&gt; <strong>命令模式 / Command Pattern</strong> — 把操作封装成对象，让你能排队、记录、撤销、重放。</p>
+
+<hr/>
+
+<h3>真实场景 / Real-World Scenario</h3>
+
+<p>你在做一个文本编辑器（或图像编辑器），需要：</p>
+<p>- <strong>Ctrl+Z</strong> 撤销最后一步操作</p>
+<p>- <strong>Ctrl+Y</strong> 重做</p>
+<p>- <strong>宏录制</strong> — 把一系列操作保存为宏，一键重放</p>
+<p>- <strong>操作日志</strong> — 记录用户做了什么，用于 audit 或 replay</p>
+
+<p><em>You&#x27;re building a text editor. Users expect Undo, Redo, macro recording, and audit logs. All these features have one thing in common: treating operations as first-class objects.</em></p>
+
+<hr/>
+
+<h3>核心结构 / Core Structure</h3>
+
+<pre><code>
+from abc import ABC, abstractmethod
+from typing import Optional
+import copy
+
+# ─── Command Interface ───────────────────────────────────────────
+class Command(ABC):
+    @abstractmethod
+    def execute(self) -&gt; None:
+        &quot;&quot;&quot;执行操作 / Perform the operation&quot;&quot;&quot;
+        pass
+    
+    @abstractmethod
+    def undo(self) -&gt; None:
+        &quot;&quot;&quot;撤销操作 / Reverse the operation&quot;&quot;&quot;
+        pass
+    
+    def redo(self) -&gt; None:
+        &quot;&quot;&quot;重做 = 再次执行 / Redo = re-execute (default)&quot;&quot;&quot;
+        self.execute()
+
+# ─── Receiver: The actual state being modified ──────────────────
+class TextDocument:
+    def __init__(self):
+        self.content = &quot;&quot;
+    
+    def insert(self, pos: int, text: str) -&gt; None:
+        self.content = self.content[:pos] + text + self.content[pos:]
+    
+    def delete(self, pos: int, length: int) -&gt; None:
+        self.content = self.content[:pos] + self.content[pos + length:]
+    
+    def __repr__(self):
+        return f&#x27;Document(&quot;{self.content}&quot;)&#x27;
+
+# ─── Concrete Commands ───────────────────────────────────────────
+class InsertCommand(Command):
+    def __init__(self, doc: TextDocument, pos: int, text: str):
+        self.doc = doc
+        self.pos = pos
+        self.text = text
+    
+    def execute(self) -&gt; None:
+        self.doc.insert(self.pos, self.text)
+    
+    def undo(self) -&gt; None:
+        self.doc.delete(self.pos, len(self.text))
+
+class DeleteCommand(Command):
+    def __init__(self, doc: TextDocument, pos: int, length: int):
+        self.doc = doc
+        self.pos = pos
+        self.length = length
+        self._deleted_text = &quot;&quot;  # Store for undo
+    
+    def execute(self) -&gt; None:
+        # Capture the text BEFORE deleting (needed for undo)
+        self._deleted_text = self.doc.content[self.pos:self.pos + self.length]
+        self.doc.delete(self.pos, self.length)
+    
+    def undo(self) -&gt; None:
+        self.doc.insert(self.pos, self._deleted_text)
+
+# ─── Invoker: Manages command history ────────────────────────────
+class CommandHistory:
+    def __init__(self):
+        self._history: list[Command] = []   # Undo stack
+        self._redo_stack: list[Command] = []
+    
+    def execute(self, command: Command) -&gt; None:
+        command.execute()
+        self._history.append(command)
+        self._redo_stack.clear()  # New action clears redo history
+    
+    def undo(self) -&gt; bool:
+        if not self._history:
+            return False
+        command = self._history.pop()
+        command.undo()
+        self._redo_stack.append(command)
+        return True
+    
+    def redo(self) -&gt; bool:
+        if not self._redo_stack:
+            return False
+        command = self._redo_stack.pop()
+        command.redo()
+        self._history.append(command)
+        return True
+
+# ─── Usage Demo ──────────────────────────────────────────────────
+doc = TextDocument()
+history = CommandHistory()
+
+history.execute(InsertCommand(doc, 0, &quot;Hello&quot;))
+print(doc)  # Document(&quot;Hello&quot;)
+
+history.execute(InsertCommand(doc, 5, &quot; World&quot;))
+print(doc)  # Document(&quot;Hello World&quot;)
+
+history.execute(DeleteCommand(doc, 5, 6))
+print(doc)  # Document(&quot;Hello&quot;)
+
+history.undo()
+print(doc)  # Document(&quot;Hello World&quot;)  ← undo delete
+
+history.undo()
+print(doc)  # Document(&quot;Hello&quot;)        ← undo insert
+
+history.redo()
+print(doc)  # Document(&quot;Hello World&quot;)  ← redo insert
+</code></pre>
+
+<hr/>
+
+<h3>进阶：Task Queue 应用 / Advanced: Task Queue Pattern</h3>
+
+<p>Command Pattern 非常适合<strong>任务队列</strong>——把操作序列化后存到 Redis，worker 异步执行：</p>
+
+<pre><code>
+import json
+from dataclasses import dataclass
+from typing import Any
+
+@dataclass
+class SerializableCommand:
+    &quot;&quot;&quot;Commands that can be queued in Redis / Celery&quot;&quot;&quot;
+    command_type: str
+    payload: dict
+    
+    def to_json(self) -&gt; str:
+        return json.dumps({&quot;type&quot;: self.command_type, &quot;payload&quot;: self.payload})
+    
+    @classmethod
+    def from_json(cls, data: str) -&gt; &quot;SerializableCommand&quot;:
+        d = json.loads(data)
+        return cls(d[&quot;type&quot;], d[&quot;payload&quot;])
+
+# Queue a command
+cmd = SerializableCommand(&quot;send_email&quot;, {&quot;to&quot;: &quot;user@example.com&quot;, &quot;subject&quot;: &quot;Hi&quot;})
+redis_client.lpush(&quot;task_queue&quot;, cmd.to_json())
+
+# Worker pops and executes
+raw = redis_client.brpop(&quot;task_queue&quot;, timeout=5)
+if raw:
+    cmd = SerializableCommand.from_json(raw[1])
+    execute_command(cmd)  # dispatch by cmd.command_type
+</code></pre>
+
+<p><strong>真实世界用例 / Real-world uses:</strong></p>
+<p>- Celery task serialization</p>
+<p>- Event sourcing (每条命令 = 一个事件)</p>
+<p>- Database migration rollback scripts</p>
+<p>- Game engine (replay systems)</p>
+
+<hr/>
+
+<h3>❌ vs ✅ 常见错误</h3>
+
+<p><strong>❌ 直接在 UI handler 里写逻辑:</strong></p>
+<pre><code>
+# 耦合紧，无法 undo/redo
+def on_click_delete():
+    doc.delete(cursor_pos, selected_len)
+</code></pre>
+
+<p><strong>✅ 封装为 Command:</strong></p>
+<pre><code>
+def on_click_delete():
+    history.execute(DeleteCommand(doc, cursor_pos, selected_len))
+</code></pre>
+
+<hr/>
+
+<h3>When to Use / When NOT to Use</h3>
+
+<p><strong>✅ 用 Command Pattern 当：</strong></p>
+<p>- 需要 Undo/Redo</p>
+<p>- 需要操作队列或延迟执行</p>
+<p>- 需要 audit log / replay</p>
+<p>- 操作需要参数化（不同配置执行同类操作）</p>
+
+<p><strong>❌ 不用当：</strong></p>
+<p>- 操作简单且一次性（过度设计）</p>
+<p>- 操作不可逆且不需要撤销（比如发邮件，你不能&quot;取消发送&quot;）</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [Refactoring Guru — Command Pattern](https://refactoring.guru/design-patterns/command)</p>
+<p>- [Command Pattern in Python — Real Python](https://realpython.com/python-command-pattern/)</p>
+<p>- [Event Sourcing + Command Pattern — Martin Fowler](https://martinfowler.com/eaaDev/EventSourcing.html)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象一个遥控器：每个按钮就是一个命令对象（InsertCommand、DeleteCommand）。遥控器（CommandHistory）记住你按过哪些按钮，按&quot;返回&quot;就能把最后一个操作倒放。这就是所有文字编辑器 Ctrl+Z 的工作原理！</p>
+
+<p><em>Think of a TV remote: each button is a Command object. The remote (history) remembers which buttons you pressed. Press &quot;Back&quot; to replay the last command in reverse. That&#x27;s literally how Ctrl+Z works in every text editor!</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>Day 62 — AI</h2>
+
+<p>🤖 <strong>AI</strong> · Day 62 · Practical Concept</p>
+
+<hr/>
+
+<h2>AI Coding Assistants — Architecture &amp; How They Work</h2>
+
+<p>&gt; <strong>AI 编程助手的底层架构</strong> — Copilot、Cursor 是怎么工作的？</p>
+
+<p><em>(CONCEPT mode — deep technical explanation)</em></p>
+
+<hr/>
+
+<h3>直觉解释 / Intuitive Explanation</h3>
+
+<p>你用 GitHub Copilot 或 Cursor 时，感觉它&quot;懂&quot;你的代码。但它不是真的理解——它在做一件非常复杂的事：<strong>把你的整个编辑器上下文打包成 prompt，喂给一个专门微调过的 LLM，再把输出实时渲染回编辑器</strong>。</p>
+
+<p><em>Copilot/Cursor doesn&#x27;t &quot;understand&quot; your code in the human sense. It&#x27;s doing something sophisticated: packaging your entire editor context into a prompt, feeding it to a fine-tuned LLM, and streaming the output back in real time.</em></p>
+
+<hr/>
+
+<h3>核心架构层 / Core Architecture Layers</h3>
+
+<pre><code>
+┌─────────────────────────────────────────────────────────┐
+│                    Editor Plugin                         │
+│  VSCode Extension / JetBrains Plugin                     │
+│  - Captures keystrokes, cursor position                  │
+│  - Renders inline completions                            │
+│  - Shows diff views (Cursor&#x27;s agent mode)                │
+└───────────────────────────┬─────────────────────────────┘
+                            │ Context Assembly
+┌───────────────────────────▼─────────────────────────────┐
+│                Context Engine                            │
+│  - Current file (above + below cursor)                   │
+│  - Open tabs / recently edited files                     │
+│  - Language Server Protocol (LSP) symbols &amp; types        │
+│  - Git history (recently changed lines)                  │
+│  - Comments, docstrings, test files                      │
+│  - Vector search over codebase (RAG for large repos)     │
+└───────────────────────────┬─────────────────────────────┘
+                            │ Prompt
+┌───────────────────────────▼─────────────────────────────┐
+│                LLM Inference Layer                       │
+│  - Fill-in-the-Middle (FIM) model for completions        │
+│  - Chat model for agent/explain mode                     │
+│  - Streaming tokens back to editor                       │
+│  - Model: GPT-4o / Claude Sonnet / DeepSeek / local      │
+└───────────────────────────┬─────────────────────────────┘
+                            │ Post-processing
+┌───────────────────────────▼─────────────────────────────┐
+│               Output Processing                          │
+│  - Parse code fences, strip artifacts                    │
+│  - Apply to editor as inline ghost text                  │
+│  - Diff view for larger edits                            │
+│  - Multi-file edits (Cursor Composer / Copilot Workspace)│
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>关键技术 1: Fill-in-the-Middle (FIM) / Key Tech 1</h3>
+
+<p>普通 LLM 只做 <strong>prefix → completion</strong>（给前缀，预测后文）。</p>
+<p>编程场景更需要 <strong>prefix + suffix → middle</strong>（知道前后文，填中间）。</p>
+
+<p><em>Standard LLMs predict what comes next. But in code editing, you often need to fill a gap between existing lines — that&#x27;s FIM.</em></p>
+
+<pre><code>
+Standard:  [prefix]  → [completion]
+
+FIM:       [prefix]  [FILL]  [suffix]
+           &quot;def foo(x):&quot;  ???  &quot;return result&quot;
+</code></pre>
+
+<p>训练时专门构造这样的三元组：<code>&lt;PRE&gt;prefix&lt;SUF&gt;suffix&lt;MID&gt;middle</code>。</p>
+<p>DeepSeek Coder、Code Llama、StarCoder 都有 FIM 能力。</p>
+
+<hr/>
+
+<h3>关键技术 2: 上下文组装 / Key Tech 2: Context Assembly</h3>
+
+<p>LLM 的 context window 是有限的（128K tokens ≈ ~100K 字符）。如何决定塞什么进去？</p>
+
+<p><strong>GitHub Copilot 的做法（公开研究）：</strong></p>
+<p>1. <strong>当前文件</strong> — 光标附近的代码优先级最高</p>
+<p>2. <strong>Import/require 的文件</strong> — 直接依赖有语义关联</p>
+<p>3. <strong>最近编辑的文件</strong> — 时间局部性</p>
+<p>4. <strong>Jaccard 相似度</strong> — 找词汇相似的代码片段（不需要 embedding！）</p>
+<p>5. <strong>语言服务器（LSP）</strong> — 获取类型信息、函数签名</p>
+
+<p>Cursor 更进一步，用 <strong>codebase embedding + vector search（RAG）</strong> 在大型仓库里找相关代码。</p>
+
+<hr/>
+
+<h3>关键技术 3: Agent Mode / Key Tech 3</h3>
+
+<p>Cursor Composer 和 Copilot Workspace 代表下一代：从&quot;补全&quot;到&quot;代理&quot;。</p>
+
+<pre><code>
+User: &quot;Add pagination to the user list API&quot;
+
+Agent Loop:
+  1. Read: src/routes/users.ts, src/models/User.ts
+  2. Plan: need to modify query + API response + tests
+  3. Edit: src/routes/users.ts (add limit/offset params)
+  4. Edit: src/models/User.ts (add paginate method)  
+  5. Edit: tests/users.test.ts (add pagination tests)
+  6. Run: npm test → see if tests pass
+  7. Fix: if tests fail, iterate
+</code></pre>
+
+<p>这是 <strong>ReAct 模式</strong>（Reason + Act）在编程场景的落地：</p>
+<p>LLM 循环调用工具（读文件、写文件、运行命令），直到任务完成。</p>
+
+<hr/>
+
+<h3>可运行示例 / Runnable Python Snippet</h3>
+
+<p>用 OpenAI API 模拟一个简单的 FIM 请求：</p>
+
+<pre><code>
+# pip install openai
+from openai import OpenAI
+
+client = OpenAI()  # uses OPENAI_API_KEY env var
+
+# Simulating FIM-style completion
+# (GPT-4 doesn&#x27;t have native FIM, but we can prompt it)
+prefix = &quot;&quot;&quot;def calculate_discount(price: float, user_type: str) -&gt; float:
+    \&quot;\&quot;\&quot;Apply discount based on user type.\&quot;\&quot;\&quot;
+    if user_type == &quot;premium&quot;:
+&quot;&quot;&quot;
+
+suffix = &quot;&quot;&quot;
+    return discounted_price
+&quot;&quot;&quot;
+
+response = client.chat.completions.create(
+    model=&quot;gpt-4o-mini&quot;,
+    messages=[{
+        &quot;role&quot;: &quot;user&quot;,
+        &quot;content&quot;: f&quot;Complete the middle of this Python function.\n\nPrefix:\n{prefix}\n\nSuffix:\n{suffix}\n\nMiddle only (no prefix/suffix):&quot;
+    }],
+    max_tokens=100,
+    temperature=0.2,
+)
+
+print(response.choices[0].message.content)
+# Expected output:
+#     discounted_price = price * 0.8
+# elif user_type == &quot;vip&quot;:
+#     discounted_price = price * 0.7
+# else:
+#     discounted_price = price
+</code></pre>
+
+<p><em>For native FIM, use models like <code>deepseek-coder</code> or <code>codellama</code> which have FIM tokens built in.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [GitHub Copilot — How it works (GitHub Engineering)](https://github.blog/ai-and-ml/github-copilot/how-github-copilot-is-getting-better-at-understanding-your-code/)</p>
+<p>- [Fill-in-the-Middle — Fried et al. 2022 (InCoder)](https://arxiv.org/abs/2204.05999)</p>
+<p>- [StarCoder: May the source be with you](https://arxiv.org/abs/2305.06161)</p>
+<p>- [Cursor docs — Codebase indexing](https://docs.cursor.com/context/codebase-indexing)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>你有一个超聪明的朋友，他读过 GitHub 上所有的代码（数十亿行）。你开始写代码，他站在你背后看着你的屏幕——不只看你刚写的，还看你打开的其他文件、你的 import、你的注释。然后他在你脑海里轻轻说&quot;你下一行应该写这个&quot;。AI 编程助手就是这个朋友，只是他住在服务器里，每次你停止打字时他都要想一下。</p>
+
+<p><em>Imagine a friend who&#x27;s read billions of lines of code. He watches your whole screen — current file, open tabs, your imports. Then he whispers suggestions in your ear. AI coding assistants are that friend, except they live on a server and think for a split second every time you pause typing.</em></p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-06-09</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-09</guid>
+      <pubDate>Tue, 09 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 61</h2>
+<p><strong>Topic:</strong> Design a Live Streaming System (Twitch)</p>
+<p><strong>Date:</strong> 2026-06-09 | <strong>Phase:</strong> Expert</p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design</h2>
+<h3>设计直播系统 / Design a Live Streaming System (Twitch)</h3>
+
+<p><strong>想象你在设计 Twitch...</strong></p>
+
+<p>每天有数百万主播同时开播，每位主播的视频流需要被数千甚至数十万观众实时观看。你需要处理极低延迟、海量并发、全球分发，还要支持聊天、订阅、打赏。这是一个真正复杂的实时系统。</p>
+
+<p><strong>Imagine you&#x27;re designing Twitch...</strong></p>
+
+<p>Millions of streamers go live daily. Each stream needs to reach thousands to hundreds of thousands of viewers in real time. You must handle ultra-low latency, massive concurrency, global distribution, plus chat, subscriptions, and donations.</p>
+
+<hr/>
+
+<h2>🏛️ 架构图 / Architecture</h2>
+
+<pre><code>
+                         ┌─────────────────────────────────┐
+                         │         Streamer Client         │
+                         │  OBS / Browser / Mobile App     │
+                         └──────────────┬──────────────────┘
+                                        │  RTMP (push)
+                                        ▼
+                         ┌─────────────────────────────────┐
+                         │    Ingest Servers (Edge PoPs)   │
+                         │  - Receive RTMP stream          │
+                         │  - Authenticate streamer        │
+                         └──────────────┬──────────────────┘
+                                        │  Raw video segments
+                                        ▼
+                         ┌─────────────────────────────────┐
+                         │     Transcoding Cluster         │
+                         │  - 1080p / 720p / 480p / 360p   │
+                         │  - HLS / DASH segmentation      │
+                         │  - ~2-5 sec segments            │
+                         └──────────────┬──────────────────┘
+                                        │  Segmented chunks
+                                        ▼
+          ┌─────────────────────────────────────────────────────┐
+          │               Origin Storage / CDN                   │
+          │   S3 / GCS  ──────────► CDN Edge Nodes (global)     │
+          │   .m3u8 manifests     Akamai / CloudFront / Fastly   │
+          └─────────────────────────────────────────────────────┘
+                                        │  HLS pull
+                                        ▼
+                         ┌─────────────────────────────────┐
+                         │       Viewer Clients            │
+                         │  - Pull segments via CDN        │
+                         │  - ABR (Adaptive Bitrate)       │
+                         └─────────────────────────────────┘
+
+          ┌─────────────────────────────────────────────────────┐
+          │               Chat / Realtime Layer                  │
+          │   WebSocket Servers → Kafka → Chat Storage          │
+          │   PubSub (Redis) for fan-out per channel            │
+          └─────────────────────────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>⚡ 核心流程 / Core Flow</h2>
+
+<p><strong>推流 (Streaming In):</strong></p>
+<p>1. 主播用 OBS 通过 RTMP 推流到最近的 Ingest 节点</p>
+<p>2. Ingest 节点验证 stream key，转发到 Transcoding 集群</p>
+<p>3. Transcoder 生成多码率 HLS 分片（每段约 2-6 秒）</p>
+<p>4. 分片上传到 Origin Storage，CDN 立即缓存</p>
+
+<p><strong>拉流 (Watching):</strong></p>
+<p>1. 观众请求频道 URL → 获取 .m3u8 playlist</p>
+<p>2. 客户端 ABR 算法根据网络选择码率</p>
+<p>3. 每 2-6 秒拉取最新分片，实现 &quot;实时&quot; 播放</p>
+
+<hr/>
+
+<h2>⚖️ 关键权衡 / Key Tradeoffs</h2>
+
+<p>| 决策 | 选项 | Why |</p>
+<p>|------|------|-----|</p>
+<p>| 传输协议 | RTMP(推) + HLS(拉) | RTMP 低延迟推流；HLS CDN 友好 |</p>
+<p>| 延迟 vs 稳定性 | 6s 缓冲 vs 1s LL-HLS | 传统 HLS 稳定但 6s 延迟；LL-HLS 降到 ~1-2s 但更复杂 |</p>
+<p>| 转码 | 实时 vs 离线 | 直播必须实时；使用 GPU 集群并行转码 |</p>
+<p>| CDN | 自建 vs 第三方 | Twitch 体量需自建部分 PoP；早期用 Akamai/Cloudfront |</p>
+<p>| 聊天 | WebSocket vs SSE | 聊天双向需要 WebSocket；每频道独立 pubsub 防止热点 |</p>
+
+<hr/>
+
+<h2>🔢 容量估算 / Capacity Estimation</h2>
+
+<pre><code>
+假设:
+- 100K 并发主播，平均 1000 观众/主播
+- 每路推流: ~6 Mbps (1080p)
+- 转码输出: 3个码率 × 6 Mbps = ~18 Mbps/主播
+
+推流带宽: 100K × 6 Mbps = 600 Gbps ingest
+输出带宽: 100K × 1000 观众 × 3 Mbps avg = 300 Tbps CDN
+存储: 100K 主播 × 6 MB/s × 3600s = ~2 PB/hour (VOD)
+</code></pre>
+
+<p>这就是为什么 Twitch 的 CDN 费用是天文数字。</p>
+
+<hr/>
+
+<h2>❌ 常见错误 / Common Mistakes</h2>
+
+<p><strong>别踩这个坑:</strong></p>
+
+<p>1. <strong>忘记 Transcoding 是瓶颈</strong> — 一路 1080p 流需要大量 CPU/GPU。不要设计单机转码，必须水平扩展 + 任务队列。</p>
+
+<p>2. <strong>忽视 CDN 缓存策略</strong> — HLS 分片是内容可寻址的，可以强缓存。但 .m3u8 manifest 是动态的，缓存时间要短（~1-3秒）否则观众看不到新分片。</p>
+
+<p>3. <strong>聊天设计的 fan-out 问题</strong> — 1 个频道 10 万人同时发消息，不能 1:1 推送。需要 pubsub + 客户端拉取，或限速 + 采样（Twitch 真的会在高热时丢弃聊天消息）。</p>
+
+<p>4. <strong>低估 Low-Latency 复杂性</strong> — LL-HLS 需要 HTTP/2 push 和 chunked transfer encoding，实现复杂，慎重选择。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [HLS Specification — Apple Developer](https://developer.apple.com/streaming/)</p>
+<p>- [How Twitch&#x27;s Video Ingestion Works — Twitch Engineering Blog](https://blog.twitch.tv/en/2022/04/26/ingesting-live-video-streams-at-global-scale/)</p>
+<p>- [Low-Latency HLS — WWDC](https://developer.apple.com/videos/play/wwdc2019/502/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>直播就像一个超级快的外卖系统：厨师（主播）做好菜后，配送员（CDN）把菜分发到全国各地的分拣站，你去最近的站取菜。厨师一直在做新菜，你每隔几秒就去取一次，所以看起来是&quot;实时&quot;的。</p>
+
+<p>Live streaming is like a super-fast food delivery: the chef (streamer) keeps cooking dishes, delivery hubs (CDN) store copies near you, and you pick up the latest dish every few seconds. It feels &quot;live&quot; because the chef never stops cooking and you never stop picking up.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 61</h2>
+<p><strong>Topic:</strong> #572 Subtree of Another Tree (Easy) — Trees Pattern</p>
+<p><strong>Date:</strong> 2026-06-09 | <strong>Phase:</strong> Expert</p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms</h2>
+<h3>🧩 树遍历模式 (6/15) — building on the template from Day 56</h3>
+
+<p>今天是树遍历模式第 6 题。前几题（Invert, Max Depth, Diameter, Balanced, Same Tree）都是在练习 DFS 递归的不同&quot;返回值语义&quot;。今天的题把 <strong>Same Tree</strong> 作为子程序来用 — 这是模式复用的典型例子。</p>
+
+<p>This is problem 6/15 in the Trees block. Previous problems trained DFS with different return semantics. Today we <strong>reuse Same Tree as a subroutine</strong> — a classic example of pattern composition.</p>
+
+<hr/>
+
+<p>🔗 [LeetCode #572](https://leetcode.com/problems/subtree-of-another-tree/) 🟢 Easy</p>
+<p>📹 [NeetCode Video](https://neetcode.io/problems/subtree-of-a-binary-tree)</p>
+
+<hr/>
+
+<h3>🌍 现实类比 / Real-World Analogy</h3>
+
+<p>你在 git 历史中搜索一个特定的 commit subtree 结构。<code>git log --all</code> 遍历每个 commit 节点，然后检查从那个节点开始的子树是否和目标结构完全匹配。</p>
+
+<p>You&#x27;re searching git history for a specific commit subtree structure. You walk every commit, then check if the subtree rooted there matches your target exactly.</p>
+
+<hr/>
+
+<h3>📋 题目 / Problem</h3>
+
+<pre><code>
+给定两棵二叉树 root 和 subRoot。
+判断 subRoot 是否是 root 的某个子树（结构和值都相同）。
+
+Given two binary trees root and subRoot.
+Return true if there is a subtree of root with the same
+structure and node values as subRoot, false otherwise.
+
+Example:
+root =    [3,4,5,1,2]     subRoot = [4,1,2]
+         3                          4
+        / \                        / \
+       4   5                      1   2
+      / \
+     1   2
+→ true (subtree rooted at 4 matches)
+</code></pre>
+
+<hr/>
+
+<h3>🗺️ 映射到模板 / Mapping to Template</h3>
+
+<pre><code>
+# 树遍历模板:
+# def dfs(node):
+#     if not node: return BASE_CASE
+#     left = dfs(node.left)
+#     right = dfs(node.right)
+#     return COMBINE(node.val, left, right)
+
+# 今天的题需要两层 DFS:
+# 1. 外层 DFS: 遍历 root 的每个节点
+# 2. 内层 DFS (isSameTree): 从某节点检查是否完全匹配 subRoot
+</code></pre>
+
+<p><strong>与 Day 60 (Same Tree) 的区别:</strong></p>
+<p>- Same Tree: 检查两棵树从根开始是否完全相同 → 单层 DFS</p>
+<p>- Subtree: 检查 root 的 <strong>任意节点</strong> 开始是否匹配 → 双层 DFS</p>
+
+<hr/>
+
+<h3>🐍 Python 解法 / Solution</h3>
+
+<pre><code>
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+class Solution:
+    def isSubtree(self, root: Optional[TreeNode], subRoot: Optional[TreeNode]) -&gt; bool:
+        # BASE CASE: subRoot is None → empty tree is always a subtree
+        if not subRoot:
+            return True
+        # If root is exhausted but subRoot isn&#x27;t, no match
+        if not root:
+            return False
+        
+        # Check if current root matches subRoot exactly
+        if self.isSameTree(root, subRoot):
+            return True
+        
+        # Otherwise, try left or right subtree (DFS traverse root)
+        return (self.isSubtree(root.left, subRoot) or 
+                self.isSubtree(root.right, subRoot))
+    
+    def isSameTree(self, s: Optional[TreeNode], t: Optional[TreeNode]) -&gt; bool:
+        # Reuse Same Tree logic from Day 60!
+        if not s and not t:
+            return True
+        if not s or not t:
+            return False
+        return (s.val == t.val and 
+                self.isSameTree(s.left, t.left) and 
+                self.isSameTree(s.right, t.right))
+</code></pre>
+
+<p><strong>执行追踪 / Trace:</strong></p>
+<pre><code>
+root = [3,4,5,1,2], subRoot = [4,1,2]
+
+isSubtree(3, 4):
+  isSameTree(3,4)? → 3≠4 → False
+  isSubtree(4, 4):
+    isSameTree(4,4)?
+      4==4 ✓
+      isSameTree(1,1)? → True ✓
+      isSameTree(2,2)? → True ✓
+    → True! ✓
+  → return True
+</code></pre>
+
+<hr/>
+
+<h3>⏱️ 复杂度 / Complexity</h3>
+
+<pre><code>
+Time:  O(m × n)  — m = root nodes, n = subRoot nodes
+                  — 每个 root 节点都可能触发一次 isSameTree
+Space: O(h)      — h = height of root (recursion stack)
+
+优化思路 (面试 follow-up):
+- Serialize trees → string matching → O(m+n) time
+- Hashing subtrees → O(m+n) time
+  (但实现复杂，Easy 题不需要)
+</code></pre>
+
+<hr/>
+
+<h3>🔁 举一反三 / Pattern Connections</h3>
+
+<p>在这个树遍历模式块中:</p>
+
+<p>| 题目 | 核心操作 | 返回值语义 |</p>
+<p>|------|---------|----------|</p>
+<p>| #226 Invert Tree | 左右互换 | 返回修改后的节点 |</p>
+<p>| #104 Max Depth | 取最大深度 | 返回整数（深度） |</p>
+<p>| #543 Diameter | 经过节点的最长路径 | 返回深度，副作用更新全局 |</p>
+<p>| #110 Balanced | 检查高度差 | 返回高度，-1 表示不平衡 |</p>
+<p>| #100 Same Tree | 比较结构+值 | 返回 bool |</p>
+<p>| <strong>#572 Subtree</strong> | <strong>Same Tree 作为子程序</strong> | <strong>返回 bool，双层 DFS</strong> |</p>
+
+<p><strong>关键洞察:</strong> 遇到&quot;检查某属性是否存在于树中某处&quot;→ 外层 DFS 遍历 + 内层 DFS 检查。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [LeetCode #572](https://leetcode.com/problems/subtree-of-another-tree/)</p>
+<p>- [NeetCode Solution](https://neetcode.io/problems/subtree-of-a-binary-tree)</p>
+<p>- [LeetCode Editorial](https://leetcode.com/problems/subtree-of-another-tree/editorial/)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>你想知道你的积木堆里，有没有一个角落和你朋友的积木堆一模一样。你从最顶上开始检查每一块积木，每次都问：从这块积木开始，是不是和朋友的一模一样？（用昨天学的 Same Tree 来问）。只要有一个角落匹配，就返回 true。</p>
+
+<p>You want to know if any corner of your Lego pile looks exactly like your friend&#x27;s pile. You check each brick one by one, and for each brick, you ask: &quot;Does everything starting from here match my friend&#x27;s pile?&quot; (using the Same Tree check from yesterday). If any corner matches — you win!</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 61</h2>
+<p><strong>Topic:</strong> Handling Teammates Missing Deadlines</p>
+<p><strong>Date:</strong> 2026-06-09 | <strong>Phase:</strong> Expert | <strong>Category:</strong> Interpersonal</p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills</h2>
+<h3>你的队友总是 miss deadline，你怎么处理？</h3>
+<h3>How do you handle a teammate who consistently misses deadlines?</h3>
+
+<hr/>
+
+<h2>🎯 为什么这个问题很重要 / Why This Matters</h2>
+
+<p>这道题考察的不是你有多严厉，而是你有多成熟。面试官想看：</p>
+<p>- 你能否区分&quot;问题&quot;和&quot;人&quot;</p>
+<p>- 你是否先寻找根因，而不是直接上升</p>
+<p>- 你能否在团队关系和项目健康之间找平衡</p>
+
+<p>This tests maturity, not toughness. Interviewers want to see:</p>
+<p>- Can you separate behavior from person?</p>
+<p>- Do you find root causes before escalating?</p>
+<p>- Can you balance team relationships with project health?</p>
+
+<hr/>
+
+<h2>📖 STAR 框架 / STAR Breakdown</h2>
+
+<p><strong>Situation:</strong> 后端同事连续两个 sprint miss 了 API 交付节点，导致前端被卡住，QA 窗口压缩。</p>
+
+<p><strong>Task:</strong> 作为 tech lead，我需要解决这个依赖问题，同时不破坏团队关系。</p>
+
+<p><strong>Action:</strong></p>
+<p>1. <strong>先私聊，不当众</strong> — 找一个 1:1 时间，以关心而非质问的姿态开场：&quot;我注意到你最近几个 sprint 的进度有些紧，是遇到什么挑战了吗？&quot;</p>
+<p>2. <strong>倾听根因</strong> — 发现他在处理一个没有文档的遗留模块，估时严重低估。</p>
+<p>3. <strong>拆分任务 + 设置中间检查点</strong> — 把大任务拆成每 2-3 天一个可见里程碑，每天 standup 时做一个简短更新。</p>
+<p>4. <strong>提供帮助，不是监控</strong> — 主动问&quot;你需要我帮你 review 这部分设计吗？&quot;让他感到被支持而非被盯着。</p>
+<p>5. <strong>调整估时流程</strong> — 引入&quot;乘以 1.5 法则&quot;和 spike ticket for unknowns。</p>
+
+<p><strong>Result:</strong> 下一个 sprint 的交付节点全部按时完成。遗留模块也有了基础文档。这位同事后来主动在 retro 上分享了估时技巧。</p>
+
+<hr/>
+
+<h2>❌ vs ✅ 对比 / Bad vs Good</h2>
+
+<p><strong>❌ Bad answers:</strong></p>
+<p>- &quot;我会告诉他这是不可接受的&quot; → 对抗性，没有根因分析</p>
+<p>- &quot;我会帮他做完&quot; → 解决了眼前问题，但没有解决系统性问题</p>
+<p>- &quot;我会立即上报给 manager&quot; → 过早上升，没有先尝试解决</p>
+<p>- &quot;我会在 standup 上追问进度&quot; → 公开施压，伤害关系</p>
+
+<p><strong>✅ Good answers:</strong></p>
+<p>- 先私下了解情况，区分意愿问题 vs 能力问题 vs 流程问题</p>
+<p>- 提供具体支持（设计讨论、拆任务、文档）</p>
+<p>- 设置可见检查点，而不是等到 deadline 才发现问题</p>
+<p>- 如果问题持续，再考虑和 manager 一起讨论</p>
+
+<hr/>
+
+<h2>👑 Senior/Staff 级别的升华 / Senior/Staff Tips</h2>
+
+<p>在 Senior/Staff 层级，面试官期待你能看到<strong>系统性问题</strong>：</p>
+
+<p>1. <strong>单个人 miss deadline ≠ 只是个人问题</strong> — 问自己：估时流程是否有问题？依赖关系是否提前暴露？是否有 buffer？</p>
+
+<p>2. <strong>建立团队规范</strong> — 引入 &quot;definition of ready&quot;（任务细化到可估时才进入 sprint），减少未来的估时风险。</p>
+
+<p>3. <strong>心理安全</strong> — 如果队友不敢在 standup 说&quot;我被卡住了&quot;，这是团队文化问题，不只是个人问题。作为 senior，你的职责是创造能说&quot;我需要帮助&quot;的环境。</p>
+
+<p>4. <strong>区分 pattern vs one-off</strong> — 一次是意外，两次要关注，三次要解决根因。题目说 &quot;consistently&quot; 所以要系统性解决。</p>
+
+<hr/>
+
+<h2>💡 Key Takeaways</h2>
+
+<p>1. <strong>私聊优先，不要公开施压</strong> — Assume positive intent first</p>
+<p>2. <strong>根因 &gt; 症状</strong> — Miss deadline 背后往往是估时、依赖、或沟通问题</p>
+<p>3. <strong>支持 &gt; 监控</strong> — 提供帮助比增加压力更有效</p>
+<p>4. <strong>中间检查点</strong> — 防止问题在 deadline 才暴露</p>
+<p>5. <strong>系统性改进</strong> — 解决这次问题的同时，改善流程避免下次发生</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Google&#x27;s Project Aristotle on Team Effectiveness](https://rework.withgoogle.com/print/guides/5721312655835136/)</p>
+<p>- [Radical Candor — Kim Scott](https://www.radicalcandor.com/the-book/)</p>
+<p>- [The Staff Engineer&#x27;s Path — Tanya Reilly](https://www.oreilly.com/library/view/the-staff-engineers/9781098118723/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>如果你的同学总是没做完作业，聪明的做法是先问他&quot;是不是哪里不懂？&quot;而不是马上告诉老师。搞清楚原因，然后一起想办法。如果每次都帮他做作业，他永远学不会；如果马上告诉老师，他会很生气。最好的办法是帮他学会自己完成。</p>
+
+<p>If your classmate keeps forgetting homework, the smart move is to ask &quot;do you need help understanding something?&quot; instead of telling the teacher right away. Find the reason, then fix it together. Doing it for them doesn&#x27;t help; escalating too fast hurts trust. The goal is helping them succeed on their own.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 61</h2>
+<p><strong>Topic:</strong> Singleton Pattern — And Why You Usually Shouldn&#x27;t</p>
+<p><strong>Date:</strong> 2026-06-09 | <strong>Phase:</strong> Expert | <strong>Week:</strong> 4 — Design Patterns</p>
+
+<hr/>
+
+<h2>🐍 Python Craft</h2>
+<h3>Singleton 模式 — 以及为什么你通常不应该用它</h3>
+<h3>Singleton Pattern — And Why You Usually Shouldn&#x27;t</h3>
+
+<hr/>
+
+<h2>🎯 真实场景 / Real Scenario</h2>
+
+<p>你在做一个 backend service，需要一个全局配置对象。你听说用 Singleton 可以保证只有一个实例。听起来很合理对吧？</p>
+
+<p>You&#x27;re building a backend service and need a single global config object. Someone says &quot;use a Singleton.&quot; Sounds reasonable... until it isn&#x27;t.</p>
+
+<hr/>
+
+<h2>📖 什么是 Singleton / What Is a Singleton</h2>
+
+<p>Singleton 保证一个类 <strong>只有一个实例</strong>，并提供全局访问点。</p>
+
+<pre><code>
+# 最简单的 Python Singleton: 用 __new__ 控制实例化
+class Singleton:
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+    
+    def __init__(self):
+        # 注意: __init__ 会被多次调用! 用 hasattr 防止重复初始化
+        if not hasattr(self, &#x27;_initialized&#x27;):
+            self.value = 42
+            self._initialized = True
+
+# Usage
+a = Singleton()
+b = Singleton()
+print(a is b)  # True — 同一个对象
+</code></pre>
+
+<hr/>
+
+<h2>🏭 更 Pythonic 的实现 / More Pythonic Approaches</h2>
+
+<pre><code>
+# 方式 1: Module-level singleton (最 Pythonic)
+# config.py
+class _Config:
+    def __init__(self):
+        self.debug = False
+        self.db_url = &quot;postgres://localhost/mydb&quot;
+
+config = _Config()  # 模块只加载一次，天然单例
+
+# 其他模块:
+from config import config
+print(config.debug)
+
+# -------------------------
+
+# 方式 2: 用 @classmethod + class variable
+class DatabasePool:
+    _pool = None
+    
+    @classmethod
+    def get_instance(cls):
+        if cls._pool is None:
+            cls._pool = cls._create_pool()
+        return cls._pool
+    
+    @classmethod
+    def _create_pool(cls):
+        print(&quot;Creating connection pool...&quot;)
+        return {&quot;connections&quot;: []}
+
+pool1 = DatabasePool.get_instance()
+pool2 = DatabasePool.get_instance()
+print(pool1 is pool2)  # True
+
+# -------------------------
+
+# 方式 3: Metaclass (最&quot;正规&quot;但最复杂)
+class SingletonMeta(type):
+    _instances = {}
+    
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class Logger(metaclass=SingletonMeta):
+    def __init__(self):
+        self.logs = []
+</code></pre>
+
+<hr/>
+
+<h2>⚠️ 为什么你通常不应该用 Singleton / Why You Usually Shouldn&#x27;t</h2>
+
+<pre><code>
+# ❌ 问题 1: 测试困难 — 全局状态污染测试
+class UserService:
+    def get_user(self, user_id):
+        return Database.get_instance().query(f&quot;SELECT * FROM users WHERE id={user_id}&quot;)
+
+# 你怎么在测试里替换 Database？很难！
+
+# ✅ 更好的做法: 依赖注入
+class UserService:
+    def __init__(self, db):  # 注入依赖
+        self.db = db
+    
+    def get_user(self, user_id):
+        return self.db.query(f&quot;SELECT * FROM users WHERE id={user_id}&quot;)
+
+# 测试里:
+mock_db = MockDatabase()
+service = UserService(db=mock_db)  # 轻松 mock!
+
+# -------------------------
+
+# ❌ 问题 2: 并发问题 — 线程不安全的懒初始化
+import threading
+
+class UnsafeSingleton:
+    _instance = None
+    
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:  # 两个线程可能同时通过这里!
+            cls._instance = cls()
+        return cls._instance
+
+# ✅ 线程安全版本:
+import threading
+
+class ThreadSafeSingleton:
+    _instance = None
+    _lock = threading.Lock()
+    
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:  # 双重检查锁
+                    cls._instance = cls()
+        return cls._instance
+</code></pre>
+
+<hr/>
+
+<h2>✅ 何时应该用 Singleton / When to Actually Use It</h2>
+
+<p>| 场景 | 理由 |</p>
+<p>|------|------|</p>
+<p>| 连接池 (DB, Redis) | 连接是昂贵的全局资源 |</p>
+<p>| 日志器 | 全局写入点，可接受 |</p>
+<p>| 配置对象 | 只读，没有状态变更问题 |</p>
+<p>| 缓存 | 全局共享缓存合理 |</p>
+
+<p><strong>何时绝对不用:</strong></p>
+<p>- 业务逻辑对象（User, Order, Product）</p>
+<p>- 任何需要在测试中 mock 的对象</p>
+<p>- 多进程环境（每个进程有自己的内存空间，Singleton 不跨进程）</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Python Design Patterns — Singleton](https://python-patterns.guide/gang-of-four/singleton/)</p>
+<p>- [Why Singleton is Considered Anti-Pattern](https://stackoverflow.com/questions/137975/what-are-drawbacks-or-disadvantages-of-singleton-pattern)</p>
+<p>- [Python Docs — Metaclasses](https://docs.python.org/3/reference/datamodel.html#metaclasses)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>Singleton 就像学校里只有一个校长办公室——不管谁去问，都去同一间办公室找同一个人。这听起来很方便，但问题是：如果你在做作业测验，你没办法假装一个&quot;假校长&quot;来测试不同情况。真正好的设计是把校长作为参数传入，这样测验时可以用&quot;模拟校长&quot;。</p>
+
+<p>Singleton is like a school with one principal&#x27;s office — everyone goes to the same place to get the same person. Sounds convenient, but the problem is: when testing, you can&#x27;t swap in a &quot;fake principal.&quot; Better design passes the principal as a parameter, so tests can use a mock one.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 61</h2>
+<p><strong>Topic:</strong> AI News Roundup</p>
+<p><strong>Date:</strong> 2026-06-09 | <strong>Phase:</strong> Expert</p>
+
+<hr/>
+
+<h2>🤖 AI 新闻速递 / AI News Roundup</h2>
+<h3>本周最重要的 AI 动态 / This Week&#x27;s Top AI Stories</h3>
+
+<hr/>
+
+<h3>📰 Story 1: Anthropic 披露 80% 代码由 Claude 编写</h3>
+<p><strong>Anthropic Reveals 80% of Production Code Written by Claude</strong></p>
+
+<p>Anthropic 披露，2026 年 5 月合并进生产代码库的代码中，据报道超过 80% 是由 Claude 本身编写的。这一披露被定性为对 AI 递归自我改进的警示——一个 AI 系统现在大量参与改进其继任者的开发工作。与此同时，Anthropic 据报道已申请 IPO，估值据报道接近 1 万亿美元。</p>
+
+<p>Anthropic disclosed that reportedly over 80% of code merged into its production codebase in May 2026 was authored by Claude itself. The disclosure was framed as a caution about recursive self-improvement — an AI system now substantially participates in building its own successors. Anthropic has also reportedly filed for a landmark IPO, with valuations reportedly approaching $1 trillion.</p>
+
+<p>🔗 Source: [AI Weekly for Leaders — June 8, 2026](https://aidrivensucess.substack.com/p/ai-weekly-for-leaders-june-8-2026)</p>
+
+<p><strong>工程师视角:</strong> 这意味着 AI-assisted coding 已经从&quot;好用的工具&quot;进化到&quot;主要贡献者&quot;。如果你还没在工作流里深度整合 AI coding assistant，现在已经是竞争劣势了。</p>
+
+<p><strong>Engineer&#x27;s take:</strong> AI-assisted coding has evolved from &quot;useful tool&quot; to &quot;primary contributor.&quot; If you haven&#x27;t deeply integrated AI coding assistants into your workflow, it&#x27;s already a competitive disadvantage.</p>
+
+<hr/>
+
+<h3>📰 Story 2: Snap 裁员 1000 人，AI 生成 65%+ 代码</h3>
+<p><strong>Snap Lays Off 1,000, Citing AI-Driven Productivity</strong></p>
+
+<p>Snap 宣布裁员约 1,000 人并关闭 300+ 个职位，理由是&quot;AI 的快速进步使更小的团队能实现相同的产出&quot;。据报道，AI 现在生成了 Snap 超过 65% 的新代码。</p>
+
+<p>Snap announced layoffs of approximately 1,000 employees and closure of 300+ open roles, citing &quot;rapid advancements in AI allowing smaller teams to achieve the same output.&quot; AI reportedly now generates over 65% of Snap&#x27;s new code.</p>
+
+<p>🔗 Source: [Axios — AI News June 8, 2026](https://www.axios.com/2026/06/08/ai-news-nvidia-cosmos-3-openai-sites-solara-rtx-spark)</p>
+
+<p><strong>关键信号:</strong> 这不只是 Snap 的问题。行业趋势很清楚：AI 正在压缩团队规模，但同时提高了留下的人的产出预期。</p>
+
+<p><strong>Key signal:</strong> This isn&#x27;t just Snap. The industry trend is clear: AI is compressing team sizes while raising output expectations for those who remain.</p>
+
+<hr/>
+
+<h3>📰 Story 3: Nvidia 发布 Cosmos 3 — 物理 AI 基础模型</h3>
+<p><strong>Nvidia Unveils Cosmos 3 — Foundation Model for Physical AI</strong></p>
+
+<p>Nvidia 发布了 Cosmos 3，一个为物理 AI 设计的基础模型，用于训练能与物理世界交互的 AI 系统——例如控制工厂机器人。同时发布的还有 RTX Spark 处理器，为本地 AI 工作负载提供算力，已被微软 Surface Laptop Ultra 采用。</p>
+
+<p>Nvidia unveiled Cosmos 3, a foundation model for physical AI designed to train systems that interact with the physical world — like controlling factory robots. Also announced: the RTX Spark processor for local AI workloads, already adopted by Microsoft&#x27;s Surface Laptop Ultra.</p>
+
+<p>🔗 Source: [Axios — AI News June 8, 2026](https://www.axios.com/2026/06/08/ai-news-nvidia-cosmos-3-openai-sites-solara-rtx-spark)</p>
+
+<p><strong>为什么重要:</strong> 物理 AI（具身智能）正在从实验室走向工厂。Cosmos 3 是这个方向的基础设施层——类似于 CV 领域的 ImageNet 时刻。</p>
+
+<p><strong>Why it matters:</strong> Physical AI (embodied intelligence) is moving from lab to factory floor. Cosmos 3 is the infrastructure layer for this shift — similar to the ImageNet moment for computer vision.</p>
+
+<hr/>
+
+<h3>💡 本周大趋势 / Big Picture</h3>
+
+<pre><code>
+2024: &quot;AI 会不会抢走我的工作？&quot; (焦虑期)
+2025: &quot;AI 是好用的辅助工具&quot; (工具期)  
+2026: &quot;AI 正在写大部分代码，团队在缩小&quot; (现实期)
+
+The transition from tool → coworker → primary contributor
+is happening faster than most engineers expected.
+</code></pre>
+
+<p><strong>给工程师的实用建议 / Practical Advice:</strong></p>
+<p>- 学会审查和引导 AI 生成的代码，不只是接受它</p>
+<p>- 你的差异化价值在于：系统设计判断力、业务理解、代码审查能力</p>
+<p>- &quot;AI fluency&quot; 已经是必备技能，不是加分项</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Axios AI Roundup June 8, 2026](https://www.axios.com/2026/06/08/ai-news-nvidia-cosmos-3-openai-sites-solara-rtx-spark)</p>
+<p>- [AI Weekly for Leaders — June 8](https://aidrivensucess.substack.com/p/ai-weekly-for-leaders-june-8-2026)</p>
+<p>- [Medium AI Update June 6](https://medium.com/adi-insights-innovations-collective/ai-update-june-6-2026-everything-that-happened-be697deb26e1)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>这周 AI 世界发生了三件大事：1) Anthropic 的 AI 自己写了大部分自己公司的代码（有点像机器人在建造更好的机器人）；2) Snap 因为 AI 太能干而裁了很多员工；3) Nvidia 造了一个让机器人能理解物理世界的 AI。总结：AI 不只会聊天了，它在真实工作中已经超过了很多人。</p>
+
+<p>Three big things happened in AI this week: 1) Anthropic&#x27;s AI wrote most of its own company&#x27;s code (like robots building better robots); 2) Snap laid off employees because AI got too productive; 3) Nvidia built an AI to help robots understand the physical world. Summary: AI isn&#x27;t just for chatting — it&#x27;s outperforming humans in real work.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-08</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
