@@ -5,8 +5,802 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 11 Jun 2026 23:27:04 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 12 Jun 2026 15:10:24 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-12</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-12</guid>
+      <pubDate>Fri, 12 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>Day 64 — System Design: Design a CDN from Scratch</h2>
+
+<p>🏗️ <strong>系统设计 / System Design</strong> — Design a CDN from Scratch</p>
+
+<hr/>
+
+<h2>真实场景 / Real-World Scenario</h2>
+
+<p>想象你在构建一个视频平台，用户遍布全球。一个视频文件 5GB 存储在你的纽约数据中心——东京的用户每次播放都要跨越 14,000 公里的海底光纤，延迟高达 200ms+，缓冲不断。</p>
+
+<p>Imagine you&#x27;re building a video platform with global users. A 5GB video stored in your NYC datacenter means Tokyo users cross 14,000km of undersea fiber cables — 200ms+ latency, constant buffering.</p>
+
+<p><strong>解决方案：内容分发网络 (CDN)</strong>。把内容推近用户，而不是把用户拉向内容。</p>
+<p><strong>Solution: Content Delivery Network (CDN)</strong>. Push content close to users, not the other way around.</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+                    ┌─────────────────────────────────┐
+                    │         Origin Server           │
+                    │    (NYC — Source of Truth)      │
+                    └──────────────┬──────────────────┘
+                                   │ Cache Miss → Pull
+                    ┌──────────────▼──────────────────┐
+                    │      CDN Control Plane          │
+                    │  (DNS routing, cache policies,  │
+                    │   purge API, analytics)         │
+                    └───┬─────────────┬───────────────┘
+                        │             │
+          ┌─────────────▼──┐    ┌─────▼──────────────┐
+          │  Edge PoP: LAX │    │  Edge PoP: NRT(Tokyo)│
+          │  ┌──────────┐  │    │  ┌──────────────┐   │
+          │  │L1 Cache  │  │    │  │ L1 Cache     │   │
+          │  │(SSD,hot) │  │    │  │(SSD, hot)    │   │
+          │  └──────────┘  │    │  └──────────────┘   │
+          │  ┌──────────┐  │    │  ┌──────────────┐   │
+          │  │L2 Cache  │  │    │  │ L2 Cache     │   │
+          │  │(HDD,warm)│  │    │  │(HDD, warm)   │   │
+          │  └──────────┘  │    │  └──────────────┘   │
+          └────────────────┘    └────────────────────┘
+                 ▲                       ▲
+           US West users           Asia-Pacific users
+           ~5ms latency              ~8ms latency
+</code></pre>
+
+<hr/>
+
+<h2>核心组件 / Core Components</h2>
+
+<h3>1. DNS 路由 / DNS Routing</h3>
+<p>当用户访问 <code>cdn.example.com/video.mp4</code>：</p>
+<p>1. DNS 返回距离用户最近的 PoP (Point of Presence) IP</p>
+<p>2. 基于 <strong>Anycast</strong> 或 GeoDNS 实现就近路由</p>
+<p>3. TTL 设置短 (30-60s) 以支持快速故障转移</p>
+
+<p>When a user requests <code>cdn.example.com/video.mp4</code>:</p>
+<p>1. DNS returns the IP of the nearest PoP</p>
+<p>2. Routing via <strong>Anycast</strong> or GeoDNS</p>
+<p>3. Short TTL (30-60s) enables fast failover</p>
+
+<h3>2. 缓存策略 / Cache Strategy</h3>
+<pre><code>
+Cache-Control: public, max-age=86400, stale-while-revalidate=3600
+</code></pre>
+<p>- <strong>静态资源</strong> (JS/CSS/images): 长 TTL + 内容哈希命名 (<code>app.a3f2bc.js</code>)</p>
+<p>- <strong>视频内容</strong>: 按块缓存 (HLS segments, 2-10s each)</p>
+<p>- <strong>动态内容</strong> (API 响应): 短 TTL 或 bypass CDN</p>
+<p>- <strong>Cache Key</strong>: URL + 重要请求头 (Accept-Encoding, Accept-Language)</p>
+
+<h3>3. 缓存填充 / Cache Population</h3>
+<pre><code>
+两种模式 / Two modes:
+
+Pull Model (Lazy):  User Request → Cache Miss → Fetch from Origin → Cache → Serve
+Push Model (Eager): Upload → CDN API → Pre-populate all edges → Serve instantly
+</code></pre>
+<p>- <strong>Pull</strong>: 适合长尾内容，按需缓存 / Good for long-tail content</p>
+<p>- <strong>Push</strong>: 适合热门发布 (新专辑、大型活动) / Good for hot launches</p>
+
+<h3>4. 缓存失效 / Cache Invalidation</h3>
+<pre><code>
+# Purge by URL
+curl -X DELETE https://api.cdn.com/cache?url=https://cdn.example.com/image.png
+
+# Purge by tag (bulk)
+curl -X DELETE https://api.cdn.com/cache?tag=product-123
+</code></pre>
+<p>挑战：全球 200+ PoP，purge 传播延迟 5-30s。</p>
+<p>Challenge: 200+ PoPs globally, purge propagation takes 5-30s.</p>
+
+<hr/>
+
+<h2>关键权衡 / Key Tradeoffs</h2>
+
+<p>| 决策 | 选项A | 选项B | 如何选 |</p>
+<p>|------|-------|-------|--------|</p>
+<p>| 缓存 TTL | 长 (高命中率) | 短 (内容新鲜) | 静态用长+内容哈希；动态用短 |</p>
+<p>| Pull vs Push | 按需填充 | 预热所有边缘 | 热门内容 Push；长尾 Pull |</p>
+<p>| 边缘计算 | 在 PoP 运行逻辑 | 回源运行逻辑 | 认证/个性化放 Edge |</p>
+<p>| HTTPS 终止 | 在 Edge 终止 | 透传到 Origin | 在 Edge 终止：降延迟 |</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p><strong>❌ 忘记 Vary 头</strong></p>
+<pre><code>
+# 没有 Vary: Accept-Encoding
+# 压缩版本和非压缩版本共用同一缓存 key → 部分用户收到乱码
+Vary: Accept-Encoding
+</code></pre>
+
+<p><strong>❌ 缓存含用户数据的 API 响应</strong></p>
+<pre><code>
+# 错误：用户特定数据被公开缓存
+Cache-Control: public, max-age=300  ← 危险！包含用户 ID
+
+# 正确：
+Cache-Control: private, max-age=60   ← 只在用户浏览器缓存
+</code></pre>
+
+<p><strong>❌ 单点 Origin 导致 CDN 全量回源时雪崩</strong></p>
+<p>解法：Origin 也要部署在多个区域，CDN 回源时就近选择。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://www.cloudflare.com/learning/cdn/what-is-a-cdn/</p>
+<p>- https://aws.amazon.com/cloudfront/features/</p>
+<p>- https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control</p>
+
+<h2>🧒 ELI5</h2>
+<p>CDN 就像麦当劳的供应链：总部 (Origin) 做好配方，全球门店 (Edge PoP) 就近备好食材。北京的顾客不用飞到美国总部点汉堡——最近的门店直接出餐。</p>
+
+<p>CDN is like McDonald&#x27;s supply chain: HQ (Origin) creates the recipe, local franchises (Edge PoPs) stock the ingredients nearby. Beijing customers don&#x27;t fly to US HQ for a burger — the nearest store serves them instantly.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>Day 64 — Algorithms: #199 Binary Tree Right Side View (Medium)</h2>
+
+<p>💻 <strong>算法 / Algorithms</strong> — #199 Binary Tree Right Side View (Medium)</p>
+
+<p>🧩 <strong>树遍历模式 (9/15)</strong> — building on the DFS/BFS template from Day 56</p>
+
+<hr/>
+
+<h2>今日问题与模式 / Today&#x27;s Problem &amp; Pattern</h2>
+
+<p>前面 8 道树题 (Invert → LCA) 主要用 <strong>DFS 递归</strong>。今天的「右视图」有个关键转折——我们需要 <strong>层级信息</strong> (每层最后一个节点)，这让 <strong>BFS (层序遍历)</strong> 成为更自然的选择。这正是对模式的变奏：同一棵树，换个遍历视角。</p>
+
+<p>The previous 8 tree problems primarily used <strong>DFS recursion</strong>. Today&#x27;s &quot;right side view&quot; has a key twist — we need <strong>level information</strong> (last node per level), making <strong>BFS (level-order traversal)</strong> the more natural fit. This is the pattern variation: same tree, different traversal perspective.</p>
+
+<p>🔗 [LeetCode #199](https://leetcode.com/problems/binary-tree-right-side-view/) 🟡 Medium</p>
+<p>📹 [NeetCode Solution](https://neetcode.io/problems/right-side-view-of-a-binary-tree)</p>
+
+<hr/>
+
+<h2>真实类比 / Real-World Analogy</h2>
+
+<p>想象你站在一棵树的 <strong>正右侧</strong>，从上往下看。每层你只能看到最右边的那个节点——左边的节点被遮住了。这就是「右视图」：每层最右边的节点的值。</p>
+
+<p>Imagine standing to the <strong>right side</strong> of a tree, looking in. For each level, you can only see the rightmost node — the left ones are blocked. That&#x27;s the right side view: the value of the rightmost node at each level.</p>
+
+<pre><code>
+     1            ← 看到 1 (只有一个节点)
+    / \
+   2   3          ← 看到 3 (最右)
+    \   \
+     5   4        ← 看到 4 (最右)
+
+输出: [1, 3, 4]
+</code></pre>
+
+<hr/>
+
+<h2>方法对比 / Approach Comparison</h2>
+
+<h3>方法 1：BFS (推荐)</h3>
+<p>每层处理完取最后一个节点 → 自然对应「右视图」语义</p>
+
+<h3>方法 2：DFS (更优雅，但反直觉)</h3>
+<p>先遍历右子树，用 depth 追踪当前层，首次访问某 depth 时即为右视图节点。</p>
+
+<hr/>
+
+<h2>BFS 解法 / BFS Solution</h2>
+
+<pre><code>
+from collections import deque
+from typing import Optional, List
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def rightSideView(root: Optional[TreeNode]) -&gt; List[int]:
+    if not root:
+        return []
+    
+    result = []
+    queue = deque([root])
+    
+    while queue:
+        level_size = len(queue)  # snapshot current level size
+        
+        for i in range(level_size):
+            node = queue.popleft()
+            
+            # Only record the LAST node in this level
+            if i == level_size - 1:
+                result.append(node.val)
+            
+            # Add children for next level
+            if node.left:
+                queue.append(node.left)
+            if node.right:
+                queue.append(node.right)
+    
+    return result
+</code></pre>
+
+<h3>执行追踪 / Execution Trace</h3>
+<pre><code>
+Tree:     1
+         / \
+        2   3
+         \   \
+          5   4
+
+Initial queue: [1]
+
+Level 0: size=1, process node 1 → i=0 == size-1 → append 1. Add children: 2, 3
+Level 1: size=2, process node 2 (i=0, skip), process node 3 (i=1 == size-1 → append 3). Add 5, 4
+Level 2: size=2, process node 5 (i=0, skip), process node 4 (i=1 == size-1 → append 4)
+
+Result: [1, 3, 4] ✓
+</code></pre>
+
+<hr/>
+
+<h2>DFS 解法 / DFS Solution (Bonus — More Elegant)</h2>
+
+<pre><code>
+def rightSideView_dfs(root: Optional[TreeNode]) -&gt; List[int]:
+    result = []
+    
+    def dfs(node, depth):
+        if not node:
+            return
+        
+        # If visiting this depth for the FIRST time (right-first DFS)
+        # then this is the rightmost node at this depth
+        if depth == len(result):
+            result.append(node.val)
+        
+        # Visit RIGHT first so right nodes are recorded first
+        dfs(node.right, depth + 1)
+        dfs(node.left, depth + 1)
+    
+    dfs(root, 0)
+    return result
+</code></pre>
+
+<p><strong>核心洞察</strong>：先遍历右子树 + 用 <code>depth == len(result)</code> 判断是否是该层首次访问 = 自动只记录最右节点。</p>
+<p><strong>Key Insight</strong>: Visit right first + <code>depth == len(result)</code> as &quot;first visit&quot; check = automatically only records rightmost nodes.</p>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+
+<p>| 解法 | Time | Space |</p>
+<p>|------|------|-------|</p>
+<p>| BFS | O(n) | O(w) w=最宽层节点数 |</p>
+<p>| DFS | O(n) | O(h) h=树高 |</p>
+
+<p>- 平衡树：BFS 空间 O(n/2)，DFS 空间 O(log n)</p>
+<p>- 链状树：BFS 空间 O(1)，DFS 空间 O(n)</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p>这道题是 #102 Binary Tree Level Order Traversal (Day 63) 的直接变体：</p>
+<p>- #102 记录每层所有节点 → #199 只记录每层最后一个节点</p>
+<p>- 同样的 BFS 骨架，只改了 <code>result.append</code> 的条件</p>
+
+<p>连接整个树遍历 Block：</p>
+<p>- <strong>#226 Invert</strong> → 修改树结构</p>
+<p>- <strong>#102 Level Order</strong> → 层级处理 (BFS)</p>
+<p>- <strong>#199 Right Side View</strong> → 层级处理变体 ← 今天</p>
+<p>- <strong>#104/#543</strong> → 递归收集信息 (DFS)</p>
+<p>- <strong>#235 LCA</strong> → 路径问题 (DFS)</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://leetcode.com/problems/binary-tree-right-side-view/</p>
+<p>- https://neetcode.io/problems/right-side-view-of-a-binary-tree</p>
+<p>- https://www.geeksforgeeks.org/print-right-view-binary-tree-2/</p>
+
+<h2>🧒 ELI5</h2>
+<p>假设你站在一排树的右边，每层你只能看到最右边的那棵。BFS 就是从上往下，一层一层看，每层最后一棵就是你看到的那棵。</p>
+
+<p>Imagine standing to the right of a row of trees. For each row, you only see the rightmost one. BFS is going row by row from top to bottom, and the last tree in each row is what you see.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>Day 64 — Soft Skills: How do you keep a long-running project on track when momentum stalls?</h2>
+
+<p>🗣️ <strong>软技能 / Soft Skills</strong> — Project Management: Keeping Momentum</p>
+
+<hr/>
+
+<h2>为什么这很重要 / Why This Matters</h2>
+
+<p>长期项目 (3个月+) 几乎必然遭遇动力衰退——范围蔓延、依赖方失联、团队疲惫、优先级漂移。Senior/Staff 工程师被考察的不只是「能不能交付」，而是<strong>在逆境中维持团队信心和执行力的能力</strong>。</p>
+
+<p>Long-running projects (3+ months) almost always hit momentum stalls — scope creep, disengaged dependencies, team fatigue, priority drift. Senior/Staff engineers are evaluated not just on &quot;can you deliver&quot; but <strong>the ability to maintain team confidence and execution under adversity</strong>.</p>
+
+<hr/>
+
+<h2>STAR 框架 / STAR Breakdown</h2>
+
+<p><strong>Situation (情境)</strong>:</p>
+<p>项目推进到第 3 个月，遇到一个外部依赖团队连续 4 周未交付关键 API 接口，导致我们的进度完全卡住，团队士气低落，发布日期岌岌可危。</p>
+
+<p>We were 3 months into a project. A critical external team missed their API delivery for 4 consecutive weeks. Our progress was completely blocked, team morale dropped, and the release date was in jeopardy.</p>
+
+<p><strong>Task (任务)</strong>:</p>
+<p>作为项目技术负责人，需要在不失去发布时间窗口的情况下，重建团队执行力。</p>
+
+<p>As tech lead, I needed to rebuild execution momentum without losing the release window.</p>
+
+<p><strong>Action (行动)</strong>:</p>
+<p>1. <strong>诊断真实阻塞</strong> — 开 1:1 了解阻塞真相：外部团队 API 文档不全 → 帮他们写好 spec，降低他们的摩擦</p>
+<p>2. <strong>解耦依赖</strong> — 用 mock server + contract testing 让我们的开发不再等待真实 API</p>
+<p>3. <strong>重新切分里程碑</strong> — 把一个大 milestone 拆成 2 周一个的「进度锚点」，每个都有可演示的产出</p>
+<p>4. <strong>对上管理预期</strong> — 主动向 PM 和管理层提前报告风险，附带缓解方案 (不是光报告问题)</p>
+<p>5. <strong>庆祝小胜利</strong> — 每完成一个进度锚点，在 Slack 公开认可团队贡献</p>
+
+<p><strong>Result (结果)</strong>:</p>
+<p>延期 2 周但完整交付，团队没有人离开项目。事后复盘时，这个「解耦+小里程碑」模式被推广到部门其他团队。</p>
+
+<p>Shipped 2 weeks late but with full scope. Zero team attrition during the crisis. The &quot;decouple + small milestones&quot; pattern was adopted across the org after the retrospective.</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<p><strong>❌ 糟糕回答 / Bad Answer</strong>:</p>
+<p>&quot;我们加班把落后的进度赶回来了，团队非常努力。&quot;</p>
+<p>→ 只展示了执行力，没展示<strong>系统思维和主动风险管理</strong>。</p>
+
+<p><strong>✅ 优秀回答 / Good Answer</strong>:</p>
+<p>展示三层能力：</p>
+<p>1. 诊断根本原因 (不只是症状)</p>
+<p>2. 创造可执行的替代路径</p>
+<p>3. 管理上下左右的预期</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分项 / Senior-Level Tips</h2>
+
+<p>- <strong>提前报警，不要晚节不保</strong> — 每 2 周做一次 risk review，发现趋势立即升级，而不是等到危机爆发</p>
+<p>- <strong>让「不确定性」可视化</strong> — 用置信区间代替单点估算：&quot;我们 80% 概率在 Q3 结束前交付，有 20% 风险延到 Q4 第一周，原因是 X&quot;</p>
+<p>- <strong>投资团队能量</strong> — 「战时」也要保持 1:1，了解谁在 burn out，提前换人比临阵崩溃好</p>
+<p>- <strong>构建交付肌肉记忆</strong> — 坏消息要比好消息早到达管理层，这样你的信用额度才足够扛过危机</p>
+
+<hr/>
+
+<h2>Key Takeaways / 关键要点</h2>
+
+<p>1. <strong>解耦优先</strong> — 外部依赖阻塞时，先想「我怎么在没有它的情况下继续前进？」</p>
+<p>2. <strong>大里程碑 → 小锚点</strong> — 可见进展本身就能维持士气</p>
+<p>3. <strong>主动管理 vs 被动汇报</strong> — 带方案报告问题，不带方案只是转移焦虑</p>
+<p>4. <strong>动力 = 进展感</strong> — 团队需要感受到「我们在往前走」</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://www.manager-tools.com/2005/07/the-feedback-model</p>
+<p>- https://www.amazon.com/Making-Work-Visible-Exposing-Optimize/dp/1942788150</p>
+<p>- https://paulgraham.com/mean.html</p>
+
+<h2>🧒 ELI5</h2>
+<p>项目卡住就像自行车链条脱落。不是踩得更用力 (加班)，而是先下车把链条挂回去 (解除阻塞)，然后把长途旅程分成几个小段 (里程碑)，每段终点都有可以休息和庆祝的地方。</p>
+
+<p>A stalled project is like a bicycle chain falling off. Don&#x27;t pedal harder (overtime) — get off and reattach the chain (unblock), then split the long journey into short segments (milestones), each with a rest stop where you can celebrate progress.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Day 64 — Python Craft: Adapter Pattern — Wrapping Incompatible Interfaces</h2>
+
+<p>🎨 <strong>前端 / Python Craft</strong> — Adapter Pattern: Wrapping Incompatible Interfaces</p>
+
+<p>&gt; 注：本 Phase 的 Section 4 为 Python 设计模式（Python Craft），非前端内容。</p>
+
+<hr/>
+
+<h2>真实场景 / Real-World Scenario</h2>
+
+<p>你在做一个 dashboard，需要展示来自三个不同数据源的日志：AWS CloudWatch、DataDog、和你自己的 MySQL。每个 SDK 的接口都不一样——你不可能统一修改它们的源码。适配器模式 (Adapter Pattern) 就是为此而生的。</p>
+
+<p>You&#x27;re building a monitoring dashboard that aggregates logs from three different sources: AWS CloudWatch, DataDog, and your own MySQL. Each SDK has a completely different interface — you can&#x27;t modify their source code. The Adapter Pattern exists exactly for this.</p>
+
+<hr/>
+
+<h2>问题 / The Problem</h2>
+
+<pre><code>
+# Three incompatible 3rd-party interfaces
+class CloudWatchClient:
+    def get_log_events(self, log_group: str, start_time: int) -&gt; dict:
+        return {&quot;events&quot;: [{&quot;message&quot;: &quot;...&quot;, &quot;timestamp&quot;: 1234567890}]}
+
+class DatadogClient:
+    def query_logs(self, service: str, from_ts: float, to_ts: float) -&gt; list:
+        return [{&quot;text&quot;: &quot;...&quot;, &quot;date&quot;: 1234567890000}]
+
+class MySQLLogger:
+    def fetch_records(self, table: str, since: str) -&gt; list[tuple]:
+        return [(&quot;2026-06-12 10:00:00&quot;, &quot;User logged in&quot;)]
+</code></pre>
+
+<p>你的 dashboard 代码不想关心数据来自哪里——它只想调用统一的 <code>get_logs(source, start_time) → list[LogEntry]</code>。</p>
+
+<p>Your dashboard shouldn&#x27;t care where data comes from — it just wants a unified <code>get_logs(source, start_time) → list[LogEntry]</code>.</p>
+
+<hr/>
+
+<h2>解法：适配器 / Solution: Adapters</h2>
+
+<pre><code>
+from dataclasses import dataclass
+from datetime import datetime
+from abc import ABC, abstractmethod
+
+@dataclass
+class LogEntry:
+    &quot;&quot;&quot;Unified log entry — what our app speaks.&quot;&quot;&quot;
+    timestamp: datetime
+    message: str
+    source: str
+
+# Abstract target interface
+class LogProvider(ABC):
+    @abstractmethod
+    def get_logs(self, start_time: datetime) -&gt; list[LogEntry]:
+        pass
+
+# Adapter 1: Wrap CloudWatch
+class CloudWatchAdapter(LogProvider):
+    def __init__(self, client: CloudWatchClient, log_group: str):
+        self._client = client
+        self._log_group = log_group
+    
+    def get_logs(self, start_time: datetime) -&gt; list[LogEntry]:
+        raw = self._client.get_log_events(
+            log_group=self._log_group,
+            start_time=int(start_time.timestamp())
+        )
+        return [
+            LogEntry(
+                timestamp=datetime.fromtimestamp(e[&quot;timestamp&quot;]),
+                message=e[&quot;message&quot;],
+                source=&quot;cloudwatch&quot;
+            )
+            for e in raw[&quot;events&quot;]
+        ]
+
+# Adapter 2: Wrap DataDog
+class DatadogAdapter(LogProvider):
+    def __init__(self, client: DatadogClient, service: str):
+        self._client = client
+        self._service = service
+    
+    def get_logs(self, start_time: datetime) -&gt; list[LogEntry]:
+        now = datetime.now().timestamp()
+        raw = self._client.query_logs(
+            service=self._service,
+            from_ts=start_time.timestamp(),
+            to_ts=now
+        )
+        return [
+            LogEntry(
+                timestamp=datetime.fromtimestamp(e[&quot;date&quot;] / 1000),  # ms → s
+                message=e[&quot;text&quot;],
+                source=&quot;datadog&quot;
+            )
+            for e in raw
+        ]
+
+# Adapter 3: Wrap MySQL
+class MySQLAdapter(LogProvider):
+    def __init__(self, logger: MySQLLogger, table: str):
+        self._logger = logger
+        self._table = table
+    
+    def get_logs(self, start_time: datetime) -&gt; list[LogEntry]:
+        raw = self._logger.fetch_records(
+            table=self._table,
+            since=start_time.strftime(&quot;%Y-%m-%d %H:%M:%S&quot;)
+        )
+        return [
+            LogEntry(
+                timestamp=datetime.strptime(row[0], &quot;%Y-%m-%d %H:%M:%S&quot;),
+                message=row[1],
+                source=&quot;mysql&quot;
+            )
+            for row in raw
+        ]
+</code></pre>
+
+<hr/>
+
+<h2>统一调用 / Unified Usage</h2>
+
+<pre><code>
+# Dashboard code — completely unaware of underlying SDKs
+def aggregate_logs(providers: list[LogProvider], since: datetime) -&gt; list[LogEntry]:
+    all_logs = []
+    for provider in providers:
+        all_logs.extend(provider.get_logs(since))
+    
+    return sorted(all_logs, key=lambda x: x.timestamp)
+
+# Setup — only done once at startup
+providers = [
+    CloudWatchAdapter(CloudWatchClient(), log_group=&quot;/app/prod&quot;),
+    DatadogAdapter(DatadogClient(), service=&quot;payment-service&quot;),
+    MySQLAdapter(MySQLLogger(), table=&quot;app_logs&quot;),
+]
+
+# Use — dashboard just calls this
+logs = aggregate_logs(providers, since=datetime(2026, 6, 12, 8, 0))
+</code></pre>
+
+<hr/>
+
+<h2>核心结构 / Core Structure</h2>
+
+<pre><code>
+Your App Code
+     │  calls
+     ▼
+LogProvider (abstract interface)
+     │  implements
+     ├── CloudWatchAdapter ──wraps──► CloudWatchClient (3rd party)
+     ├── DatadogAdapter    ──wraps──► DatadogClient    (3rd party)
+     └── MySQLAdapter      ──wraps──► MySQLLogger      (3rd party)
+</code></pre>
+
+<hr/>
+
+<h2>❌ 常见误用 / Common Mistakes</h2>
+
+<p><strong>❌ 让适配器做业务逻辑</strong></p>
+<p>适配器只负责接口转换，不应该包含过滤、聚合、业务规则。</p>
+<pre><code>
+# 错误 ❌
+class CloudWatchAdapter(LogProvider):
+    def get_logs(self, start_time):
+        logs = ...
+        return [l for l in logs if &quot;ERROR&quot; in l.message]  # 业务过滤放这里！
+
+# 正确 ✅ — 过滤留给调用方
+logs = [l for l in provider.get_logs(since) if &quot;ERROR&quot; in l.message]
+</code></pre>
+
+<p><strong>❌ 适配器包含状态</strong></p>
+<p>适配器应该是无状态的包装器，状态属于底层客户端。</p>
+
+<hr/>
+
+<h2>适配器 vs 外观 / Adapter vs Facade</h2>
+
+<p>| | 适配器 Adapter | 外观 Facade |</p>
+<p>|---|---|---|</p>
+<p>| 目的 | 接口不兼容 → 转换 | 多个接口 → 简化 |</p>
+<p>| 被包装数量 | 一个类 | 多个类 |</p>
+<p>| 场景 | 第三方 SDK 接入 | 子系统简化 |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://refactoring.guru/design-patterns/adapter</p>
+<p>- https://refactoring.guru/design-patterns/adapter/python/example</p>
+<p>- https://docs.python.org/3/library/abc.html</p>
+
+<h2>🧒 ELI5</h2>
+<p>适配器就像电源插头转换器。你从中国带来一个两脚插头的笔记本，到美国发现插座是三孔的。转换器不改变笔记本，也不改变插座——它中间做一个「翻译」，让不兼容的东西能一起工作。</p>
+
+<p>Adapter is like a power plug converter. You bring a Chinese laptop with a two-prong plug to the US with three-prong outlets. The converter doesn&#x27;t change your laptop or the outlet — it translates in the middle so incompatible things work together.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>Day 64 — AI: Structured Output &amp; JSON Mode</h2>
+
+<p>🤖 <strong>AI</strong> — Structured Output &amp; JSON Mode</p>
+
+<hr/>
+
+<h2>问题背景 / The Problem</h2>
+
+<p>你让 LLM 返回 JSON，但得到这样的结果：</p>
+
+<p>You ask an LLM to return JSON, and you get:</p>
+<pre><code>
+Sure! Here&#x27;s the JSON you asked for:
+</code></pre>
+<p>{&quot;name&quot;: &quot;Alice&quot;, &quot;age&quot;: 30}</p>
+<pre><code>
+Let me know if you need any modifications!
+</code></pre>
+
+<p>然后你的 <code>json.loads()</code> 直接抛异常。这种情况在生产系统里非常危险。</p>
+
+<p>Then your <code>json.loads()</code> throws an exception. This is dangerously unreliable in production.</p>
+
+<hr/>
+
+<h2>结构化输出是什么 / What Is Structured Output?</h2>
+
+<p>结构化输出 = <strong>API 层面强制保证模型输出严格符合 JSON Schema</strong>，而不只是「提示模型生成 JSON」。</p>
+
+<p>Structured output = <strong>API-level guarantee that model output strictly conforms to a JSON Schema</strong>, not just &quot;asking the model nicely to produce JSON.&quot;</p>
+
+<p>实现原理：<strong>约束解码 (Constrained Decoding)</strong></p>
+<p>模型在生成每个 token 时，只能从符合当前 Schema 状态的 token 集合中选择。用上下文无关文法 (CFG) 将 JSON Schema 编译成状态机，逐 token 过滤。</p>
+
+<p>Implementation: <strong>Constrained Decoding</strong></p>
+<p>At each token generation step, the model can only sample from tokens valid for the current schema state. A JSON Schema is compiled into a state machine (Context-Free Grammar), filtering token candidates at each step.</p>
+
+<hr/>
+
+<h2>两种模式对比 / Two Modes Compared</h2>
+
+<h3>JSON Mode (旧方式 / Legacy)</h3>
+<pre><code>
+# OpenAI — JSON Mode
+response = client.chat.completions.create(
+    model=&quot;gpt-4o&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Return user info as JSON&quot;}],
+    response_format={&quot;type&quot;: &quot;json_object&quot;}  # Only guarantees valid JSON syntax
+)
+# 保证: 是合法 JSON。不保证: 字段名、类型、结构
+# Guarantees: valid JSON syntax. Does NOT guarantee: field names, types, structure
+</code></pre>
+
+<h3>Structured Outputs (新方式 / Current Standard)</h3>
+<pre><code>
+# OpenAI — Structured Outputs with Pydantic
+from pydantic import BaseModel
+
+class UserInfo(BaseModel):
+    name: str
+    age: int
+    email: str
+
+response = client.beta.chat.completions.parse(
+    model=&quot;gpt-4o&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Extract user info from: Alice, 30, alice@example.com&quot;}],
+    response_format=UserInfo
+)
+user = response.choices[0].message.parsed  # Already a UserInfo object!
+print(user.name)  # &quot;Alice&quot;
+</code></pre>
+
+<hr/>
+
+<h2>Anthropic 原生结构化输出 / Anthropic Native Structured Outputs</h2>
+
+<p>据报道，Anthropic 于 2026 年初正式 GA 结构化输出功能，支持两种模式：</p>
+
+<p>Anthropic reportedly launched structured outputs GA in early 2026 with two modes:</p>
+
+<pre><code>
+import anthropic
+
+client = anthropic.Anthropic()
+
+# Mode 1: JSON Outputs Mode (data extraction)
+response = client.messages.create(
+    model=&quot;claude-sonnet-4-5&quot;,
+    max_tokens=1024,
+    # Note: Exact parameter name may vary — check docs.anthropic.com for current API
+    output_format={
+        &quot;type&quot;: &quot;json_schema&quot;,
+        &quot;json_schema&quot;: {
+            &quot;name&quot;: &quot;UserInfo&quot;,
+            &quot;schema&quot;: {
+                &quot;type&quot;: &quot;object&quot;,
+                &quot;properties&quot;: {
+                    &quot;name&quot;: {&quot;type&quot;: &quot;string&quot;},
+                    &quot;age&quot;: {&quot;type&quot;: &quot;integer&quot;},
+                    &quot;email&quot;: {&quot;type&quot;: &quot;string&quot;}
+                },
+                &quot;required&quot;: [&quot;name&quot;, &quot;age&quot;, &quot;email&quot;]
+            }
+        }
+    },
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Extract: Alice, 30, alice@example.com&quot;}]
+)
+import json
+user = json.loads(response.content[0].text)  # Guaranteed valid + schema-conformant
+
+# Mode 2: Strict Tool Use (agentic workflows)
+tools = [{
+    &quot;name&quot;: &quot;create_user&quot;,
+    &quot;input_schema&quot;: {
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {&quot;name&quot;: {&quot;type&quot;: &quot;string&quot;}, &quot;age&quot;: {&quot;type&quot;: &quot;integer&quot;}},
+        &quot;required&quot;: [&quot;name&quot;, &quot;age&quot;]
+    },
+    &quot;strict&quot;: True  # Parameters will EXACTLY match the schema
+}]
+</code></pre>
+
+<hr/>
+
+<h2>最佳实践 / Best Practices</h2>
+
+<h3>1. Schema-First 开发</h3>
+<p>先定义 Pydantic 模型 / Zod schema，再写 prompt，不要用字符串拼 JSON。</p>
+
+<pre><code>
+# ❌ 旧方式
+prompt = &#x27;Return JSON with fields: name (string), age (int), email (string)&#x27;
+
+# ✅ 新方式  
+class UserInfo(BaseModel):
+    name: str
+    age: int
+    email: str
+# 直接传 UserInfo 给 response_format
+</code></pre>
+
+<h3>2. 处理拒绝 / Handle Refusals</h3>
+<pre><code>
+if response.choices[0].message.refusal:
+    # Model refused due to safety — handle gracefully
+    print(&quot;Model refused:&quot;, response.choices[0].message.refusal)
+else:
+    user = response.choices[0].message.parsed
+</code></pre>
+
+<h3>3. 两阶段生成 / Two-Stage for Complex Reasoning</h3>
+<p>对于需要推理的任务，先让模型 think，再格式化输出：</p>
+<pre><code>
+# Stage 1: Let the model reason freely
+reasoning = client.chat(&quot;Think through this problem...&quot;)
+
+# Stage 2: Format the conclusion
+result = client.chat(
+    f&quot;Given this reasoning: {reasoning}\n\nNow output as JSON:&quot;,
+    response_format=MySchema
+)
+</code></pre>
+
+<hr/>
+
+<h2>什么时候用 / When to Use</h2>
+
+<p>| 场景 | 推荐方式 |</p>
+<p>|------|---------|</p>
+<p>| 数据提取 (实体抽取、分类) | Structured Outputs |</p>
+<p>| Agentic 工具调用 | Strict Tool Use |</p>
+<p>| 简单 JSON 转换 | JSON Mode (够用) |</p>
+<p>| 需要推理 + 结构化输出 | Two-stage generation |</p>
+<p>| 创意写作 | 不用结构化输出 |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://platform.openai.com/docs/guides/structured-outputs</p>
+<p>- https://docs.anthropic.com/en/docs/test-and-evaluate/strengthen-guardrails/increase-consistency</p>
+<p>- https://docs.anthropic.com/en/docs/build-with-claude/tool-use</p>
+
+<h2>🧒 ELI5</h2>
+<p>让 LLM 返回 JSON 就像让朋友帮你填一张表格。普通方式：你口头说字段名，朋友可能填错地方。结构化输出：你给朋友一张预印的表格，每个格子里只能填指定类型的内容，填完自动校验——出不了错。</p>
+
+<p>Asking an LLM to return JSON is like asking a friend to fill out a form. Normal way: you describe the fields verbally — your friend might put things in the wrong box. Structured output: you hand them a pre-printed form where each box only accepts certain content and auto-validates — errors are impossible.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-11</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
