@@ -591,22 +591,9 @@ def main():
             plain_parts.append(content)
             found += 1
 
-    # If no real sections, check for review day or weekend files
+    # If no real sections, check for weekend files first, then review day
     if found == 0:
-        # Try review file first
-        review_path = os.path.join(archive_dir, '{}-{}.md'.format(today, REVIEW_META[0]))
-        if os.path.exists(review_path):
-            with open(review_path) as f:
-                content = f.read()
-            html = md_to_html(content)
-            filename, icon, name_en, name_cn = REVIEW_META
-            sections_html.append((icon, name_en, name_cn, filename, html))
-            plain_parts.append(content)
-            found = 1
-            print('📝 Review day detected — sending review quiz email')
-
-    # Try weekend formats (deepdive, week-review)
-    if found == 0:
+        # Try weekend formats (deepdive, week-review) FIRST — they take priority on Sat/Sun
         for filename, icon, name_en, name_cn in WEEKEND_META:
             path = os.path.join(archive_dir, '{}-{}.md'.format(today, filename))
             if os.path.exists(path):
@@ -617,6 +604,25 @@ def main():
                 plain_parts.append(content)
                 found += 1
                 print('🔬 Weekend content detected — sending {} email'.format(name_en))
+
+    # Try review file (weekday review days — no weekend content found)
+    if found == 0:
+        review_path = os.path.join(archive_dir, '{}-{}.md'.format(today, REVIEW_META[0]))
+        if os.path.exists(review_path):
+            with open(review_path) as f:
+                content = f.read()
+            # Skip review files that are just stubs pointing to weekend content
+            content_lower = content.lower()
+            is_stub = any(marker in content_lower for marker in ['deepdive.md', 'week-review.md', 'deep dive day'])
+            if not is_stub:
+                html = md_to_html(content)
+                filename, icon, name_en, name_cn = REVIEW_META
+                sections_html.append((icon, name_en, name_cn, filename, html))
+                plain_parts.append(content)
+                found = 1
+                print('📝 Review day detected — sending review quiz email')
+            else:
+                print('📝 Review file is a weekend stub — using weekend content instead')
 
     if found == 0:
         print('No archive files found for {}. Skipping email.'.format(today))

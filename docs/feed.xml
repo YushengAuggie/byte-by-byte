@@ -5,8 +5,639 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 12 Jun 2026 15:10:24 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 13 Jun 2026 15:10:57 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-13</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-13</guid>
+      <pubDate>Sat, 13 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: 股票交易所撮合引擎 / Stock Exchange Order Matching Engine (18 min read)</strong></p>
+<p>📊 NeetCode: 54/150 · SysDesign: 53/40 · Behavioral: 53/40 · Frontend: 37/50 · AI: 26/30</p>
+<p>🔥 65-day streak!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>撮合引擎（Order Matching Engine，OME）是整个交易所的心脏。纽约证券交易所每秒处理数百万笔订单，延迟要求在微秒级别。它解决的核心问题是：在价格/时间优先的原则下，将买单（Bid）和卖单（Ask）高效配对，并以最公平的价格成交。</p>
+
+<p>这个系统的难点不在于逻辑复杂，而在于：</p>
+<p>- <strong>极端吞吐量</strong>：每秒百万级 TPS</p>
+<p>- <strong>确定性</strong>：相同的订单序列，永远产生相同的成交结果</p>
+<p>- <strong>公平性</strong>：FIFO（先进先出）保证，无&quot;插队&quot;</p>
+<p>- <strong>持久性</strong>：崩溃后能精确重放</p>
+
+<p><strong>English:</strong></p>
+<p>An order matching engine is the core of any exchange — NYSE handles millions of orders/second with microsecond latency. The problem: given buy (bid) and sell (ask) orders, match them at the best fair price following price-time priority. Hard part isn&#x27;t the algorithm — it&#x27;s building it at extreme throughput with deterministic, crash-safe execution.</p>
+
+<p>Why this matters in interviews: it combines data structures (priority queues), concurrency, event sourcing, and system design into one question. Meta, Jane Street, Citadel, and Stripe all ask variants of this.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>核心概念 / Core Concepts</h3>
+
+<p><strong>订单类型 / Order Types</strong></p>
+
+<pre><code>
+限价单 (Limit Order):  以指定价格或更优价格买/卖
+市价单 (Market Order): 立即以最优市价成交
+撤单   (Cancel Order): 取消已有挂单
+</code></pre>
+
+<p><strong>订单簿结构 / The Order Book</strong></p>
+
+<pre><code>
+ASKS (卖方) — 按价格升序排列
+  ┌─────────────────────────────┐
+  │ Price  | Qty  | Orders      │
+  │ 102.50 | 500  | [A1, A2]    │  ← best ask (lowest sell)
+  │ 103.00 | 300  | [A3]        │
+  │ 103.50 | 1000 | [A4, A5]    │
+  └─────────────────────────────┘
+        SPREAD (差价)
+  ┌─────────────────────────────┐
+  │ 101.50 | 400  | [B3, B4]    │
+  │ 101.00 | 600  | [B2]        │
+  │ 100.50 | 800  | [B1]        │  ← best bid (highest buy)
+  └─────────────────────────────┘
+BIDS (买方) — 按价格降序排列
+</code></pre>
+
+<p><strong>撮合规则 / Matching Rules</strong></p>
+<p>1. <strong>Price Priority</strong>: Best price first (highest bid, lowest ask)</p>
+<p>2. <strong>Time Priority</strong>: Same price → earliest order first (FIFO)</p>
+<p>3. <strong>成交条件</strong>: bid_price &gt;= ask_price 时触发成交</p>
+
+<p><strong>三个不变量 / Three Invariants</strong></p>
+<p>- 任意时刻，best_bid &lt; best_ask（否则立即撮合）</p>
+<p>- 同价格级别内，订单严格 FIFO</p>
+<p>- 所有状态变更通过 event log 持久化，可重放</p>
+
+<h3>关键数据结构 / Key Data Structures</h3>
+
+<pre><code>
+# Price level: all orders at the same price
+# Use deque for O(1) FIFO add/remove at head
+from collections import deque
+
+class PriceLevel:
+    def __init__(self, price: float):
+        self.price = price
+        self.orders: deque[Order] = deque()  # FIFO queue
+        self.total_qty: int = 0
+
+# Order book side: sorted price levels
+# Bids: max-heap (negate price for Python&#x27;s min-heap)
+# Asks: min-heap
+import heapq
+
+class OrderBookSide:
+    def __init__(self, is_bid: bool):
+        self.is_bid = is_bid
+        self.levels: dict[float, PriceLevel] = {}
+        self.heap: list[float] = []  # price heap for O(log n) best price
+</code></pre>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>完整撮合引擎实现 / Full Matching Engine</h3>
+
+<pre><code>
+import heapq
+import time
+import uuid
+from collections import deque
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Optional
+
+
+class Side(Enum):
+    BID = &quot;bid&quot;  # Buy order
+    ASK = &quot;ask&quot;  # Sell order
+
+
+class OrderType(Enum):
+    LIMIT = &quot;limit&quot;
+    MARKET = &quot;market&quot;
+
+
+@dataclass
+class Order:
+    order_id: str
+    symbol: str
+    side: Side
+    order_type: OrderType
+    price: Optional[float]   # None for market orders
+    quantity: int
+    timestamp: int = field(default_factory=lambda: time.time_ns())
+    filled_qty: int = 0
+
+    @property
+    def remaining_qty(self) -&gt; int:
+        return self.quantity - self.filled_qty
+
+
+@dataclass
+class Trade:
+    trade_id: str
+    symbol: str
+    price: float
+    quantity: int
+    buyer_order_id: str
+    seller_order_id: str
+    timestamp: int = field(default_factory=lambda: time.time_ns())
+
+
+class OrderBook:
+    &quot;&quot;&quot;
+    Maintains bids and asks for a single symbol.
+
+    Internal representation:
+      - bids: max-heap (negate price → Python min-heap trick)
+      - asks: min-heap
+      - levels: dict mapping price → PriceLevel (deque of orders)
+      - order_map: dict mapping order_id → Order (for O(1) cancel)
+    &quot;&quot;&quot;
+
+    def __init__(self, symbol: str):
+        self.symbol = symbol
+        # Bids: store (-price, timestamp) for max-heap behavior
+        self._bid_heap: list[tuple[float, int, float]] = []  # (-price, ts, price)
+        # Asks: store (price, timestamp)
+        self._ask_heap: list[tuple[float, int]] = []
+        self._bid_levels: dict[float, deque] = {}
+        self._ask_levels: dict[float, deque] = {}
+        self._order_map: dict[str, Order] = {}  # for cancellation
+        self._cancelled: set[str] = set()       # lazy deletion set
+
+    def best_bid(self) -&gt; Optional[float]:
+        &quot;&quot;&quot;O(log n) — skip cancelled/empty levels&quot;&quot;&quot;
+        while self._bid_heap:
+            neg_price, _, price = self._bid_heap[0]
+            level = self._bid_levels.get(price)
+            # Clean up: if level is empty or all cancelled, pop and continue
+            if level and len(level) &gt; 0:
+                return price
+            heapq.heappop(self._bid_heap)
+            if price in self._bid_levels:
+                del self._bid_levels[price]
+        return None
+
+    def best_ask(self) -&gt; Optional[float]:
+        &quot;&quot;&quot;O(log n) — skip empty levels&quot;&quot;&quot;
+        while self._ask_heap:
+            price, _ = self._ask_heap[0]
+            level = self._ask_levels.get(price)
+            if level and len(level) &gt; 0:
+                return price
+            heapq.heappop(self._ask_heap)
+            if price in self._ask_levels:
+                del self._ask_levels[price]
+        return None
+
+    def add_limit_order(self, order: Order):
+        &quot;&quot;&quot;Add limit order to the book (no immediate matching here).&quot;&quot;&quot;
+        self._order_map[order.order_id] = order
+        if order.side == Side.BID:
+            if order.price not in self._bid_levels:
+                self._bid_levels[order.price] = deque()
+                # Push to heap: negate for max-heap, include timestamp for tie-breaking
+                heapq.heappush(self._bid_heap, (-order.price, order.timestamp, order.price))
+            self._bid_levels[order.price].append(order)
+        else:
+            if order.price not in self._ask_levels:
+                self._ask_levels[order.price] = deque()
+                heapq.heappush(self._ask_heap, (order.price, order.timestamp))
+            self._ask_levels[order.price].append(order)
+
+    def cancel_order(self, order_id: str) -&gt; bool:
+        &quot;&quot;&quot;
+        Lazy deletion: mark as cancelled, skip during matching.
+        O(1) — no heap restructuring needed.
+        &quot;&quot;&quot;
+        if order_id not in self._order_map:
+            return False
+        self._cancelled.add(order_id)
+        return True
+
+    def pop_best_ask(self) -&gt; Optional[Order]:
+        &quot;&quot;&quot;Get and remove the best ask order (FIFO within price level).&quot;&quot;&quot;
+        while True:
+            best = self.best_ask()
+            if best is None:
+                return None
+            level = self._ask_levels[best]
+            while level:
+                order = level[0]
+                if order.order_id in self._cancelled or order.remaining_qty &lt;= 0:
+                    level.popleft()  # Remove cancelled/filled orders
+                    continue
+                return level[0]  # Peek — don&#x27;t pop yet (partial fills)
+            # Level empty after cleanup
+            del self._ask_levels[best]
+            heapq.heappop(self._ask_heap)
+
+    def pop_best_bid(self) -&gt; Optional[Order]:
+        &quot;&quot;&quot;Get and remove the best bid order (FIFO within price level).&quot;&quot;&quot;
+        while True:
+            best = self.best_bid()
+            if best is None:
+                return None
+            level = self._bid_levels[best]
+            while level:
+                order = level[0]
+                if order.order_id in self._cancelled or order.remaining_qty &lt;= 0:
+                    level.popleft()
+                    continue
+                return level[0]
+            del self._bid_levels[best]
+            heapq.heappop(self._bid_heap)
+
+
+class MatchingEngine:
+    &quot;&quot;&quot;
+    Core matching engine. Single-threaded per symbol (no locks needed).
+
+    Architecture:
+      - One OrderBook per symbol (isolated state)
+      - process_order() = the single entry point
+      - Returns list of Trade objects (for downstream processing)
+
+    Matching algorithm: continuous auction (price-time priority)
+    &quot;&quot;&quot;
+
+    def __init__(self):
+        self._books: dict[str, OrderBook] = {}
+
+    def _get_book(self, symbol: str) -&gt; OrderBook:
+        if symbol not in self._books:
+            self._books[symbol] = OrderBook(symbol)
+        return self._books[symbol]
+
+    def process_order(self, order: Order) -&gt; list[Trade]:
+        &quot;&quot;&quot;
+        Main entry point. Handles limit and market orders.
+        Returns list of trades generated.
+        &quot;&quot;&quot;
+        book = self._get_book(order.symbol)
+        trades = []
+
+        if order.order_type == OrderType.MARKET:
+            # Market orders: match immediately, no resting in book
+            trades = self._match_market(book, order)
+        else:
+            # Limit orders: try to match first, rest remainder in book
+            trades = self._match_limit(book, order)
+
+        return trades
+
+    def _match_limit(self, book: OrderBook, incoming: Order) -&gt; list[Trade]:
+        &quot;&quot;&quot;
+        Limit order matching:
+        - BUY limit: match against asks where ask_price &lt;= buy_price
+        - SELL limit: match against bids where bid_price &gt;= sell_price
+        &quot;&quot;&quot;
+        trades = []
+
+        if incoming.side == Side.BID:
+            # Incoming buy: sweep asks from best (lowest) upward
+            while incoming.remaining_qty &gt; 0:
+                best_ask = book.best_ask()
+                # Stop if no asks, or best ask is above our limit price
+                if best_ask is None or best_ask &gt; incoming.price:
+                    break
+                trade = self._execute_match(book, incoming, book, is_incoming_bid=True)
+                if trade:
+                    trades.append(trade)
+        else:
+            # Incoming sell: sweep bids from best (highest) downward
+            while incoming.remaining_qty &gt; 0:
+                best_bid = book.best_bid()
+                # Stop if no bids, or best bid is below our limit price
+                if best_bid is None or best_bid &lt; incoming.price:
+                    break
+                trade = self._execute_match(book, incoming, book, is_incoming_bid=False)
+                if trade:
+                    trades.append(trade)
+
+        # Rest unfilled portion in the book
+        if incoming.remaining_qty &gt; 0:
+            # Create a new order for remaining quantity
+            resting = Order(
+                order_id=incoming.order_id,
+                symbol=incoming.symbol,
+                side=incoming.side,
+                order_type=incoming.order_type,
+                price=incoming.price,
+                quantity=incoming.remaining_qty,  # Only rest what&#x27;s left
+                timestamp=incoming.timestamp,
+            )
+            book.add_limit_order(resting)
+
+        return trades
+
+    def _match_market(self, book: OrderBook, incoming: Order) -&gt; list[Trade]:
+        &quot;&quot;&quot;Market orders match against all available liquidity at any price.&quot;&quot;&quot;
+        trades = []
+        while incoming.remaining_qty &gt; 0:
+            if incoming.side == Side.BID:
+                if book.best_ask() is None:
+                    break  # No liquidity — partial fill
+                trade = self._execute_match(book, incoming, book, is_incoming_bid=True)
+            else:
+                if book.best_bid() is None:
+                    break
+                trade = self._execute_match(book, incoming, book, is_incoming_bid=False)
+            if trade:
+                trades.append(trade)
+        return trades
+
+    def _execute_match(
+        self,
+        book: OrderBook,
+        incoming: Order,
+        _book: OrderBook,
+        is_incoming_bid: bool,
+    ) -&gt; Optional[Trade]:
+        &quot;&quot;&quot;
+        Execute a single match between incoming order and best resting order.
+        Price determination: resting order&#x27;s price (passive price priority).
+        &quot;&quot;&quot;
+        if is_incoming_bid:
+            resting = book.pop_best_ask()
+        else:
+            resting = book.pop_best_bid()
+
+        if resting is None:
+            return None
+
+        # Trade quantity = minimum of both remaining quantities
+        fill_qty = min(incoming.remaining_qty, resting.remaining_qty)
+        # Trade price = resting order&#x27;s price (maker price wins)
+        fill_price = resting.price
+
+        # Update filled quantities
+        incoming.filled_qty += fill_qty
+        resting.filled_qty += fill_qty
+
+        # If resting order is fully filled, remove from level deque
+        if resting.remaining_qty == 0:
+            if is_incoming_bid:
+                book._ask_levels[resting.price].popleft()
+            else:
+                book._bid_levels[resting.price].popleft()
+
+        trade = Trade(
+            trade_id=str(uuid.uuid4()),
+            symbol=incoming.symbol,
+            price=fill_price,
+            quantity=fill_qty,
+            buyer_order_id=incoming.order_id if is_incoming_bid else resting.order_id,
+            seller_order_id=resting.order_id if is_incoming_bid else incoming.order_id,
+        )
+        return trade
+
+    def cancel_order(self, symbol: str, order_id: str) -&gt; bool:
+        book = self._get_book(symbol)
+        return book.cancel_order(order_id)
+
+
+# ─── Example Usage ─────────────────────────────────────────────────────────────
+if __name__ == &quot;__main__&quot;:
+    engine = MatchingEngine()
+
+    # Resting sell orders in the book
+    ask1 = Order(&quot;A1&quot;, &quot;AAPL&quot;, Side.ASK, OrderType.LIMIT, price=102.00, quantity=100)
+    ask2 = Order(&quot;A2&quot;, &quot;AAPL&quot;, Side.ASK, OrderType.LIMIT, price=101.50, quantity=50)
+    ask3 = Order(&quot;A3&quot;, &quot;AAPL&quot;, Side.ASK, OrderType.LIMIT, price=101.50, quantity=75)
+
+    engine.process_order(ask1)  # No trades (no bids yet)
+    engine.process_order(ask2)
+    engine.process_order(ask3)
+
+    # Incoming buy limit order at 102.00 — should sweep asks at 101.50 first
+    buy = Order(&quot;B1&quot;, &quot;AAPL&quot;, Side.BID, OrderType.LIMIT, price=102.00, quantity=200)
+    trades = engine.process_order(buy)
+
+    for t in trades:
+        print(f&quot;TRADE: {t.quantity} @ {t.price} | buyer={t.buyer_order_id} seller={t.seller_order_id}&quot;)
+    # Expected:
+    # TRADE: 50 @ 101.50 | buyer=B1 seller=A2   (FIFO: A2 first at 101.50)
+    # TRADE: 75 @ 101.50 | buyer=B1 seller=A3
+    # TRADE: 75 @ 102.00 | buyer=B1 seller=A1   (75 remaining of B1 matches A1)
+    # Remaining 0 qty from B1 — fully filled!
+</code></pre>
+
+<h3>系统架构图 / System Architecture</h3>
+
+<pre><code>
+                        ┌─────────────────────────────────────────────┐
+                        │              Exchange Platform              │
+                        │                                             │
+  [Broker APIs] ──────► │  ┌──────────────┐    ┌──────────────────┐  │
+  [Web Portal]  ──────► │  │  Order       │    │  Risk Engine     │  │
+  [FIX Protocol]──────► │  │  Gateway     │───►│  (pre-trade      │  │
+                        │  │  (TCP/TLS)   │    │   checks)        │  │
+                        │  └──────┬───────┘    └────────┬─────────┘  │
+                        │         │                     │            │
+                        │         ▼                     ▼            │
+                        │  ┌──────────────────────────────────────┐  │
+                        │  │         Sequencer / Order Bus        │  │
+                        │  │   (assigns monotonic sequence IDs)   │  │
+                        │  │        Kafka / LMAX Disruptor         │  │
+                        │  └─────────────────┬────────────────────┘  │
+                        │                    │                        │
+                        │         ┌──────────┴──────────┐            │
+                        │         ▼                     ▼            │
+                        │  ┌─────────────┐    ┌─────────────────┐   │
+                        │  │  Matching   │    │  Matching       │   │
+                        │  │  Engine     │    │  Engine         │   │
+                        │  │  (AAPL,GOOG)│    │  (TSLA,AMZN)    │   │
+                        │  │  [in-memory]│    │  [in-memory]    │   │
+                        │  └──────┬──────┘    └────────┬────────┘   │
+                        │         │                    │             │
+                        │         ▼                    ▼             │
+                        │  ┌─────────────────────────────────────┐  │
+                        │  │          Trade Reporter              │  │
+                        │  │  (publishes fills to market data)   │  │
+                        │  └────────┬────────────────────────────┘  │
+                        │           │                                │
+                        └───────────┼────────────────────────────────┘
+                                    │
+                    ┌───────────────┼────────────────┐
+                    ▼               ▼                ▼
+             [Event Log]    [Market Data Feed]  [Clearing House]
+             (Kafka/WAL)    (Level 1/2 quotes)  (settlement)
+</code></pre>
+
+<p><strong>请求流向追踪 / Request Flow Trace (Cross-Check)</strong></p>
+
+<p>Let&#x27;s trace <code>buy = Order(&quot;B1&quot;, &quot;AAPL&quot;, BID, LIMIT, price=102.00, qty=200)</code> through the diagram and code:</p>
+
+<p>1. <strong>Order Gateway</strong> receives order over FIX/TCP, validates format</p>
+<p>2. <strong>Risk Engine</strong> checks: does client have enough buying power? Position limits?</p>
+<p>3. <strong>Sequencer</strong> assigns sequence_id=5042 and writes to Kafka topic <code>orders-AAPL</code></p>
+<p>4. <strong>Matching Engine (AAPL)</strong> consumes from Kafka, calls <code>engine.process_order(buy)</code></p>
+<p>5. Code: <code>_match_limit()</code> → checks <code>best_ask()</code> = 101.50 ≤ 102.00 → calls <code>_execute_match()</code></p>
+<p>6. Fills 50 @ 101.50 (A2), 75 @ 101.50 (A3), 75 @ 102.00 (A1)</p>
+<p>7. <code>Trade</code> objects emitted → <strong>Trade Reporter</strong> publishes to market data feed</p>
+<p>8. <strong>Event Log</strong> persists each trade with sequence_id for crash recovery</p>
+
+<p>✅ Diagram boxes match code path exactly.</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>| 场景 | 问题 | 解决方案 |</p>
+<p>|------|------|----------|</p>
+<p>| 市价单无流动性 | 部分成交或完全失败 | 返回成交量，未成交量报告给客户；某些交易所直接拒绝 |</p>
+<p>| 撮合引擎崩溃 | 内存中订单簿丢失 | 通过 Kafka offset 重放全量订单日志重建 |</p>
+<p>| 价格精度 | 浮点误差导致 101.4999... ≠ 101.5 | <strong>用整数表示价格</strong>：$101.50 → 10150 (cents) |</p>
+<p>| 重复订单 | 网络重试导致同一订单被处理两次 | 幂等键：order_id 唯一；sequencer 去重 |</p>
+<p>| 同价格多订单撮合顺序 | FIFO 被破坏 | deque 保证插入顺序；timestamp 作为第二排序键 |</p>
+
+<p><strong>English:</strong></p>
+
+<pre><code>
+# CRITICAL: Never use float for prices in production!
+# Wrong ❌
+price = 101.50  # float precision issues
+
+# Right ✅ — store as integer cents or fixed-point
+price_cents = 10150  # $101.50 in cents
+
+# Or use Python&#x27;s Decimal
+from decimal import Decimal
+price = Decimal(&quot;101.50&quot;)  # Exact representation
+</code></pre>
+
+<p><strong>The &quot;ghost order&quot; problem</strong>: After partial fills, you must update <code>remaining_qty</code>, not create new orders. Otherwise you double-count in the book.</p>
+
+<p><strong>Clock skew</strong>: Two matching engines on different machines may see different timestamps. Use the Sequencer&#x27;s sequence number as the canonical ordering — not wall clock time.</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文 — 真实系统如何实现：</strong></p>
+
+<p><strong>LMAX Disruptor Pattern（最具影响力的架构）</strong></p>
+<p>- 单线程撮合引擎 + 无锁环形缓冲区（Ring Buffer）</p>
+<p>- 每秒处理 600 万订单，延迟 &lt; 1μs</p>
+<p>- 核心洞见：<strong>单线程 + 高效队列</strong> 比多线程 + 锁更快</p>
+
+<p><strong>Nasdaq / NYSE 的做法：</strong></p>
+<p>- 每个股票一个独立的撮合引擎（物理隔离）</p>
+<p>- 用 FPGA 硬件加速关键路径（纳秒级延迟）</p>
+<p>- 事件溯源（Event Sourcing）：订单簿状态 = 全量事件回放</p>
+
+<p><strong>非金融场景中的应用：</strong></p>
+<p>- <strong>Airbnb/Uber 定价</strong>：供需撮合，动态价格调整</p>
+<p>- <strong>广告竞价（RTB）</strong>：实时竞价，100ms 内完成</p>
+<p>- <strong>游戏交易所</strong>：Steam 市场、Eve Online 经济系统</p>
+
+<p><strong>English — Where this appears in production:</strong></p>
+
+<pre><code>
+Exchange     | Engine          | Latency    | Notes
+-------------|-----------------|------------|---------------------------
+LMAX         | Disruptor       | &lt; 1μs      | Single-threaded ring buffer
+Nasdaq       | INET            | &lt; 100μs    | FPGA for hot path
+NYSE         | Pillar          | &lt; 100μs    | Co-location for HFT firms
+Binance      | Custom C++      | ~1ms       | Crypto, simpler rules
+Interactive  | Custom Java     | ~1ms       | Retail, less HFT pressure
+Brokers      |                 |            |
+</code></pre>
+
+<p>Key insight for interviews: <strong>the matching algorithm is simple (2 priority queues). The hard parts are persistence, fairness, and latency at scale.</strong></p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>典型面试进程 / Typical Interview Flow</strong></p>
+
+<p><strong>Q1: 你会用什么数据结构来实现订单簿？</strong></p>
+<p>&gt; <strong>A:</strong> 每个价格档位用 <code>deque</code>（FIFO 保证），价格索引用堆（<code>heapq</code>）快速查找最优价。买单用最大堆（取反），卖单用最小堆。时间复杂度：插入 O(log n)，撮合 O(k log n)（k = 成交笔数）。</p>
+
+<p><strong>Q2: How do you handle the engine crashing mid-trade?</strong></p>
+<p>&gt; <strong>A:</strong> Event sourcing + write-ahead log. Every order gets a monotonic sequence ID from the sequencer before entering the engine. On restart, replay all events with seq_id &gt; last_checkpoint. This gives exactly-once semantics. The matching engine is a pure function: same input sequence → same output.</p>
+
+<p><strong>Q3: 如何支持多个交易所之间的最优价格路由（Smart Order Routing）？</strong></p>
+<p>&gt; <strong>A:</strong> SOR 层在撮合引擎之上。它订阅多个交易所的 Level 2 市场深度数据（订单簿快照），计算最优执行路径，将大订单拆分（Order Splitting）发送到不同交易所。关键挑战：各交易所数据有延迟，需要处理过期报价。</p>
+
+<p><strong>Q4: What&#x27;s the difference between a limit order book and an auction?</strong></p>
+<p>&gt; <strong>A:</strong> Limit order book = continuous matching (every new order tries to match immediately). Auction = collect orders for a time period, then batch-match at a single clearing price (used at market open/close). Auctions reduce the advantage of being microseconds faster; continuous books reward speed.</p>
+
+<p><strong>Q5: How would you scale this to handle 10 million orders/second?</strong></p>
+<p>&gt; <strong>A:</strong> Three strategies:</p>
+<p>&gt; 1. <strong>Partition by symbol</strong> — each symbol is its own stateful engine on a dedicated thread/process. No cross-symbol state needed.</p>
+<p>&gt; 2. <strong>LMAX Disruptor</strong> — replace Kafka with a single-producer/multi-consumer lock-free ring buffer for ~10x lower latency.</p>
+<p>&gt; 3. <strong>FPGA offload</strong> — the inner matching loop (heap operations, price comparison) maps well to hardware; Nasdaq uses this for &lt;100ns latency.</p>
+<p>&gt; 4. <strong>No distributed transactions</strong> — each symbol&#x27;s book is authoritative and independent. Cross-symbol atomicity (e.g., pairs trading) happens at a higher layer.</p>
+
+<hr/>
+
+<h2>总结 / Summary</h2>
+
+<pre><code>
+核心要点 / Key Takeaways:
+
+1. 数据结构: heap (价格排序) + deque (FIFO within level) + hashmap (O(1) cancel)
+2. 撮合规则: price-time priority, resting price wins, lazy deletion for cancel
+3. 持久化: event sourcing — 订单簿是事件日志的物化视图
+4. 性能: 单线程 + 无锁 &gt; 多线程 + 锁 (LMAX 证明)
+5. 踩坑: 永远用整数/Decimal表示价格，不要用float
+
+Algorithm complexity:
+  - Add limit order:  O(log P) where P = distinct price levels
+  - Match:           O(k log P) where k = number of fills
+  - Cancel:          O(1) lazy deletion
+
+面试一句话: &quot;The algorithm is two priority queues. The engineering is making it fast, fair, and crash-safe.&quot;
+</code></pre>
+
+<hr/>
+
+<p>🔗 <strong>References:</strong></p>
+<p>- [LMAX Disruptor White Paper](https://lmax-exchange.github.io/disruptor/disruptor.html)</p>
+<p>- [Limit Order Book Wikipedia](https://en.wikipedia.org/wiki/Order_book)</p>
+<p>- [Order Matching System — Wikipedia](https://en.wikipedia.org/wiki/Order_matching_system)</p>
+<p>- [Exchange Architecture — Martin Kleppmann DDIA](https://dataintensive.net/)</p>
+
+<hr/>
+<h1>Review</h1>
+<p>📝 <strong>Review Day 65 — Expert Phase</strong></p>
+<p>📊 NeetCode: 54/150 · SysDesign: 53/40 · Behavioral: 53/40 · Python: 16 · AI: 26/30</p>
+<p>🔥 65-day streak!</p>
+
+<p><em>Today is a Saturday Deep Dive day — see <code>2026-06-13-deepdive.md</code> for the full content.</em></p>
+
+<hr/>
+
+<h2>Mini-Quiz: Days 61–64</h2>
+
+<p><strong>Q1: [System Design] What makes designing a Stock Exchange / Order Matching Engine different from a typical CRUD system?</strong></p>
+<p>&gt; <strong>A:</strong> Determinism and latency are paramount. The matching engine must be single-threaded per symbol for correctness (no race conditions), use event sourcing for crash recovery, and achieve microsecond-level latency. Unlike CRUD systems, you can&#x27;t use a relational DB as the primary store — state lives in-memory with a write-ahead log.</p>
+
+<p><strong>Q2: [Algorithms] In Binary Tree Level Order Traversal (BFS), what&#x27;s the key to separating nodes by level?</strong></p>
+<p>&gt; <strong>A:</strong> Before processing each level, record <code>queue.size()</code>. Dequeue exactly that many nodes — they all belong to the current level. Their children go into the queue for the next level. This avoids needing a sentinel/null marker.</p>
+
+<p><strong>Q3: [Python Craft] Why is the Singleton pattern often considered an anti-pattern in Python?</strong></p>
+<p>&gt; <strong>A:</strong> It creates hidden global state, makes testing hard (can&#x27;t reset between tests), and violates dependency injection principles. Python alternatives: module-level globals (already singleton by nature), <code>functools.lru_cache</code> on a factory function, or dependency injection via constructor. Use Singleton only when you truly need one shared resource (e.g., a connection pool) and can&#x27;t inject it.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-12</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
