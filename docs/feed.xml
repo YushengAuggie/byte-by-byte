@@ -5,8 +5,939 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 13 Jun 2026 15:10:57 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 15 Jun 2026 15:10:30 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-15</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-15</guid>
+      <pubDate>Mon, 15 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 66</h2>
+<h2>设计搜索自动补全 / Design a Web Search Autocomplete (Google Suggest)</h2>
+
+<p><strong>⏱️ 阅读时间：约3分钟 / Reading time: ~3 min</strong></p>
+
+<hr/>
+
+<h3>🌏 想象你在设计...</h3>
+
+<p>你在负责 Google 搜索栏的自动补全功能。用户每敲一个字符，系统就要在 <strong>100ms 内</strong> 返回前10条建议。每天有数十亿次请求。这个系统怎么设计？</p>
+
+<p>You&#x27;re building the autocomplete box for Google Search. Every keystroke must return top-10 suggestions in <strong>&lt;100ms</strong>. Billions of requests per day. How do you design it?</p>
+
+<hr/>
+
+<h3>🏛️ 架构图 / Architecture</h3>
+
+<pre><code>
+User Types &quot;sea&quot;
+       │
+       ▼
+┌──────────────────┐
+│   Browser Cache  │◄── short-term prefix cache
+└──────┬───────────┘
+       │ cache miss
+       ▼
+┌──────────────────┐     ┌─────────────────────┐
+│   API Gateway    │────►│  Autocomplete        │
+│ (rate limit,     │     │  Service (stateless) │
+│  auth, routing)  │     └──────┬──────────────┘
+└──────────────────┘            │
+                                │ lookup
+                    ┌───────────▼───────────┐
+                    │   Trie Cache Layer    │
+                    │  (in-memory Redis)    │
+                    │  prefix → top10 terms │
+                    └───────────┬───────────┘
+                                │ cache miss
+                    ┌───────────▼───────────┐
+                    │   Trie DB Cluster     │
+                    │  (sharded by prefix)  │
+                    └───────────┬───────────┘
+                                │ offline build
+                    ┌───────────▼───────────┐
+                    │   Data Pipeline       │
+                    │  (Kafka → Spark)      │
+                    │  search logs → freq   │
+                    └───────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>⚙️ 核心设计决策 / Key Design Decisions</h3>
+
+<p>#### 1. 数据结构：Trie vs. Prefix Hash</p>
+<p><strong>Trie（前缀树）</strong> 是直觉上的选择，但纯内存 Trie 存10亿词条代价高。</p>
+
+<p>实际方案：</p>
+<p>- <strong>预计算</strong>：离线每小时跑 Spark Job，统计 top-K suggestions per prefix</p>
+<p>- <strong>存储</strong>：Redis Hash — <code>prefix -&gt; [term1:score1, term2:score2, ...]</code></p>
+<p>- <strong>键空间</strong>：只存长度 ≤ 5 的前缀（覆盖绝大多数真实输入）</p>
+
+<p><strong>In practice:</strong> Precompute top-K suggestions offline (Spark/MapReduce), store <code>prefix → top10</code> in Redis. Don&#x27;t build a live trie in production.</p>
+
+<p>#### 2. 分片策略 / Sharding</p>
+<p>按前缀的第一个字母分片（26个分区），确保每个 shard 负载均衡。</p>
+<p>Shard by first character(s) of prefix — ensures balanced load.</p>
+
+<p>#### 3. 更新频率 / Update Frequency</p>
+<p>- <strong>实时更新</strong>：新闻热词（&quot;earthquake 2026&quot;）需要在30分钟内出现</p>
+<p>- <strong>批量更新</strong>：常规词条每天重建一次</p>
+
+<p>Two-tier update: streaming pipeline for trending terms (&lt; 30 min lag), batch rebuild for stable terms (daily).</p>
+
+<p>#### 4. 个性化 / Personalization</p>
+<p>在通用结果之上，叠加用户历史（浏览器本地存储）。不影响主路径延迟。</p>
+<p>Layer personal history on top of global suggestions. Keep personal data in the browser to avoid latency.</p>
+
+<hr/>
+
+<h3>🔢 容量估算 / Capacity Estimation</h3>
+
+<pre><code>
+QPS: 10B queries/day ÷ 86400s ≈ 115K QPS
+     × avg 5 keystrokes/query = 575K autocomplete QPS
+
+Storage: 
+  - 5M unique prefixes (len ≤ 5)
+  - 10 suggestions × 20 bytes = 200 bytes/prefix
+  - Total: ~1 GB → fits in Redis
+  
+Latency budget:
+  - API Gateway: 5ms
+  - Redis lookup: 1-2ms
+  - Network RTT: 20-50ms
+  - Total: &lt; 100ms ✅
+</code></pre>
+
+<hr/>
+
+<h3>⚠️ 别踩这个坑 / Common Mistakes</h3>
+
+<p>| ❌ 错误做法 | ✅ 正确做法 |</p>
+<p>|------------|------------|</p>
+<p>| 实时更新 Trie | 离线批量预计算 top-K |</p>
+<p>| 在服务器存个性化数据 | 个性化数据存浏览器本地 |</p>
+<p>| 所有前缀等权处理 | 只存 ≤5 字符前缀 |</p>
+<p>| 每次都去 DB 查 | Redis 缓存 + 浏览器缓存双层 |</p>
+<p>| 存储完整 Trie | 存 prefix→top10 映射 |</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>像图书馆索引卡片一样。我们提前把&quot;以 &#x27;sea&#x27; 开头最常搜索的10个词&quot;写在一张卡片上。你一输入 &quot;sea&quot;，图书管理员(Redis)直接拿出那张卡片，不用临时翻书。</p>
+
+<p>Like index cards in a library. We pre-write the &quot;top 10 things people search starting with &#x27;sea&#x27;&quot; on a card. When you type &quot;sea&quot;, the librarian (Redis) just pulls out that card instantly.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- 🔗 https://bytebytego.com/courses/system-design-interview/design-a-search-autocomplete-system</p>
+<p>- 🔗 https://engineering.linkedin.com/blog/2016/03/instant-typeahead-search</p>
+<p>- 🔗 https://www.youtube.com/watch?v=us0qySiUsGU (NeetCode System Design)</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 66</h2>
+<h2>#1448 Count Good Nodes in Binary Tree (Medium)</h2>
+
+<p><strong>⏱️ 阅读时间：约4分钟 / Reading time: ~4 min</strong></p>
+
+<p>🔗 [LeetCode](https://leetcode.com/problems/count-good-nodes-in-binary-tree/) 🟡 Medium | 📹 [NeetCode](https://neetcode.io/problems/count-good-nodes-in-binary-tree)</p>
+
+<hr/>
+
+<h3>🧩 树遍历模式 (10/15) — 在 Day 57 的模版基础上延伸</h3>
+
+<pre><code>
+🧩 Trees (10/15) — building on the DFS template from Day 57
+</code></pre>
+
+<p>今天的问题是带&quot;路径状态&quot;的 DFS 变体：在递归过程中，我们需要把<strong>当前路径最大值</strong>传递下去。</p>
+
+<p>This is a <strong>DFS with carried state</strong> variant: pass the max value seen on the current root-to-node path down through recursion.</p>
+
+<hr/>
+
+<h3>🌏 真实世界类比 / Real-World Analogy</h3>
+
+<p>想象你在爬山，从山脚到每个地点有一条路径。一个地点是&quot;好地点&quot;，如果你到达那里的时候，它的海拔不低于路上经过的任何一个地点。问：共有多少个&quot;好地点&quot;？</p>
+
+<p>Imagine hiking: a location is &quot;good&quot; if its elevation is ≥ all previous stops on that trail from base. Count such locations.</p>
+
+<hr/>
+
+<h3>📖 问题描述 / Problem</h3>
+
+<p>给一棵二叉树，若从根到节点 X 的路径上，没有任何节点的值 <strong>大于</strong> X.val，则 X 是<strong>好节点</strong>。返回好节点的总数。</p>
+
+<p>A node X is <strong>good</strong> if no node on the path from root to X has a value greater than X.val. Return the count of good nodes.</p>
+
+<pre><code>
+    3
+   / \
+  1   4
+ /   / \
+3   1   5
+
+Good nodes: 3 (root), 3 (left-left), 4, 5 → Answer: 4
+</code></pre>
+
+<hr/>
+
+<h3>🗺️ 映射到模版 / Map to Template</h3>
+
+<pre><code>
+def dfs(node):
+    if not node: return BASE_CASE      # 0
+    left = dfs(node.left)
+    right = dfs(node.right)
+    return COMBINE(node.val, left, right)
+</code></pre>
+
+<p>今天的变化：<strong>模板加一个参数</strong> <code>max_so_far</code></p>
+
+<pre><code>
+def dfs(node, max_so_far):
+    if not node: return 0              # BASE_CASE = 0
+    
+    is_good = 1 if node.val &gt;= max_so_far else 0
+    new_max = max(max_so_far, node.val)
+    
+    left = dfs(node.left, new_max)     # pass state DOWN
+    right = dfs(node.right, new_max)
+    
+    return is_good + left + right      # COMBINE
+</code></pre>
+
+<p><strong>核心洞察 / Key insight:</strong> 路径最大值是&quot;向下传递的状态&quot;，不是向上聚合的结果。比较：求直径时最大深度是&quot;向上聚合&quot;的。</p>
+
+<p><em>Path max is <strong>top-down</strong> state; contrast with diameter where max depth is <strong>bottom-up</strong> aggregated.</em></p>
+
+<hr/>
+
+<h3>🐍 Python 解法 with Trace</h3>
+
+<pre><code>
+class Solution:
+    def goodNodes(self, root: TreeNode) -&gt; int:
+        def dfs(node, max_val):
+            if not node:
+                return 0
+            
+            # Is this node good?
+            is_good = 1 if node.val &gt;= max_val else 0
+            
+            # Update max for children
+            new_max = max(max_val, node.val)
+            
+            return is_good + dfs(node.left, new_max) + dfs(node.right, new_max)
+        
+        return dfs(root, float(&#x27;-inf&#x27;))  # root is always good
+
+# Trace on example:
+# dfs(3, -inf): 3 &gt;= -inf ✅, new_max=3
+#   dfs(1, 3):  1 &gt;= 3? ❌, new_max=3
+#     dfs(3, 3): 3 &gt;= 3? ✅ → 1
+#   dfs(4, 3):  4 &gt;= 3? ✅, new_max=4
+#     dfs(1, 4): 1 &gt;= 4? ❌ → 0
+#     dfs(5, 4): 5 &gt;= 4? ✅ → 1
+# Total: 1 + 0 + 1 + 1 + 1 = 4 ✅
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- ⏱️ Time: O(n) — visit each node once</p>
+<p>- 💾 Space: O(h) — recursion stack, h = tree height</p>
+
+<hr/>
+
+<h3>🔁 举一反三 / Pattern Connections</h3>
+
+<p>| Problem | What you pass down | What you return up |</p>
+<p>|---------|-------------------|--------------------|</p>
+<p>| Max Depth (#104, Day 57) | nothing | max depth |</p>
+<p>| Good Nodes (#1448, Today) | <code>max_so_far</code> | count |</p>
+<p>| Path Sum II | <code>remaining</code> target | list of paths |</p>
+<p>| Validate BST (#98, Day 67) | <code>(min, max)</code> bounds | bool |</p>
+
+<p><strong>规律 / Pattern:</strong> 需要路径上的累积信息 → 往下传参数。需要子树的聚合结果 → 从下往上返回。</p>
+
+<p><em>Need cumulative path info → pass it down. Need subtree aggregation → return it up.</em></p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>你走迷宫，随身带一个&quot;见过的最高数字&quot;的记事本。每到一个房间，如果这个房间的数字 ≥ 记事本上的数字，就是&quot;好房间&quot;，把记事本更新。最后数有几个好房间。</p>
+
+<p>Walk a maze carrying a notepad showing &quot;highest number seen so far.&quot; A room is &quot;good&quot; if its number ≥ notepad. Update notepad, keep walking. Count good rooms.</p>
+
+<hr/>
+
+<h3>📝 Quiz</h3>
+<pre><code>
+{&quot;question&quot;:&quot;Count Good Nodes: what&#x27;s the initial value passed to root?&quot;,&quot;options&quot;:[&quot;0&quot;,&quot;float(&#x27;-inf&#x27;)&quot;,&quot;root.val&quot;,&quot;None&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- 🔗 https://leetcode.com/problems/count-good-nodes-in-binary-tree/</p>
+<p>- 🔗 https://neetcode.io/problems/count-good-nodes-in-binary-tree</p>
+<p>- 🔗 https://www.youtube.com/watch?v=7cp5imvDzl4 (NeetCode video)</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 66</h2>
+<h2>利益相关者管理 / Stakeholder Management</h2>
+
+<p><strong>⏱️ 阅读时间：约2分钟 / Reading time: ~2 min</strong></p>
+
+<p><strong>问题 / Question:</strong> <em>&quot;Describe a time you raised concerns about a project direction. How did stakeholders react?&quot;</em></p>
+
+<hr/>
+
+<h3>为什么这道题很重要 / Why This Matters</h3>
+
+<p>Senior/Staff 工程师不只是执行者，更是项目的<strong>质量守护者</strong>。能在合适的时机、以合适的方式提出反对意见，是区分 L5/L6 的关键信号。</p>
+
+<p>Senior/Staff engineers aren&#x27;t just executors — they&#x27;re <strong>quality guardians</strong>. Raising concerns effectively at the right moment, in the right way, separates L5 from L6.</p>
+
+<p>面试官想知道：你是否有勇气说出难听的话？你是否能用数据和逻辑说服别人，而不是情绪？</p>
+
+<p><em>Interviewers want to know: Do you have the courage to speak up? Can you persuade with data, not emotion?</em></p>
+
+<hr/>
+
+<h3>🌟 STAR 框架拆解 / STAR Breakdown</h3>
+
+<p><strong>Situation（背景）:</strong></p>
+<p>&gt; &quot;我们团队正准备在 Q3 上线一个新的支付流程改版，PM 和设计已经花了3个月，产品路演结果也很好。&quot;</p>
+
+<p><strong>Task（任务）:</strong></p>
+<p>&gt; &quot;我在做技术 Review 时发现，新流程在低端设备上有明显的性能问题，预计会影响约15%的用户群体（主要是新兴市场用户）。&quot;</p>
+
+<p><strong>Action（行动）:</strong></p>
+<p>&gt; &quot;我没有直接在大群里说&#x27;这个方案有问题&#x27;——那只会制造对立。我先：</p>
+<p>&gt; 1. <strong>收集数据</strong>：用 Lighthouse 跑了5款代表性低端机型，截图 + 数字</p>
+<p>&gt; 2. <strong>内部对齐</strong>：先找直属 TL 对齐，然后约 PM 单独聊</p>
+<p>&gt; 3. <strong>提方案，不只提问题</strong>：&#x27;我建议延迟6周，先做性能优化，或者我们可以对低端设备做降级处理。&#x27;</p>
+<p>&gt; 4. <strong>明确风险</strong>：&#x27;如果现在上，预计用户投诉率会上升20%，这对我们的Q4 retention 目标有影响。&#x27;&quot;</p>
+
+<p><strong>Result（结果）:</strong></p>
+<p>&gt; &quot;PM 最初有些不情愿（他们已经对外承诺了日期），但数据说话。最终我们选择了分阶段上线，先上高端设备，低端设备版本延迟4周。实际结果：投诉率仅上升了3%，远低于预期。&quot;</p>
+
+<hr/>
+
+<h3>❌ 差的回答 vs ✅ 好的回答</h3>
+
+<p><strong>❌ Bad:</strong></p>
+<p>&gt; &quot;我告诉 PM 这个方案有问题，他们不听，但后来上线出了问题，证明我是对的。&quot;</p>
+
+<p><em>问题：没有行动力，结果是负面的，听起来像在抱怨。</em></p>
+
+<p><strong>✅ Good:</strong></p>
+<p>&gt; &quot;我用数据量化了风险，提前对齐关键决策者，并提供了替代方案——最终找到了各方都能接受的折衷路径。&quot;</p>
+
+<p><em>关键：把阻力变成合作，用数据而非情绪。</em></p>
+
+<hr/>
+
+<h3>👑 Senior/Staff 加分项 / Level-Up Tips</h3>
+
+<p>1. <strong>说出影响范围</strong>：&quot;影响约15%的新兴市场用户&quot; — 量化 &gt; 模糊</p>
+<p>2. <strong>展示政治智慧</strong>：先私下对齐，再正式提出 — 不打无准备之战</p>
+<p>3. <strong>提方案不提问题</strong>：永远带着解决方案来，而不只是抱怨</p>
+<p>4. <strong>接受不完美结果</strong>：你的建议被部分采纳也是成功，不是失败</p>
+
+<p><strong>For Staff+:</strong> Talk about how you built frameworks/processes so concerns get raised earlier next time — e.g., a &quot;pre-mortem&quot; practice before major launches.</p>
+
+<hr/>
+
+<h3>🔑 关键句子模板 / Key Phrases</h3>
+
+<p>- <em>&quot;我在评审时发现了一个潜在风险，量化来看是...所以我建议...&quot;</em></p>
+<p>- <em>&quot;I surfaced this as a data-backed risk, not a gut feeling, and proposed two alternatives...&quot;</em></p>
+<p>- <em>&quot;我们的讨论帮助团队在 [具体结果] 上达成一致。&quot;</em></p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像在大家都兴奋地准备出发时，你发现车轮快没气了。好的做法不是大喊&quot;不能走！&quot;，而是悄悄告诉司机，说&quot;我们先充气，15分钟后更安全地出发&quot;。</p>
+
+<p>Like noticing the tire is low before a road trip. Don&#x27;t shout &quot;we can&#x27;t go!&quot; — quietly tell the driver, &quot;let&#x27;s add air, 15 min saves us a breakdown.&quot;</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- 🔗 https://www.theengineeringmanager.com/management-101/stakeholder-management/</p>
+<p>- 🔗 https://lethain.com/managing-technical-quality/ (Will Larson on raising quality concerns)</p>
+<p>- 🔗 https://staffeng.com/guides/work-on-what-matters (How Staff engineers prioritize and push back)</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 66</h2>
+<h2>State Machine — Explicit State Transitions</h2>
+
+<p><strong>⏱️ 阅读时间：约2分钟 / Reading time: ~2 min</strong></p>
+<p><strong>Pattern: Design Patterns | Week 5</strong></p>
+
+<hr/>
+
+<h3>🌏 真实场景 / Real Scenario</h3>
+
+<p>你在做一个订单系统：订单可以是 <code>pending → paid → shipped → delivered</code>，也可以 <code>canceled</code>。随着业务复杂度增加，你开始在代码里到处写 <code>if order.status == &quot;paid&quot; and ...</code>——这就是状态机失控的信号。</p>
+
+<p>You&#x27;re building an order system: <code>pending → paid → shipped → delivered</code>, or <code>canceled</code>. As complexity grows, you get <code>if status == &quot;paid&quot; and ...</code> scattered everywhere. Time for an explicit state machine.</p>
+
+<hr/>
+
+<h3>❌ 没有状态机时 / Without State Machine</h3>
+
+<pre><code>
+class Order:
+    def __init__(self):
+        self.status = &quot;pending&quot;
+    
+    def pay(self):
+        if self.status == &quot;pending&quot;:
+            self.status = &quot;paid&quot;
+        elif self.status == &quot;paid&quot;:
+            raise Exception(&quot;Already paid&quot;)
+        elif self.status == &quot;shipped&quot;:
+            raise Exception(&quot;Can&#x27;t pay after shipping&quot;)
+        # ... 到处都是 if/elif，容易漏状态
+
+    def ship(self):
+        if self.status == &quot;paid&quot;:  # what about canceled?
+            self.status = &quot;shipped&quot;
+        # 谁来保证这里的逻辑完整？
+</code></pre>
+
+<p>❌ 问题：状态转换逻辑散落在每个方法里，难以追踪合法路径。</p>
+
+<hr/>
+
+<h3>✅ 显式状态机 / Explicit State Machine</h3>
+
+<pre><code>
+from enum import Enum, auto
+from typing import Dict, Set
+
+class OrderStatus(Enum):
+    PENDING = auto()
+    PAID = auto()
+    SHIPPED = auto()
+    DELIVERED = auto()
+    CANCELED = auto()
+
+class StateMachine:
+    &quot;&quot;&quot;
+    Generic state machine: declare transitions, enforce them.
+    &quot;&quot;&quot;
+    def __init__(self, initial: OrderStatus, transitions: Dict[OrderStatus, Set[OrderStatus]]):
+        self.state = initial
+        self.transitions = transitions
+    
+    def transition(self, new_state: OrderStatus) -&gt; None:
+        allowed = self.transitions.get(self.state, set())
+        if new_state not in allowed:
+            raise ValueError(
+                f&quot;Invalid transition: {self.state.name} → {new_state.name}. &quot;
+                f&quot;Allowed: {[s.name for s in allowed]}&quot;
+            )
+        self.state = new_state
+
+
+class Order:
+    TRANSITIONS = {
+        OrderStatus.PENDING:   {OrderStatus.PAID, OrderStatus.CANCELED},
+        OrderStatus.PAID:      {OrderStatus.SHIPPED, OrderStatus.CANCELED},
+        OrderStatus.SHIPPED:   {OrderStatus.DELIVERED},
+        OrderStatus.DELIVERED: set(),   # terminal state
+        OrderStatus.CANCELED:  set(),   # terminal state
+    }
+    
+    def __init__(self, order_id: str):
+        self.order_id = order_id
+        self._sm = StateMachine(OrderStatus.PENDING, self.TRANSITIONS)
+    
+    @property
+    def status(self) -&gt; OrderStatus:
+        return self._sm.state
+    
+    def pay(self):
+        self._sm.transition(OrderStatus.PAID)
+        print(f&quot;Order {self.order_id}: payment confirmed ✅&quot;)
+    
+    def ship(self):
+        self._sm.transition(OrderStatus.SHIPPED)
+        print(f&quot;Order {self.order_id}: shipped 📦&quot;)
+    
+    def deliver(self):
+        self._sm.transition(OrderStatus.DELIVERED)
+        print(f&quot;Order {self.order_id}: delivered 🎉&quot;)
+    
+    def cancel(self):
+        self._sm.transition(OrderStatus.CANCELED)
+        print(f&quot;Order {self.order_id}: canceled ❌&quot;)
+
+
+# Usage
+order = Order(&quot;ORD-001&quot;)
+order.pay()     # PENDING → PAID ✅
+order.ship()    # PAID → SHIPPED ✅
+order.cancel()  # SHIPPED → CANCELED ❌ raises ValueError!
+</code></pre>
+
+<hr/>
+
+<h3>🔑 核心洞察 / Key Insights</h3>
+
+<p>1. <strong>转换表是单一事实来源</strong>：所有合法状态转换都在 <code>TRANSITIONS</code> 字典里，一目了然</p>
+<p>2. <strong>无效转换立即报错</strong>：不会静默地进入非法状态</p>
+<p>3. <strong>状态机可复用</strong>：<code>StateMachine</code> 类与业务逻辑解耦，可以用在任何场景</p>
+
+<p><em>The transition table is the single source of truth. Invalid transitions fail loudly. The machine is reusable.</em></p>
+
+<hr/>
+
+<h3>🔁 何时用状态机 / When to Use</h3>
+
+<p><strong>✅ 用状态机：</strong></p>
+<p>- 对象有明确的生命周期（订单、任务、连接、审批流）</p>
+<p>- 你发现代码里有很多 <code>if status == X and status == Y</code></p>
+<p>- 需要记录状态转换历史（审计日志）</p>
+
+<p><strong>❌ 不必用：</strong></p>
+<p>- 状态只有2-3个且逻辑简单</p>
+<p>- 状态之间不互相约束</p>
+
+<hr/>
+
+<h3>📈 进阶：带回调的状态机 / Advanced: Hooks on Transition</h3>
+
+<pre><code>
+def transition(self, new_state, on_enter=None):
+    # ... validate ...
+    old_state = self.state
+    self.state = new_state
+    if on_enter:
+        on_enter(old_state, new_state)  # trigger side effects
+
+# Example: log every transition
+order._sm.transition(
+    OrderStatus.PAID,
+    on_enter=lambda old, new: audit_log.write(old, new)
+)
+</code></pre>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像地铁闸机：只有在&quot;关闭&quot;状态投币才能开门；已经&quot;开着&quot;的时候不能再投币。状态机就是这个&quot;只允许合法操作&quot;的逻辑。</p>
+
+<p>Like a subway turnstile: you can only insert a coin when it&#x27;s &quot;locked.&quot; The state machine enforces what actions are legal in each state.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- 🔗 https://python-statemachine.readthedocs.io/en/latest/ (python-statemachine library)</p>
+<p>- 🔗 https://realpython.com/python-finite-state-machine/</p>
+<p>- 🔗 https://gameprogrammingpatterns.com/state.html (classic State pattern explanation)</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 66</h2>
+<h2>AI in Production — Monitoring, Guardrails &amp; Costs</h2>
+
+<p><strong>⏱️ 阅读时间：约2分钟 / Reading time: ~2 min</strong></p>
+
+<hr/>
+
+<h3>🧠 核心概念 / Core Concept</h3>
+
+<p>把 AI 模型部署到生产环境只是第一步。真正的挑战是：<strong>它会不会出轨？用多少钱？出问题怎么查？</strong></p>
+
+<p>Deploying an AI model is step one. The real challenges are: <strong>Will it misbehave? How much will it cost? How do you debug it when it goes wrong?</strong></p>
+
+<hr/>
+
+<h3>🛡️ Guardrails — 运行时护栏</h3>
+
+<p>Guardrails 是在 LLM 输入/输出之间插入的<strong>运行时校验层</strong>，防止：</p>
+<p>- 提示注入攻击（Prompt Injection）</p>
+<p>- PII（个人身份信息）泄露</p>
+<p>- 有害/违规内容输出</p>
+<p>- 幻觉（Hallucination）——输出看起来合理但错误的内容</p>
+
+<p><em>Guardrails are runtime controls inserted between your app and the LLM. They intercept inputs and outputs to block policy violations.</em></p>
+
+<p><strong>主流工具 / Key tools</strong> (据各平台文档/报道):</p>
+<p>- <strong>AWS Bedrock Guardrails</strong> — 云原生，集成简单</p>
+<p>- <strong>NVIDIA NeMo Guardrails</strong> — 开源，可自托管</p>
+<p>- <strong>Galileo</strong> — 评估 + 可观测性一体</p>
+<p>- <strong>Bifrost</strong> — 开源 AI Gateway，统一 guardrail 层</p>
+
+<p><em>Sources: [getmaxim.ai](https://www.getmaxim.ai/articles/top-5-ai-guardrail-solutions-for-production-llm-applications-in-2026/), [galileo.ai](https://galileo.ai/blog/best-ai-guardrails-platforms)</em></p>
+
+<hr/>
+
+<h3>📊 Monitoring — 可观测性</h3>
+
+<p>生产 LLM 的监控比传统服务更复杂：你需要追踪<strong>语义质量</strong>，不只是延迟/错误率。</p>
+
+<p><em>Production LLM monitoring is harder than normal services: you need to track semantic quality, not just latency and error rate.</em></p>
+
+<p><strong>你需要追踪什么 / What to track:</strong></p>
+
+<p>| 指标 | 工具 |</p>
+<p>|------|------|</p>
+<p>| Token 用量 &amp; 成本归因 | Braintrust, LangSmith |</p>
+<p>| 延迟（TTFT / total） | OpenTelemetry |</p>
+<p>| 用户反馈 + 评估分数 | Opik, Galileo |</p>
+<p>| 幻觉率 &amp; 相关性 | Ragas (for RAG) |</p>
+<p>| 安全事件（guardrail 触发） | 各 Guardrail 平台日志 |</p>
+
+<hr/>
+
+<h3>💰 成本优化 / Cost Optimization</h3>
+
+<p>Token 费用是 LLM 最主要的成本，以下是<strong>实战策略</strong> (数据据行业报告，结果因场景而异):</p>
+
+<p><strong>1. 模型路由 / Model Routing</strong></p>
+<p>简单查询用小模型（GPT-4o-mini、Claude Haiku），复杂任务才用前沿模型。</p>
+<p><em>Route simple queries to cheap models; reserve frontier models for complex tasks. Reportedly reduces average cost-per-query by 37-46%.</em></p>
+
+<p><strong>2. 语义缓存 / Semantic Cache</strong></p>
+<p>相似问题复用缓存答案。Redis 官方 LLM 文档中提到此策略。</p>
+<p><em>Cache responses for semantically similar requests. Can reduce costs up to 73% for repetitive workloads.</em></p>
+
+<p><strong>3. Prompt 缓存 / Prompt Caching</strong></p>
+<p>固定的系统 Prompt 前缀只付一次钱。Anthropic、OpenAI 均已支持。</p>
+<p><em>Reuse stable prompt prefixes — only pay to process them once. Anthropic and OpenAI both support this natively.</em></p>
+
+<p><strong>4. 上下文压缩 / Context Compression</strong></p>
+<p>用小模型先压缩对话历史，再发给大模型。减少 44-89% token（据 codezilla.io 报道）。</p>
+
+<p><em>Source: [aisuperior.com](https://aisuperior.com/llm-cost-optimization-strategies-2026/), [maviklabs.com](https://www.maviklabs.com/blog/llm-cost-optimization-2026)</em></p>
+
+<hr/>
+
+<h3>🐍 实战代码 / Runnable Python</h3>
+
+<pre><code>
+# pip install openai tiktoken
+
+import tiktoken
+import openai
+
+def count_tokens(text: str, model: str = &quot;gpt-4o&quot;) -&gt; int:
+    &quot;&quot;&quot;Count tokens before sending — avoid surprise bills.&quot;&quot;&quot;
+    enc = tiktoken.encoding_for_model(model)
+    return len(enc.encode(text))
+
+def smart_route(prompt: str) -&gt; str:
+    &quot;&quot;&quot;Route to cheap model if prompt is simple.&quot;&quot;&quot;
+    token_count = count_tokens(prompt)
+    
+    if token_count &lt; 500:
+        model = &quot;gpt-4o-mini&quot;       # cheap: ~$0.15/1M input tokens
+    else:
+        model = &quot;gpt-4o&quot;            # powerful: ~$2.50/1M input tokens
+    
+    print(f&quot;Tokens: {token_count} → Using: {model}&quot;)
+    
+    client = openai.OpenAI()
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}]
+    )
+    return response.choices[0].message.content
+
+# Example
+result = smart_route(&quot;What is 2+2?&quot;)   # → gpt-4o-mini
+</code></pre>
+
+<hr/>
+
+<h3>🏗️ 生产架构图 / Production Architecture</h3>
+
+<pre><code>
+User Request
+     │
+     ▼
+┌────────────┐    ┌──────────────────┐
+│  Guardrail │───►│  Block/Flag PII, │
+│  Gateway   │    │  Injection, Harm │
+└─────┬──────┘    └──────────────────┘
+      │
+      ▼
+┌────────────┐    ┌──────────────┐
+│  Semantic  │───►│  Cache Hit?  │──YES──► Return Cached
+│  Cache     │    └──────┬───────┘
+└────────────┘           │ NO
+                         ▼
+                  ┌─────────────┐
+                  │  Router     │──cheap──► GPT-4o-mini
+                  │  (by token  │
+                  │   count)    │──complex─► GPT-4o
+                  └─────┬───────┘
+                        │
+                        ▼
+                  ┌─────────────┐
+                  │  Monitor    │
+                  │  (LangSmith │
+                  │  /Braintrust)│
+                  └─────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>把 AI 放到产品里就像雇了一个聪明但有时会乱说话的员工。Guardrail 是经理在旁边监督；Monitoring 是录像机；成本优化是让简单问题找实习生而不是总监回答。</p>
+
+<p>Putting AI in production is like hiring a smart but sometimes unreliable employee. Guardrails = a manager watching over; monitoring = security cameras; cost optimization = routing simple questions to the intern, not the VP.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- 🔗 https://www.getmaxim.ai/articles/top-5-ai-guardrail-solutions-for-production-llm-applications-in-2026/</p>
+<p>- 🔗 https://aisuperior.com/llm-cost-optimization-strategies-2026/</p>
+<p>- 🔗 https://www.braintrust.dev/articles/best-tools-tracking-llm-costs-2026</p>
+<p>- 🔗 https://redis.io/blog/large-language-model-operations-guide/</p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-06-14</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-14</guid>
+      <pubDate>Sun, 14 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 24 (10 min read)</strong></p>
+<p>📊 NeetCode: 54/150 · SysDesign: 53/40 · Behavioral: 53/40 · Python: 16 · AI: 26/30</p>
+<p>🔥 65-day streak!</p>
+
+<hr/>
+
+<h2>🗓️ 本周回顾 / This Week&#x27;s Journey</h2>
+
+<p>本周是第 61–65 天（Expert Phase），覆盖五个内容满满的交易日，以 Saturday Deep Dive 收尾。</p>
+
+<p><em>Week 61–65 (Expert Phase) — five packed days plus a Saturday Deep Dive.</em></p>
+
+<p>| 日期 / Date | 主题亮点 / Highlights |</p>
+<p>|---|---|</p>
+<p>| 周一 6/9 (Day 61) | 直播系统 · Subtree of Another Tree · Singleton 模式 · AI 编程助手生产化警示 |</p>
+<p>| 周二 6/10 (Day 62) | 股票撮合引擎 · LCA of BST · AI 编程助手底层架构 · Command 模式 |</p>
+<p>| 周三 6/11 (Day 63) | 分布式锁服务 · BFS 层序遍历 · 可逆/不可逆决策框架 · Builder 模式 |</p>
+<p>| 周四 6/12 (Day 64) | CDN 从零设计 · Binary Tree Right Side View · Structured Output &amp; JSON Mode · Adapter 模式 |</p>
+<p>| 周六 6/13 (Day 65) | Review Day — Mini-quiz 涵盖 Day 61–64 核心知识点 + 深度回顾 |</p>
+
+<hr/>
+
+<h2>🏗️ 系统设计要点 / System Design: Key Takeaways</h2>
+
+<p><strong>本周系统设计的暗线：极端可靠性系统的共同基因。</strong></p>
+
+<p><em>This week&#x27;s hidden theme: what makes extreme-reliability systems tick.</em></p>
+
+<h3>🎥 设计 Twitch 直播系统 (Day 61)</h3>
+<p>主播用 <strong>RTMP 推流 → Transcoding 集群（多码率 HLS 分片）→ CDN 边缘节点 → 观众 ABR 拉流</strong>。核心权衡：延迟 vs 稳定性（LL-HLS 降至 1-2s 但实现复杂）；聊天系统 fan-out 需要 pubsub + 限速采样，而非 1:1 推送。</p>
+
+<p><em>Streamer → RTMP → transcoding → CDN → viewer ABR pull. LL-HLS reduces latency to 1-2s but adds complexity. Chat fan-out requires pubsub + rate-limiting, not 1:1 push.</em></p>
+
+<h3>📈 设计股票撮合引擎 (Day 62)</h3>
+<p><strong>核心反直觉：单线程比多线程更快。</strong> 每个股票品种一个单线程引擎，零锁竞争。订单簿 = MaxHeap(买) + MinHeap(卖)；持久化靠 WAL + Event Sourcing；延迟目标 &lt; 1ms。Fencing token 防止 GC 暂停导致的过期持有者写脏数据。NYSE 和 NASDAQ 实际架构就是这样。</p>
+
+<p><em>Counterintuitive: single-threaded matching engine is faster because zero lock contention. Order book = MaxHeap(bids) + MinHeap(asks). WAL + event sourcing for persistence. Sub-millisecond target.</em></p>
+
+<h3>🔐 设计分布式锁服务 (Day 63)</h3>
+<p>Zookeeper 用 ephemeral sequential 节点 + watch 前驱（避免羊群效应）；etcd 用 lease TTL + compare-and-swap Txn。<strong>最重要的设计点：Fencing Token</strong>——单调递增令牌，防止 GC 暂停/网络抖动导致的过期持有者写脏。用 Redis SETNX 做生产级分布式锁是危险的。</p>
+
+<p><em>Zookeeper: ephemeral sequential nodes + watch predecessor (avoids herd effect). etcd: lease TTL + CAS transaction. Critical: fencing tokens prevent stale lock holders from corrupting data.</em></p>
+
+<h3>🌐 设计 CDN (Day 64)</h3>
+<p>Pull（按需填充）vs Push（提前预热）策略；DNS/Anycast 就近路由；静态资源用内容哈希命名 + 长 TTL；动态内容 bypass CDN 或短 TTL。常见陷阱：忘记 <code>Vary: Accept-Encoding</code>、缓存含用户数据的 API 响应、Origin 单点导致雪崩回源。</p>
+
+<p><em>Pull vs Push caching; DNS/Anycast routing; content-hash naming for long TTL on statics. Top traps: missing Vary header, caching user-specific API responses, single-origin SPOF.</em></p>
+
+<p><strong>🔗 系统间连接 / What Connects Them:</strong></p>
+<p>直播、撮合引擎、分布式锁、CDN——四个系统都依赖<strong>同一套可靠性工具箱</strong>：WAL/Event Sourcing（可回放性）、TTL/Lease（防死锁）、CDN/分片（就近+解耦）、fencing token（防止脑裂）。这是 Expert Phase 的核心主题：<strong>设计模式在极端规模下的复用</strong>。</p>
+
+<p><em>All four systems share the same reliability toolkit: WAL/event-sourcing (replayability), TTL/lease (deadlock prevention), sharding by key (contention avoidance), and fencing tokens (split-brain protection). Expert Phase theme: reliability patterns at scale.</em></p>
+
+<hr/>
+
+<h2>💻 算法模式总结 / Algorithms: Patterns Mastered</h2>
+
+<p><strong>本周完成树遍历 Block 第 6–9 题，DFS 与 BFS 双工具箱均已就位。</strong></p>
+
+<p><em>Completed tree traversal problems 6–9 of 15. Both DFS and BFS toolkits are now online.</em></p>
+
+<h3>🌳 DFS 模式 — 子程序复用 (Day 61: Subtree of Another Tree)</h3>
+<p>关键洞察：把 <strong>Same Tree 作为子程序</strong>，外层 DFS 遍历每个节点，内层 isSameTree 检查是否匹配。时间 O(m×n)。进阶：序列化树 → 字符串匹配可降到 O(m+n)。</p>
+
+<p><em>Key insight: Same Tree as subroutine. Outer DFS traverses every node; inner isSameTree checks for match. O(m×n). Optimization: serialize to string → O(m+n).</em></p>
+
+<h3>🌲 BST 导航模式 (Day 62: LCA of BST)</h3>
+<p>利用 BST 有序性：两节点都在左 → 往左；都在右 → 往右；分叉点 → 即为 LCA。<strong>时间从 O(n) 降到 O(h)</strong>。迭代版本空间 O(1)，优于递归版本。普通二叉树的 LCA（#236）需要双侧递归，O(n)。</p>
+
+<p><em>BST ordering enables guided navigation: O(h) instead of O(n). Iterative version preferred (O(1) space). Generic tree LCA requires O(n) both-sides recursion.</em></p>
+
+<h3>📶 BFS 层序遍历 (Day 63: Level Order Traversal)</h3>
+<p><strong>核心技巧：每轮循环开始记录 <code>n = len(queue)</code>，只处理这 n 个节点</strong>。一次 while 循环迭代 = 一层。这个 BFS 骨架是后续层级类题目的通用模板。</p>
+
+<p><em>Core trick: snapshot <code>n = len(queue)</code> at loop start, process exactly n nodes. One while-loop iteration = one level. This BFS skeleton is the template for all level-based problems.</em></p>
+
+<h3>👁️ BFS 变体 — 右视图 (Day 64: Right Side View)</h3>
+<p>在层序遍历骨架上，每层只记录最后一个节点（<code>i == level_size - 1</code>）。DFS 变体：先遍历右子树 + <code>depth == len(result)</code> 自动只记录最右节点，更优雅但反直觉。</p>
+
+<p><em>Layer traversal skeleton with one change: record only the last node per level. DFS variant: visit right first + depth check — more elegant but counterintuitive.</em></p>
+
+<p>| 题目 | 模式 | 关键洞察 |</p>
+<p>|---|---|---|</p>
+<p>| #572 Subtree | DFS 嵌套调用 | Same Tree 作为子程序 |</p>
+<p>| #235 LCA of BST | BST 性质导航 | 分叉点 = LCA，O(h) |</p>
+<p>| #102 Level Order | BFS 队列 | len(queue) 快照分层 |</p>
+<p>| #199 Right Side View | BFS 变体 | 每层最后一个 |</p>
+
+<hr/>
+
+<h2>🗣️ 软技能练习重点 / Soft Skills: What to Practice</h2>
+
+<p><strong>本周软技能主题：Senior/Staff 工程师在「困难情境」下的领导力模型。</strong></p>
+
+<p><em>This week&#x27;s theme: Leadership models for difficult situations at the Senior/Staff level.</em></p>
+
+<h3>📋 涵盖场景 / Scenarios Covered:</h3>
+
+<p><strong>Day 61 — 队友持续 miss deadline</strong></p>
+<p>核心框架：私聊优先 → 根因分析（意愿 vs 能力 vs 流程）→ 支持而非监控 → 中间检查点。Staff 级别加分：把个人问题转化为流程改进（估时规范、Definition of Ready）。</p>
+
+<p><em>Private conversation first → root cause (will vs skill vs process) → support not surveillance → intermediate checkpoints. Staff upgrade: convert individual issue to systemic improvement.</em></p>
+
+<p><strong>Day 62 — 主导事故响应</strong></p>
+<p>框架：Triage → Communicate → <strong>Mitigate first（先缓解，再根因）</strong> → Root Cause → Fix → Blameless Postmortem。面试时记得给数字（QPS 影响、恢复时长）和说出 &quot;blameless postmortem&quot; 这个词。</p>
+
+<p><em>Framework: Triage → Communicate → Mitigate first → Root Cause → Blameless Postmortem. Include numbers and say &quot;blameless postmortem&quot; explicitly.</em></p>
+
+<p><strong>Day 63 — 信息不全时做决策（可逆 vs 不可逆）</strong></p>
+<p>Bezos 的&quot;单向门 vs 双向门&quot;框架：可逆决策 → 快速行动 + 安全网；不可逆决策 → 慢慢来 + 多评审。<strong>大多数决策是可逆的</strong>——用单向门的标准处理双向门是团队速度杀手。</p>
+
+<p><em>Bezos&#x27;s one-way vs two-way door: reversible = move fast with safety nets; irreversible = slow down. Most decisions are reversible — treating them as irreversible kills team velocity.</em></p>
+
+<p><strong>Day 64 — 长期项目动力下滑</strong></p>
+<p>解耦外部依赖（mock server + contract testing）→ 大 milestone 拆小锚点 → 主动带方案上报风险 → 庆祝小胜利维持士气。&quot;动力 = 进展感&quot;是核心心理学原理。</p>
+
+<p><em>Decouple dependencies (mock server) → split milestones into 2-week anchors → proactive risk reporting with solutions → celebrate small wins. &quot;Momentum = sense of progress.&quot;</em></p>
+
+<p><strong>⚠️ 最需要练习的场景 / Most Needs Practice:</strong></p>
+<p>事故响应回答容易流于&quot;找到 bug 修好了&quot;。练习用完整 STAR（含数字 + blameless postmortem）来讲，以及明确说出&quot;先 mitigate 再 investigate&quot;的原则。</p>
+
+<p><em>Incident response answers tend to devolve into &quot;found the bug and fixed it.&quot; Practice the full STAR with numbers + postmortem, and explicitly stating &quot;mitigate before investigate.&quot;</em></p>
+
+<hr/>
+
+<h2>🐍 Python Craft: Design Patterns Week 4 — 模式总结</h2>
+
+<p><strong>本周完成设计模式 Week 4，四个模式都有深度实战代码。</strong></p>
+
+<p><em>Completed Design Patterns Week 4. All four patterns covered with production-grade code examples.</em></p>
+
+<p>| 模式 / Pattern | 核心用途 | Python 特别提示 |</p>
+<p>|---|---|---|</p>
+<p>| <strong>Singleton</strong> (Day 61) | 全局唯一实例（连接池、配置） | module-level var 更 Pythonic；注意线程安全的双重检查锁 |</p>
+<p>| <strong>Command</strong> (Day 62) | 操作封装 → Undo/Redo/Queue | Task Queue 场景下序列化 Command 是 Celery 的基础 |</p>
+<p>| <strong>Builder</strong> (Day 63) | 多可选参数的分步构造 | Python 优先用 <code>@dataclass + kwargs</code>；Builder 用于需要校验/链式 DSL 时 |</p>
+<p>| <strong>Adapter</strong> (Day 64) | 第三方接口转统一接口 | 适配器只做接口转换，业务逻辑留给调用方；保持无状态 |</p>
+
+<p><strong>模式间的联系：</strong> Command + Adapter 是构建&quot;可插拔、可扩展&quot;系统的基础组合——Command 让操作可排队可撤销，Adapter 让不同数据源统一接口。这正是事件驱动架构的核心思想。</p>
+
+<p><em>Command + Adapter are the foundation of pluggable, extensible systems — Command makes operations queueable and undoable; Adapter unifies disparate interfaces. This is the core of event-driven architecture.</em></p>
+
+<hr/>
+
+<h2>🤖 AI 要点 / AI: What Stuck</h2>
+
+<p><strong>本周 AI 内容聚焦两个主题：AI Coding Assistants 的技术内核 + Structured Output 最佳实践。</strong></p>
+
+<h3>🤖 AI 编程助手架构 (Day 62)</h3>
+<p>四层架构：Editor Plugin → <strong>Context Engine</strong>（FIM + RAG + LSP）→ LLM Inference → Output Rendering。关键技术：<strong>Fill-in-the-Middle (FIM)</strong> 训练让模型能填 prefix/suffix 之间的空白；Context Engine 用 Jaccard 相似度（不需要 embedding！）做代码片段检索；Cursor 等进阶工具用 ReAct 模式实现 agent 级别的多文件编辑。</p>
+
+<p><em>Four layers: Editor Plugin → Context Engine (FIM + RAG + LSP) → LLM Inference → Output. FIM training enables prefix+suffix → middle completion. Jaccard similarity (no embeddings needed) for snippet retrieval.</em></p>
+
+<h3>📊 Structured Output &amp; JSON Mode (Day 64)</h3>
+<p>核心原理：<strong>约束解码 (Constrained Decoding)</strong>——JSON Schema → 状态机 → 每步只能选合法 token。JSON Mode 只保证合法 JSON 语法，Structured Outputs 保证字段名/类型/结构完全匹配 Schema。最佳实践：Schema-First 开发、处理 refusal、复杂推理用两阶段生成。据报道 Anthropic 于 2026 年初正式 GA 结构化输出功能。</p>
+
+<p><em>Constrained Decoding compiles JSON Schema to a state machine. JSON Mode ≠ Structured Outputs — only the latter guarantees schema conformance. Schema-first development is the right approach.</em></p>
+
+<h3>📰 AI 新闻速递 (Day 61, Day 63)</h3>
+<p>- 据报道 Anthropic 80% 生产代码由 Claude 编写；Snap 裁员 1000 人称 AI 生成 65%+ 代码（据报道）；Nvidia 发布 Cosmos 3 物理 AI 基础模型（据报道）</p>
+<p>- 据报道 Anthropic 发布 Claude Fable 5（专为药物发现设计）；微软 Build 2026 发布 MAI-Thinking-1（稀疏 MoE，~350 亿激活参数）；Nvidia Nemotron 3 Ultra（据报道 5500 亿参数 MoE，1M token 上下文）（据报道）</p>
+<p>- 趋势：MoE + 长上下文 + 低比特训练（4-bit NVFP4/QAT）正成为标配</p>
+
+<p><em>Key trend: MoE + long context + low-bit training (4-bit NVFP4/QAT) becoming standard. AI coding contribution rates at major companies signal a structural shift in software development.</em></p>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<p><strong>1. 分布式锁的 Fencing Token（两次提到，仍需加深）</strong></p>
+<p>Kleppmann 的论点常在面试中被追问：&quot;分布式锁能 100% 保证安全吗？&quot; 答案是否——GC 暂停可以让持有者在锁过期后仍继续写。Fencing token（单调递增令牌 + 被保护资源校验）才是真正安全的做法。建议：实际手写一个 etcd lease + fencing token 的伪代码流程。</p>
+
+<p><em>Can a distributed lock guarantee 100% safety? No — GC pauses can cause stale holders to write after expiry. Fencing tokens are the real answer. Practice: write pseudocode for etcd lease + fencing token flow.</em></p>
+
+<p><strong>2. 算法：DFS 右子树优先 + depth 判断的 Right Side View 解法</strong></p>
+<p>BFS 解法直观，但 DFS 解法（先右后左 + <code>depth == len(result)</code>）更优雅且空间复杂度更好（O(h) vs O(w)）。建议从零手写 DFS 版本，不要依赖 BFS 版本的记忆。</p>
+
+<p><em>The DFS variant for Right Side View (visit right first + depth check) is more elegant and space-efficient. Practice writing it from scratch without relying on the BFS version.</em></p>
+
+<p><strong>3. 软技能：事故响应回答的数字化</strong></p>
+<p>回答事故响应时，&quot;影响了一些用户，我们在几小时内修复了&quot;远不如&quot;影响了 15% 的支付请求，我们在 47 分钟内恢复了 SLA&quot;。建议：准备 2-3 个真实事故的 STAR 故事，每个都有具体数字。</p>
+
+<p><em>&quot;Impacted some users, fixed in a few hours&quot; is weak. &quot;Impacted 15% of payment requests, restored SLA in 47 minutes&quot; is strong. Prepare 2-3 real incident stories with specific metrics.</em></p>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p><strong>本周最大的亮点：算法模式的质变。</strong></p>
+
+<p>从 Day 61 到 Day 64，树遍历从&quot;用 Same Tree 作为子程序&quot;（组合模式），到&quot;利用 BST 性质做有目的的导航&quot;（O(h) vs O(n)），到&quot;BFS 与 DFS 双工具箱互补&quot;——这是一次清晰的认知升级，不再是记题解，而是在<strong>感受算法工具箱里每个工具的边界和选择时机</strong>。Day 62 股票撮合引擎&quot;单线程反而更快&quot;也是本周最反直觉、最值得炫耀的洞察。</p>
+
+<p><em>The algorithmic leap this week: from &quot;memorize solutions&quot; to &quot;feel the boundary and choice moment of each tool.&quot; The counterintuitive insight that single-threaded matching engines outperform multi-threaded ones is this week&#x27;s most interview-worthy takeaway.</em></p>
+
+<p>本周亮点也体现在 Python Craft 的系统性收尾——四个设计模式形成了一个完整的 Week 4，Command + Adapter 的组合更是看到了模式之间的协同关系。</p>
+
+<p><em>Python Craft Week 4 is complete — and seeing how Command + Adapter combine to build event-driven architectures shows the patterns are starting to compose.</em></p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p>根据当前进度（Day 65，Expert Phase），下周（Day 66–71）预计内容：</p>
+
+<p><em>Based on current state (Day 65, Expert Phase), next week (Day 66–71) is expected to cover:</em></p>
+
+<p><strong>系统设计 (SysDesign Index: 53)：</strong> 继续 Expert Phase 后期题目，可能包括更多分布式系统深度题（如 CRDT、一致性协议等）</p>
+
+<p><strong>算法 (NeetCode Index: 54)：</strong> 继续树遍历 Block（#10–15 题），进入 BST 验证、Kth Smallest、BST 序列化等题目，或开始新 Pattern Block</p>
+
+<p><strong>Python Craft：</strong> 设计模式 Week 5 或新主题（性能优化、测试模式等）</p>
+
+<p><strong>AI：</strong> 继续交替新闻速递和概念深度讲解</p>
+
+<p>🏁 <strong>65 天了。Expert Phase 的最后冲刺正在进行中。</strong> 坚持住！</p>
+
+<p><em>65 days in. The Expert Phase final sprint is underway. Keep going!</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-13</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

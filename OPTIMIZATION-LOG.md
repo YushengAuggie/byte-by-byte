@@ -515,3 +515,14 @@
 2. **Verify day-counter behavior.** Check if `currentDay` is supposed to increment on missed days, weekends, or every send. Two pairs of double-"Day N" commits (Day 55 on 5/30+5/31, Day 59 on 6/6+6/7) need a clear answer: is this expected (weekend pause) or a `lastSentDate`-update bug?
 3. **Fix optimizer's PATH.** This cron run couldn't query cron telemetry because `openclaw` wasn't on PATH. Add `source ~/.zshrc` or use the absolute binary path so future runs can pull cron error/timeout data.
 4. **Carry-over open items**: post-send verification step, weekday-miss root-cause, sync `state.lastSentDate` with email-send-log writes. Of these, item #1 may now be partially addressed by `health-check.sh` — worth confirming it's wired into a cron.
+
+## 2026-06-13 Optimization Run
+
+### Issues Found
+- **P0**: Optimizer cron's own previous run (2026-06-10) failed — `HTTP 404: Model not found` (lastErrorReason=model_not_found, consecutiveErrors=1). The cron job has no explicit model set (model=None), so it depends on the gateway default; on 06-10 the default model resolved to an unavailable model. Today's run (06-13) succeeded, so it appears transient/intermittent. Recommend pinning a known-good model on the optimizer cron to prevent recurrence.
+- **P1**: Git commit numbering gap — no "Day 61" commit exists. History jumps from Day 60 (06-08) to Day 62 (06-10). However, email-send-log confirms 2026-06-09 WAS delivered (2 recipients, 4 sections). So content shipped fine; only the commit label/sequence is inconsistent. Cosmetic, no delivery impact.
+
+### Metrics
+- Delivery rate (7d): 7/7 ✅ (06-07 through 06-13 all sent)
+- Cron errors: optimizer (06-10, model_not_found — recovered this run); all content/delivery crons (weekday, saturday, sunday, review-and-send, backup-send, health-check) = ok
+- State: currentDay=65, lastSentDate=2026-06-13, last review day=65 (on schedule, every 5 days)
