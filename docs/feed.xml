@@ -5,8 +5,697 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 15 Jun 2026 15:10:30 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 16 Jun 2026 15:09:07 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-16</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-16</guid>
+      <pubDate>Tue, 16 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 67</h2>
+<p><strong>主题 / Topic:</strong> Design a Rate Limiter as a Service</p>
+<p><strong>难度 / Difficulty:</strong> Advanced | <strong>阶段 / Phase:</strong> Expert</p>
+<p><strong>预计阅读 / Read time:</strong> ~3 min</p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design</h2>
+
+<p><strong>设计一个限流服务 / Design a Rate Limiter as a Service</strong></p>
+
+<hr/>
+
+<h3>场景 / Scenario</h3>
+
+<p>想象你在 Stripe 基础设施团队。每秒有数百万个 API 请求打到你们的系统，客户的代码 bug、恶意爬虫、或者流量突增随时可能压垮下游服务。你需要设计一个分布式限流服务，支持多种算法、多级限流（按用户、按 IP、按 API key），且延迟必须在 1ms 以内。</p>
+
+<p><em>Imagine you&#x27;re on Stripe&#x27;s infrastructure team. Millions of API requests hit your system every second — buggy client code, malicious scrapers, and traffic spikes can take down downstream services at any moment. Design a distributed rate limiter service with multiple algorithms, multi-level limiting (by user, IP, API key), and sub-1ms latency.</em></p>
+
+<hr/>
+
+<h3>🏛️ 架构图 / Architecture Diagram</h3>
+
+<pre><code>
+                    ┌─────────────────────────────────┐
+                    │          API Gateway              │
+                    │   (Nginx / Envoy / Kong)          │
+                    └──────────────┬──────────────────┘
+                                   │
+                         ┌─────────▼─────────┐
+                         │  Rate Limiter      │
+                         │  Sidecar / SDK     │
+                         │                   │
+                         │  1. Check limit    │
+                         │  2. Increment ctr  │
+                         │  3. Return allow/  │
+                         │     deny + headers │
+                         └────────┬──────────┘
+                      ┌───────────┼───────────┐
+                      │           │           │
+              ┌───────▼──┐  ┌─────▼────┐ ┌───▼──────┐
+              │  Redis   │  │  Redis   │ │  Redis   │
+              │ Cluster  │  │ Cluster  │ │ Cluster  │
+              │ (Shard1) │  │ (Shard2) │ │ (Shard3) │
+              └──────────┘  └──────────┘ └──────────┘
+                      │           │           │
+              ┌───────▼───────────▼───────────▼───────┐
+              │         Config Service                  │
+              │  (limits per API key / IP / user)       │
+              │  Stored in DB, cached in Redis          │
+              └─────────────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>⚙️ 核心算法对比 / Algorithm Comparison</h3>
+
+<p><strong>四种主流限流算法 / Four main algorithms:</strong></p>
+
+<p>| 算法 | 优点 | 缺点 | 适用场景 |</p>
+<p>|------|------|------|----------|</p>
+<p>| <strong>Token Bucket</strong> 令牌桶 | 允许突发流量 | 实现稍复杂 | API 限流（最常用）|</p>
+<p>| <strong>Leaky Bucket</strong> 漏桶 | 平滑输出 | 不允许突发 | 流媒体、网络 |</p>
+<p>| <strong>Fixed Window</strong> 固定窗口 | 简单，O(1) | 边界突发问题 | 简单场景 |</p>
+<p>| <strong>Sliding Window Log</strong> 滑动日志 | 精确 | 内存占用大 | 精确计费 |</p>
+<p>| <strong>Sliding Window Counter</strong> 滑动计数 | 近似精确+高效 | 有误差 | 生产推荐 ✅ |</p>
+
+<p><strong>Redis 实现 — 滑动窗口计数 / Redis Sliding Window Counter:</strong></p>
+
+<pre><code>
+import redis
+import time
+
+r = redis.Redis()
+
+def is_allowed(key: str, limit: int, window_seconds: int) -&gt; bool:
+    now = time.time()
+    window_start = now - window_seconds
+    
+    pipe = r.pipeline()
+    # Remove old entries outside the window
+    pipe.zremrangebyscore(key, 0, window_start)
+    # Add current request
+    pipe.zadd(key, {str(now): now})
+    # Count requests in window
+    pipe.zcard(key)
+    # Set expiry to avoid memory leak
+    pipe.expire(key, window_seconds + 1)
+    results = pipe.execute()
+    
+    count = results[2]
+    return count &lt;= limit
+
+# Usage
+key = f&quot;rate_limit:user:{user_id}:api_key:{api_key}&quot;
+if not is_allowed(key, limit=100, window_seconds=60):
+    return 429, {&quot;Retry-After&quot;: 60}
+</code></pre>
+
+<hr/>
+
+<h3>⚖️ 关键权衡 / Key Tradeoffs</h3>
+
+<p><strong>1. 本地缓存 vs 完全依赖 Redis</strong></p>
+<p>- 方案A：每次请求都查 Redis → 精确，但 +0.5-1ms 延迟</p>
+<p>- 方案B：本地缓存 + Redis 异步同步 → 快，但允许小幅超限（~1-5%）</p>
+<p>- <strong>生产选择：</strong> 方案B，通过软限制 + 硬限制双层实现（本地 soft limit 95%，Redis hard limit 100%）</p>
+
+<p><strong>2. 分布式 Race Condition</strong></p>
+<p>- 问题：多个节点同时读写同一个计数器可能超限</p>
+<p>- 解决：Redis Lua 脚本原子操作（EVAL），或用 Redis INCR + EXPIRE 组合</p>
+
+<p><strong>3. 多维度限流优先级</strong></p>
+<pre><code>
+API Key Level  → 10,000 req/min
+└── User Level → 1,000 req/min
+    └── IP Level → 100 req/min
+</code></pre>
+<p>按最严格的维度拒绝，返回对应的 <code>X-RateLimit-*</code> headers。</p>
+
+<hr/>
+
+<h3>❌ 常见坑 / Common Mistakes</h3>
+
+<p>1. <strong>固定窗口的边界突发</strong>：如果窗口 0:59 来 100 次，1:01 再来 100 次，两秒内实际 200 次但都算合法。用滑动窗口解决。</p>
+<p>2. <strong>没有降级机制</strong>：Redis 挂了怎么办？应该有 fail-open（放行）vs fail-closed（拒绝）的配置，通常选 fail-open 避免影响业务。</p>
+<p>3. <strong>忘记返回标准 headers</strong>：<code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, <code>X-RateLimit-Reset</code>, <code>Retry-After</code></p>
+
+<hr/>
+
+<h3>📚 深入阅读 / References</h3>
+
+<p>1. [System Design: Rate Limiter — Alex Xu DDIA-style](https://bytebytego.com/courses/system-design-interview/design-a-rate-limiter)</p>
+<p>2. [Redis Rate Limiting Patterns](https://redis.io/learn/develop/dotnet/aspnetcore/rate-limiting/sliding-window)</p>
+<p>3. [Stripe&#x27;s Rate Limiting Approach](https://stripe.com/blog/rate-limiters)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p><em>限流就像超市收银台排队：每分钟只能结 100 个人，超了就让你等一会儿，不是不让你来，只是让你稍等。</em></p>
+
+<p><em>Rate limiting is like a checkout line: only 100 people per minute, extras just wait — you&#x27;re not banned, just slowed down.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 67</h2>
+<p><strong>题目 / Problem:</strong> #98 Validate Binary Search Tree (Medium)</p>
+<p><strong>模式 / Pattern:</strong> 树遍历模式 (Trees) — 第 11/15 题</p>
+<p><strong>预计阅读 / Read time:</strong> ~4 min</p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms</h2>
+
+<p>🧩 <strong>树遍历模式 (11/15)</strong> — building on the template from Day 56</p>
+
+<p>这是 Trees 板块第 11 题，我们已经掌握了 DFS 递归框架。今天的关键是：<strong>BST 验证不是每个节点和左右孩子比，而是和整棵子树的范围比。</strong></p>
+
+<p><em>We&#x27;re 11/15 into the Trees block. Today&#x27;s key insight: BST validation isn&#x27;t comparing a node to its direct children — it&#x27;s checking against the valid range of the entire subtree.</em></p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+
+<p>- 📌 [LeetCode #98](https://leetcode.com/problems/validate-binary-search-tree/) 🟡 Medium</p>
+<p>- 📹 [NeetCode Video](https://neetcode.io/problems/valid-binary-search-tree)</p>
+
+<hr/>
+
+<h3>🌍 现实类比 / Real-World Analogy</h3>
+
+<p>想象你在验证一棵公司组织架构：CEO 薪资必须高于所有下属，且每一层的薪资范围都有上下限约束。不是只看&quot;老板比直属下属高&quot;就够了——你得确保整条链路都满足范围约束。</p>
+
+<p><em>Like verifying salary hierarchy in an org chart: it&#x27;s not enough that a manager earns more than direct reports — every node must fit within valid bounds for its entire chain.</em></p>
+
+<hr/>
+
+<h3>🗺️ 映射到模版 / Map to Template</h3>
+
+<pre><code>
+# 基础模版
+def dfs(node):
+    if not node: return BASE_CASE
+    left = dfs(node.left)
+    right = dfs(node.right)
+    return COMBINE(node.val, left, right)
+
+# 今天的变体：传入范围边界
+# Today&#x27;s variation: pass valid range bounds down
+def dfs(node, min_val, max_val):
+    if not node: return True  # BASE_CASE = valid
+    if not (min_val &lt; node.val &lt; max_val):
+        return False
+    left = dfs(node.left, min_val, node.val)   # must be &lt; node.val
+    right = dfs(node.right, node.val, max_val) # must be &gt; node.val
+    return left and right                       # COMBINE
+</code></pre>
+
+<p><strong>与之前题目的区别 / What&#x27;s different from previous problems:</strong></p>
+<p>- Day 56 (Max Depth): 返回整数（深度），bottom-up 合并</p>
+<p>- Day 60 (Count Good Nodes): 自顶向下传递当前路径最大值</p>
+<p>- <strong>今天</strong>: 自顶向下传递<strong>双边界</strong> (min, max)，验证合法性</p>
+
+<hr/>
+
+<h3>🐍 完整解法 + 追踪 / Solution with Trace</h3>
+
+<pre><code>
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def isValidBST(root: Optional[TreeNode]) -&gt; bool:
+    def validate(node, min_val, max_val):
+        # Base case: empty node is valid
+        if not node:
+            return True
+        
+        # Current node must be strictly within (min_val, max_val)
+        if not (min_val &lt; node.val &lt; max_val):
+            return False
+        
+        # Recurse: left subtree bounded above by node.val
+        #          right subtree bounded below by node.val
+        return (validate(node.left, min_val, node.val) and
+                validate(node.right, node.val, max_val))
+    
+    # Start with infinite bounds
+    return validate(root, float(&#x27;-inf&#x27;), float(&#x27;inf&#x27;))
+
+# Trace for BST: [5,1,4,null,null,3,6]  → Invalid
+#        5           validate(5, -inf, +inf)
+#       / \            5 in (-inf, +inf) ✅
+#      1   4           validate(1, -inf, 5) → 1 in (-inf,5) ✅
+#         / \          validate(4, 5, +inf) → 4 NOT in (5,+inf) ❌
+#        3   6       → return False ✅ (correctly invalid)
+
+# Trace for valid BST: [2,1,3]
+#        2           validate(2, -inf, +inf) → ✅
+#       / \          validate(1, -inf, 2) → 1 in (-inf,2) ✅
+#      1   3         validate(3, 2, +inf) → 3 in (2,+inf) ✅
+#                  → return True ✅
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- 时间 Time: <strong>O(n)</strong> — 每个节点访问一次</p>
+<p>- 空间 Space: <strong>O(h)</strong> — 递归栈，h=树高；平衡树 O(log n)，最坏 O(n)</p>
+
+<hr/>
+
+<h3>❌ 常见错误 / Common Mistake</h3>
+
+<pre><code>
+# WRONG: 只比较父子节点，忽略全局范围
+# This fails for [5, 4, 6, null, null, 3, 7]
+def isValidBST_WRONG(root):
+    def check(node):
+        if not node: return True
+        if node.left and node.left.val &gt;= node.val: return False
+        if node.right and node.right.val &lt;= node.val: return False
+        return check(node.left) and check(node.right)
+    # ❌ node 6&#x27;s left child 3 &lt; 5 (root), violates BST!
+    # But this code says it&#x27;s valid because 3 &lt; 6 locally
+
+# CORRECT: 传递边界 / Pass bounds
+def isValidBST_CORRECT(root):
+    def validate(node, lo, hi):
+        if not node: return True
+        if not (lo &lt; node.val &lt; hi): return False
+        return validate(node.left, lo, node.val) and \
+               validate(node.right, node.val, hi)
+    return validate(root, float(&#x27;-inf&#x27;), float(&#x27;inf&#x27;))
+</code></pre>
+
+<hr/>
+
+<h3>举一反三 / Pattern Connections</h3>
+
+<p>这道题在 Trees 板块的位置：</p>
+<p>- <strong>#235 LCA of BST</strong> (Day 62): 利用 BST 性质找分叉点 → 方向类似（利用范围导航）</p>
+<p>- <strong>#230 Kth Smallest in BST</strong> (Day 68): 利用中序遍历天然有序</p>
+<p>- <strong>#105 Construct BST from Preorder/Inorder</strong> (Day 70): 用范围界定子树</p>
+
+<p><strong>通用洞察</strong>: BST 问题 = 普通树 DFS + 利用 BST 有序性（范围/中序）</p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+
+<p>1. [LeetCode #98 Discussion](https://leetcode.com/problems/validate-binary-search-tree/solutions/)</p>
+<p>2. [NeetCode BST Explanation](https://neetcode.io/problems/valid-binary-search-tree)</p>
+<p>3. [BST Properties — CS Visualizations](https://visualgo.net/en/bst)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p><em>验证 BST 就像检查每层楼的门牌号：不只是&quot;这层比下面高&quot;，而是每个房间的号码必须在整栋楼允许的范围内。</em></p>
+
+<p><em>Validating a BST is like checking room numbers floor by floor: it&#x27;s not just &quot;higher than below&quot; — every room must be within its globally allowed range.</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 67</h2>
+<p><strong>题目 / Question:</strong> Tell me about a time you had to balance individual contribution with team enablement</p>
+<p><strong>类型 / Category:</strong> Leadership (Staff Level)</p>
+<p><strong>预计阅读 / Read time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills</h2>
+
+<p><strong>&quot;讲一次你需要在个人贡献和团队赋能之间找平衡的经历。&quot;</strong></p>
+<p><em>&quot;Tell me about a time you had to balance individual contribution with team enablement.&quot;</em></p>
+
+<hr/>
+
+<h3>🎯 为什么这道题很重要 / Why This Matters</h3>
+
+<p>这是 Staff+ 工程师的核心困境：<strong>你的代码产出在下降，但你的影响力在上升。</strong> 面试官想知道：你是否理解 Staff 工程师的价值来自放大团队，而不只是个人产出。</p>
+
+<p><em>This is the core Staff+ dilemma: your code output decreases, but your impact multiplies. Interviewers want to know: do you understand that Staff value comes from multiplying the team, not just your own output?</em></p>
+
+<hr/>
+
+<h3>⭐ STAR 结构 / STAR Framework</h3>
+
+<p><strong>Situation 背景:</strong></p>
+<p>&gt; &quot;我们有一个关键的性能重构项目，周期 6 周，我是最熟悉这块代码的人。同时团队有 2 名新加入的高级工程师需要 onboarding。&quot;</p>
+<p>&gt;</p>
+<p>&gt; <em>&quot;We had a critical 6-week performance refactor. I was the most familiar with the codebase. Meanwhile, 2 newly joined senior engineers needed onboarding.&quot;</em></p>
+
+<p><strong>Task 任务:</strong></p>
+<p>&gt; &quot;我需要决定：自己全力冲刺完成项目，还是花时间带新人——这可能让项目延期 1-2 周。&quot;</p>
+<p>&gt;</p>
+<p>&gt; <em>&quot;I had to decide: sprint solo to hit the deadline, or invest in onboarding — which might slip the timeline by 1-2 weeks.&quot;</em></p>
+
+<p><strong>Action 行动:</strong></p>
+<p>&gt; &quot;我做了一个混合策略：把项目拆成两层。第一层是核心关键路径（约 40% 工作），我独立完成；第二层是模块化子任务，我设计了完整的技术文档和测试框架，让两位新工程师上手。我每天 30 分钟代码 review + 答疑，而不是 pair programming 全天。&quot;</p>
+<p>&gt;</p>
+<p>&gt; <em>&quot;I used a hybrid approach: split the project into two layers. Layer 1 (critical path, ~40%) I owned solo. Layer 2 I documented thoroughly with test scaffolding, letting the two engineers take it on. Daily 30-min review sessions, not full-day pairing.&quot;</em></p>
+
+<p><strong>Result 结果:</strong></p>
+<p>&gt; &quot;项目整体只晚了 4 天，但两位工程师在第 3 周就能独立推进了。三个月后他们领导了下一个类似项目，我根本不用参与。&quot;</p>
+<p>&gt;</p>
+<p>&gt; <em>&quot;We shipped only 4 days late. By week 3, both engineers were self-sufficient. Three months later they led a similar project without me.&quot;</em></p>
+
+<hr/>
+
+<h3>❌ Bad vs ✅ Good</h3>
+
+<p>| | ❌ 错误答案 | ✅ 优秀答案 |</p>
+<p>|---|---|---|</p>
+<p>| <strong>焦点</strong> | &quot;我加班自己搞定了，没有delay&quot; | 明确说出了取舍和选择依据 |</p>
+<p>| <strong>结果</strong> | 只说完成了任务 | 说出了长期杠杆效应（团队变强） |</p>
+<p>| <strong>视角</strong> | 以自己为中心 | 以团队+公司目标为中心 |</p>
+
+<hr/>
+
+<h3>🌟 Senior/Staff 进阶技巧 / Level-Up Tips</h3>
+
+<p><strong>你可以主动加分的点：</strong></p>
+
+<p>1. <strong>量化杠杆效应</strong>：&quot;我花了 20 小时 onboarding，换来了团队多 400 小时的未来产能&quot;</p>
+<p>2. <strong>说出框架</strong>：&quot;我的原则是：如果这件事只有我能做，我做；如果可以教别人，我优先教&quot;</p>
+<p>3. <strong>主动提到代价</strong>：&quot;是的，我们稍微 slip 了，我和 EM 对齐了这个决策，他们认可&quot;</p>
+
+<p><strong>关键词到加入答案里 / Power phrases:</strong></p>
+<p>- &quot;force multiplier&quot; — 放大器</p>
+<p>- &quot;bus factor&quot; — 单点风险</p>
+<p>- &quot;sustainable pace&quot; — 可持续节奏</p>
+
+<hr/>
+
+<h3>💡 关键要点 / Key Takeaways</h3>
+
+<p>1. Staff 工程师的价值 = 个人产出 × 团队倍数，不只是自己写多少代码</p>
+<p>2. 平衡不是 50/50，而是动态调整，根据项目紧迫度和人员成熟度</p>
+<p>3. 面试时说出你<strong>如何决策</strong>，比结果更重要</p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+
+<p>1. [Will Larson — Staff Engineer: Leadership beyond the management track](https://staffeng.com/book)</p>
+<p>2. [The Engineer/Manager Pendulum — Charity Majors](https://charity.wtf/2017/05/11/the-engineer-manager-pendulum/)</p>
+<p>3. [Being Glue — Tanya Reilly](https://noidea.dog/glue)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p><em>就像篮球明星选择传球还是自己投：高手知道什么时候自己投（赢关键球），什么时候传给队友（培养团队，赢整个赛季）。</em></p>
+
+<p><em>Like a basketball star choosing to shoot vs. pass: great players know when to take the shot themselves (win the crucial moment) and when to pass (develop the team, win the season).</em></p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python 实战 / Python Craft — Day 67</h2>
+<p><strong>主题 / Topic:</strong> Repository Pattern — Clean Data Access Layer</p>
+<p><strong>类型 / Category:</strong> Design Patterns (Week 5)</p>
+<p><strong>预计阅读 / Read time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>🐍 Python Craft</h2>
+
+<p><strong>Repository Pattern — 干净的数据访问层 / Clean Data Access Layer</strong></p>
+
+<hr/>
+
+<h3>🎯 场景 / Scenario</h3>
+
+<p>你在构建一个用户服务。刚开始用 SQLite 测试，后来要切换到 PostgreSQL，再后来要加 Redis 缓存层。每次切换都要改业务逻辑代码？<strong>不行。</strong></p>
+
+<p>Repository Pattern 的目标：<strong>业务逻辑完全不知道数据从哪来。</strong></p>
+
+<p><em>You&#x27;re building a user service — started with SQLite for tests, now migrating to PostgreSQL, then adding a Redis cache layer. Rewriting business logic every time? Nope. The Repository Pattern&#x27;s goal: business logic has zero knowledge of where data comes from.</em></p>
+
+<hr/>
+
+<h3>🧠 核心概念 / Core Concept</h3>
+
+<pre><code>
+业务逻辑 Business Logic
+      ↕
+  Repository Interface  ← 定义契约 / Defines contract
+      ↕
+  Repository Implementation
+      ↕
+  Database / Cache / API  ← 细节隐藏在这里 / Details hidden here
+</code></pre>
+
+<hr/>
+
+<h3>🐍 实现 / Implementation</h3>
+
+<pre><code>
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Optional, List
+import sqlite3
+
+# Domain model — pure Python, no DB dependency
+@dataclass
+class User:
+    id: int
+    name: str
+    email: str
+
+# Repository interface — the contract
+class UserRepository(ABC):
+    @abstractmethod
+    def get_by_id(self, user_id: int) -&gt; Optional[User]:
+        ...
+
+    @abstractmethod
+    def save(self, user: User) -&gt; User:
+        ...
+
+    @abstractmethod
+    def find_by_email(self, email: str) -&gt; Optional[User]:
+        ...
+
+# SQLite implementation
+class SQLiteUserRepository(UserRepository):
+    def __init__(self, db_path: str):
+        self.conn = sqlite3.connect(db_path)
+        self._create_table()
+
+    def _create_table(self):
+        self.conn.execute(
+            &quot;CREATE TABLE IF NOT EXISTS users &quot;
+            &quot;(id INTEGER PRIMARY KEY, name TEXT, email TEXT UNIQUE)&quot;
+        )
+
+    def get_by_id(self, user_id: int) -&gt; Optional[User]:
+        row = self.conn.execute(
+            &quot;SELECT id, name, email FROM users WHERE id=?&quot;, (user_id,)
+        ).fetchone()
+        return User(*row) if row else None
+
+    def save(self, user: User) -&gt; User:
+        self.conn.execute(
+            &quot;INSERT OR REPLACE INTO users VALUES (?,?,?)&quot;,
+            (user.id, user.name, user.email)
+        )
+        self.conn.commit()
+        return user
+
+    def find_by_email(self, email: str) -&gt; Optional[User]:
+        row = self.conn.execute(
+            &quot;SELECT id, name, email FROM users WHERE email=?&quot;, (email,)
+        ).fetchone()
+        return User(*row) if row else None
+
+# In-memory implementation — perfect for tests!
+class InMemoryUserRepository(UserRepository):
+    def __init__(self):
+        self._store: dict[int, User] = {}
+
+    def get_by_id(self, user_id: int) -&gt; Optional[User]:
+        return self._store.get(user_id)
+
+    def save(self, user: User) -&gt; User:
+        self._store[user.id] = user
+        return user
+
+    def find_by_email(self, email: str) -&gt; Optional[User]:
+        return next(
+            (u for u in self._store.values() if u.email == email),
+            None
+        )
+
+# Business logic — zero database knowledge
+class UserService:
+    def __init__(self, repo: UserRepository):
+        self.repo = repo  # dependency injected!
+
+    def register(self, user_id: int, name: str, email: str) -&gt; User:
+        if self.repo.find_by_email(email):
+            raise ValueError(f&quot;Email {email} already registered&quot;)
+        user = User(id=user_id, name=name, email=email)
+        return self.repo.save(user)
+
+# --- Usage ---
+# Production
+prod_repo = SQLiteUserRepository(&quot;users.db&quot;)
+service = UserService(prod_repo)
+
+# Tests — no DB, fast, isolated
+test_repo = InMemoryUserRepository()
+test_service = UserService(test_repo)
+u = test_service.register(1, &quot;Alice&quot;, &quot;alice@example.com&quot;)
+assert u.name == &quot;Alice&quot;
+print(&quot;✅ Test passed!&quot;)
+</code></pre>
+
+<hr/>
+
+<h3>❌ vs ✅</h3>
+
+<pre><code>
+# ❌ Anti-pattern: business logic touches DB directly
+def register_user(user_id, name, email):
+    conn = sqlite3.connect(&quot;users.db&quot;)  # DB detail in business logic!
+    existing = conn.execute(&quot;SELECT * FROM users WHERE email=?&quot;, (email,)).fetchone()
+    if existing:
+        raise ValueError(&quot;Email taken&quot;)
+    conn.execute(&quot;INSERT INTO users VALUES (?,?,?)&quot;, (user_id, name, email))
+    conn.commit()
+
+# ✅ Repository: business logic is DB-agnostic
+def register_user(user_id, name, email, repo: UserRepository):
+    if repo.find_by_email(email):
+        raise ValueError(&quot;Email taken&quot;)
+    return repo.save(User(id=user_id, name=name, email=email))
+    # Test with InMemoryUserRepository, ship with PostgreSQLUserRepository
+</code></pre>
+
+<hr/>
+
+<h3>🔄 何时用 / When to Use</h3>
+
+<p><strong>✅ 用 Repository Pattern 当：</strong></p>
+<p>- 需要测试业务逻辑，不想真正连 DB</p>
+<p>- 可能切换数据库（SQLite → PostgreSQL）</p>
+<p>- 需要多数据源（DB + Cache + API）</p>
+
+<p><strong>❌ 别过度使用：</strong></p>
+<p>- 小型脚本 / 一次性工具</p>
+<p>- 只有一层逻辑，直接 ORM 就够了</p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+
+<p>1. [Repository Pattern — Martin Fowler PoEAA](https://martinfowler.com/eaaCatalog/repository.html)</p>
+<p>2. [Python Design Patterns — Repository](https://python-patterns.guide/)</p>
+<p>3. [Architecture Patterns with Python — Cosmic Python](https://www.cosmicpython.com/book/chapter_02_repository.html)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p><em>Repository 就像外卖 App：你只管点餐，不管食物从哪家厨房来、怎么送到。换了配送商，你的点餐体验不变。</em></p>
+
+<p><em>Repository is like a food delivery app: you just place orders, not caring which kitchen or courier. Swap the delivery service, your ordering experience stays the same.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI 动态 / AI News — Day 67</h2>
+<p><strong>模式 / Mode:</strong> NEWS</p>
+<p><strong>日期 / Date:</strong> 2026-06-16</p>
+<p><strong>预计阅读 / Read time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>🤖 AI 动态 / AI News Roundup</h2>
+
+<p><em>本周 AI 圈发生了什么？/ What happened in AI this week?</em></p>
+
+<hr/>
+
+<h3>📰 Story 1: SpaceX Colossus 延迟问题被曝光，被迫租给 Anthropic 和 Google</h3>
+
+<p><strong>发生了什么？/ What happened?</strong></p>
+
+<p>据 Bloomberg 报道，SpaceX 原计划在 Memphis 的 Colossus 1 数据中心用三个园区联合训练 Grok，但因为站点间距超过 10 英里、叠加老旧网络基础设施，导致严重的网络延迟问题。无法自用后，SpaceX 转而将算力出租给 Anthropic（据报道 $15B/年）和 Google（据报道 $920M/月）。</p>
+
+<p><em>According to Bloomberg, SpaceX planned to train Grok across three data center campuses at Colossus 1, but hit latency issues when connecting sites over 10 miles apart, compounded by aging network infrastructure. Unable to use it themselves, SpaceX reportedly rented capacity to Anthropic and Google.</em></p>
+
+<p>🔗 来源 Source: [Bloomberg / The Verge](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<p><strong>为什么重要？/ Why it matters:</strong></p>
+<p>分布式训练对网络延迟极度敏感——哪怕几毫秒的 inter-node 延迟都会拖垮整体训练效率。这也说明&quot;拥有算力&quot;和&quot;有效使用算力&quot;之间存在巨大的工程鸿沟。</p>
+
+<p><em>Distributed training is extremely latency-sensitive — even milliseconds of inter-node delay can tank training efficiency. It shows a massive engineering gap between &quot;owning compute&quot; and &quot;effectively using compute.&quot;</em></p>
+
+<hr/>
+
+<h3>📰 Story 2: 政府叫停 Anthropic 最新最强模型</h3>
+
+<p><strong>发生了什么？/ What happened?</strong></p>
+
+<p>The Verge 援引知情人士透露，美国政府叫停了 Anthropic 最新、最强大的模型发布，理由是认为该模型&quot;功能过于强大&quot;。Anthropic 和其他 AI 支持者据报道花了整个周末试图解释该模型并不像政府担心的那样危险。</p>
+
+<p><em>The Verge cited sources saying the US government blocked Anthropic&#x27;s newest, most powerful model from release, citing concerns it was &quot;too powerful.&quot; Anthropic and AI advocates reportedly spent the weekend explaining that the model — referred to as &quot;Fable 5&quot; in some reporting — wasn&#x27;t as dangerous as feared.</em></p>
+
+<p>🔗 来源 Source: [The Verge](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<p><strong>为什么重要？/ Why it matters:</strong></p>
+<p>AI 监管实际落地来了。政府开始主动干预模型发布，而不只是讨论框架。这将影响 AI lab 的发布节奏和能力展示方式。</p>
+
+<p><em>AI regulation is landing in real time. Governments are actively intervening in model releases, not just discussing frameworks. This will reshape how AI labs release and communicate capabilities.</em></p>
+
+<hr/>
+
+<h3>📰 Story 3: Elon Musk 再次在对 OpenAI 诉讼中败诉</h3>
+
+<p><strong>发生了什么？/ What happened?</strong></p>
+
+<p>Elon Musk 在对 OpenAI 的诉讼中再次败诉。这是他试图通过法律手段阻止 OpenAI 从非营利组织转型为营利公司的系列诉讼之一，但法院再次驳回了他的请求。</p>
+
+<p><em>Elon Musk lost his legal battle against OpenAI again — another failed attempt to legally block OpenAI&#x27;s transition from a nonprofit to a for-profit structure.</em></p>
+
+<p>🔗 来源 Source: [The Verge](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<p><strong>为什么重要？/ Why it matters:</strong></p>
+<p>OpenAI 的公司结构转型基本已无法律障碍，意味着其融资能力和商业化路径将更清晰。同时也折射出 AI 行业的治理争议远未结束。</p>
+
+<p><em>OpenAI&#x27;s corporate restructuring is now largely legally unobstructed, clearing the way for larger fundraising and clearer commercial paths. The governance debate in AI, however, is far from over.</em></p>
+
+<hr/>
+
+<h3>💡 本周思考 / This Week&#x27;s Takeaway</h3>
+
+<p><strong>算力 ≠ AI 能力。</strong> SpaceX 有世界顶级的硬件，却因为基础网络工程问题无法自用。AI 的瓶颈往往不在参数量，而在系统工程。</p>
+
+<p><em>Compute ≠ AI capability. SpaceX had world-class hardware, but basic networking engineering issues blocked self-use. AI bottlenecks are often not parameter counts — they&#x27;re systems engineering.</em></p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+
+<p>1. [SpaceX Colossus latency issues — Bloomberg via The Verge](https://www.theverge.com/ai-artificial-intelligence)</p>
+<p>2. [Government blocks Anthropic model — The Verge](https://www.theverge.com/ai-artificial-intelligence)</p>
+<p>3. [Musk loses OpenAI lawsuit — The Verge (Jun 15)](https://www.theverge.com/ai-artificial-intelligence)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p><em>就算你有世界上最强的厨房设备，厨师们如果没法互相沟通配合，做出来的菜还是一团糟。AI 训练也一样——硬件再好，网络不行就白搭。</em></p>
+
+<p><em>Even with the world&#x27;s best kitchen equipment, if the chefs can&#x27;t communicate, the meal is a mess. Same with AI training — great hardware means nothing if the network is broken.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-15</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

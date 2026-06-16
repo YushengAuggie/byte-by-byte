@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-06-16</title>
+  <meta name="description" content="byte-by-byte daily lessons for Tuesday, June 16, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Tuesday, June 16, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-06-16.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-06-15.html" style="color:var(--text2)">← 2026-06-15</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-06-16</span>
+    <h1>Tuesday, June 16, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-06-15.html" class="day-nav-btn">← 2026-06-15</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 67</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 / System Design — Day 67</h1>
+<p><strong>主题 / Topic:</strong> Design a Rate Limiter as a Service</p>
+<p><strong>难度 / Difficulty:</strong> Advanced | <strong>阶段 / Phase:</strong> Expert</p>
+<p><strong>预计阅读 / Read time:</strong> ~3 min</p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design</h2>
+
+<p><strong>设计一个限流服务 / Design a Rate Limiter as a Service</strong></p>
+
+<hr/>
+
+<h3>场景 / Scenario</h3>
+
+<p>想象你在 Stripe 基础设施团队。每秒有数百万个 API 请求打到你们的系统，客户的代码 bug、恶意爬虫、或者流量突增随时可能压垮下游服务。你需要设计一个分布式限流服务，支持多种算法、多级限流（按用户、按 IP、按 API key），且延迟必须在 1ms 以内。</p>
+
+<p><em>Imagine you're on Stripe's infrastructure team. Millions of API requests hit your system every second — buggy client code, malicious scrapers, and traffic spikes can take down downstream services at any moment. Design a distributed rate limiter service with multiple algorithms, multi-level limiting (by user, IP, API key), and sub-1ms latency.</em></p>
+
+<hr/>
+
+<h3>🏛️ 架构图 / Architecture Diagram</h3>
+
+<div class="diagram-block">                    ┌─────────────────────────────────┐
+                    │          API Gateway              │
+                    │   (Nginx / Envoy / Kong)          │
+                    └──────────────┬──────────────────┘
+                                   │
+                         ┌─────────▼─────────┐
+                         │  Rate Limiter      │
+                         │  Sidecar / SDK     │
+                         │                   │
+                         │  1. Check limit    │
+                         │  2. Increment ctr  │
+                         │  3. Return allow/  │
+                         │     deny + headers │
+                         └────────┬──────────┘
+                      ┌───────────┼───────────┐
+                      │           │           │
+              ┌───────▼──┐  ┌─────▼────┐ ┌───▼──────┐
+              │  Redis   │  │  Redis   │ │  Redis   │
+              │ Cluster  │  │ Cluster  │ │ Cluster  │
+              │ (Shard1) │  │ (Shard2) │ │ (Shard3) │
+              └──────────┘  └──────────┘ └──────────┘
+                      │           │           │
+              ┌───────▼───────────▼───────────▼───────┐
+              │         Config Service                  │
+              │  (limits per API key / IP / user)       │
+              │  Stored in DB, cached in Redis          │
+              └─────────────────────────────────────────┘</div>
+
+<hr/>
+
+<h3>⚙️ 核心算法对比 / Algorithm Comparison</h3>
+
+<p><strong>四种主流限流算法 / Four main algorithms:</strong></p>
+
+<table><thead><tr><th>算法</th><th>优点</th><th>缺点</th><th>适用场景</th></tr></thead><tbody><tr><td><strong>Token Bucket</strong> 令牌桶</td><td>允许突发流量</td><td>实现稍复杂</td><td>API 限流（最常用）</td></tr><tr><td><strong>Leaky Bucket</strong> 漏桶</td><td>平滑输出</td><td>不允许突发</td><td>流媒体、网络</td></tr><tr><td><strong>Fixed Window</strong> 固定窗口</td><td>简单，O(1)</td><td>边界突发问题</td><td>简单场景</td></tr><tr><td><strong>Sliding Window Log</strong> 滑动日志</td><td>精确</td><td>内存占用大</td><td>精确计费</td></tr><tr><td><strong>Sliding Window Counter</strong> 滑动计数</td><td>近似精确+高效</td><td>有误差</td><td>生产推荐 ✅</td></tr></tbody></table>
+
+<p><strong>Redis 实现 — 滑动窗口计数 / Redis Sliding Window Counter:</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import redis&#10;import time&#10;&#10;r = redis.Redis()&#10;&#10;def is_allowed(key: str, limit: int, window_seconds: int) -&gt; bool:&#10;    now = time.time()&#10;    window_start = now - window_seconds&#10;    &#10;    pipe = r.pipeline()&#10;    # Remove old entries outside the window&#10;    pipe.zremrangebyscore(key, 0, window_start)&#10;    # Add current request&#10;    pipe.zadd(key, {str(now): now})&#10;    # Count requests in window&#10;    pipe.zcard(key)&#10;    # Set expiry to avoid memory leak&#10;    pipe.expire(key, window_seconds + 1)&#10;    results = pipe.execute()&#10;    &#10;    count = results[2]&#10;    return count &lt;= limit&#10;&#10;# Usage&#10;key = f&quot;rate_limit:user:{user_id}:api_key:{api_key}&quot;&#10;if not is_allowed(key, limit=100, window_seconds=60):&#10;    return 429, {&quot;Retry-After&quot;: 60}">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> redis
+<span style="color:#c678dd;">import</span> time
+
+r = redis.Redis()
+
+<span style="color:#c678dd;">def</span> is_allowed(key: str, limit: int, window_seconds: int) -&gt; bool:
+    now = time.time()
+    window_start = now - window_seconds
+    
+    pipe = r.pipeline()
+    <span style="color:#5c6370;"># Remove old entries outside the window</span>
+    pipe.zremrangebyscore(key, <span style="color:#56b6c2;">0</span>, window_start)
+    <span style="color:#5c6370;"># Add current request</span>
+    pipe.zadd(key, {str(now): now})
+    <span style="color:#5c6370;"># Count requests in window</span>
+    pipe.zcard(key)
+    <span style="color:#5c6370;"># Set expiry to avoid memory leak</span>
+    pipe.expire(key, window_seconds + <span style="color:#56b6c2;">1</span>)
+    results = pipe.execute()
+    
+    count = results[<span style="color:#56b6c2;">2</span>]
+    <span style="color:#c678dd;">return</span> count &lt;= limit
+
+<span style="color:#5c6370;"># Usage</span>
+key = f<span style="color:#e5c07b;">"rate_limit:user:{user_id}:api_key:{api_key}"</span>
+<span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> is_allowed(key, limit=<span style="color:#56b6c2;">100</span>, window_seconds=<span style="color:#56b6c2;">60</span>):
+    <span style="color:#c678dd;">return</span> <span style="color:#56b6c2;">429</span>, {<span style="color:#e5c07b;">"Retry-After"</span>: <span style="color:#56b6c2;">60</span>}</code></pre>
+</div>
+
+<hr/>
+
+<h3>⚖️ 关键权衡 / Key Tradeoffs</h3>
+
+<p><strong>1. 本地缓存 vs 完全依赖 Redis</strong></p>
+<ul><li>方案A：每次请求都查 Redis → 精确，但 +0.5-1ms 延迟</li><li>方案B：本地缓存 + Redis 异步同步 → 快，但允许小幅超限（~1-5%）</li><li><strong>生产选择：</strong> 方案B，通过软限制 + 硬限制双层实现（本地 soft limit 95%，Redis hard limit 100%）</li></ul>
+
+<p><strong>2. 分布式 Race Condition</strong></p>
+<ul><li>问题：多个节点同时读写同一个计数器可能超限</li><li>解决：Redis Lua 脚本原子操作（EVAL），或用 Redis INCR + EXPIRE 组合</li></ul>
+
+<p><strong>3. 多维度限流优先级</strong></p>
+<div class="diagram-block">API Key Level  → 10,000 req/min
+└── User Level → 1,000 req/min
+    └── IP Level → 100 req/min</div>
+<p>按最严格的维度拒绝，返回对应的 <code>X-RateLimit-*</code> headers。</p>
+
+<hr/>
+
+<h3>❌ 常见坑 / Common Mistakes</h3>
+
+<ol><li><strong>固定窗口的边界突发</strong>：如果窗口 0:59 来 100 次，1:01 再来 100 次，两秒内实际 200 次但都算合法。用滑动窗口解决。</li><li><strong>没有降级机制</strong>：Redis 挂了怎么办？应该有 fail-open（放行）vs fail-closed（拒绝）的配置，通常选 fail-open 避免影响业务。</li><li><strong>忘记返回标准 headers</strong>：<code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, <code>X-RateLimit-Reset</code>, <code>Retry-After</code></li></ol>
+
+<hr/>
+
+<h3>📚 深入阅读 / References</h3>
+
+<ol><li><a href="https://bytebytego.com/courses/system-design-interview/design-a-rate-limiter">System Design: Rate Limiter — Alex Xu DDIA-style</a></li><li><a href="https://redis.io/learn/develop/dotnet/aspnetcore/rate-limiting/sliding-window">Redis Rate Limiting Patterns</a></li><li><a href="https://stripe.com/blog/rate-limiters">Stripe's Rate Limiting Approach</a></li></ol>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p><em>限流就像超市收银台排队：每分钟只能结 100 个人，超了就让你等一会儿，不是不让你来，只是让你稍等。</em></p>
+
+<p><em>Rate limiting is like a checkout line: only 100 people per minute, extras just wait — you're not banned, just slowed down.</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 67</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>💻 算法 / Algorithms — Day 67</h1>
+<p><strong>题目 / Problem:</strong> #98 Validate Binary Search Tree (Medium)</p>
+<p><strong>模式 / Pattern:</strong> 树遍历模式 (Trees) — 第 11/15 题</p>
+<p><strong>预计阅读 / Read time:</strong> ~4 min</p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms</h2>
+
+<p>🧩 <strong>树遍历模式 (11/15)</strong> — building on the template from Day 56</p>
+
+<p>这是 Trees 板块第 11 题，我们已经掌握了 DFS 递归框架。今天的关键是：<strong>BST 验证不是每个节点和左右孩子比，而是和整棵子树的范围比。</strong></p>
+
+<p><em>We're 11/15 into the Trees block. Today's key insight: BST validation isn't comparing a node to its direct children — it's checking against the valid range of the entire subtree.</em></p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+
+<ul><li>📌 <a href="https://leetcode.com/problems/validate-binary-search-tree/">LeetCode #98</a> 🟡 Medium</li><li>📹 <a href="https://neetcode.io/problems/valid-binary-search-tree">NeetCode Video</a></li></ul>
+
+<hr/>
+
+<h3>🌍 现实类比 / Real-World Analogy</h3>
+
+<p>想象你在验证一棵公司组织架构：CEO 薪资必须高于所有下属，且每一层的薪资范围都有上下限约束。不是只看"老板比直属下属高"就够了——你得确保整条链路都满足范围约束。</p>
+
+<p><em>Like verifying salary hierarchy in an org chart: it's not enough that a manager earns more than direct reports — every node must fit within valid bounds for its entire chain.</em></p>
+
+<hr/>
+
+<h3>🗺️ 映射到模版 / Map to Template</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# 基础模版&#10;def dfs(node):&#10;    if not node: return BASE_CASE&#10;    left = dfs(node.left)&#10;    right = dfs(node.right)&#10;    return COMBINE(node.val, left, right)&#10;&#10;# 今天的变体：传入范围边界&#10;# Today's variation: pass valid range bounds down&#10;def dfs(node, min_val, max_val):&#10;    if not node: return True  # BASE_CASE = valid&#10;    if not (min_val &lt; node.val &lt; max_val):&#10;        return False&#10;    left = dfs(node.left, min_val, node.val)   # must be &lt; node.val&#10;    right = dfs(node.right, node.val, max_val) # must be &gt; node.val&#10;    return left and right                       # COMBINE">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># 基础模版</span>
+<span style="color:#c678dd;">def</span> dfs(node):
+    <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> node: <span style="color:#c678dd;">return</span> BASE_CASE
+    left = dfs(node.left)
+    right = dfs(node.right)
+    <span style="color:#c678dd;">return</span> COMBINE(node.val, left, right)
+
+<span style="color:#5c6370;"># 今天的变体：传入范围边界</span>
+<span style="color:#5c6370;"># Today's variation: pass valid range bounds down</span>
+<span style="color:#c678dd;">def</span> dfs(node, min_val, max_val):
+    <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> node: <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>  <span style="color:#5c6370;"># BASE_CASE = valid</span>
+    <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> (min_val &lt; node.val &lt; max_val):
+        <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+    left = dfs(node.left, min_val, node.val)   <span style="color:#5c6370;"># must be &lt; node.val</span>
+    right = dfs(node.right, node.val, max_val) <span style="color:#5c6370;"># must be &gt; node.val</span>
+    <span style="color:#c678dd;">return</span> left <span style="color:#c678dd;">and</span> right                       <span style="color:#5c6370;"># COMBINE</span></code></pre>
+</div>
+
+<p><strong>与之前题目的区别 / What's different from previous problems:</strong></p>
+<ul><li>Day 56 (Max Depth): 返回整数（深度），bottom-up 合并</li><li>Day 60 (Count Good Nodes): 自顶向下传递当前路径最大值</li><li><strong>今天</strong>: 自顶向下传递<strong>双边界</strong> (min, max)，验证合法性</li></ul>
+
+<hr/>
+
+<h3>🐍 完整解法 + 追踪 / Solution with Trace</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from typing import Optional&#10;&#10;class TreeNode:&#10;    def __init__(self, val=0, left=None, right=None):&#10;        self.val = val&#10;        self.left = left&#10;        self.right = right&#10;&#10;def isValidBST(root: Optional[TreeNode]) -&gt; bool:&#10;    def validate(node, min_val, max_val):&#10;        # Base case: empty node is valid&#10;        if not node:&#10;            return True&#10;        &#10;        # Current node must be strictly within (min_val, max_val)&#10;        if not (min_val &lt; node.val &lt; max_val):&#10;            return False&#10;        &#10;        # Recurse: left subtree bounded above by node.val&#10;        #          right subtree bounded below by node.val&#10;        return (validate(node.left, min_val, node.val) and&#10;                validate(node.right, node.val, max_val))&#10;    &#10;    # Start with infinite bounds&#10;    return validate(root, float('-inf'), float('inf'))&#10;&#10;# Trace for BST: [5,1,4,null,null,3,6]  → Invalid&#10;#        5           validate(5, -inf, +inf)&#10;#       / \            5 in (-inf, +inf) ✅&#10;#      1   4           validate(1, -inf, 5) → 1 in (-inf,5) ✅&#10;#         / \          validate(4, 5, +inf) → 4 NOT in (5,+inf) ❌&#10;#        3   6       → return False ✅ (correctly invalid)&#10;&#10;# Trace for valid BST: [2,1,3]&#10;#        2           validate(2, -inf, +inf) → ✅&#10;#       / \          validate(1, -inf, 2) → 1 in (-inf,2) ✅&#10;#      1   3         validate(3, 2, +inf) → 3 in (2,+inf) ✅&#10;#                  → return True ✅">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> typing <span style="color:#c678dd;">import</span> Optional
+
+<span style="color:#c678dd;">class</span> TreeNode:
+    <span style="color:#c678dd;">def</span> __init__(self, val=<span style="color:#56b6c2;">0</span>, left=<span style="color:#c678dd;">None</span>, right=<span style="color:#c678dd;">None</span>):
+        self.val = val
+        self.left = left
+        self.right = right
+
+<span style="color:#c678dd;">def</span> isValidBST(root: Optional[TreeNode]) -&gt; bool:
+    <span style="color:#c678dd;">def</span> validate(node, min_val, max_val):
+        <span style="color:#5c6370;"># Base case: empty node is valid</span>
+        <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> node:
+            <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+        
+        <span style="color:#5c6370;"># Current node must be strictly within (min_val, max_val)</span>
+        <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> (min_val &lt; node.val &lt; max_val):
+            <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+        
+        <span style="color:#5c6370;"># Recurse: left subtree bounded above by node.val</span>
+        <span style="color:#5c6370;">#          right subtree bounded below by node.val</span>
+        <span style="color:#c678dd;">return</span> (validate(node.left, min_val, node.val) <span style="color:#c678dd;">and</span>
+                validate(node.right, node.val, max_val))
+    
+    <span style="color:#5c6370;"># Start with infinite bounds</span>
+    <span style="color:#c678dd;">return</span> validate(root, float(<span style="color:#e5c07b;">'-inf'</span>), float(<span style="color:#e5c07b;">'inf'</span>))
+
+<span style="color:#5c6370;"># Trace for BST: [5,1,4,null,null,3,6]  → Invalid</span>
+<span style="color:#5c6370;">#        5           validate(5, -inf, +inf)</span>
+<span style="color:#5c6370;">#       / \            5 in (-inf, +inf) ✅</span>
+<span style="color:#5c6370;">#      1   4           validate(1, -inf, 5) → 1 in (-inf,5) ✅</span>
+<span style="color:#5c6370;">#         / \          validate(4, 5, +inf) → 4 NOT in (5,+inf) ❌</span>
+<span style="color:#5c6370;">#        3   6       → return False ✅ (correctly invalid)</span>
+
+<span style="color:#5c6370;"># Trace for valid BST: [2,1,3]</span>
+<span style="color:#5c6370;">#        2           validate(2, -inf, +inf) → ✅</span>
+<span style="color:#5c6370;">#       / \          validate(1, -inf, 2) → 1 in (-inf,2) ✅</span>
+<span style="color:#5c6370;">#      1   3         validate(3, 2, +inf) → 3 in (2,+inf) ✅</span>
+<span style="color:#5c6370;">#                  → return True ✅</span></code></pre>
+</div>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<ul><li>时间 Time: <strong>O(n)</strong> — 每个节点访问一次</li><li>空间 Space: <strong>O(h)</strong> — 递归栈，h=树高；平衡树 O(log n)，最坏 O(n)</li></ul>
+
+<hr/>
+
+<h3>❌ 常见错误 / Common Mistake</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# WRONG: 只比较父子节点，忽略全局范围&#10;# This fails for [5, 4, 6, null, null, 3, 7]&#10;def isValidBST_WRONG(root):&#10;    def check(node):&#10;        if not node: return True&#10;        if node.left and node.left.val &gt;= node.val: return False&#10;        if node.right and node.right.val &lt;= node.val: return False&#10;        return check(node.left) and check(node.right)&#10;    # ❌ node 6's left child 3 &lt; 5 (root), violates BST!&#10;    # But this code says it's valid because 3 &lt; 6 locally&#10;&#10;# CORRECT: 传递边界 / Pass bounds&#10;def isValidBST_CORRECT(root):&#10;    def validate(node, lo, hi):&#10;        if not node: return True&#10;        if not (lo &lt; node.val &lt; hi): return False&#10;        return validate(node.left, lo, node.val) and \&#10;               validate(node.right, node.val, hi)&#10;    return validate(root, float('-inf'), float('inf'))">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># WRONG: 只比较父子节点，忽略全局范围</span>
+<span style="color:#5c6370;"># This fails for [5, 4, 6, null, null, 3, 7]</span>
+<span style="color:#c678dd;">def</span> isValidBST_WRONG(root):
+    <span style="color:#c678dd;">def</span> check(node):
+        <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> node: <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+        <span style="color:#c678dd;">if</span> node.left <span style="color:#c678dd;">and</span> node.left.val &gt;= node.val: <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+        <span style="color:#c678dd;">if</span> node.right <span style="color:#c678dd;">and</span> node.right.val &lt;= node.val: <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+        <span style="color:#c678dd;">return</span> check(node.left) <span style="color:#c678dd;">and</span> check(node.right)
+    <span style="color:#5c6370;"># ❌ node 6's left child 3 &lt; 5 (root), violates BST!</span>
+    <span style="color:#5c6370;"># But this code says it's valid because 3 &lt; 6 locally</span>
+
+<span style="color:#5c6370;"># CORRECT: 传递边界 / Pass bounds</span>
+<span style="color:#c678dd;">def</span> isValidBST_CORRECT(root):
+    <span style="color:#c678dd;">def</span> validate(node, lo, hi):
+        <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> node: <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+        <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> (lo &lt; node.val &lt; hi): <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+        <span style="color:#c678dd;">return</span> validate(node.left, lo, node.val) <span style="color:#c678dd;">and</span> \
+               validate(node.right, node.val, hi)
+    <span style="color:#c678dd;">return</span> validate(root, float(<span style="color:#e5c07b;">'-inf'</span>), float(<span style="color:#e5c07b;">'inf'</span>))</code></pre>
+</div>
+
+<hr/>
+
+<h3>举一反三 / Pattern Connections</h3>
+
+<p>这道题在 Trees 板块的位置：</p>
+<ul><li><strong>#235 LCA of BST</strong> (Day 62): 利用 BST 性质找分叉点 → 方向类似（利用范围导航）</li><li><strong>#230 Kth Smallest in BST</strong> (Day 68): 利用中序遍历天然有序</li><li><strong>#105 Construct BST from Preorder/Inorder</strong> (Day 70): 用范围界定子树</li></ul>
+
+<p><strong>通用洞察</strong>: BST 问题 = 普通树 DFS + 利用 BST 有序性（范围/中序）</p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+
+<ol><li><a href="https://leetcode.com/problems/validate-binary-search-tree/solutions/">LeetCode #98 Discussion</a></li><li><a href="https://neetcode.io/problems/valid-binary-search-tree">NeetCode BST Explanation</a></li><li><a href="https://visualgo.net/en/bst">BST Properties — CS Visualizations</a></li></ol>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p><em>验证 BST 就像检查每层楼的门牌号：不只是"这层比下面高"，而是每个房间的号码必须在整栋楼允许的范围内。</em></p>
+
+<p><em>Validating a BST is like checking room numbers floor by floor: it's not just "higher than below" — every room must be within its globally allowed range.</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 67</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🗣️ 软技能 / Soft Skills — Day 67</h1>
+<p><strong>题目 / Question:</strong> Tell me about a time you had to balance individual contribution with team enablement</p>
+<p><strong>类型 / Category:</strong> Leadership (Staff Level)</p>
+<p><strong>预计阅读 / Read time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills</h2>
+
+<p><strong>"讲一次你需要在个人贡献和团队赋能之间找平衡的经历。"</strong></p>
+<p><em>"Tell me about a time you had to balance individual contribution with team enablement."</em></p>
+
+<hr/>
+
+<h3>🎯 为什么这道题很重要 / Why This Matters</h3>
+
+<p>这是 Staff+ 工程师的核心困境：<strong>你的代码产出在下降，但你的影响力在上升。</strong> 面试官想知道：你是否理解 Staff 工程师的价值来自放大团队，而不只是个人产出。</p>
+
+<p><em>This is the core Staff+ dilemma: your code output decreases, but your impact multiplies. Interviewers want to know: do you understand that Staff value comes from multiplying the team, not just your own output?</em></p>
+
+<hr/>
+
+<h3>⭐ STAR 结构 / STAR Framework</h3>
+
+<p><strong>Situation 背景:</strong></p>
+<blockquote>"我们有一个关键的性能重构项目，周期 6 周，我是最熟悉这块代码的人。同时团队有 2 名新加入的高级工程师需要 onboarding。"</blockquote>
+<blockquote></blockquote>
+<blockquote><em>"We had a critical 6-week performance refactor. I was the most familiar with the codebase. Meanwhile, 2 newly joined senior engineers needed onboarding."</em></blockquote>
+
+<p><strong>Task 任务:</strong></p>
+<blockquote>"我需要决定：自己全力冲刺完成项目，还是花时间带新人——这可能让项目延期 1-2 周。"</blockquote>
+<blockquote></blockquote>
+<blockquote><em>"I had to decide: sprint solo to hit the deadline, or invest in onboarding — which might slip the timeline by 1-2 weeks."</em></blockquote>
+
+<p><strong>Action 行动:</strong></p>
+<blockquote>"我做了一个混合策略：把项目拆成两层。第一层是核心关键路径（约 40% 工作），我独立完成；第二层是模块化子任务，我设计了完整的技术文档和测试框架，让两位新工程师上手。我每天 30 分钟代码 review + 答疑，而不是 pair programming 全天。"</blockquote>
+<blockquote></blockquote>
+<blockquote><em>"I used a hybrid approach: split the project into two layers. Layer 1 (critical path, ~40%) I owned solo. Layer 2 I documented thoroughly with test scaffolding, letting the two engineers take it on. Daily 30-min review sessions, not full-day pairing."</em></blockquote>
+
+<p><strong>Result 结果:</strong></p>
+<blockquote>"项目整体只晚了 4 天，但两位工程师在第 3 周就能独立推进了。三个月后他们领导了下一个类似项目，我根本不用参与。"</blockquote>
+<blockquote></blockquote>
+<blockquote><em>"We shipped only 4 days late. By week 3, both engineers were self-sufficient. Three months later they led a similar project without me."</em></blockquote>
+
+<hr/>
+
+<h3>❌ Bad vs ✅ Good</h3>
+
+<table><thead><tr><th></th><th>❌ 错误答案</th><th>✅ 优秀答案</th></tr></thead><tbody><tr><td><strong>焦点</strong></td><td>"我加班自己搞定了，没有delay"</td><td>明确说出了取舍和选择依据</td></tr><tr><td><strong>结果</strong></td><td>只说完成了任务</td><td>说出了长期杠杆效应（团队变强）</td></tr><tr><td><strong>视角</strong></td><td>以自己为中心</td><td>以团队+公司目标为中心</td></tr></tbody></table>
+
+<hr/>
+
+<h3>🌟 Senior/Staff 进阶技巧 / Level-Up Tips</h3>
+
+<p><strong>你可以主动加分的点：</strong></p>
+
+<ol><li><strong>量化杠杆效应</strong>："我花了 20 小时 onboarding，换来了团队多 400 小时的未来产能"</li><li><strong>说出框架</strong>："我的原则是：如果这件事只有我能做，我做；如果可以教别人，我优先教"</li><li><strong>主动提到代价</strong>："是的，我们稍微 slip 了，我和 EM 对齐了这个决策，他们认可"</li></ol>
+
+<p><strong>关键词到加入答案里 / Power phrases:</strong></p>
+<ul><li>"force multiplier" — 放大器</li><li>"bus factor" — 单点风险</li><li>"sustainable pace" — 可持续节奏</li></ul>
+
+<hr/>
+
+<h3>💡 关键要点 / Key Takeaways</h3>
+
+<ol><li>Staff 工程师的价值 = 个人产出 × 团队倍数，不只是自己写多少代码</li><li>平衡不是 50/50，而是动态调整，根据项目紧迫度和人员成熟度</li><li>面试时说出你<strong>如何决策</strong>，比结果更重要</li></ol>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+
+<ol><li><a href="https://staffeng.com/book">Will Larson — Staff Engineer: Leadership beyond the management track</a></li><li><a href="https://charity.wtf/2017/05/11/the-engineer-manager-pendulum/">The Engineer/Manager Pendulum — Charity Majors</a></li><li><a href="https://noidea.dog/glue">Being Glue — Tanya Reilly</a></li></ol>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p><em>就像篮球明星选择传球还是自己投：高手知道什么时候自己投（赢关键球），什么时候传给队友（培养团队，赢整个赛季）。</em></p>
+
+<p><em>Like a basketball star choosing to shoot vs. pass: great players know when to take the shot themselves (win the crucial moment) and when to pass (develop the team, win the season).</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI 动态 / AI News — Day 67</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content ">
+        <h1>🤖 AI 动态 / AI News — Day 67</h1>
+<p><strong>模式 / Mode:</strong> NEWS</p>
+<p><strong>日期 / Date:</strong> 2026-06-16</p>
+<p><strong>预计阅读 / Read time:</strong> ~2 min</p>
+
+<hr/>
+
+<h2>🤖 AI 动态 / AI News Roundup</h2>
+
+<p><em>本周 AI 圈发生了什么？/ What happened in AI this week?</em></p>
+
+<hr/>
+
+<h3>📰 Story 1: SpaceX Colossus 延迟问题被曝光，被迫租给 Anthropic 和 Google</h3>
+
+<p><strong>发生了什么？/ What happened?</strong></p>
+
+<p>据 Bloomberg 报道，SpaceX 原计划在 Memphis 的 Colossus 1 数据中心用三个园区联合训练 Grok，但因为站点间距超过 10 英里、叠加老旧网络基础设施，导致严重的网络延迟问题。无法自用后，SpaceX 转而将算力出租给 Anthropic（据报道 $15B/年）和 Google（据报道 $920M/月）。</p>
+
+<p><em>According to Bloomberg, SpaceX planned to train Grok across three data center campuses at Colossus 1, but hit latency issues when connecting sites over 10 miles apart, compounded by aging network infrastructure. Unable to use it themselves, SpaceX reportedly rented capacity to Anthropic and Google.</em></p>
+
+<p>🔗 来源 Source: <a href="https://www.theverge.com/ai-artificial-intelligence">Bloomberg / The Verge</a></p>
+
+<p><strong>为什么重要？/ Why it matters:</strong></p>
+<p>分布式训练对网络延迟极度敏感——哪怕几毫秒的 inter-node 延迟都会拖垮整体训练效率。这也说明"拥有算力"和"有效使用算力"之间存在巨大的工程鸿沟。</p>
+
+<p><em>Distributed training is extremely latency-sensitive — even milliseconds of inter-node delay can tank training efficiency. It shows a massive engineering gap between "owning compute" and "effectively using compute."</em></p>
+
+<hr/>
+
+<h3>📰 Story 2: 政府叫停 Anthropic 最新最强模型</h3>
+
+<p><strong>发生了什么？/ What happened?</strong></p>
+
+<p>The Verge 援引知情人士透露，美国政府叫停了 Anthropic 最新、最强大的模型发布，理由是认为该模型"功能过于强大"。Anthropic 和其他 AI 支持者据报道花了整个周末试图解释该模型并不像政府担心的那样危险。</p>
+
+<p><em>The Verge cited sources saying the US government blocked Anthropic's newest, most powerful model from release, citing concerns it was "too powerful." Anthropic and AI advocates reportedly spent the weekend explaining that the model — referred to as "Fable 5" in some reporting — wasn't as dangerous as feared.</em></p>
+
+<p>🔗 来源 Source: <a href="https://www.theverge.com/ai-artificial-intelligence">The Verge</a></p>
+
+<p><strong>为什么重要？/ Why it matters:</strong></p>
+<p>AI 监管实际落地来了。政府开始主动干预模型发布，而不只是讨论框架。这将影响 AI lab 的发布节奏和能力展示方式。</p>
+
+<p><em>AI regulation is landing in real time. Governments are actively intervening in model releases, not just discussing frameworks. This will reshape how AI labs release and communicate capabilities.</em></p>
+
+<hr/>
+
+<h3>📰 Story 3: Elon Musk 再次在对 OpenAI 诉讼中败诉</h3>
+
+<p><strong>发生了什么？/ What happened?</strong></p>
+
+<p>Elon Musk 在对 OpenAI 的诉讼中再次败诉。这是他试图通过法律手段阻止 OpenAI 从非营利组织转型为营利公司的系列诉讼之一，但法院再次驳回了他的请求。</p>
+
+<p><em>Elon Musk lost his legal battle against OpenAI again — another failed attempt to legally block OpenAI's transition from a nonprofit to a for-profit structure.</em></p>
+
+<p>🔗 来源 Source: <a href="https://www.theverge.com/ai-artificial-intelligence">The Verge</a></p>
+
+<p><strong>为什么重要？/ Why it matters:</strong></p>
+<p>OpenAI 的公司结构转型基本已无法律障碍，意味着其融资能力和商业化路径将更清晰。同时也折射出 AI 行业的治理争议远未结束。</p>
+
+<p><em>OpenAI's corporate restructuring is now largely legally unobstructed, clearing the way for larger fundraising and clearer commercial paths. The governance debate in AI, however, is far from over.</em></p>
+
+<hr/>
+
+<h3>💡 本周思考 / This Week's Takeaway</h3>
+
+<p><strong>算力 ≠ AI 能力。</strong> SpaceX 有世界顶级的硬件，却因为基础网络工程问题无法自用。AI 的瓶颈往往不在参数量，而在系统工程。</p>
+
+<p><em>Compute ≠ AI capability. SpaceX had world-class hardware, but basic networking engineering issues blocked self-use. AI bottlenecks are often not parameter counts — they're systems engineering.</em></p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+
+<ol><li><a href="https://www.theverge.com/ai-artificial-intelligence">SpaceX Colossus latency issues — Bloomberg via The Verge</a></li><li><a href="https://www.theverge.com/ai-artificial-intelligence">Government blocks Anthropic model — The Verge</a></li><li><a href="https://www.theverge.com/ai-artificial-intelligence">Musk loses OpenAI lawsuit — The Verge (Jun 15)</a></li></ol>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p><em>就算你有世界上最强的厨房设备，厨师们如果没法互相沟通配合，做出来的菜还是一团糟。AI 训练也一样——硬件再好，网络不行就白搭。</em></p>
+
+<p><em>Even with the world's best kitchen equipment, if the chefs can't communicate, the meal is a mess. Same with AI training — great hardware means nothing if the network is broken.</em></p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
