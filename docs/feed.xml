@@ -5,8 +5,689 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 16 Jun 2026 15:09:07 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 17 Jun 2026 15:10:03 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-17</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-17</guid>
+      <pubDate>Wed, 17 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — 分布式追踪系统 (Jaeger/Zipkin)</h2>
+
+<p>&gt; <strong>Day 68 · Expert Phase · ~3 min read</strong></p>
+
+<hr/>
+
+<h2>场景 / The Scenario</h2>
+
+<p>想象你在 Uber 工程团队：一个打车请求失败了，用户报告&quot;无法匹配司机&quot;。这个请求经过了 <strong>API Gateway → Ride Service → Matching Service → Driver Service → Notification Service</strong>，跨越 5 个微服务、3 个数据库、2 个消息队列。你怎么找到哪一步慢了？</p>
+
+<p>You&#x27;re on the Uber engineering team: a ride request failed. It touched 5 microservices, 3 databases, 2 queues. How do you find the bottleneck?</p>
+
+<p><strong>答案 / Answer:</strong> 分布式追踪系统。Distributed tracing.</p>
+
+<hr/>
+
+<h2>架构图 / Architecture</h2>
+
+<pre><code>
+                    ┌─────────────────────────────────────────┐
+                    │         Client App / API Gateway         │
+                    │   generates TraceID: abc123, SpanID: 1   │
+                    └──────────────────┬──────────────────────┘
+                                       │ HTTP Header: X-Trace-ID: abc123
+            ┌──────────────────────────┼──────────────────────────┐
+            ▼                          ▼                           ▼
+    ┌──────────────┐          ┌──────────────┐           ┌──────────────┐
+    │ Ride Service │          │  Auth Service│           │ Maps Service │
+    │  SpanID: 2   │          │  SpanID: 3   │           │  SpanID: 4   │
+    │  parent: 1   │          │  parent: 1   │           │  parent: 1   │
+    └──────┬───────┘          └──────────────┘           └──────────────┘
+           │
+    ┌──────▼───────┐
+    │  DB Query    │
+    │  SpanID: 5   │
+    │  parent: 2   │
+    │  latency: 450ms ⚠️│
+    └──────────────┘
+
+Each service sends span data to:
+    ┌─────────────────────────────────────────┐
+    │           Collector (Jaeger Agent)       │
+    │  Receives spans via UDP (fire-and-forget)│
+    └──────────────────┬──────────────────────┘
+                       │
+            ┌──────────▼──────────┐
+            │   Storage Backend   │
+            │  Cassandra / ES /   │
+            │  Badger (local dev) │
+            └──────────┬──────────┘
+                       │
+            ┌──────────▼──────────┐
+            │    Query Service    │  ◄── Jaeger UI / Grafana Tempo
+            │  TraceID lookup     │
+            │  Dependency graph   │
+            └─────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>核心概念 / Core Concepts</h2>
+
+<h3>Span 是什么？</h3>
+<p>一个 <strong>span</strong> = 一个操作单元，包含：</p>
+<p>- <code>trace_id</code>: 整条请求链路的唯一 ID</p>
+<p>- <code>span_id</code>: 本次操作的 ID</p>
+<p>- <code>parent_span_id</code>: 谁调用了我</p>
+<p>- <code>operation_name</code>, <code>start_time</code>, <code>duration</code></p>
+<p>- <code>tags</code> (key-value), <code>logs</code> (events), <code>status</code></p>
+
+<p>A <strong>span</strong> = one unit of work. A <strong>trace</strong> = a tree of spans sharing the same <code>trace_id</code>.</p>
+
+<h3>Context Propagation（上下文传播）</h3>
+<p>TraceID 需要在<strong>每次跨服务调用</strong>时传递：</p>
+<p>- <strong>HTTP:</strong> <code>X-B3-TraceId</code>, <code>X-B3-SpanId</code> headers (Zipkin B3 format)</p>
+<p>- <strong>gRPC:</strong> Metadata headers</p>
+<p>- <strong>Async/Queue:</strong> Message headers (Kafka, RabbitMQ)</p>
+<p>- <strong>OpenTelemetry:</strong> W3C <code>traceparent</code> header (now the standard)</p>
+
+<hr/>
+
+<h2>采样策略 / Sampling Strategies</h2>
+
+<p><strong>为什么需要采样？</strong> 100% 采样会产生巨量数据，影响性能。</p>
+<p>Why sample? 100% tracing = too much data, too much overhead.</p>
+
+<p>| 策略 | 说明 | 适用场景 |</p>
+<p>|------|------|----------|</p>
+<p>| <strong>Head-based</strong> | 在入口处决定采样（随机 1%） | 低流量，简单 |</p>
+<p>| <strong>Tail-based</strong> | 请求完成后，根据结果决定（保留错误/慢请求） | 生产首选 |</p>
+<p>| <strong>Adaptive</strong> | 动态调整采样率（Jaeger 默认） | 高流量系统 |</p>
+
+<p><strong>最佳实践:</strong> Tail-based sampling — 总是保留 error traces 和 P99 以上的慢 trace。</p>
+
+<hr/>
+
+<h2>关键权衡 / Key Tradeoffs</h2>
+
+<h3>存储选择</h3>
+<p>- <strong>Cassandra:</strong> 高写入吞吐，水平扩展佳 → Jaeger 生产首选</p>
+<p>- <strong>Elasticsearch:</strong> 全文搜索，适合日志 + 追踪融合</p>
+<p>- <strong>ClickHouse:</strong> Grafana Tempo 后端，列存储，超快聚合</p>
+
+<h3>Push vs Pull</h3>
+<p>- <strong>Jaeger:</strong> 服务推送 spans 到 Agent（UDP，低延迟，不阻塞）</p>
+<p>- <strong>OpenTelemetry Collector:</strong> 可配置 pipeline，支持 fan-out 到多个后端</p>
+
+<h3>与日志/指标的关系 (三大支柱)</h3>
+<pre><code>
+Logs    → What happened (事件记录)
+Metrics → How much / how fast (聚合数字)
+Traces  → Why it happened (因果链路)
+</code></pre>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>同步发送 spans</strong> — 会增加服务延迟</p>
+<p>✅ <strong>异步 + UDP</strong> — fire-and-forget，span 丢失可接受（比业务延迟更重要）</p>
+
+<p>❌ <strong>100% 采样上生产</strong> — 数据量是请求量的 10-100x</p>
+<p>✅ <strong>1% 随机 + 100% 错误/慢请求</strong></p>
+
+<p>❌ <strong>只追踪 HTTP，忘了 DB/Queue</strong></p>
+<p>✅ <strong>插桩所有 I/O</strong>：DB queries, external HTTP calls, queue publishes</p>
+
+<p>❌ <strong>TraceID 不传给异步 worker</strong></p>
+<p>✅ 把 TraceID 放进消息体/headers，让下游能关联</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [OpenTelemetry Docs](https://opentelemetry.io/docs/) — W3C standard, vendor-neutral</p>
+<p>- [Jaeger Architecture](https://www.jaegertracing.io/docs/1.58/architecture/) — official deep dive</p>
+<p>- [Grafana Tempo](https://grafana.com/docs/tempo/latest/) — cost-efficient tracing storage</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>你和朋友去迷宫，每个人都有一根毛线球，进每个房间都撕一段贴上自己名字。如果有人迷路了，顺着毛线就能找回来，还能看出谁进了哪些房间、用了多长时间。</p>
+
+<p>Imagine a maze where everyone carries a ball of yarn and tears off a piece in each room with their name on it. If someone gets lost, you follow the yarn trail — and you can see exactly who went where and how long they spent there. Distributed tracing is that yarn for microservice requests.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — #230 Kth Smallest Element in a BST (Medium)</h2>
+
+<p>&gt; <strong>Day 68 · Expert Phase · ~4 min read</strong></p>
+<p>&gt; 🧩 <strong>树遍历模式 (12/15)</strong> — 在第 Day 57 的模板基础上延伸</p>
+
+<hr/>
+
+<h2>🧩 树遍历模式 (12/15) — 从 Day 57 模板延伸</h2>
+
+<p>之前的模板：后序 DFS（左 → 右 → 当前）。</p>
+<p>今天的变体：<strong>中序 DFS（左 → 当前 → 右）</strong> — BST 的中序遍历天然有序！</p>
+
+<p>Previous pattern: post-order DFS (left → right → current).</p>
+<p>Today&#x27;s twist: <strong>in-order DFS</strong> — because a BST&#x27;s in-order traversal yields sorted values automatically.</p>
+
+<pre><code>
+模板变体对比:
+Post-order: left, right, THEN process node  → aggregation (depth, path sum)
+In-order:   left, THEN process node, right  → BST sorted traversal
+Pre-order:  THEN process node, left, right  → serialization, path recording
+</code></pre>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 [LeetCode #230](https://leetcode.com/problems/kth-smallest-element-in-a-bst/) 🟡 Medium</p>
+<p>📹 [NeetCode Video](https://neetcode.io/problems/kth-smallest-integer-in-bst)</p>
+
+<p><strong>真实类比 / Real-world analogy:</strong></p>
+<p>你有一个员工薪资 BST（左小右大）。老板问：&quot;第 3 低的薪资是多少？&quot; — 你不用排序整个数组，只需按序遍历到第 k 个就停下。</p>
+
+<p>You have a salary BST (left &lt; right). The boss asks: &quot;What&#x27;s the 3rd lowest salary?&quot; You don&#x27;t need to sort everything — just traverse in order and stop at the k-th element.</p>
+
+<p><strong>问题:</strong> 给一棵 BST，找第 k 小的元素（k 从 1 开始）。</p>
+<p>Given a BST, return the k-th smallest value (1-indexed).</p>
+
+<pre><code>
+Input: root = [3,1,4,null,2], k = 1
+
+      3
+     / \
+    1   4
+     \
+      2
+
+In-order: 1, 2, 3, 4
+Output: 1
+</code></pre>
+
+<hr/>
+
+<h2>解题思路 / Approach — 映射到中序模板</h2>
+
+<p><strong>BST 的关键性质:</strong> 中序遍历（左→根→右）结果是<strong>升序排列</strong>。</p>
+<p><strong>Key BST property:</strong> In-order traversal yields values in ascending order.</p>
+
+<p>所以第 k 小 = 中序遍历的第 k 个节点。</p>
+
+<p><strong>方法一: 迭代中序（推荐，面试首选）</strong></p>
+<p>Iterative in-order (preferred for interviews — early termination):</p>
+
+<pre><code>
+def kthSmallest(root, k: int) -&gt; int:
+    stack = []
+    current = root
+    count = 0
+
+    while current or stack:
+        # Go as far left as possible
+        while current:
+            stack.append(current)
+            current = current.left
+
+        # Process node (this is &quot;in-order&quot; moment)
+        current = stack.pop()
+        count += 1
+        if count == k:
+            return current.val  # Early exit!
+
+        # Move to right subtree
+        current = current.right
+</code></pre>
+
+<p><strong>执行追踪 / Trace</strong> (root=[3,1,4,null,2], k=1):</p>
+<pre><code>
+Step 1: Push 3, push 1, push null → stack=[3,1], current=None
+Step 2: Pop 1, count=1, k=1 → RETURN 1 ✓
+</code></pre>
+
+<p><strong>方法二: 递归（清晰，但无法早退）</strong></p>
+<p>Recursive (cleaner, but can&#x27;t early-terminate):</p>
+
+<pre><code>
+def kthSmallest(root, k: int) -&gt; int:
+    result = []
+
+    def inorder(node):
+        if not node or len(result) == k:
+            return
+        inorder(node.left)         # left first
+        result.append(node.val)    # process current
+        inorder(node.right)        # then right
+
+    inorder(root)
+    return result[k - 1]
+</code></pre>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+
+<p>| | Time | Space |</p>
+<p>|---|---|---|</p>
+<p>| Iterative | O(H + k) — H = tree height | O(H) stack |</p>
+<p>| Recursive | O(H + k) | O(H) call stack |</p>
+
+<p>H = O(log n) for balanced, O(n) for skewed.</p>
+
+<p><strong>为什么是 O(H + k)？</strong> 先走 H 步到最左，再数 k 步。</p>
+
+<hr/>
+
+<h2>Follow-up (面试加分项!)</h2>
+
+<p>&gt; &quot;如果 BST 频繁插入/删除，查询 k-th 会很慢。怎么优化？&quot;</p>
+<p>&gt; &quot;If the BST is modified frequently, how do you optimize repeated k-th queries?&quot;</p>
+
+<p><strong>解法:</strong> 在每个节点存 <code>left_count</code>（左子树节点数），可以 O(log n) 查询：</p>
+<p>Store <code>left_count</code> at each node → O(log n) per query:</p>
+
+<pre><code>
+# Node stores: val, left, right, left_count
+# If k &lt;= node.left_count: go left
+# If k == left_count + 1: current is answer
+# Else: k -= (left_count + 1), go right
+</code></pre>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p>在同一个树遍历模式块中 (In the same Trees pattern block):</p>
+<p>- <strong>#98 Validate BST</strong> (Day 67): 中序遍历验证递增 → 同样利用中序性质</p>
+<p>- <strong>#235 LCA of BST</strong> (Day 57): 利用 BST 的大小性质做方向决策</p>
+<p>- <strong>#105 Construct from Preorder+Inorder</strong> (下一题): 用中序恢复树结构</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [LeetCode #230](https://leetcode.com/problems/kth-smallest-element-in-a-bst/)</p>
+<p>- [NeetCode Solution](https://neetcode.io/problems/kth-smallest-integer-in-bst)</p>
+<p>- [BST In-order Traversal — Wikipedia](https://en.wikipedia.org/wiki/Tree_traversal#In-order,_LNR)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>BST 就像一个自动整理好的书架，左边的书永远比右边便宜。找第 k 便宜的书，只要从最左边开始数，数到第 k 本停下来就行。</p>
+
+<p>A BST is like a self-sorted bookshelf where left books always cost less than right ones. To find the k-th cheapest, just start from the leftmost book and count to k — no need to sort anything first.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — 季度目标设定与沟通</h2>
+
+<p>&gt; <strong>Day 68 · Expert Phase · Staff Level · ~2 min read</strong></p>
+
+<hr/>
+
+<h2>题目 / Question</h2>
+
+<p><strong>&quot;How do you approach setting and communicating team goals each quarter?&quot;</strong></p>
+
+<hr/>
+
+<h2>为什么这道题重要 / Why It Matters</h2>
+
+<p>Staff+ 工程师被期望<strong>主动驱动目标对齐</strong>，而不是等 PM 下发任务。面试官想看：你是否能把公司战略 → 团队目标 → 个人工作串联起来，并且能清晰地向上、向下、横向沟通。</p>
+
+<p>At Staff+, you&#x27;re expected to drive goal alignment proactively — not wait for PM to hand you a roadmap. Interviewers want to see how you cascade company strategy → team goals → individual work, and communicate it in all directions.</p>
+
+<hr/>
+
+<h2>STAR 框架拆解 / STAR Breakdown</h2>
+
+<h3>❌ 弱回答 (Weak)</h3>
+<p>&gt; &quot;我们每季度开一次规划会，大家各自说说想做什么，然后 PM 整理成 OKR。&quot;</p>
+
+<p>问题：被动，无结构，无影响力体现。</p>
+
+<h3>✅ 强回答框架 (Strong)</h3>
+
+<p><strong>Situation:</strong> 上季度团队有 7 个并行项目，没有清晰优先级，最后 3 个都没完成。</p>
+<p>We had 7 parallel projects last quarter with no clear priority — 3 ended up incomplete.</p>
+
+<p><strong>Task:</strong> 我作为 tech lead，需要在下个季度建立一个目标框架，确保团队聚焦。</p>
+
+<p><strong>Action:</strong></p>
+<p>1. <strong>向上对齐 (Top-down):</strong> 参加产品 QBR，提炼出公司层面的 2-3 个核心押注</p>
+<p>2. <strong>自下而上收集 (Bottom-up):</strong> 1:1 问每个工程师：&quot;你觉得现在最大的技术债/机会是什么？&quot;</p>
+<p>3. <strong>目标草案:</strong> 写 3 个 OKR，每个 KR 都有可量化指标（不用&quot;improve performance&quot;，用&quot;P99 latency &lt; 200ms&quot;）</p>
+<p>4. <strong>对齐共识:</strong> 在 team meeting 上展示，允许 push back，明确 <strong>什么不做</strong> 同样重要</p>
+<p>5. <strong>透明进度:</strong> 每两周 async 更新，红/黄/绿状态，不等月报</p>
+
+<p><strong>Result:</strong> 团队下季度完成了 4/4 目标，且每个人都知道自己的工作如何影响业务指标。</p>
+
+<hr/>
+
+<h2>Senior vs Staff 的区别 / Seniority Differentiator</h2>
+
+<p>| | Senior | Staff |</p>
+<p>|--|--|--|</p>
+<p>| 目标来源 | PM 给我 OKR | 我帮 PM 定 OKR |</p>
+<p>| 沟通范围 | 团队内 | 跨团队 + 向上 |</p>
+<p>| 关注点 | 我的 scope 能否完成 | 整个 team 是否在做正确的事 |</p>
+<p>| 说&quot;不&quot;能力 | 偶尔 | 系统性地保护团队专注力 |</p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>- ✅ 好的 OKR 必须有取舍 — 什么都是优先 = 什么都不是优先</p>
+<p>- ✅ &quot;明确不做什么&quot; 和 &quot;明确做什么&quot; 同样重要</p>
+<p>- ✅ 用可量化 KR，避免模糊动词（improve / enhance / explore）</p>
+<p>- ✅ 季度中期 check-in，不要等到结束才知道红灯</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Google re:Work — OKR Guide](https://rework.withgoogle.com/guides/set-goals-with-okrs/steps/introduction/)</p>
+<p>- [Will Larson — Staff Engineer](https://staffeng.com/guides/work-on-what-matters)</p>
+<p>- [Andy Grove — High Output Management (OKR origin)](https://www.goodreads.com/book/show/324750.High_Output_Management)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>就像出发旅行前，你要先决定去哪里（目标），再约好大家怎么判断到了（可量化指标），还要说清楚不去哪里（取舍）。否则每个人都在开车，但方向不一样。</p>
+
+<p>Like planning a road trip: first decide where you&#x27;re going (goal), agree on how you&#x27;ll know you&#x27;ve arrived (measurable KR), and say clearly where you&#x27;re NOT going (trade-offs). Otherwise everyone&#x27;s driving in different directions.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Descriptors: @property 的底层原理</h2>
+
+<p>&gt; <strong>Day 68 · Expert Phase · Python Internals · ~2 min read</strong></p>
+
+<hr/>
+
+<h2>场景 / Real Scenario</h2>
+
+<p>你用过 <code>@property</code> 无数次，但它<strong>是什么</strong>？当你写 <code>obj.name</code>，Python 怎么决定是直接返回属性还是调用方法？答案：<strong>Descriptor Protocol（描述符协议）</strong>。</p>
+
+<p>You&#x27;ve used <code>@property</code> many times — but <em>what is it</em>? When you access <code>obj.name</code>, how does Python decide whether to return a value or call a method? The answer: the <strong>Descriptor Protocol</strong>.</p>
+
+<hr/>
+
+<h2>核心概念 / Core Concept</h2>
+
+<p>任何实现了 <code>__get__</code>, <code>__set__</code>, <code>__delete__</code> 之一的类，就是一个 <strong>描述符</strong>。</p>
+<p>Any class implementing <code>__get__</code>, <code>__set__</code>, or <code>__delete__</code> is a <strong>descriptor</strong>.</p>
+
+<pre><code>
+# @property 是语法糖，等价于用 property 类（本身就是描述符）
+# @property is syntactic sugar for the property class (which IS a descriptor)
+
+class Celsius:
+    def __init__(self):
+        self._temp = 0
+
+    @property
+    def temperature(self):
+        print(&quot;Getting temperature&quot;)
+        return self._temp
+
+    @temperature.setter
+    def temperature(self, value):
+        if value &lt; -273.15:
+            raise ValueError(&quot;Too cold!&quot;)
+        self._temp = value
+
+c = Celsius()
+c.temperature = 25   # calls __set__
+print(c.temperature) # calls __get__
+</code></pre>
+
+<hr/>
+
+<h2>自定义描述符 / Build Your Own Descriptor</h2>
+
+<pre><code>
+class ValidatedFloat:
+    &quot;&quot;&quot;A descriptor that validates float values with min/max bounds.&quot;&quot;&quot;
+
+    def __init__(self, min_val, max_val):
+        self.min_val = min_val
+        self.max_val = max_val
+        self.name = None  # set by __set_name__
+
+    def __set_name__(self, owner, name):
+        # Called when class is defined — gives descriptor its attribute name
+        self.name = name
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self  # class-level access returns descriptor itself
+        return getattr(obj, f&quot;_{self.name}&quot;, None)
+
+    def __set__(self, obj, value):
+        if not self.min_val &lt;= value &lt;= self.max_val:
+            raise ValueError(
+                f&quot;{self.name} must be between {self.min_val} and {self.max_val}&quot;
+            )
+        setattr(obj, f&quot;_{self.name}&quot;, value)
+
+
+class Product:
+    price = ValidatedFloat(0.0, 99999.99)   # descriptor instance
+    rating = ValidatedFloat(0.0, 5.0)
+
+    def __init__(self, price, rating):
+        self.price = price    # triggers ValidatedFloat.__set__
+        self.rating = rating
+
+
+p = Product(29.99, 4.5)
+print(p.price)    # 29.99 — triggers __get__
+p.price = -10     # ValueError: price must be between 0.0 and 99999.99
+</code></pre>
+
+<hr/>
+
+<h2>工作原理 / How It Works</h2>
+
+<pre><code>
+obj.attr 的查找顺序 (attribute lookup order):
+1. type(obj).__mro__ 中找 attr → 如果是 data descriptor → 优先返回
+2. obj.__dict__ 中找 attr → 返回
+3. type(obj).__mro__ 中找 attr → 如果是 non-data descriptor → 返回
+4. AttributeError
+
+Data Descriptor = 同时有 __get__ + __set__ (e.g., property, ValidatedFloat)
+Non-data Descriptor = 只有 __get__ (e.g., functions/methods)
+</code></pre>
+
+<p>这就是为什么 <code>@property</code> 能<strong>覆盖</strong> instance dict — 它是 data descriptor，优先级更高。</p>
+<p>This is why <code>@property</code> overrides instance dict — it&#x27;s a data descriptor with higher priority.</p>
+
+<hr/>
+
+<h2>@property vs 描述符对比 / When to Use Which</h2>
+
+<p>| | <code>@property</code> | Custom Descriptor |</p>
+<p>|--|--|--|</p>
+<p>| 适用场景 | 单个类的属性验证/计算 | 多个类复用同一验证逻辑 |</p>
+<p>| 代码位置 | 在类内部 | 在类外部，可复用 |</p>
+<p>| 例子 | <code>temperature</code> getter/setter | <code>ValidatedFloat</code> 跨类复用 |</p>
+
+<p><strong>规则:</strong> 逻辑只在一个类用 → <code>@property</code>；多个类复用 → 自定义描述符。</p>
+
+<hr/>
+
+<h2>实际应用 / Real-World Uses</h2>
+
+<p>- <strong>Django ORM Fields:</strong> <code>CharField</code>, <code>IntegerField</code> 都是描述符</p>
+<p>- <strong>SQLAlchemy:</strong> Column 映射通过描述符协议实现</p>
+<p>- <strong>dataclasses with validation:</strong> <code>__post_init__</code> + property 组合</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Python Docs: Descriptor HowTo Guide](https://docs.python.org/3/howto/descriptor.html)</p>
+<p>- [Fluent Python Ch.23 — Descriptors](https://www.oreilly.com/library/view/fluent-python-2nd/9781492056348/)</p>
+<p>- [Real Python: Python Descriptors](https://realpython.com/python-descriptors/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>普通属性就像一个盒子，你往里放东西，拿出来就是原样。描述符就像一个有内置规则的盒子：放进去时会检查，拿出来时会加工。<code>@property</code> 就是 Python 自带的最常用描述符盒子。</p>
+
+<p>A normal attribute is like a plain box — put something in, get the same thing out. A descriptor is a box with built-in rules: it checks when you put things in and transforms when you take them out. <code>@property</code> is just Python&#x27;s most popular pre-made descriptor box.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — 开源 vs 闭源 LLM：格局全览</h2>
+
+<p>&gt; <strong>Day 68 · Expert Phase · Industry · ~2 min read</strong></p>
+
+<hr/>
+
+<h2>格局概览 / The Landscape</h2>
+
+<p>2026 年，LLM 世界的核心张力：<strong>开源 vs 闭源</strong>。这不只是技术选择，更是商业模式、数据安全、能力上限的全面博弈。</p>
+
+<p>In 2026, the core tension in the LLM world is <strong>open source vs. closed source</strong> — a competition spanning technical capability, business models, and data control.</p>
+
+<hr/>
+
+<h2>主要玩家 / Key Players</h2>
+
+<h3>🔒 闭源 / Closed Source</h3>
+<p>| 模型 | 公司 | 特点 |</p>
+<p>|------|------|------|</p>
+<p>| GPT-4o / o3 | OpenAI | 多模态强，工具调用成熟 |</p>
+<p>| Claude 3.5 / Opus 4 | Anthropic | 长上下文，代码能力强，对齐严格 |</p>
+<p>| Gemini 2.5 Pro | Google | 集成 Google 生态，原生多模态 |</p>
+<p>| Grok 3 | xAI | 实时 X/Twitter 数据，推理特长 |</p>
+
+<h3>🔓 开源 / Open Source</h3>
+<p>| 模型 | 来源 | 特点 |</p>
+<p>|------|------|------|</p>
+<p>| Llama 3.x | Meta | 最广泛部署，社区生态最强 |</p>
+<p>| Mistral / Mixtral | Mistral AI | 法国公司，MoE 架构，效率出众 |</p>
+<p>| Qwen 2.5 | Alibaba | 多语言（中文尤强），Apache 2.0 |</p>
+<p>| DeepSeek V3/R1 | DeepSeek | 训练成本极低，推理模型出众 |</p>
+<p>| Gemma 3 | Google | 小型高效，适合边缘部署 |</p>
+
+<hr/>
+
+<h2>核心对比 / Core Tradeoffs</h2>
+
+<pre><code>
+                    开源 Open Source          闭源 Closed Source
+                    ─────────────────────    ─────────────────────
+成本 Cost           自托管 = 硬件成本         按 token 计费，无前期成本
+                    Self-host = infra cost    Pay-per-token, no upfront
+
+数据隐私 Privacy    ✅ 数据不离本地            ⚠️ 数据发送给第三方
+                    Data stays on-prem        Data sent to vendor
+
+定制化 Fine-tuning  ✅ 完全可控，LoRA/QLoRA   ⚠️ 有限 (OpenAI ft API)
+                    Full control             Limited fine-tuning
+
+性能上限 SOTA       通常滞后 6-12 个月         ✅ 通常领先
+                    Usually lags 6-12 months  Usually ahead
+
+合规 Compliance    ✅ 适合金融/医疗等高合规     需要 BAA/DPA 协议
+                    Great for regulated      Need contracts
+
+运维负担 Ops        ⚠️ 需要 GPU 集群 + MLOps   ✅ 无需维护
+                    GPU cluster + MLOps      Zero ops burden
+</code></pre>
+
+<hr/>
+
+<h2>关键洞察 / Key Insights</h2>
+
+<h3>为什么开源在快速追赶？</h3>
+<p>1. <strong>Meta 的战略:</strong> 开源 Llama 削弱竞争对手的护城河（既然我不靠模型本身赚钱）</p>
+<p>2. <strong>中国公司发力:</strong> DeepSeek、Qwen 以极低成本达到闭源级别性能，重塑了&quot;需要多少算力&quot;的预期</p>
+<p>3. <strong>社区效应:</strong> Hugging Face 生态让微调、评测、部署成本急剧下降</p>
+
+<h3>为什么闭源仍有优势？</h3>
+<p>1. <strong>多模态先发:</strong> GPT-4o 的语音/视觉整合仍领先</p>
+<p>2. <strong>工具生态:</strong> OpenAI 的函数调用、Code Interpreter 成熟度高</p>
+<p>3. <strong>安全投入:</strong> Anthropic Constitutional AI，合规场景有保障</p>
+
+<hr/>
+
+<h2>实践决策框架 / Practical Decision Framework</h2>
+
+<pre><code>
+需要处理敏感数据？→ 开源（本地部署）
+Need sensitive data? → Open source (on-prem)
+
+需要最强多步推理？→ 闭源 (o3, Claude Opus)
+Need best multi-step reasoning? → Closed source
+
+预算有限，团队小？→ 闭源 API（无运维成本）
+Limited budget, small team? → Closed source API
+
+需要深度定制行业模型？→ 开源（微调 Llama/Qwen）
+Need industry fine-tuning? → Open source
+
+中文为主的应用？→ Qwen 2.5 / DeepSeek
+Chinese-primary app? → Qwen 2.5 / DeepSeek
+</code></pre>
+
+<hr/>
+
+<h2>可运行代码 / Runnable Code</h2>
+
+<pre><code>
+# pip install transformers torch huggingface_hub
+from transformers import pipeline
+
+# 本地运行开源模型 / Run open source model locally
+pipe = pipeline(
+    &quot;text-generation&quot;,
+    model=&quot;Qwen/Qwen2.5-0.5B-Instruct&quot;,  # ~1GB, runs on CPU
+    max_new_tokens=100,
+    device=-1  # CPU
+)
+
+response = pipe(&quot;Explain the difference between open and closed source LLMs in 2 sentences.&quot;)
+print(response[0][&quot;generated_text&quot;])
+
+# 对比：调用 OpenAI API / Compare: calling OpenAI API
+# pip install openai
+# from openai import OpenAI
+# client = OpenAI()
+# r = client.chat.completions.create(model=&quot;gpt-4o-mini&quot;, messages=[{&quot;role&quot;:&quot;user&quot;,&quot;content&quot;:&quot;...&quot;}])
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Hugging Face Open LLM Leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard)</p>
+<p>- [Lmsys Chatbot Arena](https://lmarena.ai/) — human preference rankings</p>
+<p>- [Meta Llama 3 blog](https://ai.meta.com/blog/meta-llama-3/)</p>
+<p>- [DeepSeek V3 Technical Report](https://arxiv.org/abs/2412.19437)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>开源 LLM 就像公开菜谱的餐厅：你可以自己做，可以改配方，但要自己买锅碗瓢盆。闭源就像外卖：方便、即开即用，但厨房里发生什么你不知道，而且每次都要付钱。</p>
+
+<p>Open source LLMs are like restaurants that share their recipes: you can cook yourself, modify the dish, but you need to buy your own kitchen. Closed source is like food delivery: convenient, ready to use, but you don&#x27;t know what happens in the kitchen, and you pay every time.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-16</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
