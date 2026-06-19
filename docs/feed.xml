@@ -5,8 +5,848 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 17 Jun 2026 15:10:03 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 19 Jun 2026 15:07:19 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-19</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-19</guid>
+      <pubDate>Fri, 19 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 / Review Day — Day 70</h2>
+
+<p>&gt; 📊 NeetCode: 58/150 · SysDesign: 57/40 · Behavioral: 57/40 · Frontend: 37/50 · AI: 28/30</p>
+<p>&gt; 🔥 4-day streak!</p>
+
+<p>今天是复习日！回顾过去4天的内容。</p>
+<p><em>Today is review day! Let&#x27;s revisit the past 4 days.</em></p>
+
+<p>回顾主题 / Topics covered (Days 66–69):</p>
+<p>- 🏗️ Web Search Autocomplete · Rate Limiter as a Service · Distributed Tracing · Secrets Management</p>
+<p>- 💻 Count Good Nodes · Validate BST · Kth Smallest in BST · Construct BT from Pre+Inorder</p>
+<p>- 🗣️ Raising concerns on direction · Individual vs team enablement · Quarterly goals · Advocating for juniors</p>
+<p>- 🐍 State Machine · Repository Pattern · Descriptors (@property) · Metaclasses</p>
+<p>- 🤖 AI in Production · Open Source vs Closed LLMs</p>
+
+<hr/>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+
+<p><strong>Q1: [🏗️ System Design]</strong> 在设计分布式追踪系统 (Jaeger/Zipkin) 时，Trace ID 是如何在服务之间传播的？它解决了什么核心问题？</p>
+
+<p><em>When designing a distributed tracing system like Jaeger or Zipkin, how is the Trace ID propagated between services? What core problem does it solve?</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>Trace ID 通过 HTTP header（如 <code>X-B3-TraceId</code>、W3C <code>traceparent</code>）或 gRPC metadata 在服务之间传递——每个服务调用下游时必须将其带入请求头。它解决的核心问题是<strong>分布式系统的可观测性</strong>：在微服务架构中，一个请求可能跨越十几个服务，单看日志无法判断哪里慢、哪里出错。Trace ID 将所有 Span 串联成一棵完整的调用树，让你能一眼看出延迟在哪个服务中产生。</p>
+
+<p><em>The Trace ID is propagated via HTTP headers (e.g., <code>X-B3-TraceId</code>, W3C <code>traceparent</code>) or gRPC metadata — each service must forward it when calling downstream services. This solves the core observability problem in distributed systems: a single user request may traverse a dozen services, and logs alone can&#x27;t tell you where latency or failures occurred. The Trace ID stitches all Spans into a complete call tree, making bottlenecks immediately visible.</em></p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [💻 Algorithms]</strong> 从前序遍历 (Preorder) 和中序遍历 (Inorder) 重建二叉树时，关键洞察是什么？时间复杂度如何？</p>
+
+<p><em>When constructing a binary tree from Preorder and Inorder traversals, what is the key insight? What is the time complexity?</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>关键洞察有两点：<strong>① 前序遍历的第一个元素永远是当前子树的根节点；② 在中序遍历中找到该根节点，其左边的元素都属于左子树，右边属于右子树</strong>。用 HashMap 预存中序遍历的值→下标映射可将查找根节点的操作从 O(n) 降至 O(1)，整体时间复杂度 O(n)，空间复杂度 O(n)（HashMap + 递归调用栈）。</p>
+
+<pre><code>
+def buildTree(preorder, inorder):
+    idx_map = {val: i for i, val in enumerate(inorder)}
+    def build(pre_l, pre_r, in_l, in_r):
+        if pre_l &gt; pre_r:
+            return None
+        root_val = preorder[pre_l]
+        root = TreeNode(root_val)
+        mid = idx_map[root_val]
+        left_size = mid - in_l
+        root.left = build(pre_l+1, pre_l+left_size, in_l, mid-1)
+        root.right = build(pre_l+left_size+1, pre_r, mid+1, in_r)
+        return root
+    return build(0, len(preorder)-1, 0, len(inorder)-1)
+</code></pre>
+
+<p><em>Two key insights: ① The first element of Preorder is always the root of the current subtree; ② Finding that root in Inorder splits the array into left and right subtrees. Pre-building a HashMap of value→index reduces each root lookup from O(n) to O(1), giving overall O(n) time and O(n) space (HashMap + call stack).</em></p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [🐍 Python Craft]</strong> Python 中的描述符 (Descriptor) 协议是什么？<code>@property</code> 是如何基于描述符实现的？什么时候应该直接写描述符而不是用 <code>@property</code>？</p>
+
+<p><em>What is Python&#x27;s Descriptor protocol? How does <code>@property</code> build on it? When should you write a raw descriptor instead of using <code>@property</code>?</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>描述符是实现了 <code>__get__</code>、<code>__set__</code>、<code>__delete__</code> 中至少一个方法的类。当你访问实例属性时，Python 会先检查类的 <code>__dict__</code> 中是否有描述符，若有则调用描述符的 <code>__get__</code> 而非直接返回值。<code>@property</code> 是 Python 内置的描述符工厂——它把一个普通函数包装成只读（<code>__get__</code>）或可读写（加上 <code>setter</code>）的描述符。</p>
+
+<p><strong>应该写原生描述符而非 <code>@property</code> 的场景：</strong></p>
+<p>- 同一验证逻辑需要复用到<strong>多个类的多个属性</strong>（@property 每次都要重写）</p>
+<p>- 需要元数据感知（如 ORM 字段：<code>name = CharField(max_length=100)</code>）</p>
+<p>- 构建框架级别的抽象（如 SQLAlchemy Column、Django Field）</p>
+
+<pre><code>
+class PositiveInt:
+    def __set_name__(self, owner, name):
+        self.name = name
+    def __get__(self, obj, objtype=None):
+        return obj.__dict__.get(self.name)
+    def __set__(self, obj, value):
+        if value &lt;= 0:
+            raise ValueError(f&quot;{self.name} must be positive&quot;)
+        obj.__dict__[self.name] = value
+
+class Product:
+    price = PositiveInt()   # reuse across any class
+    stock = PositiveInt()
+</code></pre>
+
+<p><em>A descriptor is any class implementing <code>__get__</code>, <code>__set__</code>, or <code>__delete__</code>. On attribute access, Python checks if the class <code>__dict__</code> holds a descriptor and calls <code>__get__</code> instead of returning the raw value. <code>@property</code> is simply Python&#x27;s built-in descriptor factory wrapping a function. Write a raw descriptor when: the same validation logic needs to be <strong>reused across many attributes or classes</strong>, you need ORM-style field metadata, or you&#x27;re building a framework abstraction (SQLAlchemy Column, Django Field).</em></p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。Spaced repetition builds lasting knowledge.</em></p>
+
+<p>📅 明天继续新内容！Tomorrow: Day 71, new content!</p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-06-18</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-18</guid>
+      <pubDate>Thu, 18 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 57</h2>
+<p><strong>主题 / Topic:</strong> Design a Secrets Management System (Vault)</p>
+<p><strong>日期 / Date:</strong> 2026-06-18</p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design</h2>
+
+<p><strong>Secrets Management System（密钥管理系统）— 像 HashiCorp Vault</strong></p>
+
+<hr/>
+
+<h3>场景 / Scenario</h3>
+
+<p>想象你在一家有 200 个微服务的公司工作。每个服务都需要数据库密码、API 密钥、TLS 证书……如果这些密钥硬编码在代码里，一旦泄露，后果不堪设想。你需要一个中心化的&quot;密钥银行&quot;。</p>
+
+<p>You work at a company with 200 microservices. Each needs DB passwords, API keys, TLS certs. Hardcoding secrets is a disaster waiting to happen. You need a centralized &quot;secrets bank.&quot;</p>
+
+<hr/>
+
+<h3>架构图 / Architecture</h3>
+
+<pre><code>
+        ┌─────────────────────────────────────────┐
+        │           Secrets Management System      │
+        └─────────────────────────────────────────┘
+                           │
+          ┌────────────────┼────────────────┐
+          │                │                │
+    ┌─────▼─────┐  ┌───────▼──────┐  ┌─────▼──────┐
+    │   Auth    │  │   Secrets    │  │   Policy   │
+    │  Service  │  │    Engine    │  │   Engine   │
+    │(JWT/Cert) │  │  (KV, PKI,  │  │  (ACL/    │
+    │           │  │  Database)  │  │  RBAC)    │
+    └─────┬─────┘  └───────┬──────┘  └─────┬──────┘
+          │                │                │
+          └────────────────┼────────────────┘
+                           │
+               ┌───────────▼──────────┐
+               │     Audit Log         │
+               │  (Immutable, append-  │
+               │   only, encrypted)    │
+               └──────────────────────┘
+                           │
+               ┌───────────▼──────────┐
+               │    Storage Backend    │
+               │ (Consul/etcd/Dynamo) │
+               └──────────────────────┘
+
+  Clients:
+  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+  │  Service A  │   │  CI/CD Job  │   │  Operator   │
+  │ (K8s SA)    │   │ (GitHub     │   │ (mTLS cert) │
+  │             │   │  Actions)   │   │             │
+  └─────────────┘   └─────────────┘   └─────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>核心组件 / Core Components</h3>
+
+<p><strong>1. Authentication Methods（认证方式）</strong></p>
+<p>- <strong>Kubernetes Auth:</strong> Pod 用 Service Account Token 认证 → 获取临时凭证</p>
+<p>- <strong>AppRole:</strong> CI/CD 流水线使用 role_id + secret_id 获取 token</p>
+<p>- <strong>AWS/GCP IAM:</strong> 云上服务用 instance identity 认证</p>
+<p>- <strong>mTLS 证书认证:</strong> 操作员使用客户端证书</p>
+
+<p><strong>2. Secrets Engines（密钥引擎）</strong></p>
+<p>- <strong>KV（Key-Value）:</strong> 静态密钥存储，支持版本化（v1 vs v2）</p>
+<p>- <strong>Dynamic Secrets:</strong> 按需生成数据库凭证，TTL 后自动吊销 ← 杀手级功能</p>
+<p>- <strong>PKI Engine:</strong> 自动颁发短期 TLS 证书（24h 有效）</p>
+<p>- <strong>Transit Engine:</strong> 加密即服务，应用不存明文，只存密文</p>
+
+<p><strong>3. Policy Engine（策略引擎）</strong></p>
+<pre><code>
+# Vault HCL policy
+path &quot;secret/data/db/*&quot; {
+  capabilities = [&quot;read&quot;]  # read-only for app
+}
+path &quot;secret/data/db/admin&quot; {
+  capabilities = [&quot;deny&quot;]  # override: block admin creds
+}
+</code></pre>
+
+<p><strong>4. Dynamic Secrets 工作流 / Dynamic Secrets Flow</strong></p>
+<pre><code>
+Service → Vault: &quot;我需要 PostgreSQL 凭证&quot;
+Vault → DB: CREATE ROLE app_xyz_1234 WITH PASSWORD &#x27;...&#x27; VALID UNTIL &#x27;...+1h&#x27;
+Vault → Service: {username: &quot;app_xyz_1234&quot;, password: &quot;...&quot;, ttl: 3600}
+[1小时后 / 1 hour later]
+Vault → DB: DROP ROLE app_xyz_1234  ← 自动清理
+</code></pre>
+
+<hr/>
+
+<h3>关键权衡 / Key Tradeoffs</h3>
+
+<p>| 方案 | 优点 | 缺点 |</p>
+<p>|------|------|------|</p>
+<p>| <strong>Dynamic Secrets</strong> | 泄露影响有限（TTL 短）| 需 DB 支持动态用户 |</p>
+<p>| <strong>Static Secrets + Rotation</strong> | 兼容性好 | 轮换期间有窗口期 |</p>
+<p>| <strong>Seal/Unseal（Shamir）</strong> | 高安全性，防单点 | 重启需手动解封，运维负担 |</p>
+<p>| <strong>Auto-unseal（KMS）</strong> | 自动运维 | 依赖云 KMS，费用增加 |</p>
+
+<p><strong>Seal/Unseal 机制：</strong></p>
+<p>Vault 启动时处于 Sealed 状态（完全加密）。需要 n-of-m Shamir Key Shares 才能解封。生产中通常配合 AWS KMS/GCP KMS 做 Auto-unseal。</p>
+
+<hr/>
+
+<h3>High Availability</h3>
+
+<pre><code>
+                  ┌─────────────┐
+    requests ────▶│  Load Balancer│
+                  └──────┬──────┘
+             ┌───────────┼───────────┐
+      ┌──────▼──┐  ┌──────▼──┐  ┌──────▼──┐
+      │ Vault 1 │  │ Vault 2 │  │ Vault 3 │
+      │ (active)│  │(standby)│  │(standby)│
+      └─────────┘  └─────────┘  └─────────┘
+             └───────────┼───────────┘
+                  ┌──────▼──────┐
+                  │   Consul /  │
+                  │   Raft HA   │
+                  └─────────────┘
+</code></pre>
+<p>- <strong>Raft 共识:</strong> Vault Enterprise 内置 Raft，无需 Consul</p>
+<p>- <strong>只有 Active 节点处理写请求，Standby 可处理读（PR 模式）</strong></p>
+
+<hr/>
+
+<h3>别踩这个坑 / Common Mistakes</h3>
+
+<p>❌ <strong>Token 不设 TTL</strong> — Token 泄露后永久有效，应设短 TTL + 自动续约</p>
+<p>❌ <strong>Root Token 常用</strong> — Root Token 只应用于初始化，然后吊销</p>
+<p>❌ <strong>密钥缓存过长</strong> — 应用缓存 Dynamic Secret 超过 TTL，导致认证失败</p>
+<p>❌ <strong>忽略 Audit Log</strong> — 合规系统必须开启 audit device，且做不可变存储</p>
+<p>❌ <strong>Vault 单点</strong> — 生产环境必须 HA，Vault 挂了 = 所有服务挂了</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [HashiCorp Vault Documentation](https://developer.hashicorp.com/vault/docs)</p>
+<p>- [Vault Architecture Deep Dive](https://developer.hashicorp.com/vault/docs/internals/architecture)</p>
+<p>- [Dynamic Secrets: Database Secrets Engine](https://developer.hashicorp.com/vault/docs/secrets/databases)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象你家有一个超级保险箱（Vault）。你不把钥匙直接给每个家庭成员，而是让他们去保险箱说&quot;我是小明，我要开车库&quot;。保险箱验证身份后，吐出一把<strong>临时钥匙</strong>，1小时后自动失效。如果临时钥匙丢了？没关系，它很快就过期了。这就是 Secrets Management。</p>
+
+<p>Imagine a super-safe at home (Vault). Instead of giving each family member permanent keys, they go to the safe and say &quot;I&#x27;m Xiaoming, I need the garage key.&quot; The safe verifies their identity and gives a <strong>temporary key</strong> that expires in 1 hour. Lost key? No big deal — it expires soon anyway. That&#x27;s secrets management.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 58</h2>
+<p><strong>主题 / Topic:</strong> #105 Construct Binary Tree from Preorder and Inorder (Medium)</p>
+<p><strong>日期 / Date:</strong> 2026-06-18</p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms</h2>
+
+<p>🧩 <strong>树遍历模式 (13/15)</strong> — building on the template from Day 56 (Invert Binary Tree)</p>
+
+<p>今天是树遍历 Block 的第 <strong>13/15</strong> 题。我们已经用 DFS 解决了从 Easy 到 Medium 的树问题，今天遇到一道真正考验&quot;理解遍历顺序&quot;的题目。</p>
+
+<hr/>
+
+<h3>🔗 链接 / Links</h3>
+
+<p>- 🟡 [LeetCode #105 — Construct Binary Tree from Preorder and Inorder Traversal](https://leetcode.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/)</p>
+<p>- 📹 [NeetCode 视频讲解](https://neetcode.io/problems/binary-tree-from-preorder-and-inorder-traversal)</p>
+
+<hr/>
+
+<h3>📖 问题理解 / Problem</h3>
+
+<p><strong>现实类比：</strong> 你有一本书的目录（前序遍历 = 父节点先出现）和索引（中序遍历 = 左→根→右）。这两份信息合在一起，能唯一还原整棵书的章节树。</p>
+
+<p>You have a book&#x27;s table of contents (preorder = parent appears first) and its index (inorder = left→root→right). Together they uniquely reconstruct the chapter hierarchy tree.</p>
+
+<p><strong>输入 / Input:</strong></p>
+<pre><code>
+preorder = [3, 9, 20, 15, 7]
+inorder  = [9, 3, 15, 20, 7]
+</code></pre>
+
+<p><strong>输出 / Output:</strong></p>
+<pre><code>
+    3
+   / \
+  9  20
+    /  \
+   15   7
+</code></pre>
+
+<p><strong>关键洞察 / Key Insight:</strong></p>
+<p>1. <strong>前序遍历的第一个元素 = 当前树的根</strong></p>
+<p>2. 在<strong>中序遍历</strong>中找到根的位置，左边 = 左子树，右边 = 右子树</p>
+<p>3. 递归重复以上步骤</p>
+
+<hr/>
+
+<h3>🧩 映射到模式 / Mapping to Pattern</h3>
+
+<p>这道题是树遍历模式的<strong>变体</strong>——不是遍历树，而是<strong>重建树</strong>。但核心递归结构一样：</p>
+
+<pre><code>
+def dfs(node):          →    def build(pre_start, pre_end, in_start, in_end):
+    if not node: return BASE_CASE   →    if pre_start &gt; pre_end: return None
+    left = dfs(node.left)           →    root = TreeNode(preorder[pre_start])
+    right = dfs(node.right)         →    in_root = inorder_map[root.val]
+    return COMBINE(...)             →    left_size = in_root - in_start
+                                         root.left = build(...)
+                                         root.right = build(...)
+                                         return root
+</code></pre>
+
+<p><strong>与之前题目的不同点：</strong></p>
+<p>- 普通 DFS（第1-12题）：从根出发，向下递归</p>
+<p>- 本题：从&quot;遍历数组&quot;出发，<strong>重建</strong>根再向下递归</p>
+<p>- 关键额外技巧：用 <strong>HashMap</strong> 预存中序下标，O(1) 查找</p>
+
+<hr/>
+
+<h3>💡 Python 解题 / Solution</h3>
+
+<pre><code>
+from typing import Optional, List
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def buildTree(preorder: List[int], inorder: List[int]) -&gt; Optional[TreeNode]:
+    # O(1) lookup: value -&gt; inorder index
+    inorder_map = {val: idx for idx, val in enumerate(inorder)}
+
+    def build(pre_start, pre_end, in_start, in_end):
+        # Base case: empty range
+        if pre_start &gt; pre_end:
+            return None
+
+        # Preorder[pre_start] is ALWAYS the current root
+        root_val = preorder[pre_start]
+        root = TreeNode(root_val)
+
+        # Find root in inorder → splits left/right subtree
+        in_root = inorder_map[root_val]
+        left_size = in_root - in_start  # how many nodes in left subtree
+
+        # Recurse: left subtree
+        root.left = build(
+            pre_start + 1,              # skip root in preorder
+            pre_start + left_size,      # left subtree takes left_size nodes
+            in_start,
+            in_root - 1                 # left of root in inorder
+        )
+
+        # Recurse: right subtree
+        root.right = build(
+            pre_start + left_size + 1,  # right subtree starts after left
+            pre_end,
+            in_root + 1,                # right of root in inorder
+            in_end
+        )
+
+        return root
+
+    return build(0, len(preorder) - 1, 0, len(inorder) - 1)
+</code></pre>
+
+<hr/>
+
+<h3>🔍 执行追踪 / Trace</h3>
+
+<pre><code>
+preorder = [3, 9, 20, 15, 7]
+inorder  = [9, 3, 15, 20, 7]
+inorder_map = {9:0, 3:1, 15:2, 20:3, 7:4}
+
+build(0, 4, 0, 4):
+  root = 3, in_root = 1, left_size = 1
+  left  = build(1, 1, 0, 0)  → root=9, no children → TreeNode(9)
+  right = build(2, 4, 2, 4):
+    root = 20, in_root = 3, left_size = 1
+    left  = build(3, 3, 2, 2) → root=15, no children → TreeNode(15)
+    right = build(4, 4, 4, 4) → root=7,  no children → TreeNode(7)
+    → TreeNode(20, 15, 7)
+  → TreeNode(3, 9, TreeNode(20, 15, 7))
+</code></pre>
+
+<hr/>
+
+<h3>⏱️ 复杂度 / Complexity</h3>
+
+<p>- <strong>时间 Time:</strong> O(n) — 每个节点访问一次，HashMap 查找 O(1)</p>
+<p>- <strong>空间 Space:</strong> O(n) — HashMap + 递归栈 O(h)，最坏 O(n)</p>
+
+<hr/>
+
+<h3>举一反三 / Pattern Connections</h3>
+
+<p><strong>同 Block 的后续挑战（14/15, 15/15）：</strong></p>
+
+<p>| 题目 | 难点 | 与本题的联系 |</p>
+<p>|------|------|-------------|</p>
+<p>| #124 Binary Tree Maximum Path Sum (Hard) | 返回值语义复杂（全局变量技巧）| 同样是递归返回 left/right，但需要&quot;全局最大&quot;外部状态 |</p>
+<p>| #297 Serialize and Deserialize BT (Hard) | 编码+解码，本质是 DFS 重建 | 直接复用本题思路！序列化=前序遍历，反序列化=重建 |</p>
+
+<p><strong>一句话总结：</strong> 本题是 #297 的前置知识——学会&quot;从遍历序列重建树&quot;，Serialize/Deserialize 就迎刃而解。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [LeetCode #105 Official Solution](https://leetcode.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/editorial/)</p>
+<p>- [NeetCode Explanation](https://neetcode.io/problems/binary-tree-from-preorder-and-inorder-traversal)</p>
+<p>- [Visualizing Tree Reconstruction](https://visualgo.net/en/bst)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>前序遍历就像你介绍家庭成员的顺序：&quot;我是爸爸，我有左孩子小明，小明有……&quot;</p>
+<p>中序遍历就像家庭合照的站位：左边的是左子树，中间是根，右边是右子树。</p>
+<p>有了这两个信息，就能唯一确定谁是谁的爸爸！</p>
+
+<p>Preorder = introducing family members: &quot;I&#x27;m Dad, my left child is Xiaoming...&quot;</p>
+<p>Inorder = family photo positions: left group = left subtree, middle = root, right group = right subtree.</p>
+<p>With both, you can always figure out who&#x27;s whose parent!</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 57</h2>
+<p><strong>主题 / Topic:</strong> Advocating for a Junior Engineer&#x27;s Idea Against Pushback</p>
+<p><strong>类别 / Category:</strong> Leadership</p>
+<p><strong>日期 / Date:</strong> 2026-06-18</p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills</h2>
+
+<p><strong>问题 / Question:</strong> Describe a time you advocated for a junior engineer&#x27;s idea against pushback.</p>
+
+<hr/>
+
+<h3>为什么这个问题重要 / Why This Matters</h3>
+
+<p>这道题考察的不只是&quot;你有没有帮过别人&quot;，而是：</p>
+<p>1. <strong>包容性领导力</strong>：你能不能让低话语权的人的好想法被听见？</p>
+<p>2. <strong>技术判断力</strong>：你能区分&quot;这个想法好但提议者资历浅&quot;和&quot;这个想法本身不好&quot;吗？</p>
+<p>3. <strong>心理安全感</strong>：你的团队成员知道好想法不会因为级别而被忽视吗？</p>
+
+<p>This tests more than &quot;did you help someone.&quot; It tests:</p>
+<p>1. <strong>Inclusive leadership</strong>: Can you amplify good ideas from people with less voice?</p>
+<p>2. <strong>Technical judgment</strong>: Can you distinguish &quot;good idea from junior person&quot; vs &quot;bad idea&quot;?</p>
+<p>3. <strong>Psychological safety</strong>: Do team members know good ideas won&#x27;t die by seniority?</p>
+
+<hr/>
+
+<h3>STAR 框架 / STAR Breakdown</h3>
+
+<p><strong>Situation（情境）:</strong></p>
+<p>设定一个具体场景——代码评审、设计讨论、团队会议。明确：谁提出了什么，谁在反对，为什么反对。</p>
+
+<p>&quot;我们的团队正在重构数据管道，一位刚入职3个月的工程师小李提议用 event sourcing 替代直接更新数据库。几位高级工程师立刻说&#x27;太复杂了，不值得&#x27;。&quot;</p>
+
+<p><strong>Task（任务）:</strong></p>
+<p>你认为这个想法值得认真评估，你的职责是确保决策基于技术优劣，而非提议者的级别。</p>
+
+<p><strong>Action（行动）:</strong></p>
+<p>- <strong>先私下确认想法</strong>：找小李深入聊，让他把完整方案讲给你听。评估他的思考深度。</p>
+<p>- <strong>技术分析</strong>：自己做 due diligence——event sourcing 的 tradeoff 你要搞清楚。</p>
+<p>- <strong>重新框架提案</strong>：在下次会议中，说&quot;小李提的方向让我想深入研究了一下，这里是详细分析……&quot; — 把想法和技术评估一起呈现。</p>
+<p>- <strong>给小李空间</strong>：邀请他来 present，提前帮他准备反驳高频问题的素材。</p>
+<p>- <strong>处理反对声音</strong>：直接回应&quot;这太复杂&quot;——&quot;我们来具体量化&#x27;复杂&#x27;：实现多少周？运维负担是什么？vs 当前方案的历史数据痛点……&quot;</p>
+
+<p><strong>Result（结果）:</strong></p>
+<p>团队最终采纳了改进版的提案。小李的方案为审计能力节省了后来3个月的重工。更重要的是，小李在团队的信心大幅提升，后来独立负责了整个数据层 review。</p>
+
+<hr/>
+
+<h3>❌ 差的回答 vs ✅ 好的回答</h3>
+
+<p>❌ <strong>Bad:</strong></p>
+<p>&quot;我帮他说话了，告诉大家应该听听小李的想法，因为他很聪明。&quot;</p>
+<p>→ 太感性，没有技术依据，听起来像护着朋友。</p>
+
+<p>✅ <strong>Good:</strong></p>
+<p>&quot;我先独立验证了这个想法的技术可行性，做了 POC，量化了 tradeoff，然后以数据为基础重新呈现提案，同时创造条件让小李自己来 present——因为他应该得到这份认可。&quot;</p>
+<p>→ 技术严谨 + 行动具体 + 真正赋能对方。</p>
+
+<hr/>
+
+<h3>Senior/Staff 进阶技巧</h3>
+
+<p><strong>你在系统性地推动还是一次性救场？</strong></p>
+<p>好的答案不只是&quot;这次帮了他&quot;，而是：&quot;我之后开始改变团队 review 文化——评论要针对想法本身，不针对提议者的级别。我们引入了匿名 RFC 初稿机制……&quot;</p>
+
+<p><strong>&quot;倡导&quot;的层次：</strong></p>
+<p>- Level 1: 私下鼓励他再提一次</p>
+<p>- Level 2: 公开支持他的想法</p>
+<p>- Level 3: 帮他完善技术论证后共同呈现</p>
+<p>- Level 4: <strong>改变团队文化，让这种倡导不再需要</strong>（Staff/Principal 答案）</p>
+
+<hr/>
+
+<h3>关键要点 / Key Takeaways</h3>
+
+<p>- 倡导 ≠ 偏袒 — 前提是你认为这个想法<strong>技术上有价值</strong></p>
+<p>- 最强的倡导是&quot;让事实说话&quot;，而不是&quot;相信他&quot;</p>
+<p>- 真正赋能是让对方得到应有的<strong>信用和成长</strong>，不是你替他说话</p>
+<p>- Staff 工程师在系统层面改变 = 建立文化，而非单次干预</p>
+
+<p>Advocacy ≠ favoritism — it only applies when the idea has technical merit.</p>
+<p>The strongest advocacy is &quot;let facts speak&quot; not &quot;trust him.&quot;</p>
+<p>Real empowerment = the junior gets the credit and growth, not you speaking for them.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [Psychological Safety — Google re:Work](https://rework.withgoogle.com/print/guides/5721312655835136/)</p>
+<p>- [Staff Engineer: Leadership Without Formal Authority](https://staffeng.com/guides/work-on-what-matters)</p>
+<p>- [Amplifying Quiet Voices in Tech Meetings](https://www.askamanager.org/2019/03/how-to-amplify-quiet-voices-in-meetings.html)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象班上最害羞的同学提出了一个好主意，但大家都没认真听。你不是替他说&quot;相信他嘛&quot;，而是自己先研究他的想法，确认它真的好，然后在全班说&quot;我深入研究了这个方案，数据显示……&quot;再邀请他来讲细节。这才是真正的倡导——用事实替好想法撑腰。</p>
+
+<p>Imagine the shyest classmate had a great idea nobody listened to. You don&#x27;t just say &quot;trust him.&quot; You research the idea yourself, confirm it&#x27;s good, then tell the class &quot;I analyzed this in depth, here&#x27;s the data...&quot; then invite them to present the details. That&#x27;s real advocacy — backing a good idea with facts.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🎨 Python Craft — Day 20</h2>
+<p><strong>主题 / Topic:</strong> Metaclasses — When and Why (ORM Example)</p>
+<p><strong>类别 / Category:</strong> Python Internals</p>
+<p><strong>日期 / Date:</strong> 2026-06-18</p>
+
+<hr/>
+
+<h2>🎨 Python Craft</h2>
+
+<p><strong>Metaclasses（元类）— 控制&quot;类&quot;本身的创建</strong></p>
+
+<hr/>
+
+<h3>🔥 真实场景 / Real Scenario</h3>
+
+<p>你在构建一个 mini ORM（像 Django Models 那样）。你希望用户写：</p>
+
+<pre><code>
+class User(Model):
+    name = CharField(max_length=100)
+    age  = IntField()
+</code></pre>
+
+<p>然后 <code>User.objects.filter(name=&quot;Alice&quot;)</code> 就能自动生成 SQL。</p>
+<p>问题是：<code>name</code> 和 <code>age</code> 在类定义时只是<strong>类属性</strong>，ORM 怎么知道它们是数据库字段？</p>
+
+<p>You&#x27;re building a mini ORM (like Django Models). The user writes a class with field descriptors. How does the ORM auto-detect which attributes are fields vs regular class attributes?</p>
+
+<p><strong>答案：Metaclass。</strong> 元类在类被<strong>创建时</strong>拦截，可以检查、修改、注册任何类属性。</p>
+
+<hr/>
+
+<h3>🤔 先理解：类也是对象 / Classes Are Objects</h3>
+
+<pre><code>
+# 普通对象的创建
+obj = MyClass()   # MyClass() 调用 MyClass.__init__
+
+# 类本身的创建（你平时看不见的）
+MyClass = type(&#x27;MyClass&#x27;, (object,), {&#x27;method&#x27;: ...})
+#             ^^^名字      ^^^父类       ^^^属性字典
+</code></pre>
+
+<p><code>type</code> 就是所有类的默认<strong>元类</strong>。自定义 metaclass = 自定义&quot;类的工厂&quot;。</p>
+
+<hr/>
+
+<h3>💻 Mini ORM 实现 / Implementation</h3>
+
+<pre><code>
+# Field descriptors (simplified)
+class Field:
+    def __init__(self, column_type):
+        self.column_type = column_type
+        self.name = None  # set by metaclass
+
+class CharField(Field):
+    def __init__(self, max_length=255):
+        super().__init__(&#x27;VARCHAR&#x27;)
+        self.max_length = max_length
+
+class IntField(Field):
+    def __init__(self):
+        super().__init__(&#x27;INTEGER&#x27;)
+
+
+# THE METACLASS — intercepts class creation
+class ModelMeta(type):
+    def __new__(mcs, name, bases, namespace):
+        # Collect all Field instances from class body
+        fields = {}
+        for attr_name, attr_value in namespace.items():
+            if isinstance(attr_value, Field):
+                attr_value.name = attr_name  # inject field name
+                fields[attr_name] = attr_value
+
+        # Inject metadata onto the class
+        namespace[&#x27;_fields&#x27;] = fields
+        namespace[&#x27;_table&#x27;] = name.lower() + &#x27;s&#x27;  # User → users
+
+        return super().__new__(mcs, name, bases, namespace)
+
+
+# Base Model uses the metaclass
+class Model(metaclass=ModelMeta):
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+
+    @classmethod
+    def create_table_sql(cls):
+        cols = []
+        for name, field in cls._fields.items():
+            cols.append(f&quot;  {name} {field.column_type}&quot;)
+        return f&quot;CREATE TABLE {cls._table} (\n&quot; + &quot;,\n&quot;.join(cols) + &quot;\n);&quot;
+
+    def insert_sql(self):
+        fields = list(self._fields.keys())
+        values = [repr(getattr(self, f, None)) for f in fields]
+        return (f&quot;INSERT INTO {self._table} ({&#x27;, &#x27;.join(fields)}) &quot;
+                f&quot;VALUES ({&#x27;, &#x27;.join(values)});&quot;)
+
+
+# User just declares fields — metaclass does the rest
+class User(Model):
+    name = CharField(max_length=100)
+    age  = IntField()
+
+
+# Usage
+print(User._fields)         # {&#x27;name&#x27;: CharField, &#x27;age&#x27;: IntField}
+print(User._table)          # &#x27;users&#x27;
+print(User.create_table_sql())
+# CREATE TABLE users (
+#   name VARCHAR,
+#   age INTEGER
+# );
+
+u = User(name=&quot;Alice&quot;, age=30)
+print(u.insert_sql())
+# INSERT INTO users (name, age) VALUES (&#x27;Alice&#x27;, 30);
+</code></pre>
+
+<hr/>
+
+<h3>猜猜输出什么 / Quiz</h3>
+
+<pre><code>
+class Meta(type):
+    def __new__(mcs, name, bases, ns):
+        ns[&#x27;_created_by&#x27;] = &#x27;metaclass&#x27;
+        return super().__new__(mcs, name, bases, ns)
+
+class Foo(metaclass=Meta):
+    pass
+
+print(Foo._created_by)
+print(type(Foo))
+</code></pre>
+
+<p>A) <code>&#x27;metaclass&#x27;</code> 和 <code>&lt;class &#x27;__main__.Meta&#x27;&gt;</code></p>
+<p>B) <code>AttributeError</code> — Foo 没有 <code>_created_by</code></p>
+<p>C) <code>&#x27;metaclass&#x27;</code> 和 <code>&lt;class &#x27;type&#x27;&gt;</code></p>
+<p>D) <code>None</code> 和 <code>&lt;class &#x27;type&#x27;&gt;</code></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+<p><strong>A</strong> — 元类的 <code>__new__</code> 在类创建时运行，自动注入 <code>_created_by</code>。<code>type(Foo)</code> 返回的是元类本身 <code>Meta</code>，不是 <code>type</code>。</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>❌ 误用 vs ✅ 正确用法</h3>
+
+<p>❌ <strong>Bad:</strong> 什么都用 metaclass</p>
+<pre><code>
+# DON&#x27;T: 用 metaclass 只是加一个方法
+class MyMeta(type):
+    def __new__(mcs, name, bases, ns):
+        ns[&#x27;greet&#x27;] = lambda self: &quot;hello&quot;
+        return super().__new__(mcs, name, bases, ns)
+</code></pre>
+
+<p>✅ <strong>Good:</strong> 用 <code>__init_subclass__</code> 或 class decorator 替代简单场景</p>
+<pre><code>
+# BETTER for simple injection:
+class Base:
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.greet = lambda self: &quot;hello&quot;
+
+# OR: use a decorator
+def add_greet(cls):
+    cls.greet = lambda self: &quot;hello&quot;
+    return cls
+</code></pre>
+
+<p><strong>何时真正需要 metaclass / When You Actually Need It:</strong></p>
+<p>- 框架级别的类注册（Django Models, SQLAlchemy）</p>
+<p>- 需要在类创建时（非实例化时）修改类结构</p>
+<p>- 跨继承链的 API 强制约束（如 ABC）</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [Python Data Model — Metaclasses](https://docs.python.org/3/reference/datamodel.html#metaclasses)</p>
+<p>- [Understanding Python Metaclasses](https://realpython.com/python-metaclasses/)</p>
+<p>- [Django ORM Source — ModelBase metaclass](https://github.com/django/django/blob/main/django/db/models/base.py)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>普通类是&quot;蓝图&quot;，用来造对象。元类是&quot;造蓝图的工厂&quot;——它控制蓝图本身是怎么被创建的。Django 的 <code>Model</code> 就用了元类：当你写 <code>class User(Model): name = CharField()</code> 时，元类自动扫描所有字段、创建数据库映射，你什么都不用手动做。</p>
+
+<p>A regular class is a &quot;blueprint&quot; for making objects. A metaclass is a &quot;factory for blueprints&quot; — it controls how the blueprint itself is created. Django&#x27;s <code>Model</code> uses a metaclass: when you write <code>class User(Model): name = CharField()</code>, the metaclass auto-scans all fields and creates DB mappings. You do nothing manually.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 69</h2>
+<p><strong>模式 / Mode:</strong> NEWS</p>
+<p><strong>日期 / Date:</strong> 2026-06-18</p>
+
+<hr/>
+
+<h2>🤖 AI 新闻速递 / AI News Roundup</h2>
+
+<p><em>Sources fetched from The Verge AI section on 2026-06-18</em></p>
+
+<hr/>
+
+<h3>📰 Story 1: Gemini 联合负责人 Noam Shazeer 加入 OpenAI</h3>
+
+<p><strong>Gemini Co-Lead Noam Shazeer Joins OpenAI</strong></p>
+
+<p>据 Reuters 报道，Noam Shazeer——Google Gemini 的联合负责人——已确认加入 OpenAI。Shazeer 在 Google 工作了 20 年，2021 年联合创立了 Character.AI，随后 Google 据报道斥资 $2.7 billion 将他和一批研究员&quot;买&quot;回来，并于 2024 年重归 Google。此次他再度跳槽至 OpenAI，引发业界对 Google AI 人才流失的广泛关注。</p>
+
+<p>According to Reuters, Noam Shazeer — Gemini co-lead — has joined OpenAI. Shazeer spent 20 years at Google, co-founded Character.AI in 2021, and reportedly returned to Google when it paid ~$2.7B to acquire him and his team in 2024. This second departure to OpenAI raises questions about Google&#x27;s AI talent retention.</p>
+
+<p>📌 <strong>Source:</strong> [The Verge — Gemini co-lead joins OpenAI](https://www.theverge.com/ai-artificial-intelligence) | [Reuters](https://www.reuters.com/technology/googles-gemini-co-lead-noam-shazeer-join-openai-2026-06-18/)</p>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<p>Shazeer 是 Transformer 架构的原始作者之一（2017 年那篇&quot;Attention Is All You Need&quot;）。他从 Gemini 跳到 OpenAI，象征着顶尖 AI 研究人才的争夺战已经到了白热化阶段。</p>
+
+<p>Shazeer is one of the original authors of the Transformer architecture (&quot;Attention Is All You Need,&quot; 2017). His move from Gemini to OpenAI signals the talent war for top AI researchers is at a fever pitch.</p>
+
+<hr/>
+
+<h3>📰 Story 2: Anthropic Fable / Mythos 出口管制风波持续</h3>
+
+<p><strong>Anthropic&#x27;s Mythos Drama Continues with CISA Access</strong></p>
+
+<p>Anthropic 的网络安全专用模型 Mythos 持续成为争议焦点。据 Nextgov/FCW 报道，美国网络安全和基础设施安全局（CISA）上周才获得 Mythos Preview 的访问权限，而此时外界关注的焦点已转向 Trump 政府对 Fable 5（Mythos 公开版）的出口管制争议。</p>
+
+<p>Anthropic&#x27;s cybersecurity-focused model Mythos has continued to generate controversy. Per Nextgov/FCW, CISA only gained access to Mythos Preview last week — late to the party as the public debate has shifted to the Trump administration&#x27;s block of Fable 5 (the safeguarded public version) over export control concerns.</p>
+
+<p>📌 <strong>Source:</strong> [The Verge — Anthropic Mythos/Fable coverage](https://www.theverge.com/ai-artificial-intelligence/950412/anthropic-trump-adminstration-claude-mythos-fable-5-export-controls)</p>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<p>AI 出口管制正成为地缘政治博弈的新战场。政府能否及时访问关键 AI 安全工具，直接影响国家网络安全能力。这也暗示 AI 公司与政府之间的合规摩擦将持续升级。</p>
+
+<p>AI export controls are becoming a new geopolitical battleground. Government timely access to critical AI security tools directly affects national cybersecurity capabilities. It signals growing compliance friction between AI companies and regulators.</p>
+
+<hr/>
+
+<h3>📰 Story 3: Claude Design 推出直接编辑器与 Adobe/Canva 导出</h3>
+
+<p><strong>Claude Design Gets Direct Editor + Adobe/Canva Export</strong></p>
+
+<p>Anthropic 的 AI 设计工具 Claude Design 新增了直接操作编辑器——用户可以拖拽、调整大小、对齐元素。同时支持导出到 Adobe 和 Canva，并可与 Claude Code 无缝联动：从 Design 直接交付软件布局给 Claude Code，无需截图或重建。</p>
+
+<p>Anthropic&#x27;s AI design chatbot Claude Design added a direct drag/resize/align editor, expanded export options to Adobe and Canva, and introduced Claude Code integration: design layouts can be handed directly to Claude Code, which picks up &quot;exactly where you left off, without a screenshot or rebuild.&quot;</p>
+
+<p>📌 <strong>Source:</strong> [The Verge — Claude Design update](https://www.theverge.com/ai-artificial-intelligence) | [Anthropic Blog](https://claude.com/blog/claude-design-stays-on-brand-for-daily-work)</p>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<p>AI 工具链正在快速整合——从设计到代码的工作流开始无缝打通。这是 Anthropic 在设计工具市场挑战 Figma + Canva 的明确信号。对前端工程师而言，AI 辅助设计与代码的边界正在快速模糊。</p>
+
+<p>AI toolchains are rapidly converging — the design-to-code workflow is becoming seamless. This is Anthropic&#x27;s clear signal to challenge Figma + Canva in the design tools market. For frontend engineers, the line between AI-assisted design and code is blurring fast.</p>
+
+<hr/>
+
+<h3>🔍 本周主题 / This Week&#x27;s Theme</h3>
+
+<p><strong>人才战 × 政策博弈 × 工具整合</strong></p>
+
+<p>这周的 AI 新闻折射出三个宏观趋势：</p>
+<p>1. <strong>顶尖人才争夺战</strong>（Shazeer Google→OpenAI）：AI 已经是赢者通吃的人才市场</p>
+<p>2. <strong>AI 监管博弈</strong>（Mythos/Fable 出口管制）：政府介入 AI 部署的速度跟不上技术发展</p>
+<p>3. <strong>AI 工具链融合</strong>（Claude Design + Code）：单点 AI 工具正让位于端到端 AI 工作流</p>
+
+<p>Three macro trends this week:</p>
+<p>1. <strong>Talent wars</strong> (Shazeer Google→OpenAI): AI is a winner-take-all talent market</p>
+<p>2. <strong>Regulatory friction</strong> (Mythos/Fable export controls): Government can&#x27;t keep pace with AI deployment</p>
+<p>3. <strong>Toolchain convergence</strong> (Claude Design + Code): Point AI tools giving way to end-to-end AI workflows</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [The Verge AI Section](https://www.theverge.com/ai-artificial-intelligence) <em>(fetched 2026-06-18)</em></p>
+<p>- [Reuters: Noam Shazeer joins OpenAI](https://www.reuters.com/technology/googles-gemini-co-lead-noam-shazeer-join-openai-2026-06-18/)</p>
+<p>- [Anthropic: Claude Design update blog](https://claude.com/blog/claude-design-stays-on-brand-for-daily-work)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>AI 圈这周有点热闹：Google 培养的&quot;大神&quot;又跳槽去 OpenAI 了；美国政府想用 Anthropic 的安全 AI 工具，结果卡在了政策审批里；Anthropic 的设计工具现在能和代码工具直接&quot;对话&quot;——就像设计图纸能自动变成代码。</p>
+
+<p>AI world was buzzing this week: a Google-trained superstar jumped ship to OpenAI; the US government wanted to use Anthropic&#x27;s safety AI tool but got stuck in policy red tape; and Anthropic&#x27;s design tool can now &quot;talk directly&quot; to its code tool — like blueprints auto-converting to code.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-17</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
