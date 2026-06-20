@@ -5,8 +5,462 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 19 Jun 2026 15:07:19 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 20 Jun 2026 15:37:57 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-20</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-20</guid>
+      <pubDate>Sat, 20 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Binary Tree Maximum Path Sum (15 min read)</strong></p>
+<p>📊 NeetCode: 58/150 · SysDesign: 57/40 · Behavioral: 57/40 · Frontend: 37/50 · AI: 28/30</p>
+<p>🔥 Day 71 — Expert Phase</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong> 二叉树最大路径和是 LeetCode 上最经典的困难题之一，也是面试高频题。它难在哪里？不是数据结构复杂，而是需要在同一个 DFS 递归里同时维护两种不同语义的值：</p>
+<p>1. <strong>向上返回给父节点的值</strong>（只能选一条分支）</p>
+<p>2. <strong>本地最优解</strong>（可以跨越当前节点，同时利用左右两条分支）</p>
+
+<p>这种&quot;局部观察 vs 全局维护&quot;的模式在很多树问题里都会出现，掌握它能让你在面试中举一反三。</p>
+
+<p><strong>English:</strong> Binary Tree Maximum Path Sum is one of LeetCode&#x27;s most iconic Hard problems. The difficulty isn&#x27;t the data structure — it&#x27;s managing two semantically different values inside a single DFS pass:</p>
+<p>1. <strong>What to return to the parent</strong> (only one branch allowed — otherwise you&#x27;d create a cycle)</p>
+<p>2. <strong>The local best candidate</strong> (the path can arch through the current node using both left + right branches)</p>
+
+<p>This &quot;local candidate vs. global tracker&quot; pattern appears repeatedly in tree problems. Mastering it unlocks a whole class of similar challenges.</p>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/binary-tree-maximum-path-sum/</p>
+<p>📹 NeetCode: https://www.youtube.com/watch?v=Hr5cWUld4vU</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>什么是路径？/ What is a &quot;path&quot;?</h3>
+
+<p><strong>中文：</strong> 在这道题里，&quot;路径&quot;的定义很重要：</p>
+<p>- 路径是树中任意一组节点的序列，序列中每对相邻节点之间有边相连</p>
+<p>- <strong>路径不需要经过根节点</strong></p>
+<p>- 每个节点最多出现一次</p>
+<p>- 路径可以只包含单个节点</p>
+
+<p>关键约束：路径是一条连续的线，不能分叉。一旦你选择了左子树的路径，就不能再往右子树延伸后&quot;折回&quot;。</p>
+
+<p><strong>English:</strong> The definition of &quot;path&quot; here is crucial:</p>
+<p>- A path is any sequence of nodes where each adjacent pair is connected by an edge</p>
+<p>- <strong>The path does not need to pass through the root</strong></p>
+<p>- Each node appears at most once</p>
+<p>- A path can consist of just a single node</p>
+
+<p>Key constraint: a path is a continuous line — no forking. Once you go left, you can&#x27;t also go right and come back.</p>
+
+<hr/>
+
+<h3>两种视角 / Two Perspectives</h3>
+
+<p><strong>中文：</strong> 解题的核心洞察是：对同一个节点，我们需要用两种视角来看：</p>
+
+<p><strong>视角 1 — 作为子树根节点（局部最优）：</strong></p>
+<p>当前节点可以&quot;撑开&quot;成一个拱形路径：<code>左分支 → 当前节点 → 右分支</code>。</p>
+<p>这个拱形路径的和 = <code>left_gain + node.val + right_gain</code>。</p>
+<p>但这条路径无法再向上延伸（因为它已经分叉了），所以它只用于更新全局最大值。</p>
+
+<p><strong>视角 2 — 作为父节点的一段延伸（向上贡献）：</strong></p>
+<p>当前节点能贡献给父节点的最大值 = <code>node.val + max(left_gain, right_gain, 0)</code>。</p>
+<p>只能选左或右一条分支（不能同时选），且如果两条分支都是负的，贡献为 0（不如不选）。</p>
+
+<p><strong>English:</strong> The core insight is that every node plays two roles simultaneously:</p>
+
+<p><strong>Role 1 — Local arch candidate:</strong></p>
+<p>The current node can &quot;arch&quot; through both children: <code>left_gain + node.val + right_gain</code>.</p>
+<p>This arch can&#x27;t extend further upward (it forks), so it&#x27;s only used to update the global max.</p>
+
+<p><strong>Role 2 — Upward contributor:</strong></p>
+<p>The max gain the current node can contribute to its parent = <code>node.val + max(left_gain, right_gain, 0)</code>.</p>
+<p>Must pick only one branch (left or right), and if both are negative, contribute 0 (better not to extend).</p>
+
+<hr/>
+
+<h3>为什么需要全局变量？/ Why a global variable?</h3>
+
+<p><strong>中文：</strong> 因为最优路径可能不经过树的根节点。如果只看递归的返回值，我们可能会错过那些&quot;拱形&quot;路径（选了左右两条分支后就无法再向上返回了）。全局变量 <code>max_sum</code> 在每个节点都被更新一次，保证我们捕获了所有可能的路径。</p>
+
+<p><strong>English:</strong> Because the optimal path might exist deep in the subtree without ever touching the root. If we only look at return values, we&#x27;d miss &quot;arch&quot; paths (which consume both branches and can&#x27;t propagate further up). The global <code>max_sum</code> is updated at every node, ensuring we capture every candidate path.</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>朴素思路 → 最优解 / Naive → Optimal</h3>
+
+<p><strong>朴素思路（会超时）：</strong></p>
+<p>对每个节点，把它当做路径的&quot;最高点&quot;，然后 DFS 搜索所有经过它的路径。</p>
+<p>时间复杂度 O(n²)，不够用。</p>
+
+<p><strong>最优思路（O(n)）：</strong></p>
+<p>一次 DFS 遍历，在每个节点同时做两件事：</p>
+<p>1. 更新全局最大值（考虑拱形路径）</p>
+<p>2. 返回向上的最大贡献</p>
+
+<hr/>
+
+<h3>完整实现 / Complete Implementation</h3>
+
+<pre><code>
+from typing import Optional
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+class Solution:
+    def maxPathSum(self, root: Optional[TreeNode]) -&gt; int:
+        # Global tracker: initialized to -infinity because all nodes
+        # could be negative (e.g., a tree with only -3 → answer is -3)
+        self.max_sum = float(&#x27;-inf&#x27;)
+        
+        def dfs(node: Optional[TreeNode]) -&gt; int:
+            &quot;&quot;&quot;
+            Returns: the maximum gain this subtree can contribute
+                     to its PARENT (single-branch, no arching allowed).
+            Side effect: updates self.max_sum with the best arch path
+                         rooted at `node`.
+            &quot;&quot;&quot;
+            if not node:
+                # Null nodes contribute 0 (base case)
+                return 0
+            
+            # --- Step 1: Recurse on children ---
+            # Use max(..., 0) to &quot;ignore&quot; negative branches.
+            # If going left makes things worse, we just don&#x27;t go left.
+            left_gain  = max(dfs(node.left),  0)
+            right_gain = max(dfs(node.right), 0)
+            
+            # --- Step 2: Compute local arch path (Role 1) ---
+            # This path passes THROUGH the current node using both branches.
+            # It is a valid path from the deepest left leaf to deepest right leaf.
+            # It CANNOT be extended upward (already forked), so only update global max.
+            arch_path_sum = node.val + left_gain + right_gain
+            self.max_sum = max(self.max_sum, arch_path_sum)
+            
+            # --- Step 3: Return upward contribution (Role 2) ---
+            # Parent can only extend one direction.
+            # Pick the branch that gives more gain.
+            return node.val + max(left_gain, right_gain)
+        
+        dfs(root)
+        return self.max_sum
+</code></pre>
+
+<hr/>
+
+<h3>逐步追踪一个例子 / Tracing Through an Example</h3>
+
+<pre><code>
+Tree:
+        -10
+       /    \
+      9      20
+            /  \
+           15    7
+</code></pre>
+
+<p>目标路径 / Target path: <code>15 → 20 → 7</code> = 42</p>
+
+<p><strong>DFS 调用顺序（后序遍历）：</strong></p>
+
+<pre><code>
+dfs(9):
+  left_gain  = max(dfs(None), 0) = 0
+  right_gain = max(dfs(None), 0) = 0
+  arch = 9 + 0 + 0 = 9     → max_sum = max(-inf, 9) = 9
+  return 9 + max(0, 0) = 9
+
+dfs(15):
+  left_gain  = 0, right_gain = 0
+  arch = 15 + 0 + 0 = 15   → max_sum = max(9, 15) = 15
+  return 15
+
+dfs(7):
+  left_gain  = 0, right_gain = 0
+  arch = 7 + 0 + 0 = 7     → max_sum = max(15, 7) = 15
+  return 7
+
+dfs(20):
+  left_gain  = max(dfs(15), 0) = 15
+  right_gain = max(dfs(7),  0) = 7
+  arch = 20 + 15 + 7 = 42  → max_sum = max(15, 42) = 42  ← found!
+  return 20 + max(15, 7) = 35  (only left branch goes up)
+
+dfs(-10):
+  left_gain  = max(dfs(9),  0) = 9
+  right_gain = max(dfs(20), 0) = 35
+  arch = -10 + 9 + 35 = 34 → max_sum = max(42, 34) = 42
+  return -10 + max(9, 35) = 25
+
+Final answer: 42 ✓
+</code></pre>
+
+<hr/>
+
+<h3>关键细节解析 / Key Detail Analysis</h3>
+
+<p><strong>为什么用 <code>max(dfs(...), 0)</code> 而不是直接用返回值？</strong></p>
+
+<pre><code>
+# BAD: forces us to include negative subtrees
+left_gain = dfs(node.left)
+
+# GOOD: &quot;prune&quot; negative contributions — don&#x27;t extend if it hurts
+left_gain = max(dfs(node.left), 0)
+</code></pre>
+
+<p><strong>中文：</strong> 如果左子树最好的路径是 -5，我们不应该把它加进来。<code>max(..., 0)</code> 相当于&quot;如果这条路是负的，就当成没有这条路&quot;。这避免了显式的 None 检查和负值处理。</p>
+
+<p><strong>English:</strong> If the best path in the left subtree sums to -5, we&#x27;re better off not extending there. <code>max(..., 0)</code> is a clean idiom for &quot;treat negative subtrees as nonexistent.&quot; This eliminates explicit null checks and negative-branch edge case handling.</p>
+
+<hr/>
+
+<h3>变体 1：追踪路径（不只是数值）/ Variant: Track the Actual Path</h3>
+
+<pre><code>
+class Solution:
+    def maxPathSumWithPath(self, root: Optional[TreeNode]):
+        self.max_sum = float(&#x27;-inf&#x27;)
+        self.best_path = []
+        
+        def dfs(node):
+            if not node:
+                return 0, []
+            
+            left_gain, left_path   = dfs(node.left)
+            right_gain, right_path = dfs(node.right)
+            left_gain  = max(left_gain,  0)
+            right_gain = max(right_gain, 0)
+            
+            # Build the arch path for comparison
+            arch = node.val + left_gain + right_gain
+            if arch &gt; self.max_sum:
+                self.max_sum = arch
+                # Reconstruct path: left reversed + current + right
+                arch_path = (
+                    (left_path  if left_gain  &gt; 0 else []) +
+                    [node.val] +
+                    (right_path if right_gain &gt; 0 else [])
+                )
+                self.best_path = arch_path
+            
+            # Return single-branch path upward
+            if left_gain &gt;= right_gain:
+                return node.val + left_gain, [node.val] + left_path
+            else:
+                return node.val + right_gain, [node.val] + right_path
+        
+        dfs(root)
+        return self.max_sum, self.best_path
+</code></pre>
+
+<hr/>
+
+<h3>变体 2：迭代写法（Morris / 显式栈）/ Iterative Variant</h3>
+
+<pre><code>
+def maxPathSumIterative(self, root: Optional[TreeNode]) -&gt; int:
+    &quot;&quot;&quot;
+    Post-order traversal using an explicit stack.
+    Useful when recursion depth is a concern (very deep trees → stack overflow).
+    &quot;&quot;&quot;
+    if not root:
+        return 0
+    
+    max_sum = float(&#x27;-inf&#x27;)
+    # Stack stores (node, visited_flag)
+    stack = [(root, False)]
+    # Stores the best upward gain for each node
+    gain = {}
+    
+    while stack:
+        node, visited = stack.pop()
+        
+        if visited:
+            # Post-order: both children are processed
+            left_gain  = max(gain.get(node.left,  0), 0)
+            right_gain = max(gain.get(node.right, 0), 0)
+            
+            arch = node.val + left_gain + right_gain
+            max_sum = max(max_sum, arch)
+            
+            # Store upward contribution for parent
+            gain[node] = node.val + max(left_gain, right_gain)
+        else:
+            # Push self back as &quot;visited&quot;, then children
+            stack.append((node, True))
+            if node.right:
+                stack.append((node.right, False))
+            if node.left:
+                stack.append((node.left, False))
+    
+    return max_sum
+</code></pre>
+
+<hr/>
+
+<h3>复杂度分析 / Complexity</h3>
+
+<p>| | 时间 Time | 空间 Space |</p>
+<p>|---|---|---|</p>
+<p>| 递归 Recursive | O(n) | O(h) — 调用栈深度 call stack depth |</p>
+<p>| 迭代 Iterative | O(n) | O(n) — 显式栈 + gain 字典 |</p>
+
+<p>其中 h = 树高，最坏情况（链状树）h = n，平衡树 h = log n。</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>1. 全负数树 / All Negative Values</strong></p>
+<pre><code>
+root = TreeNode(-3)
+# Expected: -3 (the single node is the path)
+# Bug: initializing max_sum = 0 would wrongly return 0
+# Fix: initialize to float(&#x27;-inf&#x27;), NOT 0
+</code></pre>
+
+<p><strong>2. 单节点树 / Single Node</strong></p>
+<pre><code>
+root = TreeNode(5)
+# dfs returns 5, arch_path_sum = 5, max_sum = 5 ✓
+</code></pre>
+
+<p><strong>3. 路径不过根节点 / Optimal Path Doesn&#x27;t Touch Root</strong></p>
+<pre><code>
+#      -100
+#      /  \
+#     1    2
+#    / \
+#  50   50
+# Best path: 50 + 1 + 50 = 101, ignores -100 at root
+</code></pre>
+<p>由于 <code>max_sum</code> 在每个节点都更新，我们不会遗漏这种情况。</p>
+
+<p><strong>4. 忘记 <code>max(..., 0)</code> / Forgetting to Clamp Negative Gains</strong></p>
+<pre><code>
+# Without clamping:
+left_gain = dfs(node.left)   # could be -999
+arch = node.val + (-999) + right_gain   # incorrectly penalized
+
+# With clamping:
+left_gain = max(dfs(node.left), 0)  # negative branch = 0
+</code></pre>
+
+<p><strong>5. 负数根但有正路径 / Negative Root with Positive Deep Path</strong></p>
+<pre><code>
+#    -1
+#   /  \
+#  10   10
+# Best path: 10 + (-1) + 10 = 19  — still valid, arch through root
+# OR simply: 10 alone if root was even more negative
+</code></pre>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong> 这道题的模式在生产系统中出处不少：</p>
+
+<p><strong>1. 金融 / Finance — 最优投资路径：</strong></p>
+<p>树结构表示一个投资决策树（每个节点是一项投资，边代表序列依赖关系）。最大路径和 = 最优投资组合的总收益。</p>
+
+<p><strong>2. 网络路由 / Network Routing — 最大带宽路径：</strong></p>
+<p>在树形网络拓扑中（如 ISP 骨干网），找两个叶节点之间带宽最大的路径，同样是树中最大路径和的变体。</p>
+
+<p><strong>3. 游戏 AI / Game AI — 行动序列价值：</strong></p>
+<p>棋类游戏里，博弈树的某个子树中最有价值的&quot;连续行动序列&quot;，本质上就是子树中的最大路径。</p>
+
+<p><strong>4. 编译器 / Compilers — 表达式树优化：</strong></p>
+<p>在 AST（抽象语法树）中，找出对性能影响最大的表达式链，指导内联或循环展开决策。</p>
+
+<p><strong>English:</strong> This pattern appears in real production systems:</p>
+
+<p>1. <strong>Finance</strong>: Portfolio optimization over decision trees — find the sequence of investments with maximum total return</p>
+<p>2. <strong>Network routing</strong>: In tree-topology networks (ISP backbone), find the max-bandwidth path between any two leaf nodes</p>
+<p>3. <strong>Game AI</strong>: In game trees, the most valuable sequence of moves in a subtree is a maximum path problem</p>
+<p>4. <strong>Compilers</strong>: In ASTs, identifying the expression chain with the highest performance impact guides inlining decisions</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Q1: 为什么 DFS 返回值不能是&quot;拱形路径&quot;的和？</strong></p>
+<p><strong>Why can&#x27;t the DFS return value be the arch path sum?</strong></p>
+
+<p>A: 因为返回值会被父节点用来向上延伸路径。拱形路径已经使用了两个方向（左 + 右），如果父节点再把它向上接，就相当于节点被访问两次——这破坏了&quot;路径&quot;中每个节点只出现一次的约束。所以拱形结果只能更新全局 max，不能向上传递。</p>
+
+<p>Because the return value is used by the parent to extend the path upward. An arch path has already forked left and right — if the parent tries to continue from it, a node would appear twice in the path (violating the problem&#x27;s uniqueness constraint). So arch values only update the global max; they never propagate upward.</p>
+
+<hr/>
+
+<p><strong>Q2: 如果树可能有几百万节点，递归会栈溢出怎么办？</strong></p>
+<p><strong>What if the tree has millions of nodes and recursion hits stack limits?</strong></p>
+
+<p>A: 用显式栈做后序遍历（见变体 2），把递归调用栈换成堆上的数据结构。Python 默认递归限制约 1000 层，对链状树（最坏情况）可以用 <code>sys.setrecursionlimit()</code> 或直接用迭代版本。</p>
+
+<p>Use an explicit stack for iterative post-order traversal (see Variant 2 above). Python&#x27;s default recursion limit is ~1000 frames — for degenerate (linear chain) trees, either increase <code>sys.setrecursionlimit()</code> or switch to the iterative version.</p>
+
+<hr/>
+
+<p><strong>Q3: 这道题的哪部分最容易出 bug？</strong></p>
+<p><strong>What&#x27;s the most common bug in this problem?</strong></p>
+
+<p>A: 两个地方：(1) 将 <code>max_sum</code> 初始化为 0 而不是 <code>-inf</code>，导致全负数树返回错误的 0；(2) 忘记用 <code>max(..., 0)</code> 截断负增益，导致强行走负路径拉低结果。</p>
+
+<p>Two places: (1) initializing <code>max_sum = 0</code> instead of <code>float(&#x27;-inf&#x27;)</code>, which breaks all-negative trees; (2) forgetting <code>max(..., 0)</code> to clamp negative gains, forcing the algorithm to extend into costly negative subtrees.</p>
+
+<hr/>
+
+<p><strong>Q4: 如何将这道题推广到 N 叉树（每个节点有多个子节点）？</strong></p>
+<p><strong>How would you generalize this to an N-ary tree?</strong></p>
+
+<p>A: 思路完全相同，只是&quot;局部最优（拱形）&quot;变成：取所有子节点中增益 &gt; 0 的子节点，全部加进来。向上贡献则取所有子节点中最大的那一个。代码里把 <code>left_gain + right_gain</code> 改为对所有子节点的正增益求和即可。</p>
+
+<p>Same idea — the &quot;arch&quot; at any node is: take the sum of all child gains that are positive (include any direction that helps). The upward contribution is still just the single best child. Replace <code>left_gain + right_gain</code> with <code>sum(max(dfs(child), 0) for child in node.children)</code>.</p>
+
+<hr/>
+
+<p><strong>Q5: 如果路径要求至少包含 K 个节点，怎么改？</strong></p>
+<p><strong>How would you modify this if the path must contain at least K nodes?</strong></p>
+
+<p>A: 这变成了一道更复杂的题。需要在 DFS 状态里额外追踪&quot;路径长度&quot;，并且只有当路径长度 ≥ K 时才更新全局最大值。同时，<code>max(..., 0)</code> 的剪枝也需要更谨慎——即使某段是负的，如果路径还不够长，也可能不得不选它。通常会变成 DFS + 状态压缩或 DP on tree 的问题。</p>
+
+<p>This becomes significantly harder. You&#x27;d need to track &quot;path length&quot; in the DFS state and only update the global max when the path has ≥ K nodes. The <code>max(..., 0)</code> pruning also becomes unsafe — you might be forced to extend into a negative-gain subtree just to satisfy the length requirement. This typically becomes a DP-on-tree problem.</p>
+
+<hr/>
+
+<h2>总结 / Summary</h2>
+
+<pre><code>
+关键模式 / Key Pattern:
+┌─────────────────────────────────────────────────────────┐
+│  DFS返回值 = 向上贡献 = node.val + max(left, right, 0)  │
+│  全局更新  = 拱形路径 = node.val + left_gain + right_gain│
+│  负增益截断: left_gain = max(dfs(left), 0)              │
+│  初始化: max_sum = float(&#x27;-inf&#x27;)  (NOT 0!)              │
+└─────────────────────────────────────────────────────────┘
+
+相似题目 / Similar Problems:
+  · #543 Diameter of Binary Tree (same pattern, replace sum with count)
+  · #687 Longest Univalue Path
+  · #1373 Maximum Sum BST in Binary Tree
+  · #337 House Robber III
+</code></pre>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-19</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
