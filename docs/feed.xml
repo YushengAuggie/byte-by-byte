@@ -5,8 +5,227 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 20 Jun 2026 15:37:57 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 21 Jun 2026 15:07:37 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-21</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-21</guid>
+      <pubDate>Sun, 21 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 25（约10分钟阅读 / ~10 min read）</strong></p>
+<p>📊 NeetCode: 59/150 · SysDesign: 58/40 · Behavioral: 58/40 · Frontend: 37/50 · AI: 29/30</p>
+<p>🔥 7-day streak！</p>
+
+<hr/>
+
+<h2>🗓️ 本周回顾 / This Week&#x27;s Journey</h2>
+
+<p><em>Days 66–71（2026年6月15日–20日）</em></p>
+
+<p>本周处于 <strong>Expert 阶段</strong>，五个内容日 + 一个复习日 + 周六深潜。每天密度都不低。</p>
+
+<p>- <strong>周一 Day 66</strong>：自动补全系统设计 · Count Good Nodes（树DFS+路径状态）· 利益相关者管理 · 状态机 · AI生产监控三件套</p>
+<p>- <strong>周二 Day 67</strong>：限流即服务 · Validate BST（双边界DFS）· 个人贡献vs团队赋能 · Repository 模式 · AI新闻（SpaceX算力问题/Anthropic政府叫停/马斯克诉讼再败）</p>
+<p>- <strong>周三 Day 68</strong>：分布式追踪系统（Jaeger/Zipkin）· Kth Smallest in BST（中序遍历）· 季度OKR目标设定 · Python描述符协议 · 开源vs闭源LLM格局</p>
+<p>- <strong>周四 Day 69</strong>：密钥管理系统（Vault）· 从前序+中序重建二叉树 · 为初级工程师发声 · 元类（Metaclass/ORM实战）· AI新闻（Shazeer加入OpenAI/Fable风波/Claude Design更新）</p>
+<p>- <strong>周五 Day 70</strong>：复习日——回顾 Days 66–69 全部内容，Quick Quiz三道</p>
+<p>- <strong>周六 Day 71</strong>：周六深潜——二叉树最大路径和（Hard，15分钟完整解析）</p>
+
+<hr/>
+
+<h2>🧠 系统设计：本周要点 / System Design: Key Takeaways</h2>
+
+<p>本周啃了四道 Expert 级别的&quot;基础设施类&quot;系统设计题，有清晰的主线：</p>
+
+<h3>核心主题：可观测性 × 安全 × 流量控制</h3>
+
+<p><strong>1. 自动补全（Autocomplete）</strong></p>
+<p>预计算是核心：不要在线维护 Trie，而是离线 Spark Job 算好 <code>prefix → top10</code> 存进 Redis。只存 ≤5 字符前缀，节省 99% 存储。两层缓存（浏览器 + Redis）保证 100ms SLA。</p>
+
+<p><strong>2. 限流即服务（Rate Limiter as a Service）</strong></p>
+<p>五种算法要会对比（令牌桶/漏桶/固定窗口/滑动日志/滑动计数器）——生产推荐<strong>滑动窗口计数器 + Redis Pipeline 原子操作</strong>。多维度限流（用户/IP/API Key）按最严维度拒绝。Redis 挂了要有 fail-open 降级。</p>
+
+<p><strong>3. 分布式追踪（Jaeger/Zipkin）</strong></p>
+<p>三大可观测性支柱：Logs（什么发生了）/ Metrics（发生了多少）/ Traces（为什么发生）。Span 的两个关键字段：<code>trace_id</code>（链路）+ <code>parent_span_id</code>（因果）。Tail-based 采样是生产首选——总保留 error trace 和 P99 慢 trace。</p>
+
+<p><strong>4. 密钥管理（Vault）</strong></p>
+<p>杀手级功能是 <strong>Dynamic Secrets</strong>：按需生成 DB 凭证，TTL 后自动吊销。不要用 Root Token。不要忘记开 Audit Log（不可变存储）。Vault 本身也要 HA（Raft 共识）。</p>
+
+<h3>三者的连接点</h3>
+<p>这四道题本质上都是<strong>分布式系统的防御性基础设施</strong>：Autocomplete 防延迟，Rate Limiter 防滥用，Tracing 防故障盲点，Vault 防凭证泄露。面试中被问到&quot;你们团队如何保证系统可靠性&quot;——这四个系统就是答案的骨架。</p>
+
+<p>The four problems this week are all <strong>defensive distributed infrastructure</strong>: Autocomplete fights latency, Rate Limiter fights abuse, Tracing fights blind spots, Vault fights credential leaks. Together they form the backbone of a reliable production system.</p>
+
+<hr/>
+
+<h2>💻 算法：模式总结 / Algorithms: Patterns Mastered</h2>
+
+<p>本周全部是<strong>树遍历（Trees Block）</strong>，Day 66–71 覆盖了第 10–15 题，完成了整个 Trees 模块！</p>
+
+<h3>本周四道核心题</h3>
+
+<p>| 题目 | 核心模式 | 关键洞察 |</p>
+<p>|------|----------|----------|</p>
+<p>| #1448 Count Good Nodes | 自顶向下传状态 | 路径最大值随递归下传，不是向上聚合 |</p>
+<p>| #98 Validate BST | 双边界约束 | 不是比父子，而是比整个子树的合法范围 |</p>
+<p>| #230 Kth Smallest in BST | 中序遍历 | BST 中序 = 天然升序，迭代版本可早退 |</p>
+<p>| #105 Construct BT from Pre+Inorder | 重建树 | 前序首元素 = 根；中序找根位置切左右子树 |</p>
+<p>| #124 Max Path Sum（深潜）| 局部+全局双视角 | 返回值=向上贡献（单支）；拱形=只更新全局max |</p>
+
+<h3>树 DFS 模板变体小结</h3>
+
+<pre><code>
+基础模板：后序（left → right → 当前）
+  → 求深度、路径和等聚合型问题
+
+变体1：自顶向下传状态（top-down）
+  → Count Good Nodes（路径最大值）
+  → Validate BST（合法范围 min/max）
+
+变体2：中序（left → 当前 → right）
+  → BST 相关（Kth Smallest、验证有序性）
+
+变体3：重建树（从数组而非树出发）
+  → Construct from Preorder+Inorder
+  → Serialize/Deserialize（下一块预习）
+
+变体4：双角色（返回值 ≠ 局部最优）
+  → Max Path Sum（最经典 Hard 模式）
+</code></pre>
+
+<p><strong>规律 / Pattern rule:</strong> 需要路径上的累积信息 → 往下传参数。需要子树的聚合结果 → 从下往上返回。返回值无法涵盖&quot;拱形&quot;路径时 → 全局变量记录最优。</p>
+
+<hr/>
+
+<h2>🗣️ 软技能：练习重点 / Soft Skills: What to Practice</h2>
+
+<p>本周四道行为题全部是 <strong>Staff 级别</strong>领导力场景，刚好构成一个完整的&quot;影响力框架&quot;：</p>
+
+<p>| 场景 | 核心技能 | 一句话总结 |</p>
+<p>|------|----------|-----------|</p>
+<p>| 对项目方向提出反对 | 数据驱动说服 | 先私下对齐，再用量化数据公开提方案 |</p>
+<p>| 个人贡献 vs 团队赋能 | 杠杆效应判断 | 20h onboarding → 400h 未来团队产能 |</p>
+<p>| 季度目标设定与沟通 | OKR 自上而下+自下而上 | 说清&quot;不做什么&quot;和&quot;做什么&quot;同样重要 |</p>
+<p>| 为初级工程师发声 | 技术验证 + 赋能 | 先自己验证想法，再用事实替好想法撑腰 |</p>
+
+<h3>哪道题需要多练？</h3>
+<p><strong>个人贡献 vs 团队赋能</strong>这道题最难量化——面试时容易说成&quot;我帮了他&quot;而没有体现 Staff 视角。</p>
+
+<p>练习重点：说出<strong>具体的拆分决策</strong>（什么由我做、什么教别人做）+ <strong>量化杠杆</strong>（多少小时投入换来多少产能）+ <strong>系统改变</strong>（不只是这次救场，而是改变了团队 review 文化）。</p>
+
+<p>The hardest to articulate is <strong>individual vs. team enablement</strong> — easy to sound like &quot;I helped someone&quot; without the Staff-level framing. Practice: specific split decisions + quantified leverage + systemic culture change.</p>
+
+<hr/>
+
+<h2>🐍 Python Craft：本周知识点 / Python Craft: Concepts to Lock In</h2>
+
+<p>本周 Python Craft 进入了高阶地带——从设计模式走向 Python 语言机制本身：</p>
+
+<p>| 主题 | 核心概念 | 记忆锚点 |</p>
+<p>|------|----------|---------|</p>
+<p>| 状态机（State Machine）| 转换表作为单一事实来源 | <code>TRANSITIONS = {PENDING: {PAID, CANCELED}, ...}</code> |</p>
+<p>| Repository 模式 | 业务逻辑 ↔ 数据源解耦 | <code>InMemoryUserRepository</code> 让测试不用真实DB |</p>
+<p>| 描述符协议（Descriptor）| <code>__get__/__set__</code> 控制属性访问 | <code>@property</code> 是内置描述符；多类复用时写自定义描述符 |</p>
+<p>| 元类（Metaclass）| 类的工厂，拦截类创建 | Django Model 字段自动注册的底层原理 |</p>
+
+<h3>速查自测</h3>
+<p>1. <code>@property</code> 和自定义描述符的选择依据？ → <strong>一个类用 @property；多个类复用 → 自定义描述符</strong></p>
+<p>2. 元类的 <code>__new__</code> 什么时候执行？ → <strong>类被定义时</strong>（不是实例化时）</p>
+<p>3. Repository Pattern 最大的好处是什么？ → <strong>业务逻辑可以用 InMemory 实现做单元测试，零依赖真实DB</strong></p>
+<p>4. <code>State Machine</code> 比 if/elif 强在哪？ → <strong>转换表是单一真实来源，非法转换立即报错</strong></p>
+
+<hr/>
+
+<h2>🤖 AI：本周核心知识点 / AI: What Stuck</h2>
+
+<p>本周三个 AI 主题 + 两天新闻，信息量很大：</p>
+
+<h3>核心主题回顾</h3>
+
+<p><strong>AI in Production（Day 66）</strong></p>
+<p>Guardrails（运行时护栏）+ Monitoring（可观测性）+ Cost Optimization（成本优化）。</p>
+<p>成本优化四板斧：模型路由（简单问题用小模型）+ 语义缓存 + Prompt 缓存 + 上下文压缩。</p>
+
+<p><strong>开源 vs 闭源 LLM（Day 68）</strong></p>
+<p>决策框架：敏感数据 → 开源本地部署；最强推理 → 闭源；深度定制 → 开源微调；中文场景 → Qwen/DeepSeek。</p>
+<p>据报道，模型路由策略可降低平均每次查询成本 37-46%。</p>
+
+<p><strong>AI 新闻亮点（Days 67/69）</strong>（据报道）</p>
+
+<p>- <strong>据报道</strong> SpaceX Colossus 因站点间距超10英里+老旧网络基础设施，导致分布式训练延迟，转而将算力出租给 Anthropic 和 Google</p>
+<p>- <strong>据报道</strong> 美国政府叫停 Anthropic 最新模型（Fable 5）发布，AI 监管正从&quot;讨论框架&quot;走向&quot;实际干预&quot;</p>
+<p>- Noam Shazeer（Transformer 原作者之一、前 Gemini 联合负责人）<strong>据报道</strong>已加入 OpenAI</p>
+<p>- Elon Musk 对 OpenAI 的诉讼<strong>据报道</strong>再次败诉</p>
+
+<p>&gt; ⚠️ 以上新闻条目均为 AI 新闻日内容，据报道标注。</p>
+
+<h3>最重要的一个洞察</h3>
+<p><strong>算力 ≠ AI 能力。</strong> SpaceX 有世界顶级硬件，却因网络工程问题无法自用。AI 的瓶颈往往在<strong>系统工程</strong>，而不在参数量。这对后端工程师来说是个好消息——你的能力比你想的更稀缺。</p>
+
+<p><strong>Compute ≠ AI capability.</strong> SpaceX had world-class hardware but hit networking engineering limits. AI bottlenecks are often systems engineering, not parameter counts — good news for backend engineers.</p>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<h3>最薄弱的区域</h3>
+
+<p><strong>1. 算法 — Max Path Sum 的双角色模型</strong></p>
+<p>周六深潜内容信息密度最高。要确保能<strong>无注释</strong>写出完整解法：</p>
+<p>- <code>max_sum = float(&#x27;-inf&#x27;)</code>（不是 0！）</p>
+<p>- <code>left_gain = max(dfs(left), 0)</code>（截断负增益）</p>
+<p>- 返回值 = 单支向上贡献；arch_path = 更新全局 max</p>
+
+<p><strong>2. 系统设计 — Vault 的 Seal/Unseal 机制</strong></p>
+<p>这个概念涉及 Shamir Key Shares，考点在于：Vault 重启为什么要重新解封？Auto-unseal（KMS）vs 手动解封的权衡是什么？</p>
+
+<p><strong>3. Python Craft — 描述符查找优先级</strong></p>
+<p>Data Descriptor（有 <code>__get__</code> + <code>__set__</code>）&gt; Instance <code>__dict__</code> &gt; Non-data Descriptor（只有 <code>__get__</code>）。这个优先级顺序容易忘，但面试偶尔会被问到。</p>
+
+<p><strong>4. 软技能 — 季度 OKR 模板</strong></p>
+<p>这类题需要随时能说出完整结构：向上对齐（QBR）→ 自下而上收集 → 草案（含 KR）→ 共识对齐（明确不做什么）→ 双周进度更新。能说出完整流程才算掌握。</p>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p><strong>完成了完整的 Trees 模块！</strong></p>
+
+<p>从 Day 57 开始的树遍历 Block 在本周正式收尾。15 道题覆盖了树 DFS 的全部四种变体：后序聚合、自顶向下传状态、中序 BST、双角色返回值。这是 NeetCode 150 最重要的板块之一，完整打完是实实在在的里程碑。</p>
+
+<p>周六深潜的 Binary Tree Maximum Path Sum 是整个 Trees 板块的压轴题——Hard 难度，15 分钟完整解析，五道面试 Q&amp;A。能把这道题讲清楚，Trees 板块就真正掌握了。</p>
+
+<p><strong>The Trees block is complete!</strong> 15 problems, all four DFS variants fully covered. Binary Tree Maximum Path Sum — the Hard capstone — was tackled with full depth in Saturday&#x27;s deep dive. If you can explain this problem cold in an interview, the entire Trees block is yours.</p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p>根据当前进度，下周进入新的板块：</p>
+
+<p><strong>算法（NeetCode 59/150）：</strong></p>
+<p>Heaps / Priority Queue 模块开始——Find Median from Data Stream、Task Scheduler、Merge K Sorted Lists 等。</p>
+
+<p><strong>系统设计（Index 58）：</strong></p>
+<p>继续 Expert 阶段，即将进入更多实战系统设计变体。</p>
+
+<p><strong>Python Craft（Index 21）：</strong></p>
+<p>设计模式系列继续。可能进入 Python 并发或高级模式。</p>
+
+<p><strong>AI（Index 29/30）：</strong></p>
+<p>AI 主题即将完结本阶段，下周会是一个重要的收尾主题。</p>
+
+<p>准备好迎接堆（Heap）的世界了吗？这是面试里第二常见的数据结构，也是很多&quot;top K&quot;类问题的标准武器。</p>
+
+<p><em>Get ready for Heaps — the second most common data structure in interviews, and the standard weapon for &quot;top K&quot; problems.</em></p>
+
+<hr/>
+
+<p><em>本 Week in Review 基于 2026-06-15 至 2026-06-20 归档内容生成。</em></p>
+<p><em>Generated from archived content: June 15–20, 2026.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-20</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
