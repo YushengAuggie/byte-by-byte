@@ -5,8 +5,646 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 21 Jun 2026 15:07:37 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 22 Jun 2026 16:21:10 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-22</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-22</guid>
+      <pubDate>Mon, 22 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 59</h2>
+<p><strong>Topic:</strong> Design an LLM Inference Serving System</p>
+<p><strong>Date:</strong> 2026-06-22 | <strong>Difficulty:</strong> Expert</p>
+
+<hr/>
+
+<h2>想象你在设计... / Imagine You&#x27;re Designing...</h2>
+
+<p>你是 OpenAI 的基础设施工程师。公司刚刚发布了 GPT-X，每秒涌入数万个请求。每个请求都需要调用一个数十亿参数的模型。如何在保证低延迟的同时，让成本不至于爆炸？</p>
+
+<p>You&#x27;re an infra engineer at OpenAI. The company just launched GPT-X, and tens of thousands of requests per second are flooding in. Every request needs to run through a billion-parameter model. How do you keep latency low without bankrupting the company?</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+                    ┌─────────────────────────────┐
+                    │        Load Balancer          │
+                    │     (Request Routing)         │
+                    └────────────┬────────────────┘
+                                 │
+              ┌──────────────────┼──────────────────┐
+              │                  │                  │
+     ┌────────▼────────┐ ┌───────▼───────┐ ┌───────▼────────┐
+     │  Inference Node  │ │ Inference Node│ │ Inference Node │
+     │  (A100 x 8)     │ │  (A100 x 8)  │ │  (A100 x 8)   │
+     │  ┌────────────┐  │ │              │ │                │
+     │  │  KV Cache  │  │ │              │ │                │
+     │  │  (Per-req) │  │ │              │ │                │
+     │  └────────────┘  │ │              │ │                │
+     └────────┬────────┘ └───────┬───────┘ └───────┬────────┘
+              │                  │                  │
+     ┌────────▼──────────────────▼──────────────────▼────────┐
+     │                   Continuous Batching Engine            │
+     │    (vLLM / TensorRT-LLM — PagedAttention)              │
+     └────────────────────────────┬───────────────────────────┘
+                                  │
+              ┌───────────────────┼────────────────────┐
+              │                   │                    │
+     ┌────────▼──────┐   ┌────────▼──────┐   ┌────────▼──────┐
+     │  Model Store   │   │ Request Queue │   │  Result Store  │
+     │  (S3 + NVMe)   │   │  (Redis/Kafka)│   │  (Cache/Redis) │
+     └───────────────┘   └───────────────┘   └───────────────┘
+</code></pre>
+
+<p><strong>关键组件 / Key Components:</strong></p>
+<p>1. <strong>Continuous Batching</strong> — 不等批次填满就开始推理，动态合并请求</p>
+<p>2. <strong>PagedAttention (KV Cache)</strong> — 将 KV cache 分页管理，像操作系统管理内存一样</p>
+<p>3. <strong>Tensor Parallelism</strong> — 一个模型切分到多张 GPU 卡上并行推理</p>
+<p>4. <strong>Speculative Decoding</strong> — 用小模型预测 token，大模型验证，加速 3-5x</p>
+
+<hr/>
+
+<h2>核心权衡 / Key Tradeoffs</h2>
+
+<p><strong>为什么不用普通 batching？</strong></p>
+<p>传统 static batching 需要等最长请求完成才能处理下一批。Continuous batching 允许请求随时进出队列，GPU 利用率从 ~30% 提升到 ~80%+。</p>
+
+<p><strong>Tensor Parallelism vs Pipeline Parallelism:</strong></p>
+<p>- Tensor Parallelism: 把一层的权重切分到多卡，通信在层内 → 低延迟，适合单请求</p>
+<p>- Pipeline Parallelism: 把不同层放到不同卡，流水线处理 → 高吞吐，适合批量</p>
+
+<p><strong>Model Quantization tradeoffs:</strong></p>
+<p>- FP16 → INT8: 内存减半，速度翻倍，精度损失 &lt;1%</p>
+<p>- INT4 (GPTQ/AWQ): 内存减少 4x，精度损失稍大，适合低优先级任务</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>用 sequence length 做 batching</strong> — 不同请求长度差异极大，固定 batch size 严重浪费 GPU</p>
+<p>✅ 用 token budget 做 batching，按 token 数而非请求数打包</p>
+
+<p>❌ <strong>KV Cache 不做内存管理</strong> — 长上下文会吃光所有显存，新请求无法调度</p>
+<p>✅ 用 PagedAttention，把 KV cache 切成固定大小的 page 按需分配</p>
+
+<p>❌ <strong>冷启动未预热</strong> — 第一个请求触发模型加载，延迟高达分钟级</p>
+<p>✅ 预热策略 + 模型预加载到 GPU，保持 warm pool</p>
+
+<p>❌ <strong>忽略 prefill 和 decode 阶段差异</strong> — Prefill（处理 prompt）是计算密集型，Decode（生成 token）是内存带宽密集型，应该分开优化</p>
+<p>✅ Prefill-decode disaggregation：不同节点专门处理两个阶段</p>
+
+<hr/>
+
+<h2>容量估算 / Capacity Estimation</h2>
+
+<p>假设 10K QPS，平均 prompt 500 tokens，输出 200 tokens：</p>
+<p>- 每请求 FLOPs ≈ 2 × params × tokens (llama-70B = ~140B × 700 = 98T FLOPs)</p>
+<p>- 一块 A100 (312 TFLOPS FP16) 可处理 ~3 req/s</p>
+<p>- 10K QPS 需要 ~3,300 A100 → 实际用 continuous batching 后大概 ~600-800 卡</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象一家餐厅（GPU）同时做很多道菜（请求）。普通餐厅一次只做一桌的菜，做完再做下一桌。聪明的餐厅会把多桌的菜同时放进烤箱，一锅出。LLM 推理系统也一样，KV Cache 就像厨师的记忆，记住每道菜做到哪一步了。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- vLLM (PagedAttention paper): https://arxiv.org/abs/2309.06180</p>
+<p>- Continuous Batching Explained: https://www.anyscale.com/blog/continuous-batching-llm-inference</p>
+<p>- TensorRT-LLM Docs: https://nvidia.github.io/TensorRT-LLM/</p>
+<p>- Prefill-Decode Disaggregation: https://arxiv.org/abs/2401.09670</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 60</h2>
+<p><strong>Problem:</strong> #297 Serialize and Deserialize Binary Tree 🔴 Hard</p>
+<p><strong>Pattern:</strong> Trees (15/15) — Final problem in the block!</p>
+<p><strong>Date:</strong> 2026-06-22</p>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/serialize-and-deserialize-binary-tree/</p>
+<p>📹 NeetCode: https://neetcode.io/problems/serialize-and-deserialize-binary-tree</p>
+
+<hr/>
+
+<h2>🧩 树遍历模式 (15/15) — 收官之作！</h2>
+
+<p>🧩 <strong>Trees Pattern (15/15)</strong> — building on the DFS template from Day 56</p>
+
+<p>从第 1 题（翻转二叉树）到第 15 题（序列化/反序列化），我们完整走过了树的所有经典问题。今天是这个 block 的终点站。</p>
+
+<p><strong>今天是变体 / Today&#x27;s variation:</strong></p>
+<p>不只是&quot;遍历&quot;树，而是需要把树完整地编码成字符串，再从字符串精确还原。核心挑战：如何区分 null 节点和有值节点？</p>
+
+<hr/>
+
+<h2>真实场景 / Real-World Analogy</h2>
+
+<p>你在做分布式系统，需要把内存中的决策树发送给另一台机器执行。不能传递指针，只能传字符串或 JSON。序列化 = 把树&quot;打印&quot;成字符串；反序列化 = 从字符串&quot;重建&quot;树。</p>
+
+<p>Redis 存树形结构、网络传输对象、数据库存嵌套文档 — 本质上都是这个问题。</p>
+
+<hr/>
+
+<h2>解题思路 / Approach</h2>
+
+<p><strong>关键洞察：</strong> 用 BFS（层序遍历）序列化，null 节点用特殊标记（如 &quot;N&quot;）占位。反序列化时按队列逐层重建。</p>
+
+<p>也可以用 preorder DFS（前序遍历），两种方法都行，但 BFS 更直观。</p>
+
+<pre><code>
+from collections import deque
+
+class Codec:
+    def serialize(self, root):
+        # BFS serialization
+        if not root:
+            return &quot;&quot;
+        
+        result = []
+        queue = deque([root])
+        
+        while queue:
+            node = queue.popleft()
+            
+            if node is None:
+                result.append(&quot;N&quot;)
+            else:
+                result.append(str(node.val))
+                queue.append(node.left)   # Push left (even if None)
+                queue.append(node.right)  # Push right (even if None)
+        
+        # Trim trailing &#x27;N&#x27;s for cleaner output (like LeetCode format)
+        while result and result[-1] == &quot;N&quot;:
+            result.pop()
+        return &quot;,&quot;.join(result)
+    
+    def deserialize(self, data):
+        # BFS deserialization
+        if not data:
+            return None
+        
+        vals = data.split(&quot;,&quot;)
+        root = TreeNode(int(vals[0]))
+        queue = deque([root])
+        i = 1  # Index into vals
+        
+        while queue and i &lt; len(vals):
+            node = queue.popleft()
+            
+            # Left child
+            if vals[i] != &quot;N&quot;:
+                node.left = TreeNode(int(vals[i]))
+                queue.append(node.left)
+            i += 1
+            
+            # Right child
+            if i &lt; len(vals) and vals[i] != &quot;N&quot;:
+                node.right = TreeNode(int(vals[i]))
+                queue.append(node.right)
+            i += 1
+        
+        return root
+</code></pre>
+
+<h2>执行轨迹 / Trace</h2>
+
+<pre><code>
+Tree:    1
+        / \
+       2   3
+          / \
+         4   5
+
+serialize() BFS 遍历:
+  queue: [1]       → append &quot;1&quot;, push 2, 3
+  queue: [2, 3]    → append &quot;2&quot;, push null, null
+  queue: [3, N, N] → append &quot;3&quot;, push 4, 5
+  queue: [N,N,4,5] → N, N, &quot;4&quot;, &quot;5&quot;...
+  result: &quot;1,2,3,N,N,4,5&quot;
+
+deserialize() 重建:
+  root = TreeNode(1), queue = [1]
+  pop 1: left=TreeNode(2), right=TreeNode(3)
+  pop 2: left=N(skip), right=N(skip)
+  pop 3: left=TreeNode(4), right=TreeNode(5)
+  ✅ 完整还原
+</code></pre>
+
+<p><strong>时间复杂度 / Complexity:</strong></p>
+<p>- Time: O(n) — 每个节点访问一次</p>
+<p>- Space: O(n) — 队列最大存一层节点，最坏 O(n/2)</p>
+
+<hr/>
+
+<h2>与模版的映射 / Mapping to Template</h2>
+
+<p>标准 DFS 模板：</p>
+<pre><code>
+def dfs(node):
+    if not node: return BASE_CASE
+    left = dfs(node.left)
+    right = dfs(node.right)
+    return COMBINE(node.val, left, right)
+</code></pre>
+
+<p>本题用 BFS 而非 DFS，但核心思想相同：<strong>按某种顺序遍历每个节点，对 null 进行显式处理，保留结构信息。</strong></p>
+
+<p>DFS 版本（preorder）也完全可行：</p>
+<pre><code>
+# serialize with preorder DFS
+def serialize_dfs(root):
+    if not root: return &quot;N,&quot;
+    return str(root.val) + &quot;,&quot; + serialize_dfs(root.left) + serialize_dfs(root.right)
+</code></pre>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p>这是树 block 的第 15 题，回顾整个 block 的核心递推关系：</p>
+<p>- <strong>#226 Invert</strong> → dfs: swap left/right, return node</p>
+<p>- <strong>#104 Max Depth</strong> → dfs: return 1 + max(left, right)</p>
+<p>- <strong>#543 Diameter</strong> → dfs: 全局维护 max，return 1 + max(left, right)</p>
+<p>- <strong>#110 Balanced</strong> → dfs: return height or -1 if unbalanced</p>
+<p>- <strong>#124 Max Path Sum</strong> (昨天) → dfs: 全局维护 max，return node.val + max(0, left, right)</p>
+<p>- <strong>#297 Serialize</strong> (今天) → BFS 完整遍历，null 也要标记</p>
+
+<p><strong>规律：</strong> 树问题的难度提升，通常是&quot;返回值语义&quot;变复杂，或者需要额外的全局状态。</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你要把一棵家谱树打电话告诉朋友。你按层从上到下说：「1号，左边是2号，右边是3号，2号没孩子，3号左边4号右边5号。」朋友记下来，就能画出一模一样的树。序列化就是你说的那串话，反序列化就是朋友画树的过程。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- LeetCode 297: https://leetcode.com/problems/serialize-and-deserialize-binary-tree/</p>
+<p>- NeetCode Solution: https://neetcode.io/problems/serialize-and-deserialize-binary-tree</p>
+<p>- BFS Tree Traversal: https://en.wikipedia.org/wiki/Breadth-first_search</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 59</h2>
+<p><strong>Topic:</strong> Crisis Management — On-Call for a System You Didn&#x27;t Build</p>
+<p><strong>Question:</strong> How do you handle being on-call for a system you didn&#x27;t build?</p>
+<p><strong>Date:</strong> 2026-06-22 | <strong>Level:</strong> Senior/Staff</p>
+
+<hr/>
+
+<h2>为什么这很重要 / Why This Matters</h2>
+
+<p>这是面试里经典的高分题。每个工程师都会被要求 on-call 一个不熟悉的系统。面试官想看的是：</p>
+<p>- 你在不确定环境下的系统思维</p>
+<p>- 你是否会主动建立 context，而不是被动等着出事</p>
+<p>- 你怎么在压力下保持冷静</p>
+
+<p>This is a classic high-signal interview question. Every engineer gets paged for systems they don&#x27;t own. The interviewer wants to see your systematic thinking under uncertainty, proactive behavior, and composure under pressure.</p>
+
+<hr/>
+
+<h2>STAR 分解 / STAR Breakdown</h2>
+
+<p><strong>Situation（背景）:</strong></p>
+<p>&quot;我接手了另一个团队的支付处理服务的 on-call。那个服务是他们三年前写的，文档很少，原作者已经离职了。&quot;</p>
+
+<p><strong>Task（任务）:</strong></p>
+<p>&quot;我需要在第一次 on-call 前确保自己能处理任何 P0 事故，同时不能打扰原团队的工作。&quot;</p>
+
+<p><strong>Action（行动）:</strong></p>
+<p>1. <strong>主动 context 建立</strong> — 接手前两周，每天花 30 分钟读代码、traces、历史 alert。重点看过去 6 个月的 incident tickets，找出 top 5 告警类型。</p>
+<p>2. <strong>制作 runbook</strong> — 把每种告警写成 runbook：症状、常见原因、第一步排查命令、升级标准。没有 runbook 的告警我不接受接手。</p>
+<p>3. <strong>预演</strong> — 找原团队 senior 工程师做一次 shadowing，他们 walk through 一个 P1 场景，我主导排查，他们纠错。</p>
+<p>4. <strong>建立 escalation 路径</strong> — 明确什么情况应该立刻叫醒谁，而不是自己扛。</p>
+
+<p><strong>Result（结果）:</strong></p>
+<p>&quot;第一个月接了 3 个告警，2 个独立解决，1 个在 15 分钟内升级。MTTR 比原团队历史平均低了 20%，因为 runbook 比他们之前的文档更新更清晰。&quot;</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<p>❌ <strong>差答案：</strong></p>
+<p>&quot;我会边学边做，出了问题再去找人问。&quot;</p>
+<p>— 没有准备，等到出事才行动，让人担心你能否独立应对。</p>
+
+<p>✅ <strong>好答案：</strong></p>
+<p>&quot;我会在 on-call 开始前主动建立 context，写 runbook，做 shadowing，并明确升级路径。出事了按流程走，不超出我能力范围就独立处理，超出就快速升级。&quot;</p>
+
+<p>❌ <strong>陷阱回答：</strong></p>
+<p>&quot;我相信自己能学得很快。&quot; — 这是关于过程和系统性思维的问题，不是能力问题。</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分点 / Senior/Staff Tips</h2>
+
+<p><strong>Staff level 思维 — 不只是个人 on-call：</strong></p>
+<p>1. <strong>把 runbook 标准化</strong> — 将自己做的 runbook 模板推广到整个 org，减少 knowledge silos</p>
+<p>2. <strong>做 alert 质量审查</strong> — 接手后发现 30% 的 alert 是 noisy，提议做 alert fatigue review，降低 false positive 率</p>
+<p>3. <strong>推动 ownership 模型改进</strong> — 提出&quot;服务转移 checklist&quot;，防止下次又有人接手残缺系统</p>
+
+<p><strong>关键词 / Key Phrases:</strong></p>
+<p>- &quot;Proactive context building before the first page&quot;</p>
+<p>- &quot;Alert-to-runbook mapping&quot;</p>
+<p>- &quot;Clear escalation criteria — I know exactly when to call someone&quot;</p>
+<p>- &quot;Service handoff checklist&quot;</p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>1. <strong>接手前主动建立 context</strong> — 不要等到 3 AM 才去读代码</p>
+<p>2. <strong>Runbook 是硬性要求</strong> — 没有 runbook 的服务不应该接</p>
+<p>3. <strong>知道何时升级</strong> — 快速升级不是失败，犹豫不决才是</p>
+<p>4. <strong>把经验制度化</strong> — 把你学到的转化为团队资产</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你要帮同学照顾他的宠物狗，但你从没见过这只狗。好的做法是：事先问清楚狗的习惯、医疗记录、遇到紧急情况打谁的电话。而不是等狗生病了再说&quot;我不知道怎么办&quot;。On-call 就是这只狗。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- Google SRE Book — Being On-Call: https://sre.google/sre-book/being-on-call/</p>
+<p>- PagerDuty Runbook Guide: https://www.pagerduty.com/resources/learn/what-is-a-runbook/</p>
+<p>- Increment — On-Call: https://increment.com/on-call/</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🎨 Python Craft — Day 22</h2>
+<p><strong>Topic:</strong> Garbage Collection — Reference Counting + Generational GC</p>
+<p><strong>Category:</strong> Python Internals</p>
+<p><strong>Date:</strong> 2026-06-22</p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个高并发的 web 服务，发现内存随时间线性增长，重启后才恢复正常。是内存泄漏？还是 GC 没回收？这道题就是要搞清楚 CPython 的内存管理机制。</p>
+
+<p>You&#x27;re running a high-traffic web service and notice memory grows linearly over time, only recovering after restarts. Is it a leak, or GC not collecting? This is exactly why you need to understand CPython&#x27;s memory model.</p>
+
+<hr/>
+
+<h2>核心概念 / Core Concepts</h2>
+
+<h3>1. 引用计数 / Reference Counting (Primary GC)</h3>
+
+<p>CPython 的核心机制：每个对象维护一个 <code>ob_refcnt</code>。引用增加 +1，引用消失 -1，归零立即释放。</p>
+
+<pre><code>
+import sys
+
+a = [1, 2, 3]
+print(sys.getrefcount(a))  # 2: &#x27;a&#x27; + getrefcount&#x27;s temp ref
+
+b = a
+print(sys.getrefcount(a))  # 3: &#x27;a&#x27;, &#x27;b&#x27;, + temp ref
+
+del b
+print(sys.getrefcount(a))  # 2: back to &#x27;a&#x27; + temp ref
+
+# When refcount hits 0 → __del__ called → memory freed immediately
+</code></pre>
+
+<p><strong>优点：</strong> 确定性（立即释放），低 overhead</p>
+<p><strong>缺点：</strong> 无法处理循环引用！</p>
+
+<h3>2. 循环引用问题 / Circular Reference Problem</h3>
+
+<pre><code>
+import gc
+
+# Create a reference cycle
+a = {}
+b = {}
+a[&#x27;b&#x27;] = b  # a → b
+b[&#x27;a&#x27;] = a  # b → a  ← cycle!
+
+# Delete our references
+del a, b
+# Neither object&#x27;s refcount hits 0!
+# a.refcnt = 1 (b still points to it)
+# b.refcnt = 1 (a still points to it)
+# Both are leaked... until the cycle collector runs
+
+gc.collect()  # Manually trigger cycle collection
+print(gc.garbage)  # Objects that couldn&#x27;t be freed (if they have __del__)
+</code></pre>
+
+<h3>3. 分代垃圾回收 / Generational GC (Cycle Collector)</h3>
+
+<p>CPython 用三代（generation 0, 1, 2）来管理循环引用：</p>
+
+<pre><code>
+Generation 0: 新创建的对象 → 最频繁回收 (threshold: 700 new objects)
+Generation 1: 在 gen0 中存活的 → 每 10次 gen0 回收触发一次
+Generation 2: 长寿对象 → 每 10次 gen1 回收触发一次
+
+&quot;年轻人死得快，老人活得久&quot; — 统计规律
+</code></pre>
+
+<pre><code>
+import gc
+
+# Check current thresholds
+print(gc.get_threshold())   # (700, 10, 10) — default
+
+# Check object counts per generation
+print(gc.get_count())       # (current_gen0, current_gen1, current_gen2)
+
+# Tune for high-throughput servers
+gc.set_threshold(10000, 10, 10)  # Reduce gen0 frequency → less GC pause
+
+# Disable GC entirely (Instagram/Pinterest pattern for batch jobs)
+gc.disable()
+# ... do batch work ...
+gc.collect()  # One big collection at the end
+gc.enable()
+</code></pre>
+
+<hr/>
+
+<h2>❌ 常见内存泄漏 / Common Leak Patterns</h2>
+
+<pre><code>
+# ❌ Pattern 1: Unbounded cache
+_cache = {}
+def get_data(key):
+    if key not in _cache:
+        _cache[key] = fetch_expensive(key)  # Never evicted!
+    return _cache[key]
+
+# ✅ Fix: Use weakref or functools.lru_cache
+from functools import lru_cache
+
+@lru_cache(maxsize=1000)
+def get_data(key):
+    return fetch_expensive(key)
+
+# ❌ Pattern 2: Event listener not removed
+class Widget:
+    def __init__(self, event_bus):
+        event_bus.subscribe(&#x27;click&#x27;, self.on_click)  # Strong ref!
+    # Widget deleted, but event_bus still holds reference → leak
+
+# ✅ Fix: Use weakref
+import weakref
+event_bus.subscribe(&#x27;click&#x27;, weakref.ref(self.on_click))
+</code></pre>
+
+<hr/>
+
+<h2>实用调试 / Debug in Practice</h2>
+
+<pre><code>
+# Find what&#x27;s holding a reference
+import gc
+import sys
+
+obj = [1, 2, 3]
+referrers = gc.get_referrers(obj)
+print(f&quot;Object has {sys.getrefcount(obj)} refs&quot;)
+print(f&quot;Referred to by: {len(referrers)} objects&quot;)
+
+# Track object counts over time (memory profiling)
+import tracemalloc
+tracemalloc.start()
+
+# ... do work ...
+
+snapshot = tracemalloc.take_snapshot()
+stats = snapshot.statistics(&#x27;lineno&#x27;)
+for stat in stats[:5]:
+    print(stat)  # Top memory consumers by line
+</code></pre>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象每个对象是一个气球，上面绑着绳子。有几根绳子就是引用计数。所有绳子都断了，气球飘走（内存释放）。但如果两个气球互相绑在一起，就算你放开了，它们还在相互牵扯 — 这就是循环引用。分代 GC 是个清洁工，专门去找这种互相牵扯的气球群，剪断它们。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- CPython Memory Management: https://docs.python.org/3/c-api/memory.html</p>
+<p>- gc module docs: https://docs.python.org/3/library/gc.html</p>
+<p>- Instagram&#x27;s GC trick: https://instagram-engineering.com/dismissing-python-garbage-collection-at-instagram-4dca40b29172</p>
+<p>- tracemalloc docs: https://docs.python.org/3/library/tracemalloc.html</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI 新闻 / AI News — Day 73</h2>
+<p><strong>Mode:</strong> NEWS</p>
+<p><strong>Date:</strong> 2026-06-22</p>
+
+<p>&gt; 🔍 Sources: VentureBeat (venturebeat.com/feed), The Verge (theverge.com/ai-artificial-intelligence), Reuters via The Verge</p>
+
+<hr/>
+
+<h2>📰 本周 AI 大事 / This Week in AI</h2>
+
+<hr/>
+
+<h3>🔴 Story 1: AI 框架大规模安全漏洞爆发 — LangGraph、Langflow、LangChain 全中招</h3>
+<p><strong>AI Agent Framework Security Crisis: LangGraph, Langflow &amp; LangChain All Vulnerable</strong></p>
+
+<p>据 VentureBeat 报道，目前三大最广泛使用的 AI agent 框架同时出现严重安全漏洞，其中 Langflow 已有约 7,000 台服务器遭到实际攻击。</p>
+
+<p>As reported by VentureBeat, the three most widely deployed AI agent frameworks are all affected by serious security vulnerabilities. Langflow reportedly has around 7,000 exposed servers under active attack.</p>
+
+<p><strong>漏洞摘要 / Vulnerability Summary:</strong></p>
+
+<p>| 框架 | CVE（据报道）| 危险级别 | 类型 | 状态 |</p>
+<p>|------|------------|---------|------|------|</p>
+<p>| Langflow | CVE-2026-5027（据报道 CVSS ~8.8）| 高 | 路径遍历 → RCE | 🔴 在野攻击 |</p>
+<p>| LangGraph | CVE-2025-67644 等（据报道）| 中高 | SQL注入 → RCE | PoC 公开 |</p>
+<p>| LangChain-core | CVE-2026-34070 等（据报道）| 高 | 路径遍历 → 密钥泄露 | 已修复 |</p>
+
+<p><strong>关键点 / Key Takeaways for Engineers:</strong></p>
+<p>- Langflow 默认配置开启了 auto-login，单次未认证 HTTP 请求即可 RCE</p>
+<p>- 这些框架持有你的 OpenAI 密钥、数据库凭证、CRM token — 攻破一个等于暴露全部</p>
+<p>- 漏洞本质是老问题（SQL注入、路径遍历、不安全反序列化），不是 AI 特有风险</p>
+
+<p><strong>如果你在用这些框架 / If you use these:</strong></p>
+<pre><code>
+# 检查版本 / Check your versions
+pip show langflow langgraph langchain-core
+
+# 修复版本 / Fix versions
+# langflow → 1.9.0+
+# langgraph → 1.0.10+, langgraph-checkpoint-sqlite → 3.0.1+
+# langchain-core → 1.2.22+ or 0.3.86+
+</code></pre>
+
+<p>📎 来源 / Source: https://venturebeat.com/security/7000-langflow-servers-under-attack-langgraph-langchain-same-holes</p>
+
+<hr/>
+
+<h3>🟡 Story 2: AI Agent 自我进化 — Self-Harness 框架让 Agent 重写自己的运行规则，性能提升最高 60%</h3>
+<p><strong>Self-Harness: AI Agents That Rewrite Their Own Rules, Up to 60% Performance Boost</strong></p>
+
+<p>上海人工智能实验室研究人员发布了 Self-Harness 框架。核心思想：让 AI agent 分析自身执行轨迹，自动修改 system prompt、工具调用策略、错误恢复流程等，不依赖人工调试或更强的外部模型。</p>
+
+<p>Researchers at Shanghai AI Lab introduced Self-Harness — a framework where AI agents systematically improve their own &quot;harnesses&quot; (system prompts, tools, memory, orchestration logic) by analyzing their own execution traces, without human engineers or stronger external models.</p>
+
+<p><strong>三阶段循环 / Three-Stage Loop:</strong></p>
+<p>1. <strong>Weakness Detection</strong> — 分析失败 traces，识别系统性错误</p>
+<p>2. <strong>Edit Proposal</strong> — 生成针对性的 harness 修改方案</p>
+<p>3. <strong>Validation</strong> — 在 hold-out 任务上验证改动有效性</p>
+
+<p><strong>为什么重要 / Why It Matters:</strong></p>
+<p>- Agent 的性能不只取决于底层模型，还取决于它的 harness（就像 Claude Code 和 Codex 用同一个模型但行为很不同）</p>
+<p>- 手动调 harness 依赖直觉和 ad-hoc 调试，Self-Harness 引入了实证反馈环</p>
+<p>- 意义：每个企业都可以用同一个基础模型，通过自进化的 harness 做出差异化</p>
+
+<p>论文: https://arxiv.org/abs/2606.09498</p>
+
+<p>📎 来源 / Source: https://venturebeat.com/orchestration/researchers-introduce-self-harness-a-framework-that-lets-ai-agents-rewrite-their-own-rules-boosting-performance-up-to-60</p>
+
+<hr/>
+
+<h3>🟢 Story 3: 挪威禁止小学生使用 AI，但要求高中生学会用 AI</h3>
+<p><strong>Norway Bans AI Use for Elementary Students, Mandates It for High Schoolers</strong></p>
+
+<p>据 Reuters 报道，挪威将从 2026 年 8 月起实施分级 AI 使用限制：</p>
+<p>- 一至七年级（6-13岁）：原则上禁止使用 AI</p>
+<p>- 初中（14-16岁）：在教师监督下谨慎使用</p>
+<p>- 高中（17-19岁）：应学会适当使用 AI，为未来工作和学习做准备</p>
+
+<p>As reported by Reuters via The Verge, Norway will implement tiered AI restrictions in schools from August 2026.</p>
+
+<p><strong>背后的争论 / The Debate:</strong></p>
+<p>支持者认为，在认知能力发展阶段过早依赖 AI 会削弱批判性思维。反对者认为，禁止只会让学生在竞争中落后。挪威的分级方案试图走中间路线：按年龄差异化对待。</p>
+
+<p><strong>为什么工程师应该关注 / Why Engineers Should Care:</strong></p>
+<p>AI 在教育中的监管实验将影响未来 10 年的工程师来源。今天的政策决定明天的技术工作者如何思考和使用 AI。</p>
+
+<p>📎 来源 / Source: https://www.theverge.com/ai-artificial-intelligence (Reuters via The Verge, 2026-06-19)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>本周 AI 新闻就像这样：第一个故事是&quot;你的厨房刀把手有毒&quot;（框架安全漏洞）；第二个故事是&quot;厨师学会了自己磨刀&quot;（AI 自我改进）；第三个故事是&quot;政府规定多大年纪才能用厨师刀&quot;（AI 教育监管）。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- VentureBeat AI Security: https://venturebeat.com/security/</p>
+<p>- Self-Harness Paper: https://arxiv.org/abs/2606.09498</p>
+<p>- Norway AI School Policy (Reuters/Verge): https://www.reuters.com/technology/norway-imposes-near-ban-ai-elementary-school-2026-06-19/</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-21</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
