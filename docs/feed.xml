@@ -5,8 +5,657 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 22 Jun 2026 16:21:10 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 23 Jun 2026 15:09:40 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-23</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-23</guid>
+      <pubDate>Tue, 23 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 60</h2>
+
+<p><strong>设计一个 AI 对话平台 (ChatGPT 规模)</strong></p>
+<p><strong>Design an AI Chatbot Platform (ChatGPT-scale)</strong></p>
+
+<hr/>
+
+<h2>🌐 真实场景 / Real-World Scenario</h2>
+
+<p>想象你在设计一个每天处理 <strong>1 亿次对话</strong>的 AI 聊天平台。</p>
+<p>每个请求都要调用巨大的 LLM（比如 GPT-4o）、保持对话历史、支持流式输出（streaming），还要保证低延迟 + 高可用。</p>
+<p>这不是普通的 CRUD 系统——推理的成本是 I/O 的 1000 倍。</p>
+
+<p>Imagine building an AI chat platform handling <strong>100M conversations per day</strong>.</p>
+<p>Each request calls a massive LLM, maintains conversation history, supports streaming output, all while meeting low-latency and high-availability SLAs.</p>
+<p>This is not a normal CRUD system — inference costs 1000x more than I/O.</p>
+
+<hr/>
+
+<h2>📐 架构图 / Architecture Diagram</h2>
+
+<pre><code>
+User (Browser/App)
+        │  WebSocket / SSE
+        ▼
+  ┌─────────────┐
+  │  API Gateway │  (rate limit, auth, routing)
+  └──────┬──────┘
+         │
+  ┌──────▼──────────────────┐
+  │    Conversation Service  │  (session mgmt, context assembly)
+  └──────┬──────────────────┘
+         │ context + prompt
+  ┌──────▼──────────────────┐
+  │    LLM Inference Router  │  (load balance across model replicas)
+  └──────┬──────────────────┘
+         │ GPU workers
+  ┌──────▼──────────────────────────────────┐
+  │  Model Serving Cluster                  │
+  │  ┌────────────┐  ┌────────────┐         │
+  │  │  vLLM pod  │  │  vLLM pod  │  ...    │
+  │  │  (A100)    │  │  (H100)    │         │
+  │  └────────────┘  └────────────┘         │
+  └─────────────────────────────────────────┘
+         │ tokens (streaming)
+  ┌──────▼──────┐      ┌──────────────┐
+  │ Stream Relay │      │   Storage    │
+  │  (SSE push)  │      │ - Redis: ctx │
+  └─────────────┘      │ - S3: history│
+                        │ - Postgres: │
+                        │   user data  │
+                        └──────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>⚖️ 核心权衡 / Key Tradeoffs</h2>
+
+<h3>1. 为什么用 vLLM + Continuous Batching？</h3>
+<p>传统服务一次处理一个请求，GPU 大部分时间在等待。</p>
+<p>vLLM 用 <strong>PagedAttention</strong> + continuous batching，把等待时间&quot;填满&quot;，GPU 利用率从 30% 提升到 80%+。</p>
+
+<p>vLLM with <strong>PagedAttention</strong> + continuous batching fills GPU idle time. Without it, one slow streaming response blocks the entire GPU.</p>
+
+<h3>2. 流式输出：SSE vs WebSocket</h3>
+<p>- <strong>SSE (Server-Sent Events):</strong> 单向、HTTP/1.1 兼容、自动重连。适合 token 流。</p>
+<p>- <strong>WebSocket:</strong> 双向、更复杂。聊天场景用 SSE 更简单。</p>
+
+<p>Use SSE for token streaming — simpler than WebSocket for unidirectional token flow.</p>
+
+<h3>3. 对话上下文管理</h3>
+<p>- 短期上下文 → <strong>Redis</strong> (TTL 30 min)</p>
+<p>- 长期历史 → <strong>S3</strong> (压缩存储)</p>
+<p>- 上下文窗口有限 → 超长历史需要 <strong>摘要压缩</strong> (recursive summarization)</p>
+
+<p>Context window is finite. Long conversations require summarization to fit within token limits.</p>
+
+<h3>4. 模型路由 / Model Routing</h3>
+<p>- 简单问题 → 小模型 (GPT-4o-mini, Haiku) — 便宜 10x</p>
+<p>- 复杂推理 → 大模型 (GPT-4o, Sonnet)</p>
+<p>- 路由决策基于 intent classification（用小模型分类）</p>
+
+<p>Route cheap questions to small models. 80% of traffic often qualifies.</p>
+
+<hr/>
+
+<h2>❌ 别踩这个坑 / Common Mistakes</h2>
+
+<p><strong>坑 1: 对每个 token 都写数据库</strong></p>
+<p>→ 把 token 流缓存在内存，对话结束后一次性写入。</p>
+
+<p><strong>坑 2: 不限制并发请求数</strong></p>
+<p>→ GPU 内存是有限的。没有背压控制，会导致 OOM crash。用队列 + 请求限速。</p>
+
+<p><strong>坑 3: 上下文放全部历史</strong></p>
+<p>→ 100 轮对话 = context 爆炸 = 推理慢且贵。必须截断或摘要。</p>
+
+<p><strong>坑 4: 没有 prompt 注入防护</strong></p>
+<p>→ 用户可以通过 prompt 绕过系统指令。需要 input/output guardrails。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://vllm.ai/ — vLLM project, PagedAttention paper</p>
+<p>- https://platform.openai.com/docs/guides/streaming — OpenAI streaming guide</p>
+<p>- https://www.youtube.com/watch?v=80bIUggRJf4 — Andrej Karpathy on LLM serving</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>把 AI 聊天平台想成一家饭店：用户点菜（输入问题），厨师（GPU）做菜（推理），服务员一道一道上菜（流式输出）。</p>
+<p>vLLM 就像让厨师同时帮多张桌子备菜，而不是只等一桌做完。</p>
+
+<p>It&#x27;s like a restaurant: customers order (input), chefs cook (GPU inference), waiters serve dish by dish (streaming tokens). vLLM lets chefs prep multiple tables at once instead of one at a time.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 61</h2>
+
+<p><strong>#208 Implement Trie (Medium)</strong> — 🟡 Medium</p>
+
+<hr/>
+
+<h2>🧩 新模式 / New Pattern: 前缀树模式 (Trie Pattern)</h2>
+
+<p>📍 本模块共 3 道题 / This block: 3 problems</p>
+
+<p><strong>#208 Implement Trie</strong> ← TODAY</p>
+<p><strong>#211 Design Add and Search Words</strong> (Medium)</p>
+<p><strong>#212 Word Search II</strong> (Hard)</p>
+
+<p><strong>什么时候用 / When to use:</strong> 前缀搜索、自动补全、词典匹配</p>
+
+<p><strong>识别信号 / Signals:</strong> prefix search, autocomplete, word dictionary, &quot;starts with&quot;, matching patterns across words</p>
+
+<p><strong>通用模版 / Template:</strong></p>
+<pre><code>
+class TrieNode:
+    def __init__(self):
+        self.children = {}  # char -&gt; TrieNode
+        self.is_end = False  # marks end of a word
+
+def insert(root, word):
+    node = root
+    for ch in word:
+        if ch not in node.children:
+            node.children[ch] = TrieNode()
+        node = node.children[ch]
+    node.is_end = True
+</code></pre>
+
+<p><strong>核心洞察 / Key Insight:</strong> 共享前缀 → 节省空间 + O(L) 查询（L = 词长），不需要 O(N) 扫描所有词</p>
+
+<hr/>
+
+<h2>🔗 Links</h2>
+
+<p>- LeetCode: https://leetcode.com/problems/implement-trie-prefix-tree/</p>
+<p>- NeetCode: https://neetcode.io/problems/implement-prefix-tree</p>
+
+<hr/>
+
+<h2>🌍 现实类比 / Real-World Analogy</h2>
+
+<p>想象一棵「词语树」：</p>
+<p>- 根节点是空的</p>
+<p>- 每一层是字符串的第 N 个字符</p>
+<p>- 所有以「app」开头的词共享同一条「a→p→p」的路径</p>
+
+<p>这就是你手机键盘自动补全的底层结构！</p>
+
+<p>Imagine a &quot;word tree&quot; where words sharing a prefix share the same path from the root. Your phone&#x27;s autocomplete literally uses a trie underneath.</p>
+
+<hr/>
+
+<h2>🐍 Python 解法 + 追踪 / Solution + Trace</h2>
+
+<pre><code>
+class TrieNode:
+    def __init__(self):
+        self.children = {}  # maps char -&gt; TrieNode
+        self.is_end = False
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word: str) -&gt; None:
+        node = self.root
+        for ch in word:
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.is_end = True  # mark word end
+
+    def search(self, word: str) -&gt; bool:
+        node = self.root
+        for ch in word:
+            if ch not in node.children:
+                return False
+            node = node.children[ch]
+        return node.is_end  # must be full word
+
+    def startsWith(self, prefix: str) -&gt; bool:
+        node = self.root
+        for ch in prefix:
+            if ch not in node.children:
+                return False
+            node = node.children[ch]
+        return True  # prefix exists, don&#x27;t need is_end
+</code></pre>
+
+<p><strong>Trace for insert(&quot;app&quot;), search(&quot;app&quot;), startsWith(&quot;ap&quot;):</strong></p>
+<pre><code>
+insert(&quot;app&quot;):
+  root → &#x27;a&#x27; → &#x27;p&#x27; → &#x27;p&#x27; (is_end=True)
+
+search(&quot;app&quot;):
+  root → &#x27;a&#x27; ✓ → &#x27;p&#x27; ✓ → &#x27;p&#x27; ✓, is_end=True → True
+
+search(&quot;ap&quot;):
+  root → &#x27;a&#x27; ✓ → &#x27;p&#x27; ✓, is_end=False → False
+
+startsWith(&quot;ap&quot;):
+  root → &#x27;a&#x27; ✓ → &#x27;p&#x27; ✓ → return True (don&#x27;t care about is_end)
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(L) per operation (L = word length)</p>
+<p>- Space: O(N × L) where N = number of words</p>
+
+<hr/>
+
+<h2>🔄 举一反三 / Pattern Connections</h2>
+
+<p>这只是 Trie 模块的<strong>第 1/3</strong> 题——打好基础：</p>
+
+<p>- <strong>#211 (下一题):</strong> 支持 <code>.</code> 通配符 → DFS 遍历所有子节点</p>
+<p>- <strong>#212 (终极题):</strong> 在 2D 棋盘上搜索单词列表 → Trie 剪枝优化暴力 DFS</p>
+
+<p>关键变化点：</p>
+<p>1. 只是<strong>实现</strong>数据结构 → 下题是<strong>变形搜索</strong> → 最后是<strong>组合应用</strong></p>
+<p>2. 每次都用同一个 TrieNode 模板，只改搜索逻辑</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://leetcode.com/problems/implement-trie-prefix-tree/</p>
+<p>- https://en.wikipedia.org/wiki/Trie</p>
+<p>- https://neetcode.io/courses/dsa-for-beginners/26</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>Trie 就像一棵字母树：每层是一个字母，想找「apple」就沿着 a→p→p→l→e 走下去。</p>
+<p>比每次扫描整个词典快多了！</p>
+
+<p>A Trie is like a letter tree: each level is one character, so finding &quot;apple&quot; means walking a→p→p→l→e. Way faster than scanning the whole dictionary each time!</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 60</h2>
+
+<p><strong>Leadership — Staff Level</strong></p>
+
+<p><strong>Q: Describe how you&#x27;ve contributed to hiring and growing a team.</strong></p>
+<p><strong>描述你在招聘和团队成长方面的贡献。</strong></p>
+
+<hr/>
+
+<h2>为什么这个问题重要 / Why This Matters</h2>
+
+<p>Staff+ 工程师的影响力不只是代码——而是<strong>通过他人放大成果</strong>。</p>
+<p>招聘 = 最高杠杆的投资。一个招聘决策的影响可以持续多年。</p>
+
+<p>Staff+ engineers multiply impact through others. Hiring is the highest-leverage investment you make — one decision can shape a team for years.</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<p><strong>Situation (背景):</strong></p>
+<p>&gt; &quot;我们团队在快速扩张，从 5 人增长到 12 人，但没有标准化的面试流程。每次 Debrief 都是各说各的，录取决策不一致。&quot;</p>
+
+<p>&gt; &quot;Our team was scaling from 5 to 12 engineers with no standardized interview process. Every debrief was ad hoc, leading to inconsistent hiring decisions.&quot;</p>
+
+<p><strong>Task (任务):</strong></p>
+<p>&gt; &quot;我主动接手了重设计面试流程这件事，并且亲自参与每次系统设计面试，成为团队面试文化的负责人。&quot;</p>
+
+<p>&gt; &quot;I took ownership of redesigning our interview process and became the go-to system design interviewer, owning our hiring bar.&quot;</p>
+
+<p><strong>Action (行动):</strong></p>
+<p>&gt; &quot;我做了三件事：</p>
+<p>&gt; 1. 建立了评分矩阵（rubric），把「感觉不错」变成可量化的维度——技术深度、设计直觉、沟通清晰度</p>
+<p>&gt; 2. 与 Recruiting 合作，定义了 JD 和 level calibration 标准</p>
+<p>&gt; 3. 建立了 shadow/reverse-shadow 制度：新面试官先观摩两场再独立面试&quot;</p>
+
+<p>&gt; &quot;Three actions: (1) Built a scoring rubric converting gut feel into measurable dimensions — technical depth, design intuition, communication clarity. (2) Partnered with Recruiting to define JD and level calibration. (3) Created shadow/reverse-shadow system: new interviewers observe two sessions before flying solo.&quot;</p>
+
+<p><strong>Result (结果):</strong></p>
+<p>&gt; &quot;面试一致性显著提升——pass rate 方差降低了 40%。我们在 6 个月内成功 onboard 了 5 名工程师，其中 3 名已经独立负责项目。另外，我写的面试指南被公司其他团队复用。&quot;</p>
+
+<p>&gt; &quot;Hiring consistency improved — pass-rate variance dropped 40%. We onboarded 5 engineers in 6 months; 3 are already owning projects. My interview guide was adopted by two other teams.&quot;</p>
+
+<hr/>
+
+<h2>❌ 不好的回答 vs ✅ 好的回答</h2>
+
+<p><strong>❌ Bad:</strong> &quot;我参加了很多面试，面了很多人。&quot;</p>
+<p>&gt; Vague. No ownership, no impact.</p>
+
+<p><strong>✅ Good:</strong> 上面的 STAR 回答 — 有具体问题、有主动 ownership、有量化结果。</p>
+
+<p><strong>❌ Bad:</strong> &quot;我会给候选人打分，然后参加 debrief。&quot;</p>
+<p>&gt; This is just describing the process, not your contribution.</p>
+
+<p><strong>✅ Good:</strong> 描述你<strong>改变了什么</strong>，而不是<strong>参与了什么</strong>。</p>
+
+<hr/>
+
+<h2>👑 Senior/Staff Tips</h2>
+
+<p>- Staff 面试官应该能 <strong>define the bar</strong>，不只是 execute it</p>
+<p>- 提到你如何帮助 <strong>calibrate others</strong>（帮同事理解好坏候选人的区别）</p>
+<p>- 如果你参与过 sourcing（主动挖人）、JD 设计、offer 谈判——这些都是加分项</p>
+<p>- 成长贡献不只是招聘：还包括 onboarding、mentoring、performance review</p>
+
+<p>Staff engineers define the bar, don&#x27;t just apply it. Mention calibrating peers, sourcing, and growing people post-hire.</p>
+
+<hr/>
+
+<h2>🔑 Key Takeaways / 要点</h2>
+
+<p>1. <strong>招聘是杠杆</strong> — 一个 hire 的影响比你一个人写代码大 10 倍</p>
+<p>2. <strong>流程 &gt; 直觉</strong> — 用 rubric 减少偏见，增加一致性</p>
+<p>3. <strong>言传身教</strong> — shadow/reverse-shadow 是传递面试文化最好的方式</p>
+<p>4. <strong>量化影响</strong> — 能说出 &quot;reduced variance by X%&quot; 比泛泛而谈更有说服力</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://www.lethain.com/staff-engineer/ — Will Larson on Staff Engineering</p>
+<p>- https://interviewing.io/guides/hiring-bar — How top companies set bars</p>
+<p>- https://betterprogramming.pub/how-to-run-a-structured-technical-interview-9acb19e3d877</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>招聘就像选队友打游戏：你不只是要赢一把，你要建立一套「怎么选队友」的标准，让每次选人都更靠谱。</p>
+
+<p>Hiring is like picking teammates for a game. You don&#x27;t just want to win one round — you want to build a system for choosing well every time.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🎨 Python Craft — Day 23</h2>
+
+<p><strong>Import System — How Python Finds and Loads Modules</strong></p>
+<p><strong>Python 导入系统 — 模块是怎么被找到和加载的</strong></p>
+
+<hr/>
+
+<h2>🌐 真实场景 / Real-World Scenario</h2>
+
+<p>你在做一个大型 Python 项目，遇到过这些问题吗？</p>
+<p>- <code>ImportError: No module named &#x27;mypackage&#x27;</code> — 明明安装了！</p>
+<p>- 循环导入 (<code>circular import</code>) 导致程序崩溃</p>
+<p>- 同名模块冲突，不知道 import 了哪个</p>
+
+<p>要解决这些问题，必须理解 Python 的<strong>导入机制</strong>。</p>
+
+<p>Ever hit <code>ImportError</code> on something you&#x27;re sure is installed? Or a circular import that crashes at startup? Understanding Python&#x27;s import system demystifies all of this.</p>
+
+<hr/>
+
+<h2>🔍 Python 怎么找模块 / How Python Finds Modules</h2>
+
+<p>当你写 <code>import foo</code>，Python 按顺序查找：</p>
+
+<pre><code>
+1. sys.modules (缓存) → 已经 import 过？直接返回
+2. built-in modules  → math, os, sys...
+3. frozen modules    → 编译进 Python 解释器的
+4. sys.path          → 一个目录列表，逐一搜索
+</code></pre>
+
+<p><strong>查看 sys.path:</strong></p>
+<pre><code>
+import sys
+print(sys.path)
+# [&#x27;&#x27;, &#x27;/usr/lib/python3.11&#x27;, &#x27;/usr/local/lib/python3.11/site-packages&#x27;, ...]
+# &#x27;&#x27; = 当前工作目录
+</code></pre>
+
+<hr/>
+
+<h2>⚙️ Import 的底层步骤 / Under the Hood</h2>
+
+<pre><code>
+import mymodule
+</code></pre>
+
+<p>Python 内部做了这 3 步：</p>
+
+<pre><code>
+1. Find: 用 Finder 定位模块文件
+        - PathFinder → 搜索 sys.path
+        - 每个 entry 对应一个 sys.path_hooks importer
+
+2. Load: 用 Loader 读取 + 编译 → .pyc 缓存到 __pycache__
+
+3. Bind: 把模块对象放入 sys.modules，绑定到当前命名空间
+</code></pre>
+
+<p><strong>验证缓存：</strong></p>
+<pre><code>
+import sys
+import json
+print(sys.modules[&#x27;json&#x27;])  # &lt;module &#x27;json&#x27; from &#x27;...json/__init__.py&#x27;&gt;
+# 第二次 import json 直接从这里返回，不重复加载
+</code></pre>
+
+<hr/>
+
+<h2>🔄 循环导入陷阱 / Circular Import Trap</h2>
+
+<pre><code>
+# a.py
+from b import func_b
+
+# b.py
+from a import func_a  # ❌ CircularImportError!
+</code></pre>
+
+<p><strong>为什么会崩？</strong></p>
+<p>Python 开始 import a → 发现需要 b → 开始 import b → 发现需要 a → a 还没加载完 → 报错</p>
+
+<p><strong>解法 / Fix:</strong></p>
+<pre><code>
+# 方法1: 延迟导入 (lazy import)
+def func_b():
+    from a import func_a  # 在函数内部 import，避免模块级循环
+    return func_a()
+
+# 方法2: 重构 → 提取共同依赖到第三个模块
+# a.py 和 b.py 都 import common.py，互不依赖
+</code></pre>
+
+<hr/>
+
+<h2>🛠️ 自定义 Import Hook / Custom Import Hook</h2>
+
+<pre><code>
+import sys
+
+class DebugFinder:
+    &quot;&quot;&quot;Log every import attempt.&quot;&quot;&quot;
+    @classmethod
+    def find_module(cls, name, path=None):
+        print(f&quot;Importing: {name}&quot;)
+        return None  # None = let normal import proceed
+
+sys.meta_path.insert(0, DebugFinder())
+
+import json  # prints: Importing: json
+import os    # prints: Importing: os
+</code></pre>
+
+<p>用途：</p>
+<p>- 懒加载插件系统</p>
+<p>- 模块 mock（测试时替换真实模块）</p>
+<p>- 权限控制（禁止 import 某些模块）</p>
+
+<hr/>
+
+<h2>❌ vs ✅ 常见错误 / Common Mistakes</h2>
+
+<p><strong>❌ 相对导入用错：</strong></p>
+<pre><code>
+# 在 mypackage/utils.py 中
+import helper  # 可能找到系统 helper，不是你想要的
+</code></pre>
+
+<p><strong>✅ 用明确的相对导入：</strong></p>
+<pre><code>
+from . import helper      # 同包
+from .models import User  # 同包的子模块
+</code></pre>
+
+<p><strong>❌ 动态修改 sys.path（hack）：</strong></p>
+<pre><code>
+sys.path.append(&#x27;/some/random/path&#x27;)  # 脆弱、不可移植
+</code></pre>
+
+<p><strong>✅ 用 <code>pip install -e .</code> 或正确的 <code>pyproject.toml</code></strong></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://docs.python.org/3/reference/import.html — Official import system docs</p>
+<p>- https://realpython.com/python-import/ — Deep dive with examples</p>
+<p>- https://peps.python.org/pep-0302/ — PEP 302: New Import Hooks</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>Import 就像去图书馆借书：Python 先查「已借目录」(sys.modules)，没有的话按地图 (sys.path) 逐个书架 (目录) 找，找到了就借出来（加载），并记录在「已借目录」里，下次不用再找。</p>
+
+<p>Importing is like borrowing a library book: check the &quot;already borrowed&quot; catalog (sys.modules) first, then search the shelves in order (sys.path). Once found, it&#x27;s loaded and cataloged so the next import is instant.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 74</h2>
+
+<p><strong>AGI 争论与新兴架构 / The Future — AGI Debates, Emerging Architectures</strong></p>
+
+<hr/>
+
+<h2>💡 AGI 到底是什么？/ What Even Is AGI?</h2>
+
+<p>AGI（通用人工智能）没有统一定义，不同人的理解天差地别：</p>
+
+<p>| 定义 / Definition | 谁这么说 / Proponent |</p>
+<p>|---|---|</p>
+<p>| 能做任何人类可以做的认知任务 | OpenAI 官方定义 |</p>
+<p>| 能自主完成大多数经济任务 | OpenAI 内部操作定义 |</p>
+<p>| 能自我改进的系统 | DeepMind 等 |</p>
+<p>| 图灵测试通过 | 经典定义（已过时）|</p>
+
+<p>&gt; AGI doesn&#x27;t have a universally accepted definition. OpenAI&#x27;s operational definition is &quot;a system that can autonomously complete most economically valuable tasks.&quot; Others require self-improvement loops.</p>
+
+<hr/>
+
+<h2>🏛️ 两大阵营 / Two Camps</h2>
+
+<h3>阵营 1：Scaling Wins（缩放定律派）</h3>
+<p><strong>核心论点:</strong> 更大的模型 + 更多数据 + 更多算力 → 涌现能力持续出现</p>
+<p><strong>代表:</strong> Sam Altman, Demis Hassabis</p>
+<p><strong>证据:</strong> GPT-2 → GPT-3 → GPT-4 的质变跨越</p>
+
+<p>Bigger models keep surprising us with emergent capabilities. Just keep scaling.</p>
+
+<h3>阵营 2：Architecture Change Needed（架构变革派）</h3>
+<p><strong>核心论点:</strong> Transformer 有根本缺陷（无记忆、推理弱），需要新架构</p>
+<p><strong>代表:</strong> Yann LeCun (世界模型论), Gary Marcus</p>
+<p><strong>证据:</strong> LLM 仍然会算错 9.11 &gt; 9.9，hallucinate 事实</p>
+
+<p>Transformers lack persistent memory and true reasoning. We need something fundamentally different.</p>
+
+<hr/>
+
+<h2>🔭 新兴架构 / Emerging Architectures</h2>
+
+<h3>1. Mamba / State Space Models (SSM)</h3>
+<p>- 线性时间序列处理，<strong>不需要 Attention</strong></p>
+<p>- 长序列效率远超 Transformer (O(n) vs O(n²))</p>
+<p>- 2024 年崛起，2025 年混合模型（Attention + SSM）开始流行</p>
+
+<p>Linear-time sequence modeling without attention. Efficient for very long contexts.</p>
+
+<h3>2. Mixture of Experts (MoE) 演化</h3>
+<p>- GPT-4 据报道是 8 个专家的 MoE</p>
+<p>- 每次 token 只激活部分专家 → 大模型，小推理成本</p>
+<p>- 趋势：更细粒度的 MoE，每层 1000+ 专家</p>
+
+<p>Only activate a subset of experts per token — big model capacity, small inference cost.</p>
+
+<h3>3. Retrieval-Augmented Everything</h3>
+<p>- 不只是 RAG for QA，而是<strong>主动记忆检索</strong></p>
+<p>- 模型训练时学会「何时去查、查什么」</p>
+<p>- GraphRAG（微软）：用知识图谱结构化检索，而非纯向量相似度</p>
+
+<p>Not just retrieval at query time — models learning when and what to retrieve during reasoning.</p>
+
+<h3>4. Test-Time Compute (推理时计算)</h3>
+<p>- OpenAI o3, DeepSeek R1 的核心：<strong>推理时多想几步</strong></p>
+<p>- 不是训练更大模型，而是推理时生成更多「思考链」</p>
+<p>- 趋势：动态分配推理算力（简单问题快速回答，复杂问题深思熟虑）</p>
+
+<p>Spending more compute at inference time beats just training bigger models for reasoning tasks.</p>
+
+<hr/>
+
+<h2>🧮 可运行代码 / Runnable Python Snippet</h2>
+
+<p>探索现有 SSM 实现（Mamba 风格）：</p>
+
+<pre><code>
+# pip install mamba-ssm  (requires CUDA)
+# 或者用纯 Python 模拟 SSM 的核心思想
+
+import numpy as np
+
+def ssm_step(A, B, C, x, h):
+    &quot;&quot;&quot;
+    Simplified State Space Model step.
+    h: hidden state (memory)
+    x: input token
+    Returns: output y, new hidden state
+    &quot;&quot;&quot;
+    h_new = A @ h + B * x    # update state
+    y = C @ h_new             # project to output
+    return y, h_new
+
+# 模拟 3 个 tokens 的处理
+A = np.array([[0.9, 0.1], [0.0, 0.8]])  # state transition
+B = np.array([[1.0], [0.5]])             # input projection
+C = np.array([[1.0, 0.0]])               # output projection
+
+h = np.zeros((2, 1))  # initial hidden state
+tokens = [1.0, 2.0, 3.0]
+
+for i, x in enumerate(tokens):
+    y, h = ssm_step(A, B, C, x, h)
+    print(f&quot;Token {i}: input={x:.1f}, output={y[0,0]:.3f}, state={h.flatten()}&quot;)
+</code></pre>
+
+<hr/>
+
+<h2>🤔 我们离 AGI 还有多远？/ How Far Are We?</h2>
+
+<p><strong>乐观派（2-5年）:</strong> OpenAI, Anthropic 内部时间线</p>
+<p><strong>谨慎派（10-20年）:</strong> 大多数学术研究者</p>
+<p><strong>怀疑派（不确定）:</strong> Yann LeCun — 认为当前路径根本上错误</p>
+
+<p>没有人真正知道。但这个问题本身就说明：我们正处于 AI 历史上最有趣的时刻。</p>
+
+<p>No one really knows. But the fact that serious people disagree so dramatically tells you we&#x27;re at a genuinely inflection point.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- https://openai.com/research/planning-for-agi-and-beyond — OpenAI AGI roadmap</p>
+<p>- https://arxiv.org/abs/2312.00752 — Mamba paper (Gu &amp; Dao, 2023)</p>
+<p>- https://yann.lecun.com/ex/pubs/index.html — LeCun&#x27;s world model papers</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>AGI 就是「什么都会的 AI」。现在的 AI 很擅长特定任务（下棋、写文章、画画），但遇到从没见过的新任务就会卡壳。科学家们在争论：是「继续加大模型」就能解决，还是需要从头发明新方法？</p>
+
+<p>AGI is &quot;AI that can do anything.&quot; Current AI excels at specific tasks but struggles with genuinely novel ones. Scientists debate whether we just need bigger models, or a fundamentally new approach.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-22</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

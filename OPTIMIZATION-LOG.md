@@ -557,3 +557,15 @@
 
 ### Notes
 - The Day 69 / Day 70 commit fold likely also explains the missing "Day 69" line in git log; worth checking whether the daily commit step ran on 2026-06-18 or was deferred. Manual follow-up only — no code changes made this run per rules.
+
+## 2026-06-22 Optimization Run
+
+### Issues Found
+- P0: None. All 7 byte-by-byte cron jobs report status=ok with no errors. Email delivery 7/7 for the last 7 days.
+- P1: None observed in delivery/state data.
+- P2 (minor): Git log day-number/date drift — Day 72 was committed on both 2026-06-20 and 2026-06-21 (duplicate day label), and day numbers don't map 1:1 to calendar dates (Day 70→06-19, Day 73→06-22). Delivery unaffected, but the day counter may be incrementing inconsistently vs. send dates. Worth a manual glance at the day-increment logic.
+
+### Metrics
+- Delivery rate (7d): 7/7 ✅
+- Cron errors: none (optimizer, health-check, weekday, review-and-send, backup-send, saturday, sunday — all ok)
+- State: currentDay=73, lastSentDate=2026-06-22, lastReviewDay=70 (review cadence on track, every 5 days)
