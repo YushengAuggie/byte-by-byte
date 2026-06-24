@@ -524,7 +524,10 @@ def validate_email_content(sections_html, plain_parts):
 
         # Check for placeholder markers in final content
         for marker in PLACEHOLDER_WORDS:
-            if marker in plain_lower:
+            # Use word-boundary check for short common words to avoid false positives
+            # e.g. 'placeholder' should not match 'placeholders' in real content
+            import re
+            if re.search(r'\b' + re.escape(marker) + r'\b', plain_lower):
                 errors.append('{}: contains placeholder marker "{}"'.format(section_name, marker))
 
         # Check minimum content length
