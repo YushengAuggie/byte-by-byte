@@ -5,8 +5,771 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 24 Jun 2026 15:22:54 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 27 Jun 2026 15:11:19 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-27</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-27</guid>
+      <pubDate>Sat, 27 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<p>Saturday deep dive day — see 2026-06-27-deepdive.md</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<p>Saturday deep dive day — see 2026-06-27-deepdive.md</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<p>Saturday deep dive day — see 2026-06-27-deepdive.md</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<p>Saturday deep dive day — see 2026-06-27-deepdive.md</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<p>Saturday deep dive day — see 2026-06-27-deepdive.md</p>
+
+<hr/>
+<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: 前缀树 &amp; 通配符搜索 — Design Add and Search Words (15 min read)</strong></p>
+<p>📊 NeetCode: 61/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 Keep the streak alive!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>前缀树（Trie）是一种树形数据结构，专为字符串的前缀操作而生。它的核心思想简单而优雅：把每个字符当成树的一层，共享公共前缀。插入一百万个以 &quot;inter&quot; 开头的单词？只需在树里存一个 &quot;inter&quot; 前缀节点，而不是一百万个独立字符串的副本。</p>
+
+<p>今天的题目 [LeetCode #211](https://leetcode.com/problems/design-add-and-search-words-data-structure/)（Design Add and Search Words Data Structure）在标准 Trie 的基础上加了一个转折：<code>.</code> 可以匹配任意字符。这把一个 O(L) 的查询变成了需要回溯的 DFS，让问题从&quot;简单前缀匹配&quot;升级为&quot;带通配符的模式匹配&quot;。</p>
+
+<p><strong>English:</strong></p>
+
+<p>A Trie is a tree structure built for prefix operations. Every character becomes a level in the tree; common prefixes are shared. The twist in LeetCode #211: the <code>.</code> wildcard can match any single character, turning a straightforward O(L) lookup into a DFS with backtracking. Understanding this jump — from exact match to pattern match — is the core insight of this deep dive.</p>
+
+<p><strong>Why it matters:</strong> Tries are everywhere in production — autocomplete, spell checkers, IP routing tables, search indexing. The wildcard variant maps directly to regex engines, DNS glob matching, and file system glob patterns.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>Trie 的结构</h3>
+
+<p><strong>中文：</strong></p>
+
+<pre><code>
+插入 &quot;bad&quot;, &quot;dad&quot;, &quot;mad&quot;, &quot;pad&quot; 后的 Trie：
+
+          root
+        /  |  \  \
+       b   d   m   p
+       |   |   |   |
+       a   a   a   a
+       |   |   |   |
+      [d] [d] [d] [d]
+       *   *   *   *     (* = is_end = True)
+</code></pre>
+
+<p>每个节点包含：</p>
+<p>1. <code>children: dict[str, TrieNode]</code> — 子节点映射（26 个字母 → 最多 26 个孩子）</p>
+<p>2. <code>is_end: bool</code> — 是否是某个单词的终点</p>
+
+<p><strong>English:</strong></p>
+
+<p>Each node doesn&#x27;t store a character — it IS a character in its parent&#x27;s edge. Nodes only store:</p>
+<p>- <strong>children</strong>: which characters follow this prefix</p>
+<p>- <strong>is_end</strong>: does a complete word terminate here</p>
+
+<h3>为什么 `.` 通配符要用 DFS + 回溯？</h3>
+
+<p><strong>中文：</strong></p>
+
+<p>正常搜索 &quot;bad&quot;：</p>
+<pre><code>
+root → children[&#x27;b&#x27;] → children[&#x27;a&#x27;] → children[&#x27;d&#x27;] → is_end? True ✓
+</code></pre>
+
+<p>搜索 &quot;b.d&quot;（<code>.</code> 匹配任意字符）：</p>
+<pre><code>
+root → children[&#x27;b&#x27;] → ???
+</code></pre>
+
+<p>到了 <code>b</code> 节点，<code>.</code> 可以匹配 <code>b</code> 的任何子节点。我们不知道该走哪条路，所以必须把 <code>b</code> 的所有子节点都尝试一遍，看哪条路最终能走到 <code>d</code> 的 <code>is_end</code>。</p>
+
+<p>这就是回溯的本质：枚举所有可能的分支，剪掉死路，直到找到答案或穷举所有路径。</p>
+
+<p><strong>English:</strong></p>
+
+<p>Wildcards force us to explore multiple branches simultaneously. When we hit <code>.</code>, we can&#x27;t prune — we must try every child. This is classic <strong>backtracking</strong>: branch → explore → backtrack if failure. The key insight is recognizing that <code>.</code> converts a lookup from a single path traversal to a DFS over a subtree.</p>
+
+<h3>时间复杂度分析</h3>
+
+<p>| 操作 | 时间复杂度 | 空间复杂度 |</p>
+<p>|------|-----------|-----------|</p>
+<p>| <code>addWord(word)</code> | O(L) | O(L) 最坏情况新建 L 个节点 |</p>
+<p>| <code>search(word)</code> — 无通配符 | O(L) | O(1) 栈空间 |</p>
+<p>| <code>search(word)</code> — 全 <code>.</code> | O(N) N=所有节点数 | O(L) DFS 栈深度 |</p>
+
+<p>最坏情况：搜索 <code>&quot;...&quot;</code> 且字典里有 10 万个 3 字母单词 → 遍历整个 Trie。</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>朴素实现 → 优化过程</h3>
+
+<p><strong>中文解题思路：</strong></p>
+
+<p><strong>方法一：暴力（不用 Trie）</strong></p>
+<p>把所有单词存进 list，搜索时用 <code>re.match</code>。</p>
+<p>- 时间：O(N·L) 每次搜索</p>
+<p>- 空间：O(N·L)</p>
+<p>- 不合格：面试官要的就是 Trie</p>
+
+<p><strong>方法二：标准 Trie</strong></p>
+<p>能高效处理精确匹配，但 <code>.</code> 通配符需要额外处理。</p>
+
+<p><strong>方法三：Trie + DFS 回溯（最优解）</strong></p>
+
+<p><strong>English approach:</strong> Build a standard Trie. For search, recurse through the Trie character by character. When we hit <code>.</code>, recurse into ALL children and return True if any subtree returns True.</p>
+
+<hr/>
+
+<h3>完整实现代码</h3>
+
+<pre><code>
+class TrieNode:
+    def __init__(self):
+        # Use a dict for sparse storage (not all 26 letters used)
+        # Alternative: self.children = [None] * 26 (array-based, cache-friendly)
+        self.children: dict[str, &#x27;TrieNode&#x27;] = {}
+        self.is_end: bool = False  # True if a complete word ends here
+
+
+class WordDictionary:
+    &quot;&quot;&quot;
+    LeetCode #211: Design Add and Search Words Data Structure
+    
+    Supports:
+      - addWord(word): insert exact word
+      - search(word): match with &#x27;.&#x27; as wildcard for any single char
+    
+    Key insight: &#x27;.&#x27; wildcards require DFS + backtracking across all children.
+    &quot;&quot;&quot;
+
+    def __init__(self):
+        self.root = TrieNode()
+
+    def addWord(self, word: str) -&gt; None:
+        &quot;&quot;&quot;
+        Insert word into the Trie.
+        Time: O(L) where L = len(word)
+        Space: O(L) worst case (all new characters)
+        &quot;&quot;&quot;
+        node = self.root
+        for ch in word:
+            # Create child node if this character path doesn&#x27;t exist yet
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        # Mark the end of this word
+        node.is_end = True
+
+    def search(self, word: str) -&gt; bool:
+        &quot;&quot;&quot;
+        Search for word, where &#x27;.&#x27; matches any single character.
+        Time: O(L) best case (no wildcards), O(N) worst case (all wildcards)
+        Space: O(L) recursion stack depth
+        &quot;&quot;&quot;
+        return self._dfs(word, 0, self.root)
+
+    def _dfs(self, word: str, idx: int, node: TrieNode) -&gt; bool:
+        &quot;&quot;&quot;
+        Recursive DFS through the Trie.
+        
+        Args:
+            word: the search pattern
+            idx: current position in word (which character we&#x27;re matching)
+            node: current Trie node we&#x27;re at
+        
+        Returns:
+            True if word[idx:] matches any path from node
+        &quot;&quot;&quot;
+        # Base case: consumed all characters
+        # Check if we&#x27;re at a valid word ending
+        if idx == len(word):
+            return node.is_end
+
+        ch = word[idx]
+
+        if ch == &#x27;.&#x27;:
+            # Wildcard: try EVERY child node
+            # Return True if ANY child path leads to a complete match
+            for child in node.children.values():
+                if self._dfs(word, idx + 1, child):
+                    return True  # Found a match — no need to continue
+            return False  # No child path matched
+
+        else:
+            # Exact character match
+            if ch not in node.children:
+                return False  # Dead end — this path doesn&#x27;t exist
+            # Recurse into the matching child
+            return self._dfs(word, idx + 1, node.children[ch])
+
+
+# ============================================================
+# Usage Example
+# ============================================================
+if __name__ == &quot;__main__&quot;:
+    wd = WordDictionary()
+    wd.addWord(&quot;bad&quot;)
+    wd.addWord(&quot;dad&quot;)
+    wd.addWord(&quot;mad&quot;)
+
+    print(wd.search(&quot;pad&quot;))   # False — &#x27;p&#x27; not in root&#x27;s children
+    print(wd.search(&quot;bad&quot;))   # True  — exact match
+    print(wd.search(&quot;.ad&quot;))   # True  — &#x27;.&#x27; matches &#x27;b&#x27;, &#x27;d&#x27;, or &#x27;m&#x27;
+    print(wd.search(&quot;b..&quot;))   # True  — &#x27;b&#x27; → any → any → is_end
+    print(wd.search(&quot;b.x&quot;))   # False — &#x27;b&#x27; → any → no &#x27;x&#x27; exists
+</code></pre>
+
+<h3>迭代版本（避免递归栈溢出）</h3>
+
+<p><strong>中文：</strong> 对于极深的 Trie（单词很长），递归可能栈溢出。生产环境可用显式栈模拟 DFS：</p>
+
+<pre><code>
+def search_iterative(self, word: str) -&gt; bool:
+    &quot;&quot;&quot;
+    Iterative DFS using an explicit stack.
+    Stack stores (node, idx) pairs — current node and word index.
+    Avoids Python&#x27;s recursion limit for very long words.
+    &quot;&quot;&quot;
+    from collections import deque
+    
+    # Stack of (current_node, current_index_in_word)
+    stack = [(self.root, 0)]
+    
+    while stack:
+        node, idx = stack.pop()
+        
+        # Consumed all characters — check if valid word end
+        if idx == len(word):
+            if node.is_end:
+                return True
+            continue
+        
+        ch = word[idx]
+        
+        if ch == &#x27;.&#x27;:
+            # Push ALL children with next index
+            for child in node.children.values():
+                stack.append((child, idx + 1))
+        else:
+            # Push only the matching child (if it exists)
+            if ch in node.children:
+                stack.append((node.children[ch], idx + 1))
+    
+    return False
+</code></pre>
+
+<h3>下一题预告：Word Search II (#212) — Trie + Grid DFS</h3>
+
+<p><strong>中文：</strong> 掌握了今天的 Trie 后，#212 Word Search II 就是把 Trie 和 2D 网格 DFS 结合：</p>
+
+<pre><code>
+# 核心思路：把所有单词建成 Trie，然后在 grid 上 DFS
+# 每走一步，同时在 Trie 中推进 —— 提前剪枝不存在的前缀
+def findWords(board, words):
+    # 1. 把所有单词插入 Trie
+    # 2. 从 grid 每个格子出发，DFS
+    # 3. DFS 同时追踪 Trie 节点：
+    #    - 当前字符不在 node.children → 剪枝
+    #    - node.is_end → 找到一个词
+    pass  # Full implementation in Monday&#x27;s newsletter
+</code></pre>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>1. <strong>空字符串搜索</strong> — <code>search(&quot;&quot;)</code> 应该返回 <code>root.is_end</code>。如果你调用过 <code>addWord(&quot;&quot;)</code>（空字符串），则 <code>root.is_end = True</code>。很多实现忘记处理这个。</p>
+
+<p>2. <strong>纯通配符搜索</strong> — <code>search(&quot;...&quot;)</code> 会遍历整个 Trie。最坏时间 O(N·L)。面试中提到这个。</p>
+
+<p>3. <strong><code>is_end</code> 覆盖问题</strong> — 插入 &quot;app&quot; 和 &quot;apple&quot;：节点 <code>p</code>（第三个字符）的 <code>is_end = True</code>，同时它还有子节点 <code>l</code>。遍历时不要因为到达 <code>is_end</code> 节点就停止向下查找——只有当 <code>idx == len(word)</code> 时才检查 <code>is_end</code>。</p>
+
+<p>4. <strong>大小写敏感</strong> — 标准实现区分大小写。生产环境通常 <code>word.lower()</code> 标准化。</p>
+
+<p>5. <strong>并发写入</strong> — 多线程同时 <code>addWord</code> 会产生竞争条件。生产中需要读写锁（<code>RWLock</code>）或 lock-free Trie（用数组 + CAS）。</p>
+
+<p><strong>English:</strong></p>
+
+<p>- <strong>Empty string</strong>: <code>search(&quot;&quot;)</code> hits base case immediately; returns <code>root.is_end</code>.</p>
+<p>- <strong>All wildcards</strong>: degenerate to full Trie traversal — mention this complexity to interviewers.</p>
+<p>- <strong><code>is_end</code> coexisting with children</strong>: a node can be both a word terminal and an internal node (e.g., &quot;app&quot; inside &quot;apple&quot;). The code handles this correctly because we only check <code>is_end</code> at <code>idx == len(word)</code>.</p>
+<p>- <strong>Duplicate inserts</strong>: inserting the same word twice is idempotent — the second insert just walks existing nodes and sets <code>is_end = True</code> again.</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p><strong>1. 搜索引擎自动补全</strong></p>
+<p>Google Suggest、IDE 的代码补全都是 Trie 的直接应用。Trie 支持 O(L) 的前缀查询（L = 输入长度），无论字典里有多少词。加上频率权重 → 变成带优先队列的 &quot;prefix + top-K&quot; 系统。</p>
+
+<p><strong>2. 网络路由：IP 前缀匹配</strong></p>
+<p>路由表用 Trie 存 IP 前缀（CIDR）。查找目标 IP 时，做最长前缀匹配（Longest Prefix Match）。网络设备里的 Trie 用二进制（bit-level），每层代表一位，深度最多 32（IPv4）或 128（IPv6）。</p>
+
+<p><strong>3. 拼写检查 &amp; 模糊匹配</strong></p>
+<p>通配符搜索 → 自然扩展为编辑距离搜索（Levenshtein）：在 Trie 上 DFS 时携带一个 &quot;剩余错误次数&quot;，允许插入/删除/替换。生产中的拼写检查引擎（Hunspell、SymSpell）正是这个思路。</p>
+
+<p><strong>4. DNS 通配符解析</strong></p>
+<p>DNS 记录如 <code>*.example.com</code> 匹配任何子域。DNS 服务器内部用 Trie 存储域名（注意：域名从右到左匹配），<code>.</code> 就是通配符。</p>
+
+<p><strong>English summary:</strong> Tries underpin autocomplete, IP routing (CIDR longest prefix match), spell checkers with edit-distance tolerance, and DNS wildcard resolution. The wildcard variant you built today maps directly to glob pattern matchers in shells (<code>ls <em>.py</code>), regex engines for simple patterns, and configuration systems that support <code></em></code> in key paths.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>中文：模拟面试追问（FAANG Staff 级别）</strong></p>
+
+<p><strong>Q1: 如果字典里有 100 万个单词，每个长度最多 20，Trie 的内存占用大概多少？</strong></p>
+
+<p>A: 最坏情况（无共享前缀）：100万 × 20 节点 × 每节点约 200 字节（Python dict overhead）= ~4GB，不可接受。优化：</p>
+<p>- 用数组代替 dict（<code>children = [None] * 26</code>），每节点 ~400 字节 → 约 8GB（更差）</p>
+<p>- 实际中有大量前缀共享，内存显著减少</p>
+<p>- 生产方案：压缩 Trie（Patricia/Radix Trie）合并单链节点，节省 80%+ 内存</p>
+
+<p><strong>Q2: <code>.</code> 通配符最坏情况是什么？如何优化？</strong></p>
+
+<p>A: 所有字符都是 <code>.</code>，且 Trie 极宽（每节点有 26 个子节点）→ 遍历整个 Trie，O(26^L)。</p>
+<p>优化：</p>
+<p>1. 限制最大通配符数（业务层约束）</p>
+<p>2. 预计算反向索引（字符 → 含该字符单词列表）</p>
+<p>3. Bit-parallel matching（SIMD 加速）</p>
+
+<p><strong>Q3: 如果要支持前缀搜索（&quot;返回所有以 &#x27;pre&#x27; 开头的单词&quot;），如何修改？</strong></p>
+
+<p>A: 走到前缀的末尾节点，然后 DFS 收集所有 <code>is_end = True</code> 的路径。时间 O(P + R) 其中 P=前缀长度，R=结果数量。可以在每个节点额外维护 <code>word_count</code>（子树中单词总数）用于剪枝或排序。</p>
+
+<p><strong>Q4: 如何支持 <code>deleteWord(word)</code>？</strong></p>
+
+<p>A: 递归删除：从叶节点向上，如果该节点没有其他子节点且 <code>is_end = False</code>，则从父节点的 children 中移除。注意：如果单词是另一个单词的前缀（&quot;app&quot; in &quot;apple&quot;），只需把末尾节点的 <code>is_end</code> 设为 False，不删节点。</p>
+
+<p><strong>Q5: 这道题在 Python 里有什么陷阱？</strong></p>
+
+<p>A: Python 的 dict lookup 是 O(1) 均摊但常数大。对于高性能场景，用 <code>children = [None] * 26</code> + 字符 ord 映射更快（缓存友好）。另外，Python 默认递归限制是 1000，Trie 深度超过时需要 <code>sys.setrecursionlimit</code> 或改用迭代版本。</p>
+
+<hr/>
+
+<p><strong>English version (quick):</strong></p>
+
+<p>1. <strong>Memory at scale?</strong> 1M words × 20 chars × 200B/node = ~4GB worst case. Production uses Radix/Patricia Tries (compressed) — merge single-child chains, save 80%+ memory.</p>
+
+<p>2. <strong>Worst case for wildcards?</strong> All <code>.</code> pattern + 26-ary Trie → O(26^L). Mitigate with: wildcard count limits, bitset intersection, or precomputed inverted indices by character.</p>
+
+<p>3. <strong>Prefix listing (autocomplete)?</strong> Walk to prefix end node, DFS to collect all <code>is_end</code> paths. Add <code>word_count</code> per node for ranking/pruning.</p>
+
+<p>4. <strong>Delete support?</strong> Recursive: unset <code>is_end</code>, then walk back up deleting leaf nodes with no children. Stop if a node serves as prefix for another word.</p>
+
+<p>5. <strong>Python-specific gotchas?</strong> Dict vs array children (cache locality), recursion limit at depth &gt; 1000, <code>defaultdict</code> vs explicit <code>dict</code> (defaultdict adds overhead for missing key queries).</p>
+
+<hr/>
+
+<p>🔗 <strong>LeetCode:</strong> https://leetcode.com/problems/design-add-and-search-words-data-structure/</p>
+<p>📹 <strong>NeetCode:</strong> https://neetcode.io/problems/design-word-search-data-structure</p>
+<p>⏭️ <strong>Next up:</strong> #212 Word Search II (Hard) — Trie meets 2D backtracking</p>
+
+<hr/>
+
+<p><em>🔬 Saturday Deep Dive — byte-by-byte Day 76</em></p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-06-26</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-26</guid>
+      <pubDate>Fri, 26 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 61</h2>
+<h2>Design an AI Chatbot Platform (ChatGPT-scale)</h2>
+<p><strong>Difficulty:</strong> Expert | <strong>Read time:</strong> ~3 min</p>
+
+<hr/>
+
+<h2>想象你在设计...</h2>
+<p>你是 OpenAI 的首席工程师。ChatGPT 突然爆红，用户从零增长到一亿。你需要设计一个支撑大规模 AI 对话的平台。每秒处理数万请求，每次请求都要调用一个巨大的语言模型——如何不崩？</p>
+
+<p>You&#x27;re OpenAI&#x27;s principal engineer. ChatGPT goes viral overnight. You need a platform that handles hundreds of millions of users, each having multi-turn conversations with a giant language model. How do you architect this?</p>
+
+<hr/>
+
+<h2>📐 架构图 / Architecture Diagram</h2>
+
+<pre><code>
+        用户 / Users
+            │
+            ▼
+    ┌──────────────────┐
+    │   API Gateway    │  ← 认证、限流、路由
+    │  (Rate Limit /   │    Auth, rate limiting, routing
+    │   Auth / TLS)    │
+    └────────┬─────────┘
+             │
+    ┌────────▼─────────┐
+    │  Chat Service    │  ← 会话管理、流式响应
+    │  (Stateless)     │    Session mgmt, streaming
+    └────────┬─────────┘
+             │
+     ┌───────┴──────────┐
+     │                  │
+┌────▼─────┐   ┌────────▼────────┐
+│  Context │   │  Inference      │
+│  Store   │   │  Cluster        │
+│ (Redis)  │   │  (A100/H100     │
+│          │   │   GPUs)         │
+└────┬─────┘   └────────┬────────┘
+     │                  │
+┌────▼──────────────────▼────────┐
+│        Message Queue           │  ← 解耦推理请求
+│        (Kafka)                 │    Decouple inference requests
+└────────────────┬───────────────┘
+                 │
+        ┌────────▼────────┐
+        │  Batch Scheduler │  ← 连续批处理
+        │  (Continuous     │    Continuous batching
+        │   Batching)      │
+        └────────┬────────┘
+                 │
+        ┌────────▼────────┐
+        │   Model Store   │  ← 权重分布式存储
+        │   (HDFS/NFS)    │    Distributed weight storage
+        └─────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>🔑 关键权衡 / Key Tradeoffs</h2>
+
+<h3>1. 流式 vs 批量 / Streaming vs Batching</h3>
+<p>- <strong>流式 (SSE/WebSocket):</strong> 用户体验好，首 token 快；但连接资源消耗大</p>
+<p>- <strong>连续批处理:</strong> 把多个用户请求合并一次 GPU forward pass，吞吐量提升 10x</p>
+<p>- <strong>选择:</strong> 对外用流式，对内用连续批处理</p>
+
+<p><em>Streaming (SSE/WebSocket): great UX, fast first token — but resource-heavy. Continuous batching: merge multiple user requests into one GPU forward pass = 10x throughput. Use streaming externally, continuous batching internally.</em></p>
+
+<h3>2. 上下文存储 / Context Storage</h3>
+<p>- 对话历史不能放在服务器内存（无状态横向扩展）</p>
+<p>- 用 Redis 存 session → context，TTL 24h 节省成本</p>
+<p>- KV Cache offloading: 把 attention KV cache 从 GPU 换到 CPU/SSD 减少显存压力</p>
+
+<p><em>Conversation history can&#x27;t live in server RAM (you need stateless horizontal scaling). Store sessions in Redis with 24h TTL. Offload KV caches to CPU/SSD to reduce GPU memory pressure.</em></p>
+
+<h3>3. 模型并行 / Model Parallelism</h3>
+<p>- 单张 A100 (80GB) 放不下 GPT-4 级别模型</p>
+<p>- <strong>张量并行 (Tensor Parallelism):</strong> 把权重矩阵切分到多张 GPU</p>
+<p>- <strong>流水线并行 (Pipeline Parallelism):</strong> 不同层跑在不同 GPU 组上</p>
+<p>- 生产中通常 TP×PP 组合</p>
+
+<p><em>A single A100 (80GB) can&#x27;t hold a GPT-4-class model. Tensor parallelism splits weight matrices across GPUs. Pipeline parallelism puts different layers on different GPU groups. Production uses both (TP × PP).</em></p>
+
+<h3>4. 多租户隔离 / Multi-tenant Isolation</h3>
+<p>- 不同 tier（免费/Plus/API）用不同优先级队列</p>
+<p>- 免费用户请求在高峰期可被降级（graceful degradation）</p>
+
+<p><em>Different tiers (free/Plus/API) use different priority queues. Free user requests can be deprioritized during peak load.</em></p>
+
+<hr/>
+
+<h2>🚫 别踩这个坑 / Common Mistakes</h2>
+
+<p>1. <strong>用 HTTP 长轮询而不是 SSE</strong> — SSE 更简单，断线自动重连，不需要 WebSocket 的复杂握手</p>
+<p>2. <strong>不限制上下文长度</strong> — 无限上下文 = 显存爆炸，必须有截断策略（sliding window 或 summarization）</p>
+<p>3. <strong>忽略 time-to-first-token (TTFT)</strong> — 用户感知的延迟，不是总生成时间，要单独优化</p>
+<p>4. <strong>单点 GPU 集群</strong> — GPU 比 CPU 贵 100x，故障成本极高，必须做热备 + 快速重路由</p>
+
+<p><em>Don&#x27;t use HTTP long-polling instead of SSE. Don&#x27;t allow unbounded context (it blows GPU memory). Track TTFT separately from total latency. Never have a single GPU cluster without hot standby.</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [vLLM: Efficient Memory Management for LLM Serving](https://vllm.ai/)</p>
+<p>- [How ChatGPT Actually Works (High Scalability)](http://highscalability.com/blog/2023/2/3/system-design-chatgpt.html)</p>
+<p>- [OpenAI Triton &amp; GPU Kernel Optimization](https://openai.com/research/triton)</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象一个超级繁忙的餐厅，厨房只有几个特别贵的大厨（GPU）。侍者（Chat Service）把所有订单（请求）汇总，让大厨一次做多道菜（批处理），这样比一道一道做快多了。Redis 是记事本，记住每桌客人之前点了什么（对话历史）。</p>
+
+<p><em>Imagine a super-busy restaurant where the kitchen has a few very expensive master chefs (GPUs). Waiters collect all orders and let chefs cook multiple dishes at once (batching) — much faster than one at a time. Redis is the notepad that remembers what each table ordered before (conversation history).</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 62</h2>
+<h2>🧩 前缀树模式 (2/3) — building on the Trie template from Day 61</h2>
+
+<p><strong>#211 Design Add and Search Words Data Structure</strong> 🟡 Medium</p>
+
+<p>🔗 [LeetCode](https://leetcode.com/problems/design-add-and-search-words-data-structure/) | 📹 [NeetCode](https://neetcode.io/problems/design-word-search-data-structure)</p>
+
+<hr/>
+
+<h2>🧩 Trie 模式回顾 (2/3)</h2>
+
+<p>这是 Tries 模式块的第 2 题（共 3 题）。上节课 #208 我们实现了标准 Trie（精确匹配）。今天的变化：支持 <strong>通配符 <code>.</code></strong>，它可以匹配任意一个字符。</p>
+
+<p><em>This is problem 2/3 in the Tries block. Day 61&#x27;s #208 was exact-match Trie. Today&#x27;s twist: support <strong>wildcard <code>.</code></strong> that matches any single character.</em></p>
+
+<p><strong>模板延伸 / Template extension:</strong></p>
+<p>- Insert: 完全相同，直接复用</p>
+<p>- Search: 遇到 <code>.</code> 时，需要对当前节点的<strong>所有子节点</strong>做递归搜索（DFS）</p>
+
+<hr/>
+
+<h2>🌍 真实场景 / Real-world Analogy</h2>
+
+<p>你有一个联系人应用，用户可以搜索 <code>J.hn</code>（忘记是 John 还是 John-ish？）。<code>.</code> 代表&quot;我不确定这个字母是什么&quot;。Trie 需要在那个位置尝试所有可能。</p>
+
+<p><em>You have a contacts app. User types <code>J.hn</code> — they forgot if it&#x27;s John or Jahn. <code>.</code> means &quot;I&#x27;m not sure about this character.&quot; The Trie needs to try all possibilities at that position.</em></p>
+
+<hr/>
+
+<h2>💡 解题思路 / Solution Walkthrough</h2>
+
+<pre><code>
+class TrieNode:
+    def __init__(self):
+        self.children = {}  # char -&gt; TrieNode
+        self.is_end = False
+
+class WordDictionary:
+
+    def __init__(self):
+        self.root = TrieNode()
+
+    def addWord(self, word: str) -&gt; None:
+        # Standard Trie insert — identical to template
+        node = self.root
+        for ch in word:
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.is_end = True
+
+    def search(self, word: str) -&gt; bool:
+        # NEW: handle &#x27;.&#x27; wildcard via DFS
+        def dfs(node, i):
+            if i == len(word):
+                return node.is_end
+            
+            ch = word[i]
+            if ch == &#x27;.&#x27;:
+                # Try ALL children — this is the key difference from #208
+                for child in node.children.values():
+                    if dfs(child, i + 1):
+                        return True
+                return False
+            else:
+                # Normal character — standard Trie traversal
+                if ch not in node.children:
+                    return False
+                return dfs(node.children[ch], i + 1)
+        
+        return dfs(self.root, 0)
+</code></pre>
+
+<h3>执行跟踪 / Execution Trace</h3>
+<pre><code>
+addWord(&quot;bad&quot;), addWord(&quot;dad&quot;), addWord(&quot;mad&quot;)
+
+搜索 &quot;.ad&quot;:
+  dfs(root, 0), ch = &#x27;.&#x27;
+    → try &#x27;b&#x27;: dfs(b_node, 1), ch=&#x27;a&#x27; → dfs(a_node, 2), ch=&#x27;d&#x27; → is_end=True ✓
+</code></pre>
+
+<hr/>
+
+<h2>⏱️ 复杂度 / Complexity</h2>
+<p>- <strong>addWord:</strong> O(L) time, O(L) space — 与模板相同</p>
+<p>- <strong>search (无通配符):</strong> O(L) time — 与模板相同</p>
+<p>- <strong>search (含 <code>.</code>):</strong> O(N × L) worst case — 每个 <code>.</code> 都要尝试所有子节点</p>
+<p>- N = 节点总数, L = 单词长度</p>
+
+<hr/>
+
+<h2>🔗 举一反三 / Pattern Connections</h2>
+
+<p>| 题目 | 核心变化 | 难点 |</p>
+<p>|------|----------|------|</p>
+<p>| #208 Implement Trie | 精确匹配 | 基础模板 |</p>
+<p>| <strong>#211 本题</strong> | <code>.</code> 通配符 | DFS 递归 |</p>
+<p>| #212 Word Search II (下题) | 2D 网格 + 前缀剪枝 | Trie + Backtracking |</p>
+
+<p>下节课 #212 是这个模式的终极 Boss：在二维字符网格里找所有存在于词典中的单词——把 Trie 和回溯结合起来。</p>
+
+<p><em>Next problem #212 is the pattern boss: find all dictionary words in a 2D character grid — combine Trie with backtracking.</em></p>
+
+<hr/>
+
+<h2>📊 Quiz</h2>
+<p><strong>问题:</strong> <code>WordDictionary</code> 搜索 <code>&quot;...&quot;</code> (三个点) 时，最坏情况下会访问多少节点？</p>
+<p>- A) 3 个</p>
+<p>- B) 整棵树所有节点</p>
+<p>- C) 只有叶子节点</p>
+<p>- D) 与单词长度无关</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+<p><strong>B — 整棵树所有节点 / All nodes in the tree</strong></p>
+
+<p>三个 <code>.</code> 意味着每一层都要尝试所有子节点 → 完整 DFS 遍历整棵树。这是 Trie 通配符搜索的最坏情况。实际系统中通常限制通配符数量或深度。</p>
+
+<p><em>Three <code>.</code> characters mean every level tries all children → full DFS of the entire tree. This is the worst case. Real systems typically limit the number of wildcards.</em></p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [LeetCode #211 Discussion](https://leetcode.com/problems/design-add-and-search-words-data-structure/discuss/)</p>
+<p>- [NeetCode Trie Playlist](https://neetcode.io/roadmap)</p>
+<p>- [Trie Data Structure (Visualgo)](https://visualgo.net/en/trie)</p>
+
+<h2>🧒 ELI5</h2>
+<p>普通的 Trie 像查字典——你一个字母一个字母往下找。今天的题加了个 <code>.</code> 通配符，就像&quot;百搭牌&quot;——遇到它就得把所有可能的字母都试一遍，用的是深度优先搜索（DFS）。</p>
+
+<p><em>A normal Trie is like looking up a word in a dictionary — one letter at a time. Today&#x27;s problem adds <code>.</code> as a wildcard &quot;wild card&quot; — when you hit it, try every possible letter using DFS.</em></p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-06-25</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-25</guid>
+      <pubDate>Thu, 25 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 61</h2>
+
+<h2>设计 AI 聊天平台（ChatGPT 规模）</h2>
+<h2>Design an AI Chatbot Platform (ChatGPT-scale)</h2>
+
+<p><strong>⏱️ 预计阅读时间 / Estimated read time: 3 min</strong></p>
+
+<hr/>
+
+<h3>🎯 真实场景 / Real-World Scenario</h3>
+
+<p>想象你在 OpenAI 工作，需要设计一个每天处理 <strong>1 亿次</strong>对话请求的 AI 聊天系统。用户发一条消息，几秒内就收到流式回复——背后究竟发生了什么？</p>
+
+<p><em>Imagine you&#x27;re at OpenAI, designing a system handling <strong>100 million</strong> conversation requests per day. A user sends a message and gets a streamed response within seconds — what&#x27;s happening under the hood?</em></p>
+
+<hr/>
+
+<h3>🏛️ 架构图 / Architecture Diagram</h3>
+
+<pre><code>
+User Browser / Mobile App
+        │  WebSocket / SSE
+        ▼
+┌───────────────────────────────────────────────────────┐
+│                   API Gateway                         │
+│   (Auth, Rate Limiting, Session Routing)              │
+└──────────────────┬────────────────────────────────────┘
+                   │
+        ┌──────────┴──────────┐
+        ▼                     ▼
+┌──────────────┐     ┌──────────────────┐
+│  Chat Service│     │  Streaming Proxy  │
+│  (FastAPI)   │     │  (SSE/WebSocket)  │
+└──────┬───────┘     └────────┬─────────┘
+       │                      │
+       ▼                      ▼
+┌──────────────┐     ┌────────────────────┐
+│ Context Svc  │     │  LLM Inference     │
+│ (Redis TTL)  │     │  Cluster           │
+│              │     │  (vLLM / TGI)      │
+└──────┬───────┘     │  ┌───┐ ┌───┐ ┌───┐│
+       │             │  │GPU│ │GPU│ │GPU││
+       ▼             │  └───┘ └───┘ └───┘│
+┌──────────────┐     └────────────────────┘
+│  Conversation│              │
+│  DB          │     ┌────────▼─────────┐
+│  (Postgres)  │     │  Model Registry   │
+└──────────────┘     │  (S3 + weights)   │
+                     └───────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>⚖️ 核心权衡 / Key Tradeoffs</h3>
+
+<p><strong>为什么用 SSE（Server-Sent Events）而非 WebSocket？</strong></p>
+<p>- SSE 是单向流 → 服务端推送 token 更简单</p>
+<p>- WebSocket 需要双向通信 → 聊天场景不必要</p>
+<p>- SSE 天然支持 HTTP/2 多路复用</p>
+
+<p><em>Why SSE over WebSocket? SSE is one-directional — perfect for streaming tokens. WebSocket adds bidirectional complexity you don&#x27;t need here. SSE also works seamlessly with HTTP/2 multiplexing.</em></p>
+
+<p><strong>为什么用 Redis 存对话上下文？</strong></p>
+<p>- LLM 是无状态的：每次都要传完整 history</p>
+<p>- 用户平均对话 10-20 轮，token 预算有限</p>
+<p>- Redis TTL = 30min 自动过期，不堆垃圾</p>
+
+<p><em>Why Redis for conversation context? LLMs are stateless — you must send the full history every request. Redis with TTL handles the limited context window budget and auto-expires stale sessions.</em></p>
+
+<p><strong>推理集群如何扩容？</strong></p>
+<p>- vLLM 的 PagedAttention：GPU KV Cache 利用率 +3x</p>
+<p>- 请求路由按 session affinity（同 session → 同 GPU 节点，减少 KV cache miss）</p>
+
+<p><em>How do you scale inference? vLLM&#x27;s PagedAttention gives 3x better GPU memory utilization. Route by session affinity — same session to same GPU node minimizes KV cache misses.</em></p>
+
+<hr/>
+
+<h3>❌ 常见误区 / Common Mistakes</h3>
+
+<p><strong>坑 1：对话 Context 没有截断策略</strong></p>
+<p>- LLM 有最大 context window（如 128K tokens）</p>
+<p>- 超限直接报错，要实现 sliding window 或 summary 压缩</p>
+
+<p><em>Trap 1: No context truncation strategy. LLMs have max context windows. You need a sliding window or summary compression before you hit the limit.</em></p>
+
+<p><strong>坑 2：没有请求排队导致 GPU OOM</strong></p>
+<p>- 并发大量推理请求 → GPU 内存爆炸</p>
+<p>- 正确做法：inference queue + backpressure</p>
+
+<p><em>Trap 2: No request queuing leads to GPU OOM. Concurrent requests overwhelm GPU memory. Add an inference queue with backpressure.</em></p>
+
+<p><strong>坑 3：每次都重新加载模型权重</strong></p>
+<p>- 权重一次加载，常驻 GPU</p>
+<p>- 用 Model Registry（S3）管理版本，热更新</p>
+
+<p><em>Trap 3: Reloading model weights per request. Weights should be loaded once, resident on GPU. Use a Model Registry for version management with hot-reload.</em></p>
+
+<hr/>
+
+<h3>📚 参考资料 / References</h3>
+
+<p>1. [vLLM: PagedAttention for Efficient LLM Serving](https://vllm.ai/)</p>
+<p>2. [OpenAI API Streaming Docs](https://platform.openai.com/docs/api-reference/streaming)</p>
+<p>3. [Designing ML Systems — Chip Huyen](https://www.oreilly.com/library/view/designing-machine-learning/9781098107956/)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像一个超级快的打字员：</p>
+<p>你问问题 → 助手边想边打 → 你实时看到每个字出现。</p>
+<p>背后有很多电脑（GPU）轮流帮忙打字，</p>
+<p>还有一个&quot;记忆本&quot;记住你们聊过什么。</p>
+
+<p><em>Like a super-fast typist: you ask a question → the assistant types while thinking → you see each word appear in real time. Behind the scenes, many computers (GPUs) take turns &quot;typing,&quot; and a &quot;memory notebook&quot; (Redis) remembers your conversation history.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-24</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>byte-by-byte — 2026-06-24</title>
-  <meta name="description" content="byte-by-byte daily lessons for Wednesday, June 24, 2026: system design, algorithms, soft skills, frontend, AI." />
-  <meta property="og:title" content="byte-by-byte — Wednesday, June 24, 2026" />
+  <title>byte-by-byte — 2026-06-26</title>
+  <meta name="description" content="byte-by-byte daily lessons for Friday, June 26, 2026: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:title" content="byte-by-byte — Friday, June 26, 2026" />
   <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
-  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-06-24.html" />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-06-26.html" />
   <style>
 
 :root {
@@ -779,159 +779,271 @@ footer {
   <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
   <div class="nav-links">
     <a href="../archive.html">← Archive</a>
-    <a href="2026-06-23.html" style="color:var(--text2)">← 2026-06-23</a>
-    <a href="2026-06-25.html" style="color:var(--text2)">2026-06-25 →</a>
+    <a href="2026-06-25.html" style="color:var(--text2)">← 2026-06-25</a>
+    <a href="2026-06-27.html" style="color:var(--text2)">2026-06-27 →</a>
   </div>
 </nav>
 
 <div class="page-header">
   <div class="page-header-inner">
-    <span class="day-badge">📅 2026-06-24</span>
-    <h1>Wednesday, June 24, 2026</h1>
+    <span class="day-badge">📅 2026-06-26</span>
+    <h1>Friday, June 26, 2026</h1>
     <div class="page-header-meta">
-      <span>1 sections</span>
+      <span>2 sections</span>
       <span>~15 min read</span>
       <span>🌏 Bilingual 中/EN</span>
     </div>
     <div class="nav-days">
-      <a href="#section-review" class="nav-day-btn">📝 Review Quiz</a>
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a>
     </div>
   </div>
 </div>
 
 <main>
   <div class="day-nav">
-    <a href="2026-06-23.html" class="day-nav-btn">← 2026-06-23</a>
+    <a href="2026-06-25.html" class="day-nav-btn">← 2026-06-25</a>
     <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
-    <a href="2026-06-25.html" class="day-nav-btn">2026-06-25 →</a>
+    <a href="2026-06-27.html" class="day-nav-btn">2026-06-27 →</a>
   </div>
 
   
-    <div class="section-block" id="section-review">
-      <div class="section-header " onclick="toggleSection(this)">
-        <span class="section-header-icon">📝</span>
+    <div class="section-block" id="section-system-design">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <span class="section-header-icon">🏗️</span>
         <div>
-          <div class="section-header-title">📝 Review Quiz</div>
-          <div class="section-header-sub">🔄 复习日 / Review Day — Day 75 (2026-06-24)</div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 61</div>
+        </div>
+        <span class="section-header-chevron">▼</span>
+      </div>
+      <div class="section-content open">
+        <h1>🏗️ 系统设计 / System Design — Day 61</h1>
+<h2>Design an AI Chatbot Platform (ChatGPT-scale)</h2>
+<p><strong>Difficulty:</strong> Expert | <strong>Read time:</strong> ~3 min</p>
+
+<hr/>
+
+<h2>想象你在设计...</h2>
+<p>你是 OpenAI 的首席工程师。ChatGPT 突然爆红，用户从零增长到一亿。你需要设计一个支撑大规模 AI 对话的平台。每秒处理数万请求，每次请求都要调用一个巨大的语言模型——如何不崩？</p>
+
+<p>You're OpenAI's principal engineer. ChatGPT goes viral overnight. You need a platform that handles hundreds of millions of users, each having multi-turn conversations with a giant language model. How do you architect this?</p>
+
+<hr/>
+
+<h2>📐 架构图 / Architecture Diagram</h2>
+
+<div class="diagram-block">        用户 / Users
+            │
+            ▼
+    ┌──────────────────┐
+    │   API Gateway    │  ← 认证、限流、路由
+    │  (Rate Limit /   │    Auth, rate limiting, routing
+    │   Auth / TLS)    │
+    └────────┬─────────┘
+             │
+    ┌────────▼─────────┐
+    │  Chat Service    │  ← 会话管理、流式响应
+    │  (Stateless)     │    Session mgmt, streaming
+    └────────┬─────────┘
+             │
+     ┌───────┴──────────┐
+     │                  │
+┌────▼─────┐   ┌────────▼────────┐
+│  Context │   │  Inference      │
+│  Store   │   │  Cluster        │
+│ (Redis)  │   │  (A100/H100     │
+│          │   │   GPUs)         │
+└────┬─────┘   └────────┬────────┘
+     │                  │
+┌────▼──────────────────▼────────┐
+│        Message Queue           │  ← 解耦推理请求
+│        (Kafka)                 │    Decouple inference requests
+└────────────────┬───────────────┘
+                 │
+        ┌────────▼────────┐
+        │  Batch Scheduler │  ← 连续批处理
+        │  (Continuous     │    Continuous batching
+        │   Batching)      │
+        └────────┬────────┘
+                 │
+        ┌────────▼────────┐
+        │   Model Store   │  ← 权重分布式存储
+        │   (HDFS/NFS)    │    Distributed weight storage
+        └─────────────────┘</div>
+
+<hr/>
+
+<h2>🔑 关键权衡 / Key Tradeoffs</h2>
+
+<h3>1. 流式 vs 批量 / Streaming vs Batching</h3>
+<ul><li><strong>流式 (SSE/WebSocket):</strong> 用户体验好，首 token 快；但连接资源消耗大</li><li><strong>连续批处理:</strong> 把多个用户请求合并一次 GPU forward pass，吞吐量提升 10x</li><li><strong>选择:</strong> 对外用流式，对内用连续批处理</li></ul>
+
+<p><em>Streaming (SSE/WebSocket): great UX, fast first token — but resource-heavy. Continuous batching: merge multiple user requests into one GPU forward pass = 10x throughput. Use streaming externally, continuous batching internally.</em></p>
+
+<h3>2. 上下文存储 / Context Storage</h3>
+<ul><li>对话历史不能放在服务器内存（无状态横向扩展）</li><li>用 Redis 存 session → context，TTL 24h 节省成本</li><li>KV Cache offloading: 把 attention KV cache 从 GPU 换到 CPU/SSD 减少显存压力</li></ul>
+
+<p><em>Conversation history can't live in server RAM (you need stateless horizontal scaling). Store sessions in Redis with 24h TTL. Offload KV caches to CPU/SSD to reduce GPU memory pressure.</em></p>
+
+<h3>3. 模型并行 / Model Parallelism</h3>
+<ul><li>单张 A100 (80GB) 放不下 GPT-4 级别模型</li><li><strong>张量并行 (Tensor Parallelism):</strong> 把权重矩阵切分到多张 GPU</li><li><strong>流水线并行 (Pipeline Parallelism):</strong> 不同层跑在不同 GPU 组上</li><li>生产中通常 TP×PP 组合</li></ul>
+
+<p><em>A single A100 (80GB) can't hold a GPT-4-class model. Tensor parallelism splits weight matrices across GPUs. Pipeline parallelism puts different layers on different GPU groups. Production uses both (TP × PP).</em></p>
+
+<h3>4. 多租户隔离 / Multi-tenant Isolation</h3>
+<ul><li>不同 tier（免费/Plus/API）用不同优先级队列</li><li>免费用户请求在高峰期可被降级（graceful degradation）</li></ul>
+
+<p><em>Different tiers (free/Plus/API) use different priority queues. Free user requests can be deprioritized during peak load.</em></p>
+
+<hr/>
+
+<h2>🚫 别踩这个坑 / Common Mistakes</h2>
+
+<ol><li><strong>用 HTTP 长轮询而不是 SSE</strong> — SSE 更简单，断线自动重连，不需要 WebSocket 的复杂握手</li><li><strong>不限制上下文长度</strong> — 无限上下文 = 显存爆炸，必须有截断策略（sliding window 或 summarization）</li><li><strong>忽略 time-to-first-token (TTFT)</strong> — 用户感知的延迟，不是总生成时间，要单独优化</li><li><strong>单点 GPU 集群</strong> — GPU 比 CPU 贵 100x，故障成本极高，必须做热备 + 快速重路由</li></ol>
+
+<p><em>Don't use HTTP long-polling instead of SSE. Don't allow unbounded context (it blows GPU memory). Track TTFT separately from total latency. Never have a single GPU cluster without hot standby.</em></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://vllm.ai/">vLLM: Efficient Memory Management for LLM Serving</a></li><li><a href="http://highscalability.com/blog/2023/2/3/system-design-chatgpt.html">How ChatGPT Actually Works (High Scalability)</a></li><li><a href="https://openai.com/research/triton">OpenAI Triton &amp; GPU Kernel Optimization</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>想象一个超级繁忙的餐厅，厨房只有几个特别贵的大厨（GPU）。侍者（Chat Service）把所有订单（请求）汇总，让大厨一次做多道菜（批处理），这样比一道一道做快多了。Redis 是记事本，记住每桌客人之前点了什么（对话历史）。</p>
+
+<p><em>Imagine a super-busy restaurant where the kitchen has a few very expensive master chefs (GPUs). Waiters collect all orders and let chefs cook multiple dishes at once (batching) — much faster than one at a time. Redis is the notepad that remembers what each table ordered before (conversation history).</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <div class="section-header " onclick="toggleSection(this)">
+        <span class="section-header-icon">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 62</div>
         </div>
         <span class="section-header-chevron">▼</span>
       </div>
       <div class="section-content ">
-        <h1>🔄 复习日 / Review Day — Day 75 (2026-06-24)</h1>
+        <h1>💻 算法 / Algorithms — Day 62</h1>
+<h2>🧩 前缀树模式 (2/3) — building on the Trie template from Day 61</h2>
 
-<p>今天是复习日！回顾过去几天的内容。</p>
-<p><em>It's review day! Let's revisit the past few days.</em></p>
+<p><strong>#211 Design Add and Search Words Data Structure</strong> 🟡 Medium</p>
 
-<hr/>
-
-<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
-<p><em>从3个不同模块各取1道题 / One question from 3 different sections</em></p>
+<p>🔗 <a href="https://leetcode.com/problems/design-add-and-search-words-data-structure/">LeetCode</a> | 📹 <a href="https://neetcode.io/problems/design-word-search-data-structure">NeetCode</a></p>
 
 <hr/>
 
-<p><strong>Q1: [🏗️ System Design]</strong> — Day 74: Design an AI Chatbot Platform (ChatGPT-scale)</p>
+<h2>🧩 Trie 模式回顾 (2/3)</h2>
 
-<p>你正在为一个 ChatGPT 级别的 AI 对话平台设计请求路由层。用户请求是流式的（streaming），全球有数百万并发用户。你如何设计负载均衡层来保证<strong>同一会话的连续性</strong>，同时支持水平扩展？</p>
+<p>这是 Tries 模式块的第 2 题（共 3 题）。上节课 #208 我们实现了标准 Trie（精确匹配）。今天的变化：支持 <strong>通配符 <code>.</code></strong>，它可以匹配任意一个字符。</p>
 
-<p><em>You're designing the request routing layer for a ChatGPT-scale AI chat platform. Requests are streaming (SSE/WebSocket) with millions of concurrent users globally. How do you design the load balancer layer to ensure <strong>session continuity</strong> while supporting horizontal scaling?</em></p>
+<p><em>This is problem 2/3 in the Tries block. Day 61's #208 was exact-match Trie. Today's twist: support <strong>wildcard <code>.</code></strong> that matches any single character.</em></p>
+
+<p><strong>模板延伸 / Template extension:</strong></p>
+<ul><li>Insert: 完全相同，直接复用</li><li>Search: 遇到 <code>.</code> 时，需要对当前节点的<strong>所有子节点</strong>做递归搜索（DFS）</li></ul>
+
+<hr/>
+
+<h2>🌍 真实场景 / Real-world Analogy</h2>
+
+<p>你有一个联系人应用，用户可以搜索 <code>J.hn</code>（忘记是 John 还是 John-ish？）。<code>.</code> 代表"我不确定这个字母是什么"。Trie 需要在那个位置尝试所有可能。</p>
+
+<p><em>You have a contacts app. User types <code>J.hn</code> — they forgot if it's John or Jahn. <code>.</code> means "I'm not sure about this character." The Trie needs to try all possibilities at that position.</em></p>
+
+<hr/>
+
+<h2>💡 解题思路 / Solution Walkthrough</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="class TrieNode:&#10;    def __init__(self):&#10;        self.children = {}  # char -&gt; TrieNode&#10;        self.is_end = False&#10;&#10;class WordDictionary:&#10;&#10;    def __init__(self):&#10;        self.root = TrieNode()&#10;&#10;    def addWord(self, word: str) -&gt; None:&#10;        # Standard Trie insert — identical to template&#10;        node = self.root&#10;        for ch in word:&#10;            if ch not in node.children:&#10;                node.children[ch] = TrieNode()&#10;            node = node.children[ch]&#10;        node.is_end = True&#10;&#10;    def search(self, word: str) -&gt; bool:&#10;        # NEW: handle '.' wildcard via DFS&#10;        def dfs(node, i):&#10;            if i == len(word):&#10;                return node.is_end&#10;            &#10;            ch = word[i]&#10;            if ch == '.':&#10;                # Try ALL children — this is the key difference from #208&#10;                for child in node.children.values():&#10;                    if dfs(child, i + 1):&#10;                        return True&#10;                return False&#10;            else:&#10;                # Normal character — standard Trie traversal&#10;                if ch not in node.children:&#10;                    return False&#10;                return dfs(node.children[ch], i + 1)&#10;        &#10;        return dfs(self.root, 0)">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">class</span> TrieNode:
+    <span style="color:#c678dd;">def</span> __init__(self):
+        self.children = {}  <span style="color:#5c6370;"># char -&gt; TrieNode</span>
+        self.is_end = <span style="color:#c678dd;">False</span>
+
+<span style="color:#c678dd;">class</span> WordDictionary:
+
+    <span style="color:#c678dd;">def</span> __init__(self):
+        self.root = TrieNode()
+
+    <span style="color:#c678dd;">def</span> addWord(self, word: str) -&gt; <span style="color:#c678dd;">None</span>:
+        <span style="color:#5c6370;"># Standard Trie insert — identical to template</span>
+        node = self.root
+        <span style="color:#c678dd;">for</span> ch <span style="color:#c678dd;">in</span> word:
+            <span style="color:#c678dd;">if</span> ch <span style="color:#c678dd;">not</span> <span style="color:#c678dd;">in</span> node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.is_end = <span style="color:#c678dd;">True</span>
+
+    <span style="color:#c678dd;">def</span> search(self, word: str) -&gt; bool:
+        <span style="color:#5c6370;"># NEW: handle '.' wildcard via DFS</span>
+        <span style="color:#c678dd;">def</span> dfs(node, i):
+            <span style="color:#c678dd;">if</span> i == len(word):
+                <span style="color:#c678dd;">return</span> node.is_end
+            
+            ch = word[i]
+            <span style="color:#c678dd;">if</span> ch == <span style="color:#e5c07b;">'.'</span>:
+                <span style="color:#5c6370;"># Try ALL children — this is the key difference from #208</span>
+                <span style="color:#c678dd;">for</span> child <span style="color:#c678dd;">in</span> node.children.values():
+                    <span style="color:#c678dd;">if</span> dfs(child, i + <span style="color:#56b6c2;">1</span>):
+                        <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+            <span style="color:#c678dd;">else</span>:
+                <span style="color:#5c6370;"># Normal character — standard Trie traversal</span>
+                <span style="color:#c678dd;">if</span> ch <span style="color:#c678dd;">not</span> <span style="color:#c678dd;">in</span> node.children:
+                    <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+                <span style="color:#c678dd;">return</span> dfs(node.children[ch], i + <span style="color:#56b6c2;">1</span>)
+        
+        <span style="color:#c678dd;">return</span> dfs(self.root, <span style="color:#56b6c2;">0</span>)</code></pre>
+</div>
+
+<h3>执行跟踪 / Execution Trace</h3>
+<div class="diagram-block">addWord("bad"), addWord("dad"), addWord("mad")
+
+搜索 ".ad":
+  dfs(root, 0), ch = '.'
+    → try 'b': dfs(b_node, 1), ch='a' → dfs(a_node, 2), ch='d' → is_end=True ✓</div>
+
+<hr/>
+
+<h2>⏱️ 复杂度 / Complexity</h2>
+<ul><li><strong>addWord:</strong> O(L) time, O(L) space — 与模板相同</li><li><strong>search (无通配符):</strong> O(L) time — 与模板相同</li><li><strong>search (含 <code>.</code>):</strong> O(N × L) worst case — 每个 <code>.</code> 都要尝试所有子节点</li></ul>
+<p>  - N = 节点总数, L = 单词长度</p>
+
+<hr/>
+
+<h2>🔗 举一反三 / Pattern Connections</h2>
+
+<table><thead><tr><th>题目</th><th>核心变化</th><th>难点</th></tr></thead><tbody><tr><td>#208 Implement Trie</td><td>精确匹配</td><td>基础模板</td></tr><tr><td><strong>#211 本题</strong></td><td><code>.</code> 通配符</td><td>DFS 递归</td></tr><tr><td>#212 Word Search II (下题)</td><td>2D 网格 + 前缀剪枝</td><td>Trie + Backtracking</td></tr></tbody></table>
+
+<p>下节课 #212 是这个模式的终极 Boss：在二维字符网格里找所有存在于词典中的单词——把 Trie 和回溯结合起来。</p>
+
+<p><em>Next problem #212 is the pattern boss: find all dictionary words in a 2D character grid — combine Trie with backtracking.</em></p>
+
+<hr/>
+
+<h2>📊 Quiz</h2>
+<p><strong>问题:</strong> <code>WordDictionary</code> 搜索 <code>"..."</code> (三个点) 时，最坏情况下会访问多少节点？</p>
+<ul><li>A) 3 个</li><li>B) 整棵树所有节点</li><li>C) 只有叶子节点</li><li>D) 与单词长度无关</li></ul>
 
 <p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+<p><strong>B — 整棵树所有节点 / All nodes in the tree</strong></p>
 
-<p><strong>核心挑战：</strong> 流式响应（SSE/WebSocket）需要长连接，传统的无状态轮询负载均衡会打断会话。</p>
+<p>三个 <code>.</code> 意味着每一层都要尝试所有子节点 → 完整 DFS 遍历整棵树。这是 Trie 通配符搜索的最坏情况。实际系统中通常限制通配符数量或深度。</p>
 
-<p><strong>解决方案 — 两层路由：</strong></p>
-<ol><li><strong>会话亲和性（Sticky Sessions）+ 一致性哈希</strong>：基于 <code>session_id</code> 或 <code>user_id</code> 哈希，将同一用户的请求始终路由到同一 API Gateway 节点。用一致性哈希（Consistent Hashing）确保节点增减时影响最少的会话。</li><li><strong>无状态 Inference Worker</strong>：会话状态（KV Cache）不存在 worker 本地，而是写入分布式缓存（Redis Cluster）。Gateway 读取 KV Cache 后转发给任意可用 worker — 解耦路由层与计算层。</li><li><strong>故障转移</strong>：若某个 Gateway 节点宕机，一致性哈希环自动将该节点的 session 重新映射到相邻节点，从 Redis 恢复 KV Cache 继续推理。</li></ol>
-
-<p><strong>Key insight:</strong> Decouple session routing (sticky at gateway) from compute (stateless workers). Store KV Cache in Redis so any worker can resume any session — enabling true horizontal scale without session loss.</p>
-
+<p><em>Three <code>.</code> characters mean every level tries all children → full DFS of the entire tree. This is the worst case. Real systems typically limit the number of wildcards.</em></p>
 <p>&lt;/details&gt;</p>
 
 <hr/>
 
-<p><strong>Q2: [💻 Algorithms]</strong> — Day 73: Serialize and Deserialize Binary Tree</p>
+<h2>📚 References</h2>
+<ul><li><a href="https://leetcode.com/problems/design-add-and-search-words-data-structure/discuss/">LeetCode #211 Discussion</a></li><li><a href="https://neetcode.io/roadmap">NeetCode Trie Playlist</a></li><li><a href="https://visualgo.net/en/trie">Trie Data Structure (Visualgo)</a></li></ul>
 
-<p>给出以下二叉树：</p>
-<div class="code-block">
-  <button class="copy-btn" type="button" data-copy="    1&#10;   / \&#10;  2   3&#10;     / \&#10;    4   5">Copy</button>
-  <pre><code class="language-text">    1
-   / \
-  2   3
-     / \
-    4   5</code></pre>
-</div>
-<p>用 BFS（层序）序列化后的字符串是什么？反序列化时，如何区分一个节点"没有左子节点"和"没有右子节点"？</p>
+<h2>🧒 ELI5</h2>
+<p>普通的 Trie 像查字典——你一个字母一个字母往下找。今天的题加了个 <code>.</code> 通配符，就像"百搭牌"——遇到它就得把所有可能的字母都试一遍，用的是深度优先搜索（DFS）。</p>
 
-<p><em>Given the binary tree above, what does the BFS-serialized string look like? When deserializing, how do you distinguish "no left child" from "no right child"?</em></p>
-
-<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
-
-<p><strong>序列化结果：</strong> <code>"1,2,3,null,null,4,5"</code></p>
-
-<p><strong>BFS序列化过程：</strong></p>
-<div class="code-block">
-  <button class="copy-btn" type="button" data-copy="# 用 queue，层序遍历，null节点也入队列（但不展开）&#10;# Level 0: [1]&#10;# Level 1: [2, 3]&#10;# Level 2: [null, null, 4, 5]  ← 2的两个null子节点 + 3的两个子节点">Copy</button>
-  <pre><code class="language-python"><span style="color:#5c6370;"># 用 queue，层序遍历，null节点也入队列（但不展开）</span>
-<span style="color:#5c6370;"># Level 0: [1]</span>
-<span style="color:#5c6370;"># Level 1: [2, 3]</span>
-<span style="color:#5c6370;"># Level 2: [null, null, 4, 5]  ← 2的两个null子节点 + 3的两个子节点</span></code></pre>
-</div>
-
-<p><strong>如何区分左右子节点缺失：</strong></p>
-<p>关键在于<strong>位置编码</strong>。BFS序列化时，每个节点（包括 null）按严格的左-右顺序入队。反序列化时，用一个指针 <code>i</code> 从 <code>i=1</code> 开始，每次弹出一个父节点，就消耗 <code>tokens[i]</code>（左子）和 <code>tokens[i+1]</code>（右子）。null 占位符保证了位置信息不丢失。</p>
-
-<p><strong>Key insight:</strong> It's all about <strong>positional encoding</strong>. <code>null</code> placeholders act as tombstones that preserve the left/right relationship. Without them, <code>1,2,3,4,5</code> is ambiguous — you can't tell if <code>4</code> is a left or right child of <code>3</code>.</p>
-
-<p>&lt;/details&gt;</p>
-
-<hr/>
-
-<p><strong>Q3: [⚙️ Python Craft]</strong> — Day 73: Garbage Collection — Reference Counting + Generational GC</p>
-
-<p>以下 Python 代码会导致内存泄漏吗？为什么？Python 的哪个机制负责处理这种情况？</p>
-
-<div class="code-block">
-  <button class="copy-btn" type="button" data-copy="class Node:&#10;    def __init__(self, val):&#10;        self.val = val&#10;        self.next = None&#10;&#10;a = Node(1)&#10;b = Node(2)&#10;a.next = b&#10;b.next = a  # 循环引用！&#10;del a&#10;del b&#10;# 此时内存被释放了吗？">Copy</button>
-  <pre><code class="language-python"><span style="color:#c678dd;">class</span> Node:
-    <span style="color:#c678dd;">def</span> __init__(self, val):
-        self.val = val
-        self.next = <span style="color:#c678dd;">None</span>
-
-a = Node(<span style="color:#56b6c2;">1</span>)
-b = Node(<span style="color:#56b6c2;">2</span>)
-a.next = b
-b.next = a  <span style="color:#5c6370;"># 循环引用！</span>
-<span style="color:#c678dd;">del</span> a
-<span style="color:#c678dd;">del</span> b
-<span style="color:#5c6370;"># 此时内存被释放了吗？</span></code></pre>
-</div>
-
-<p><em>Does this Python code cause a memory leak? Why? Which Python mechanism handles this?</em></p>
-
-<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
-
-<p><strong>答案：不会永久泄漏，但引用计数单独无法处理。</strong></p>
-
-<p><strong>引用计数分析：</strong></p>
-<ul><li><code>del a</code> 后：<code>a</code> 对象的 refcount 从 2 降到 1（因为 <code>b.next</code> 仍然指向它）</li><li><code>del b</code> 后：<code>b</code> 对象的 refcount 从 2 降到 1（因为 <code>a.next</code> 仍然指向它）</li><li>两个对象的 refcount 都是 1，<strong>不为 0</strong>，引用计数无法回收它们</li></ul>
-
-<p><strong>谁来救场：分代垃圾回收器（Generational GC）</strong></p>
-<p>CPython 的 <code>gc</code> 模块实现了<strong>标记-清除（Mark and Sweep）</strong>算法，专门处理循环引用。它周期性地扫描第 1 代和第 2 代对象，找到"不可达"的循环引用组并批量回收。</p>
-
-<div class="code-block">
-  <button class="copy-btn" type="button" data-copy="import gc&#10;gc.collect()  # 手动触发，通常不需要">Copy</button>
-  <pre><code class="language-python"><span style="color:#c678dd;">import</span> gc
-gc.collect()  <span style="color:#5c6370;"># 手动触发，通常不需要</span></code></pre>
-</div>
-
-<p><strong>Key insight:</strong> Reference counting is O(1) and immediate but blind to cycles. The generational GC is the safety net — it runs less frequently (triggered by allocation thresholds) and catches what refcounting misses. For performance-critical code, avoid creating cycles or use <code>weakref</code>.</p>
-
-<p>&lt;/details&gt;</p>
-
-<hr/>
-
-<p>💡 <em>复习巩固记忆，螺旋式上升。Spaced repetition beats cramming — every review compounds.</em></p>
-
-<p>📅 明天继续新内容！See you tomorrow for Day 76.</p>
+<p><em>A normal Trie is like looking up a word in a dictionary — one letter at a time. Today's problem adds <code>.</code> as a wildcard "wild card" — when you hit it, try every possible letter using DFS.</em></p>
 
       </div>
     </div>
