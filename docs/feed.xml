@@ -5,8 +5,203 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 27 Jun 2026 15:11:19 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 28 Jun 2026 15:08:04 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-28</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-28</guid>
+      <pubDate>Sun, 28 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 25 (10 min read)</strong></p>
+<p>📊 NeetCode: 61/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 Keep the streak alive!</p>
+
+<hr/>
+
+<h2>🗓️ 本周回顾 / This Week&#x27;s Journey</h2>
+
+<p><strong>周一 Day 73（6/22）</strong> — 系统设计：LLM 推理服务系统；算法：序列化/反序列化二叉树（Trees 收官第 15 题）；软技能：On-Call 陌生系统；Python Craft：CPython 垃圾回收；AI 新闻：AI agent 框架安全漏洞、Self-Harness 自进化框架、挪威 AI 教育分级政策</p>
+
+<p><strong>周二 Day 74（6/23）</strong> — 系统设计：设计 AI 聊天平台（ChatGPT 规模）；算法：实现 Trie（前缀树模式开篇）；软技能：招聘与团队成长（Staff 级别）；Python Craft：Python 导入系统；AI：AGI 争论与新兴架构（Mamba、MoE、Test-Time Compute）</p>
+
+<p><strong>周三 Day 75（6/24）</strong> — 复习日：回顾 ChatGPT 平台架构（Sticky Session + KV Cache）、二叉树序列化 BFS 原理、Python 循环引用与分代 GC</p>
+
+<p><strong>周四 Day 61（6/25）</strong> — 系统设计：AI 聊天平台深度补充（SSE vs WebSocket、多租户隔离）</p>
+
+<p><strong>周五 Day 62（6/26）</strong> — 系统设计：AI 聊天平台第三视角；算法：前缀树模式 2/3 — 通配符搜索（<code>.</code> 匹配任意字符，DFS 回溯）</p>
+
+<p><strong>周六 Day 76（6/27）</strong> — 深度专题：前缀树通配符搜索全解（理论 + 实现 + 面试追问 + 生产应用）</p>
+
+<hr/>
+
+<p><em>Mon Day 73 (6/22): LLM Inference Serving + Tree Serialization (Trees 15/15) + On-Call ownership + CPython GC + AI framework security news</em></p>
+<p><em>Tue Day 74 (6/23): AI Chatbot Platform + Trie intro (1/3) + Hiring/growing teams + Python import system + AGI/emerging architectures</em></p>
+<p><em>Wed Day 75 (6/24): Review day — session affinity, BFS serialization, generational GC</em></p>
+<p><em>Thu Day 61 (6/25): AI Chatbot Platform — SSE deep dive + multi-tenant queues</em></p>
+<p><em>Fri Day 62 (6/26): AI Chatbot Platform (third take) + Wildcard Trie (2/3) — DFS backtracking</em></p>
+<p><em>Sat Day 76 (6/27): Deep Dive — Design Add and Search Words (Trie + wildcard, interview simulation)</em></p>
+
+<hr/>
+
+<h2>🧠 系统设计要点 / System Design: Key Takeaways</h2>
+
+<p>本周系统设计完全聚焦在 <strong>AI 基础设施</strong>这一主题，三个话题层层递进：</p>
+
+<p><strong>1. LLM 推理服务（Day 73）— GPU 利用率的艺术</strong></p>
+
+<p>传统 static batching 让 GPU 等最慢的请求，利用率仅 ~30%。<strong>Continuous Batching（vLLM）</strong> 允许请求随时进出队列，GPU 利用率提升至 80%+。<strong>PagedAttention</strong> 把 KV Cache 像操作系统管理内存一样分页管理，解决长上下文的显存碎片问题。关键区分：Prefill 阶段（处理 prompt）是计算密集型；Decode 阶段（生成 token）是内存带宽密集型——两者应分开优化，即 Prefill-Decode Disaggregation。</p>
+
+<p><strong>2. AI 聊天平台（Days 73-75, 61, 62）— 五次讲同一题，每次都有新角度</strong></p>
+
+<p>核心架构决策链：</p>
+<p>- 流式用 <strong>SSE</strong>（单向，HTTP/2 兼容），不用 WebSocket</p>
+<p>- 对话上下文用 <strong>Redis TTL</strong>（短期），长历史压缩存 S3</p>
+<p>- 模型并行：<strong>张量并行</strong>（低延迟单请求）+ <strong>流水线并行</strong>（高吞吐批量）组合使用</p>
+<p>- 多租户：不同 tier 走不同<strong>优先级队列</strong>，免费用户高峰期可降级</p>
+<p>- <strong>Session Affinity</strong>：同会话路由到同 GPU 节点，减少 KV Cache miss</p>
+
+<p><strong>3. 三者之间的连接</strong>：推理服务是 AI 平台的底层引擎；AI 平台是面向用户的产品层；两者共同依赖 GPU 资源池的精细化调度。</p>
+
+<hr/>
+
+<p><em>This week&#x27;s system design was entirely AI infrastructure — three interconnected topics. LLM inference serving: continuous batching + PagedAttention = 3x better GPU utilization. AI chatbot platform: SSE over WebSocket, Redis for context, tensor × pipeline parallelism, priority queues for multi-tenancy, session affinity to reduce KV cache misses. Connection: inference serving is the engine beneath the chatbot platform.</em></p>
+
+<hr/>
+
+<h2>💻 算法模式总结 / Algorithms: Patterns Mastered</h2>
+
+<h3>🌳 Trees 模式（第 13-15 题）— 本周完结</h3>
+
+<p>本周以 <strong>序列化/反序列化二叉树（#297）</strong> 结束了整个 Trees 模式块（共 15 题）。</p>
+
+<p><strong>BFS 序列化的关键洞察</strong>：null 节点也要作为占位符入队，否则无法区分左/右子节点缺失。<code>&quot;1,2,3,N,N,4,5&quot;</code> 中的两个 <code>N</code> 是 node 2 的左右子节点，位置信息不能丢失。反序列化时按 <code>(父节点 → 左子 → 右子)</code> 的顺序消费 token，队列保证层序同步。</p>
+
+<p>15 题 Trees 全景回顾：</p>
+<pre><code>
+翻转 → 最大深度 → 直径 → 平衡 → 同构 → 子树 → 层序 → 右视图
+→ 路径和 → 好节点 → BST验证 → BST第K小 → 前/中序建树 → 最大路径和 → 序列化
+</code></pre>
+<p>每题都是一个 DFS 模板的变体，核心变化是&quot;返回值语义&quot;越来越复杂。</p>
+
+<h3>🔡 Tries 模式（第 1-2 题）— 新模式开始</h3>
+
+<p><strong>Day 73/61（#208 Implement Trie）</strong>：共享前缀 → O(L) 查询，无论字典多大。</p>
+<p><strong>Day 76（#211 Wildcard Search）</strong>：<code>.</code> 通配符 = 在 Trie 上做 DFS + 回溯，遇到通配符尝试所有子节点。最坏情况 O(N)（全通配符遍历整棵树）。</p>
+
+<p>下周终局：<strong>#212 Word Search II（Hard）</strong> = Trie + 2D Grid DFS，用前缀剪枝避免无效路径。</p>
+
+<hr/>
+
+<p><em>Trees block complete (15/15): serialization&#x27;s key insight = null placeholders preserve positional info. Trie block started (2/3): wildcard <code>.</code> converts O(L) lookup to DFS backtracking. Coming up: #212 Word Search II — Trie meets 2D grid, prefix pruning eliminates dead paths early.</em></p>
+
+<hr/>
+
+<h2>🗣️ 软技能练习重点 / Soft Skills: What to Practice</h2>
+
+<p>本周覆盖两个高频 Staff+ 场景：</p>
+
+<p><strong>On-Call 陌生系统（Day 73）</strong>：面试官考的不是技术能力，是<strong>系统性准备</strong>的心态。三步框架：① 接手前两周主动建 context（读代码、看历史 incident、理解 top 5 告警类型）；② 每个告警必须对应 runbook，没有 runbook 不接手；③ 明确升级标准——知道何时叫人是专业，不是失败。Staff 加分：把自己做的 runbook 模板推广到 org，推动&quot;服务转移 checklist&quot;制度化。</p>
+
+<p><strong>招聘与团队成长（Day 74）</strong>：最高杠杆的工作。关键区别：参与招聘 vs <strong>定义招聘标准</strong>。Staff 期望：建 rubric 让主观判断可量化；做 shadow/reverse-shadow 传递面试文化；把经验制度化而非个人独享。量化影响很重要——&quot;pass-rate variance 降低 40%&quot; 比 &quot;面了很多人&quot; 更有说服力。</p>
+
+<p><strong>需要刻意练习</strong>：两个场景都要准备具体的 STAR 故事，量化结果是关键。On-Call 场景可以结合生产事故经历；招聘场景可以结合改进过的面试流程或设计过的 rubric。</p>
+
+<hr/>
+
+<p><em>On-call foreign systems: proactive context-building before the first page + runbook-per-alert + clear escalation criteria. Hiring: define the bar (rubric), calibrate others (shadow program), institutionalize learnings. Both need quantified STAR stories ready to go.</em></p>
+
+<hr/>
+
+<h2>🎨 前端知识巩固 / Frontend: Concepts to Lock In</h2>
+
+<p>本周无新前端内容（前端 index 维持在 37/50）。</p>
+
+<p>上次覆盖的主题（Days 61-65 期间）包括：Virtualization、Code Splitting、Web Vitals（LCP/FID/CLS）— 如果还没复习，这周是好时机。</p>
+
+<p>自查题：</p>
+<p>- <code>LCP &gt; 2.5s</code> 最常见的两个原因是什么？如何优化？</p>
+<p>- <code>React.lazy</code> + <code>Suspense</code> 实现路由级 code splitting 的完整写法？</p>
+<p>- 虚拟列表（windowing）的核心原理 — 为什么只渲染可视区域够用？</p>
+
+<hr/>
+
+<p><em>No new frontend content this week (index at 37/50). Good week to revisit Web Vitals, code splitting, and virtualization. Self-check: LCP causes + fixes, React.lazy syntax, windowing principle.</em></p>
+
+<hr/>
+
+<h2>🤖 AI 知识点 / AI: What Stuck</h2>
+
+<p><strong>AI 框架安全漏洞（Day 73 新闻）</strong>：LangGraph、Langflow、LangChain-core 同时曝出高危漏洞，Langflow 约 7,000 台服务器遭在野攻击。漏洞本质是老问题（SQL 注入、路径遍历、不安全反序列化），不是 AI 特有风险。<strong>据报道</strong>受影响版本和修复版本已公开，如果生产环境在用这些框架，应尽快检查并升级。工程师关键认知：这些框架持有 API 密钥和数据库凭证，攻破一个等于暴露所有下游系统。</p>
+
+<p><strong>AGI 与新兴架构（Day 74）</strong>：最值得记住的是三条技术趋势——① <strong>Mamba/SSM</strong>：线性时间序列处理，O(n) vs Transformer 的 O(n²)，长上下文高效；② <strong>Test-Time Compute</strong>（OpenAI o3、DeepSeek R1 路线）：推理时多花算力生成思维链，不依赖更大的预训练模型；③ <strong>MoE 细粒度化</strong>：每 token 激活更少比例的专家，实现大容量模型 + 小推理成本。</p>
+
+<hr/>
+
+<p><em>AI framework CVEs: old vulnerabilities (SQLi, path traversal) in new frameworks — upgrade immediately if using LangFlow/LangGraph/LangChain in prod. (&quot;据报道&quot; applies to specific CVSS scores cited.) AGI section: Mamba (linear-time attention alternative), Test-Time Compute (reasoning via inference-time budget, not model size), fine-grained MoE (sparse activation = big capacity, low cost) — these three architectural shifts are worth tracking.</em></p>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<p><strong>最需要强化的区域：</strong></p>
+
+<p>1. <strong>二叉树完整 15 题串联</strong>：Trees 模式刚收官，趁热打铁快速复习 #124（最大路径和）和 #297（序列化），这两题返回值语义最复杂，是面试高频出现的&quot;Hard 题压轴&quot;。</p>
+
+<p>2. <strong>Trie 模式第 3 题准备</strong>：下周 #212 Word Search II（Hard）是 Trie 模式的终局。提前思考：如何把 Trie 剪枝嵌入 2D 网格 DFS？什么时候从 Trie 删除已找到的词（避免重复）？</p>
+
+<p>3. <strong>AI 聊天平台多视角融合</strong>：同一题讲了三次（Days 60、61、62），核心区别要能区分清楚：连续批处理（推理层）vs 会话亲和性（路由层）vs 上下文截断（应用层）。</p>
+
+<p>4. <strong>Python GC 面试题</strong>：循环引用 + 分代 GC 是 Python 面试必考题，<code>gc.collect()</code>、<code>weakref</code>、<code>tracemalloc</code> 三个工具的使用场景要能流利回答。</p>
+
+<hr/>
+
+<p><em>Priority review: Trees Hard problems (#124, #297) while fresh; prep #212 Word Search II (Trie + grid DFS — think about pruning strategy); clarify AI chatbot architecture layers (batching ≠ routing ≠ context management); Python GC triad (refcount + generational + weakref) for interviews.</em></p>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p><strong>Trees 模式 15/15 完结！</strong></p>
+
+<p>从第 1 题（翻转二叉树）到第 15 题（序列化/反序列化），完整走完了 NeetCode Trees 模式的全部 15 道题。这不只是数字上的里程碑——Trees 是二叉搜索树、图、Trie、堆等所有后续数据结构的基础。掌握了&quot;DFS 返回值语义的演变&quot;这一核心模式，后续的 Graph DFS 和 Trie DFS 都是这个模式的自然延伸。</p>
+
+<p>同时，本周的深度专题（Saturday Deep Dive）质量很高——包含完整实现、迭代版本、面试追问 5 题、生产应用 4 个场景，是迄今为止最完整的一次深度专题。</p>
+
+<hr/>
+
+<p><em>Trees pattern complete: 15/15. The core insight — DFS return value semantics evolve from simple (depth) to complex (path sum + global max) — carries directly into graphs and Trie DFS. Saturday Deep Dive quality this week: full implementation, iterative alternative, 5-question interview simulation, 4 production applications.</em></p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p>基于当前进度（Day 76，Expert 阶段，6/28 星期日）：</p>
+
+<p><strong>算法（Trie 模式终局）</strong></p>
+<p>- <code>#212 Word Search II</code>（Hard）— Trie + 2D Grid DFS，本 block 最难题</p>
+<p>- 进入下一模式：<strong>Heap / Priority Queue</strong>（#703, #1046, #703...）</p>
+
+<p><strong>系统设计</strong>（第 61 题之后）</p>
+<p>- 新话题暂不透露，但 Expert 阶段会继续涉及分布式系统深水区</p>
+
+<p><strong>Python Craft</strong></p>
+<p>- index 23 — 预计继续 Python 内部机制或高级设计模式话题</p>
+
+<p><strong>软技能</strong></p>
+<p>- 继续 Staff/Principal 级别领导力场景</p>
+
+<p><strong>一个问题提前想</strong>：<code>#212 Word Search II</code> 用 Trie 的关键剪枝：当一条路径走到 Trie 中某个叶节点（<code>is_end=True</code> 且无子节点），找到单词后应该从 Trie 中删掉这个节点，避免重复记录同一个词。这个&quot;边找边剪&quot;的 Trie 变种是本题的核心技巧。</p>
+
+<hr/>
+
+<p><em>Next week: #212 Word Search II (Trie block finale — hardest problem, Trie + grid backtracking), then Heap/Priority Queue block starts. System design continues Expert-tier distributed systems. Pre-think: in #212, delete found words from Trie to avoid duplicates — the &quot;prune-while-searching&quot; trick is the key insight.</em></p>
+
+<hr/>
+
+<p><em>byte-by-byte · Week 25 · Day 76 · Generated 2026-06-28</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-27</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
