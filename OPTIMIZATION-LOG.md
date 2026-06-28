@@ -569,3 +569,19 @@
 - Delivery rate (7d): 7/7 ✅
 - Cron errors: none (optimizer, health-check, weekday, review-and-send, backup-send, saturday, sunday — all ok)
 - State: currentDay=73, lastSentDate=2026-06-22, lastReviewDay=70 (review cadence on track, every 5 days)
+
+## 2026-06-28 Optimization Run
+
+### Issues Found
+- **P0 Critical — 2 missed weekday deliveries.** No email sent on **2026-06-25 (Thu)** and **2026-06-26 (Fri)**. Both are weekdays that should have produced 5-section content. Root cause: the `byte-by-byte weekday` cron (`0 8 * * 1-5`) has `lastRunStatus=error` with `lastError="cron: job execution timed out (last phase: model-call-started)"`. The model call hung and the job timed out, so no content was generated and no email went out. State history confirms the gap: it jumps straight from **Day 75 (06-24, review)** to **Day 76 (06-27, Saturday deep dive)** — there are no Day entries for 06-25 or 06-26, and no git commits on those dates.
+  - **Contributing factor:** the weekday job has **no `timeoutSeconds` set** (None), so it falls back to the gateway default and dies mid model-call instead of failing fast/retrying. Recommend setting an explicit `timeoutSeconds` (e.g. 900) on the weekday job like the optimizer job has.
+- **P1 Quality:** None observed. Sections that did send (06-27 Sat deep dive, 06-28 Sun review) are 1-section by design and consistent with day-type. No content available to QA for the two missed days.
+- **P2 Maintenance:**
+  1. **Optimizer's own cron-list parse is still brittle** (flagged 2026-06-19, still unfixed). `openclaw cron list --json` prints a poe `providerAuthEnvVars` deprecation warning to stdout *before* the JSON, so the Step 0 `json.load(sys.stdin)` crashes. Workaround again this run: slice from first `{`. Also note `openclaw` isn't on PATH in the cron shell — had to call `~/.nvm/versions/node/v25.6.1/bin/openclaw` directly.
+  2. **Optimizer job shows `lastRunStatus=error` with empty `lastError`** — worth a manual glance; may be a prior run that errored on the parse issue above.
+  3. **Day-number / date drift continues.** Day 76 was committed on BOTH 2026-06-27 and 2026-06-28 (duplicate day label), mirroring the earlier Day 72 double-commit (06-20/06-21). Day numbers don't map 1:1 to calendar dates. Delivery unaffected, but the day-increment logic should be reviewed.
+
+### Metrics
+- Delivery rate (7d): **5/7** ❌ (missed 06-25 Thu, 06-26 Fri)
+- Cron errors: `byte-by-byte weekday` = timed out (model-call-started); `byte-by-byte optimizer` = error (empty message). Other 5 jobs (health-check, review-and-send, backup-send, saturday, sunday) = ok.
+- State: currentDay=76, lastSentDate=2026-06-27, lastReviewDay=75 (review cadence on track, every 5 days)
