@@ -5,8 +5,1406 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 28 Jun 2026 15:08:04 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 30 Jun 2026 15:40:28 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-06-30</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-30</guid>
+      <pubDate>Tue, 30 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 78</h2>
+<p><strong>Topic:</strong> Design an AI Chatbot Platform (ChatGPT-scale)</p>
+<p><strong>Difficulty:</strong> Expert | <strong>Phase:</strong> Expert</p>
+
+<hr/>
+
+<h2>想象你在设计... / Imagine you&#x27;re designing...</h2>
+
+<p>你是 OpenAI 的首席架构师。需要设计一个能同时支持 <strong>1000 万</strong>并发用户的 AI 对话平台。每个请求都需要调用一个巨大的 LLM，延迟敏感，成本巨高，故障不可接受。</p>
+
+<p>You&#x27;re the lead architect at OpenAI. Design a platform that serves <strong>10 million</strong> concurrent users, each streaming responses from a massive LLM — latency-sensitive, extremely expensive, zero tolerance for failures.</p>
+
+<hr/>
+
+<h2>核心挑战 / Core Challenges</h2>
+
+<p>1. <strong>LLM 推理极慢</strong> — GPT-4 级别模型，首 token 延迟 500ms-2s</p>
+<p>2. <strong>流式输出</strong> — 用户要看到逐字&quot;打字&quot;效果，不是等全部完成</p>
+<p>3. <strong>有状态会话</strong> — 每轮对话需要历史 context</p>
+<p>4. <strong>成本爆炸</strong> — 每 1M tokens 约 $10-30，乘以 1000 万用户</p>
+<p>5. <strong>GPU 是瓶颈</strong> — A100/H100 极贵，利用率必须最大化</p>
+
+<hr/>
+
+<h2>架构图 / Architecture Diagram</h2>
+
+<pre><code>
+┌─────────────────────────────────────────────────────────────┐
+│                        CLIENTS                              │
+│         Web / iOS / Android / API / Plugins                 │
+└────────────────────────┬────────────────────────────────────┘
+                         │ WebSocket / SSE (streaming)
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    API GATEWAY LAYER                        │
+│   Auth (JWT/OAuth) │ Rate Limiting │ Abuse Detection        │
+│              (Kong / Nginx + Lua)                           │
+└──────────┬──────────────────────────────┬───────────────────┘
+           │                              │
+           ▼                              ▼
+┌─────────────────────┐       ┌─────────────────────────────┐
+│   CONVERSATION SVC  │       │    SESSION STORE             │
+│  - History mgmt     │◄─────►│  Redis Cluster              │
+│  - Context window   │       │  (last N turns, TTL 24h)    │
+│  - Token counting   │       └─────────────────────────────┘
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   INFERENCE ROUTER                          │
+│   - Model selection (GPT-4o / GPT-4 / GPT-3.5 by cost)     │
+│   - Load balancing across GPU pods                          │
+│   - Priority queuing (paid &gt; free)                          │
+└──────────┬──────────────────────────┬───────────────────────┘
+           │                          │
+           ▼                          ▼
+┌─────────────────────┐   ┌─────────────────────────────────┐
+│  GPU CLUSTER A      │   │  GPU CLUSTER B                  │
+│  (A100/H100 pods)   │   │  (Spot instances for overflow)  │
+│  vLLM / TensorRT    │   │  vLLM + dynamic batching        │
+│  KV-Cache enabled   │   │                                 │
+└──────────┬──────────┘   └──────────────────────────────────┘
+           │
+           ▼ SSE stream
+┌─────────────────────────────────────────────────────────────┐
+│               STREAMING PROXY                               │
+│   - Chunked transfer (token by token)                       │
+│   - Connection multiplexing                                 │
+│   - Backpressure handling                                   │
+└──────────┬──────────────────────────────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────────────────────────────────────┐
+│               STORAGE LAYER                                 │
+│  PostgreSQL (conversations) │ S3 (attachments/files)        │
+│  ElasticSearch (search)     │ ClickHouse (analytics)        │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>关键设计决策 / Key Design Decisions</h2>
+
+<h3>1. 流式传输用 SSE，不用 WebSocket</h3>
+<p>- <strong>SSE (Server-Sent Events)</strong> = 单向流，更简单，CDN 友好</p>
+<p>- WebSocket 是双向的，但 LLM 推理只需要服务端→客户端方向</p>
+<p>- SSE 天然支持断线重连 (<code>Last-Event-ID</code>)</p>
+
+<h3>2. vLLM + Continuous Batching</h3>
+<p>- 传统推理：一个请求用完 GPU 才处理下一个 → 利用率低</p>
+<p>- <strong>Continuous batching</strong>：把多个请求的 prefill/decode 阶段交织执行</p>
+<p>- 效果：GPU 利用率从 30% → 80%+，吞吐量提升 3-10x</p>
+
+<h3>3. KV Cache 复用</h3>
+<p>- 系统 prompt (&quot;You are a helpful assistant&quot;) 对所有用户相同</p>
+<p>- <strong>Prefix caching</strong>：预计算并缓存这部分的 KV cache</p>
+<p>- 节省 ~20% 推理计算量</p>
+
+<h3>4. 分层会话存储</h3>
+<pre><code>
+热数据 (最近 24h) → Redis (内存，&lt;1ms)
+温数据 (最近 30d) → PostgreSQL (SSD，&lt;10ms)  
+冷数据 (历史)   → S3 (对象存储，按需加载)
+</code></pre>
+
+<h3>5. 成本控制：模型分级路由</h3>
+<pre><code>
+def route_model(user_tier, message_complexity):
+    if user_tier == &quot;free&quot;:
+        return &quot;gpt-3.5-turbo&quot;   # $0.002/1K tokens
+    elif is_simple_query(message_complexity):
+        return &quot;gpt-4o-mini&quot;     # $0.015/1K tokens  
+    else:
+        return &quot;gpt-4o&quot;          # $0.03/1K tokens
+</code></pre>
+
+<hr/>
+
+<h2>为什么这样设计 / Why This Design</h2>
+
+<p>| 决策 | 原因 |</p>
+<p>|------|------|</p>
+<p>| Inference Router 独立 | 模型升级不影响上游；可做 A/B 测试 |</p>
+<p>| Redis 存 session | 低延迟读取历史，避免每次查 DB |</p>
+<p>| 优先队列 | 付费用户等待时间 &lt; 2s；免费用户可接受 5-10s |</p>
+<p>| Spot instances | LLM 推理是无状态的，被抢占只影响当前请求 |</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>❌ <strong>坑1：把整个对话历史每次都发给 LLM</strong></p>
+<p>- 100 轮对话 × 200 tokens = 20K tokens/请求</p>
+<p>- Context window 满了就崩，成本也爆了</p>
+<p>- ✅ 正确：摘要旧轮次，只保留最近 10-20 轮</p>
+
+<p>❌ <strong>坑2：同步等待 LLM 完成再返回</strong></p>
+<p>- GPT-4 生成 500 字需要 10-30 秒</p>
+<p>- 用户会以为卡死了</p>
+<p>- ✅ 正确：SSE 流式推送，第一个 token &lt; 1s 到达</p>
+
+<p>❌ <strong>坑3：没有限流，被 prompt injection 攻击</strong></p>
+<p>- 攻击者发超长 prompt，把所有 GPU 资源耗尽</p>
+<p>- ✅ 正确：输入 token 上限 + 每用户 RPM/TPM 限流</p>
+
+<p>❌ <strong>坑4：忽略 GPU 内存碎片</strong></p>
+<p>- 不同长度请求的 KV cache 大小不同，导致显存碎片</p>
+<p>- ✅ 正确：vLLM 的 PagedAttention 像操作系统管理物理内存一样管理显存</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- 🔗 [vLLM: Easy, Fast, and Cheap LLM Serving](https://vllm.ai/)</p>
+<p>- 🔗 [How ChatGPT Works — Architecture Deep Dive](https://newsletter.pragmaticengineer.com/p/chatgpt-infrastructure)</p>
+<p>- 🔗 [OpenAI&#x27;s Infrastructure at Scale](https://openai.com/research/scaling-kubernetes-to-7500-nodes)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你是个超忙的厨师，同时要给一万个客人做饭。每道菜（LLM 推理）需要 30 秒。</p>
+
+<p>- <strong>分批下锅（Continuous Batching）</strong>：不等一道菜全熟，多道菜轮流用炉灶</p>
+<p>- <strong>菜单分级（Model Routing）</strong>：简单的要沙拉用小厨师做，复杂的大餐才用大厨</p>
+<p>- <strong>提前备料（KV Cache）</strong>：每个菜都用的酱汁提前熬好，不用每次现做</p>
+<p>- <strong>边做边上（SSE Streaming）</strong>：前菜做好先端上来，不用等整套菜都好</p>
+
+<p>这样 1 万个客人才不会都在等！</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 78</h2>
+<p><strong>#212 Word Search II</strong> | 🔴 Hard | <strong>Pattern: Tries (3/3)</strong></p>
+
+<p>🔗 [LeetCode #212](https://leetcode.com/problems/word-search-ii/) | 📹 [NeetCode Solution](https://neetcode.io/problems/word-search-ii)</p>
+
+<hr/>
+
+<h2>🧩 前缀树模式 (3/3) — 本系列最终章</h2>
+
+<pre><code>
+Trie Block 总览:
+  Day 74: #208 Implement Trie (Medium)          ← 建模板
+  Day 76: #211 Add and Search Words (Medium)     ← 加通配符 .
+  Day 78: #212 Word Search II (Hard)             ← TODAY: Trie + DFS
+</code></pre>
+
+<p>这是 Trie 系列的终极 Boss！把 Trie 嵌入 DFS 回溯，实现在矩阵里同时搜索多个单词。</p>
+
+<hr/>
+
+<h2>真实类比 / Real-world Analogy</h2>
+
+<p>想象你有一张巨大的字母瓷砖地图，要在地图上找到所有词典里的单词。暴力方法：对每个单词跑一遍 DFS。聪明方法：<strong>把词典压进 Trie，DFS 时同时在 Trie 上走</strong> —— 一旦没有前缀匹配，立刻剪枝，不用继续搜下去。</p>
+
+<p>You have a grid of letter tiles. Find all words from a dictionary that can be formed by following adjacent cells. Brute force: run DFS for every word. Smart: <strong>load the dictionary into a Trie, walk Trie + grid simultaneously</strong> — prune immediately when no prefix matches.</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<pre><code>
+board = [
+  [&#x27;o&#x27;,&#x27;a&#x27;,&#x27;a&#x27;,&#x27;n&#x27;],
+  [&#x27;e&#x27;,&#x27;t&#x27;,&#x27;a&#x27;,&#x27;e&#x27;],
+  [&#x27;i&#x27;,&#x27;h&#x27;,&#x27;k&#x27;,&#x27;r&#x27;],
+  [&#x27;i&#x27;,&#x27;f&#x27;,&#x27;l&#x27;,&#x27;v&#x27;]
+]
+words = [&quot;oath&quot;,&quot;pea&quot;,&quot;eat&quot;,&quot;rain&quot;]
+Output: [&quot;eat&quot;,&quot;oath&quot;]
+</code></pre>
+
+<hr/>
+
+<h2>模式映射 / Pattern Mapping</h2>
+
+<p>| 单独用 DFS | Trie + DFS |</p>
+<p>|-----------|-----------|</p>
+<p>| 对每个单词 DFS：O(W × M×N×4^L) | 所有单词共享一次 DFS：O(M×N×4^L) |</p>
+<p>| 无法早期剪枝 | 只要 Trie 没有当前前缀，立刻停止 |</p>
+<p>| words=10000 时超时 | words=10000 依然可行 |</p>
+
+<p><strong>核心洞察</strong>：Trie 把&quot;前缀共享&quot;的优势带入了搜索过程。</p>
+
+<hr/>
+
+<h2>Python 解法 + 逐步追踪 / Solution + Trace</h2>
+
+<pre><code>
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.word = None  # store full word at end node (not just True)
+
+class Solution:
+    def findWords(self, board: list[list[str]], words: list[str]) -&gt; list[str]:
+        # Step 1: Build Trie from word list
+        root = TrieNode()
+        for w in words:
+            node = root
+            for ch in w:
+                if ch not in node.children:
+                    node.children[ch] = TrieNode()
+                node = node.children[ch]
+            node.word = w  # mark end
+
+        rows, cols = len(board), len(board[0])
+        result = set()
+
+        def dfs(r, c, node):
+            ch = board[r][c]
+            if ch not in node.children:
+                return  # prune: no prefix match in Trie
+
+            next_node = node.children[ch]
+
+            if next_node.word:
+                result.add(next_node.word)
+                next_node.word = None  # avoid duplicates
+
+            # Mark visited by overwriting (cheaper than a visited set)
+            board[r][c] = &#x27;#&#x27;
+
+            for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:
+                nr, nc = r + dr, c + dc
+                if 0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols and board[nr][nc] != &#x27;#&#x27;:
+                    dfs(nr, nc, next_node)
+
+            board[r][c] = ch  # restore
+
+            # Optimization: prune empty Trie nodes (key insight!)
+            if not next_node.children:
+                del node.children[ch]
+
+        for r in range(rows):
+            for c in range(cols):
+                dfs(r, c, root)
+
+        return list(result)
+</code></pre>
+
+<p><strong>追踪示例 / Trace:</strong></p>
+<pre><code>
+从 (1,2)=&#x27;a&#x27; 开始，找 &quot;eat&quot;:
+  root → &#x27;e&#x27;? 不在 board[1][2]=&#x27;a&#x27; 的邻居里...
+  
+从 (1,1)=&#x27;t&#x27; 开始，找 &quot;eat&quot;:
+  root 里有 &#x27;e&#x27;? (1,0)=&#x27;e&#x27; 是邻居
+  → dfs(1,0,&#x27;e&#x27;) → Trie node &#x27;e&#x27;
+    → 邻居 (0,0)=&#x27;o&#x27;? Trie 下一步是 &#x27;a&#x27;, 不匹配
+    → 邻居 (1,1)=&#x27;t&#x27;? Trie 下一步是 &#x27;a&#x27;, 不匹配
+    → 邻居 (2,0)=&#x27;i&#x27;? 不匹配
+  
+从 (0,1)=&#x27;a&#x27; 开始:
+  root 里有 &#x27;e&#x27;? (1,1)=&#x27;t&#x27; 邻居... 找到 e→a→t 路径!
+  → found &quot;eat&quot; ✓
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(M×N×4^L) where L = max word length (Trie 剪枝大幅减少实际路径)</p>
+<p>- Space: O(N×L) for Trie — N words × avg length L</p>
+
+<hr/>
+
+<h2>关键优化 / Key Optimizations</h2>
+
+<h3>1. 存完整单词，不存布尔值</h3>
+<pre><code>
+node.word = w  # better than node.is_end = True
+</code></pre>
+<p>找到时直接加入结果，不需要重建单词。</p>
+
+<h3>2. 原地标记已访问</h3>
+<pre><code>
+board[r][c] = &#x27;#&#x27;  # overwrite, not a separate visited set
+...
+board[r][c] = ch   # restore after DFS
+</code></pre>
+<p>省去 O(M×N) 的 visited 数组。</p>
+
+<h3>3. 修剪空 Trie 节点（最关键优化！）</h3>
+<pre><code>
+if not next_node.children:
+    del node.children[ch]
+</code></pre>
+<p>找到单词后，从 Trie 里删除叶节点。随着更多单词被找到，Trie 越来越小，后续 DFS 剪枝更激进。</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p>| 题目 | 和 Word Search II 的关系 |</p>
+<p>|------|------------------------|</p>
+<p>| #208 Implement Trie | Word Search II 的核心数据结构 |</p>
+<p>| #211 Add and Search Words | 同样 Trie + DFS，但 &#x27;.&#x27; 通配符换成了矩阵的4方向 |</p>
+<p>| #79 Word Search I | Word Search II 的简化版：单词 → 多单词 |</p>
+<p>| Boggle Game | Word Search II 的现实应用 |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- 🔗 [LeetCode #212](https://leetcode.com/problems/word-search-ii/)</p>
+<p>- 🔗 [NeetCode Video Explanation](https://neetcode.io/problems/word-search-ii)</p>
+<p>- 🔗 [Trie + DFS Pattern Guide](https://leetcode.com/discuss/general-discussion/1125813/trie-question-patterns)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象玩一个字母找词游戏：一张字母格子地图，找出所有词典里能走出来的单词。</p>
+
+<p>笨方法：拿着词典，每个词在地图上走一遍。10000 个词 = 走 10000 遍。</p>
+
+<p>聪明方法：<strong>先把词典变成一棵&quot;前缀树&quot;（Trie）</strong>。比如 &quot;eat&quot;, &quot;east&quot;, &quot;easy&quot; 都从 &#x27;e&#x27;→&#x27;a&#x27; 开始，在树上共享这两步。</p>
+
+<p>然后在地图上 DFS，同时在 Trie 上走。一走进地图某格，就问 Trie：&quot;这条路有单词吗？&quot; 没有前缀匹配→直接放弃，不用继续往下走。</p>
+
+<p>就像迷宫里，你走到一扇门，门上写&quot;此路绝对没有出口&quot;，你就不用进去了！</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 78</h2>
+<p><strong>Question:</strong> Describe how you&#x27;ve contributed to hiring and growing a team</p>
+<p><strong>Category:</strong> Leadership | <strong>Level:</strong> Staff</p>
+
+<hr/>
+
+<h2>为什么这道题很重要 / Why This Matters</h2>
+
+<p>Staff 工程师的影响力不只来自个人代码，而是来自<strong>把团队规模乘以</strong>。招人和成长团队是最高 ROI 的投资：一个出色的招聘决策，可以带来 3-5 年的复利回报。面试官问这题，是想确认你<strong>从个人贡献者转型到团队构建者</strong>了。</p>
+
+<p>A Staff engineer&#x27;s leverage isn&#x27;t just their own code — it&#x27;s multiplying the team. Great hiring decisions compound for 3-5 years. Interviewers ask this to confirm you&#x27;ve shifted from individual contributor to <strong>team builder</strong>.</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<h3>Situation（情境）</h3>
+<p>&gt; &quot;我在 X 公司做 Staff 工程师时，团队需要从 4 人扩张到 10 人来支持新产品线。我负责主导技术招聘流程的设计和执行。&quot;</p>
+
+<p>&gt; &quot;At X, my team needed to grow from 4 to 10 engineers to support a new product line. I owned designing and running the technical hiring process.&quot;</p>
+
+<h3>Task（任务）</h3>
+<p>&gt; &quot;我的目标是在 6 个月内招到 6 名高质量工程师，同时维持团队生产力不中断，并确保招进来的人能够在入职后 3 个月内独立上手。&quot;</p>
+
+<p>&gt; &quot;My goal: hire 6 quality engineers in 6 months, maintain team output, and ensure new hires were independent contributors within 3 months.&quot;</p>
+
+<h3>Action（行动）— 具体化！</h3>
+<p>1. <strong>定义招聘标准</strong> — 和 EM 一起写了一个&quot;工程师成功画像&quot;，明确区分 Must-have vs Nice-to-have，避免面试官各凭直觉打分</p>
+<p>2. <strong>设计面试流程</strong> — 把原来 5 轮随机面试改成结构化 4 轮：系统设计 / 算法 / 行为 / 文化 fit。每轮有评分 rubric</p>
+<p>3. <strong>扩大候选人管道</strong> — 在 2 个行业会议上做了技术分享，直接带来 12 个候选人推荐</p>
+<p>4. <strong>优化候选人体验</strong> — 面试 → offer 时间从 3 周压到 8 天（发现延迟主要来自面试官日程协调）</p>
+<p>5. <strong>新人导师制度</strong> — 给每个新人配了一个 buddy + 写了 30/60/90 天 onboarding checklist</p>
+
+<h3>Result（结果）</h3>
+<p>&gt; &quot;6 个月招了 7 人（超额完成），面试到 offer 接受率从 40% → 68%，新人平均 2.5 个月独立上手（vs 行业平均 4-5 个月）。&quot;</p>
+
+<hr/>
+
+<h2>❌ 糟糕答案 vs ✅ 优秀答案</h2>
+
+<p>❌ <strong>糟糕：</strong></p>
+<p>&gt; &quot;我参与了很多面试，帮助面试了很多候选人，也帮助 onboard 新同事。&quot;</p>
+
+<p><em>问题：主语是&quot;很多&quot;，没有数字，没有主导权，像打酱油的。</em></p>
+
+<p>✅ <strong>优秀：</strong></p>
+<p>&gt; &quot;我发现我们的面试流程缺乏结构，导致面试官评分不一致。我主导重新设计了评分 rubric，面试结果一致性大幅提升，我们对同一候选人的分歧从平均 2.3 分降到 0.7 分（5 分制），offer 接受率从 40% 提到 68%。&quot;</p>
+
+<p><em>好在：有问题识别 → 具体行动 → 量化结果。</em></p>
+
+<hr/>
+
+<h2>Senior/Staff 级别的进阶思路 / Senior/Staff Angle</h2>
+
+<p>面试官对 Staff 级别候选人期望更高：</p>
+
+<p>- <strong>系统化，不只是个案</strong> — 你有没有建立可复用的流程，而不是每次都手工操作？</p>
+<p>- <strong>影响力超越自己团队</strong> — 你的招聘实践有没有被其他团队采纳？</p>
+<p>- <strong>长期视角</strong> — 你有没有想过 2-3 年后团队的技能组合，而不只是当前 headcount？</p>
+
+<pre><code>
+Junior: &quot;我做了 X 次面试&quot;
+Senior: &quot;我设计了面试流程，效率提升了 Y%&quot;
+Staff:  &quot;我建立了跨团队可复用的招聘框架，并 mentor 了 3 个面试官&quot;
+</code></pre>
+
+<hr/>
+
+<h2>关键 Takeaways / Key Takeaways</h2>
+
+<p>1. <strong>定义成功画像</strong> — 在招聘前对齐&quot;什么样的人算好&quot;，比招完后才发现不合适要便宜得多</p>
+<p>2. <strong>流程胜过直觉</strong> — 结构化面试的预测准确率比非结构化高 2-3 倍（心理学研究结论）</p>
+<p>3. <strong>候选人体验就是品牌</strong> — 被拒的候选人也会谈论公司，快速回复和礼貌对待是最便宜的 employer branding</p>
+<p>4. <strong>onboarding 是招聘的延伸</strong> — 入职 90 天的体验决定了这个人能否发挥 100% 的价值</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- 🔗 [Hiring Engineers at Scale — Will Larson](https://lethain.com/hiring-engineers-at-scale/)</p>
+<p>- 🔗 [The Structured Interview Guide](https://rework.withgoogle.com/guides/hiring-use-structured-interviewing/steps/introduction/)</p>
+<p>- 🔗 [Staff Engineer Career Ladder — Progression](https://staffeng.com/guides/staff-archetypes/)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>组建团队就像打篮球比赛：</p>
+
+<p>- 你不能只想着今天赢，得想着整个赛季（长期视角）</p>
+<p>- 招错人就像换了一个不适合战术的球员，还没法退换货</p>
+<p>- 好的 onboarding 就是训练营 —— 让新球员快速融入团队打法</p>
+<p>- 面试流程的 rubric 就是裁判规则 —— 没有规则，每个教练都说&quot;我感觉这球员好&quot;，结果乱成一锅粥</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 78</h2>
+<p><strong>Topic:</strong> Connection Pooling — DB, HTTP, Redis</p>
+<p><strong>Category:</strong> Practical Patterns | Week 7 | Phase: Expert</p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个高并发后端服务。每次请求都要查数据库，每次都新建一个 TCP 连接。服务上线后，DB 报错：<code>too many connections</code>，响应时间飙升到 2 秒以上。</p>
+
+<p>You have a high-concurrency backend. Each request creates a new TCP connection to the database. After launch, DB throws <code>too many connections</code> and response time spikes to 2+ seconds.</p>
+
+<p><strong>根本原因：</strong> 建立 TCP 连接 + TLS 握手 ≈ 50-200ms。100 QPS = 每秒新建 100 个连接。</p>
+
+<hr/>
+
+<h2>为什么需要连接池 / Why Connection Pooling</h2>
+
+<pre><code>
+没有连接池 / Without pooling:
+  Request → [TCP handshake] → [Auth] → Query → [Teardown]
+  每次 50-200ms 额外开销，DB 连接数随流量线性增长
+
+有连接池 / With pooling:
+  Request → [Get from pool] → Query → [Return to pool]
+  一次握手，反复复用，DB 连接数上限可控
+</code></pre>
+
+<hr/>
+
+<h2>三个场景的连接池 / Three Scenarios</h2>
+
+<h3>1. 数据库连接池 — SQLAlchemy</h3>
+
+<pre><code>
+from sqlalchemy import create_engine, text
+from sqlalchemy.pool import QueuePool
+
+# pool_size: 保持的常驻连接数
+# max_overflow: 高峰时额外允许建立的连接数
+# pool_timeout: 等待连接超时 (seconds)
+# pool_recycle: 连接最大存活时间，防止 MySQL 8小时断连
+engine = create_engine(
+    &quot;postgresql://user:pass@localhost/db&quot;,
+    poolclass=QueuePool,
+    pool_size=10,
+    max_overflow=20,
+    pool_timeout=30,
+    pool_recycle=3600,
+    pool_pre_ping=True,  # test connection health before use
+)
+
+# 用法：with 语句自动归还连接
+def get_user(user_id: int):
+    with engine.connect() as conn:
+        result = conn.execute(
+            text(&quot;SELECT * FROM users WHERE id = :id&quot;),
+            {&quot;id&quot;: user_id}
+        )
+        return result.fetchone()
+</code></pre>
+
+<p><strong>关键参数解读：</strong></p>
+<pre><code>
+pool_size=10      → 10 个连接随时待命
+max_overflow=20   → 最大并发 30 个连接
+pool_pre_ping     → 像心跳，防止用到已断开的连接
+pool_recycle      → 超时自动重建，防止数据库端踢掉连接
+</code></pre>
+
+<h3>2. HTTP 连接池 — httpx/requests</h3>
+
+<pre><code>
+import httpx
+import asyncio
+
+# 全局 client，跨请求共享连接池
+# 不要在每个函数里 `with httpx.AsyncClient() as c:`（这会关闭连接池！）
+http_client = httpx.AsyncClient(
+    limits=httpx.Limits(
+        max_connections=100,       # 总连接数上限
+        max_keepalive_connections=20,  # 保持的 keepalive 连接
+        keepalive_expiry=30,       # keepalive 超时秒数
+    ),
+    timeout=httpx.Timeout(connect=5.0, read=30.0),
+)
+
+async def fetch_user_profile(user_id: str) -&gt; dict:
+    response = await http_client.get(f&quot;https://api.example.com/users/{user_id}&quot;)
+    response.raise_for_status()
+    return response.json()
+
+# 在应用关闭时清理
+async def shutdown():
+    await http_client.aclose()
+</code></pre>
+
+<h3>3. Redis 连接池 — redis-py</h3>
+
+<pre><code>
+import redis
+
+# 创建连接池（全局单例）
+pool = redis.ConnectionPool(
+    host=&quot;localhost&quot;,
+    port=6379,
+    db=0,
+    max_connections=50,
+    decode_responses=True,
+)
+
+# 每次使用时从池里借连接
+def cache_get(key: str):
+    r = redis.Redis(connection_pool=pool)
+    return r.get(key)
+
+def cache_set(key: str, value: str, ttl: int = 300):
+    r = redis.Redis(connection_pool=pool)
+    r.setex(key, ttl, value)
+</code></pre>
+
+<hr/>
+
+<h2>❌ 常见错误 / Common Mistakes</h2>
+
+<pre><code>
+# ❌ 错误：每个请求创建新 client（销毁了连接池！）
+async def bad_request():
+    async with httpx.AsyncClient() as client:
+        return await client.get(&quot;https://api.example.com/data&quot;)
+
+# ✅ 正确：全局 client，复用连接
+_client = httpx.AsyncClient()
+async def good_request():
+    return await _client.get(&quot;https://api.example.com/data&quot;)
+
+# ❌ 错误：不设 pool_recycle，MySQL 8小时后断连
+engine = create_engine(&quot;mysql://...&quot;, pool_size=10)
+
+# ✅ 正确：设置 recycle 和 pre_ping
+engine = create_engine(&quot;mysql://...&quot;, pool_size=10, 
+                        pool_recycle=3600, pool_pre_ping=True)
+</code></pre>
+
+<hr/>
+
+<h2>连接池调参指南 / Tuning Guide</h2>
+
+<pre><code>
+pool_size = CPU核数 × 2 ~ 4 (通用起点)
+
+Web 服务:
+  - 如果主要是 I/O 等待：pool_size = 20-50 (async 场景)
+  - 如果 CPU 密集：pool_size = CPU 核数 × 2
+
+DB 侧考虑:
+  - PostgreSQL 每个连接约消耗 5-10MB 内存
+  - 100 个服务实例 × 10 连接 = 1000 DB 连接
+  - 使用 PgBouncer 做连接池代理，聚合到 DB 侧
+
+监控指标:
+  - pool.size (已创建)
+  - pool.checked_out (使用中)
+  - pool.overflow (超出 pool_size 的额外连接)
+  - pool.timeout_count (等待超时次数 → 需要加大 pool_size)
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- 🔗 [SQLAlchemy Connection Pooling](https://docs.sqlalchemy.org/en/20/core/pooling.html)</p>
+<p>- 🔗 [httpx Connection Limits](https://www.python-httpx.org/advanced/resource-limits/)</p>
+<p>- 🔗 [Redis-py Connection Pool Docs](https://redis-py.readthedocs.io/en/stable/connections.html#connection-pools)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>你去一家咖啡馆，没有连接池的情况是：每次你要点咖啡，店员都要先跑出去找一把新椅子、拼一张新桌子，然后你喝完咖啡，桌子椅子全部销毁。每次 50 秒，效率极低。</p>
+
+<p>连接池就是：<strong>咖啡馆提前摆好 10 张桌子</strong>，你来了直接坐，喝完还回去，下一个客人继续用。桌子不会销毁，反复复用，大家等待时间从 50 秒变成 1 秒。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 78</h2>
+<p><strong>Topic:</strong> The Future — AGI Debates, Emerging Architectures</p>
+<p><strong>Category:</strong> Research | Mode: CONCEPT | Phase: Expert</p>
+
+<hr/>
+
+<h2>核心问题：AGI 什么时候到来？/ The Core Question: When Does AGI Arrive?</h2>
+
+<p>AGI (Artificial General Intelligence，通用人工智能) = 能在任意认知任务上达到人类水平的 AI。现在的 LLM 很强，但到底离 AGI 有多远？这是 AI 领域最大的争论。</p>
+
+<p>AGI = AI that matches or exceeds human performance on any cognitive task. Current LLMs are impressive — but how far are we, really?</p>
+
+<hr/>
+
+<h2>AGI 定义之争 / The Definition War</h2>
+
+<p>AGI 没有统一定义，不同人说的 AGI 完全不同：</p>
+
+<p>| 谁 | 怎么定义 AGI |</p>
+<p>|----|------------|</p>
+<p>| OpenAI (官方) | &quot;能完成大多数经济价值的任务&quot; |</p>
+<p>| Yann LeCun (Meta) | &quot;真正理解物理世界，可靠推理&quot; — 认为 LLM 永远达不到 |</p>
+<p>| Demis Hassabis (Google DeepMind) | &quot;科学发现能力超越人类&quot; |</p>
+<p>| Eliezer Yudkowsky | &quot;能自我改进、自我复制的 AI&quot; — 极度担忧 |</p>
+
+<p><strong>争论本质</strong>：是&quot;能用工具的聪明助手&quot;就算 AGI，还是&quot;真正拥有理解力&quot;才算？</p>
+
+<hr/>
+
+<h2>当前架构的局限 / Current Architecture Limits</h2>
+
+<p>Transformer 很强，但有几个根本性限制：</p>
+
+<h3>1. 二次方复杂度问题 (Quadratic Attention)</h3>
+<pre><code>
+Context length = N tokens
+Attention 计算量 = O(N²)
+N = 100K tokens → 10B 次计算
+N = 1M tokens  → 1T 次计算 (实际不可行)
+</code></pre>
+
+<h3>2. 无真正&quot;状态记忆&quot;</h3>
+<p>Transformer 每次推理都是无状态的。&quot;记忆&quot;只是把历史全塞进 context window，本质上是<strong>昂贵的查找，不是真正的记忆</strong>。</p>
+
+<h3>3. 推理 ≠ 理解</h3>
+<p>LLM 在 benchmark 上强，但遇到分布外问题（out-of-distribution）会犯低级错误。这是 &quot;stochastic parrot&quot; 批评的核心。</p>
+
+<hr/>
+
+<h2>新兴架构 / Emerging Architectures</h2>
+
+<h3>🔷 State Space Models (SSM) — Mamba</h3>
+<pre><code>
+Transformer: O(N²) attention
+Mamba:       O(N) linear recurrence
+
+关键思路：
+  用选择性状态更新 (selective state updates) 替代全量 attention
+  每个 token 只更新相关的隐藏状态，忽略无关信息
+</code></pre>
+
+<p>优势：长序列性能线性增长，推理内存大幅减少</p>
+<p>现实：在某些任务上与 Transformer 持平，但多模态和代码任务仍落后</p>
+
+<h3>🔷 混合专家模型 (Mixture of Experts, MoE) — 已投入生产</h3>
+<pre><code>
+# 概念示例
+class MoE(nn.Module):
+    def forward(self, x):
+        # Router: 每个 token 只激活 top-K 个专家 (e.g., k=2/8)
+        expert_weights = self.router(x)  # sparse selection
+        outputs = [expert(x) for expert in self.experts]
+        return sum(w * o for w, o in zip(expert_weights, outputs))
+</code></pre>
+
+<p>GPT-4 据报道是 MoE 架构（8 个专家，每次激活 2 个）。总参数量大，但每次推理只用 1/4 的参数 → <strong>参数量大 + 计算量小</strong>。</p>
+
+<h3>🔷 Test-Time Compute Scaling — 最新趋势</h3>
+<p>与其在训练时用更多算力（更大模型），不如在<strong>推理时动态增加思考时间</strong>：</p>
+
+<pre><code>
+简单问题: 直接回答 (1x compute)
+难题:     CoT + Self-verify + Multiple attempts (10x compute)
+超难题:   MCTS 搜索 + Reflection loops (100x compute)
+</code></pre>
+
+<p>这就是 OpenAI o1/o3、DeepSeek-R1 背后的思路：<strong>推理时 scaling，不只是训练时 scaling</strong>。</p>
+
+<hr/>
+
+<h2>AGI 时间线的不同派系 / AGI Timeline Camps</h2>
+
+<pre><code>
+乐观派 (OpenAI, Anthropic 部分人):
+  &quot;2-5 年内出现初级 AGI&quot;
+  依据：scaling law 还在起效，o1/o3 推理能力跃升
+
+悲观派 (部分学术界):
+  &quot;当前架构有根本性限制，需要新范式&quot;
+  依据：LLM 缺乏 grounding, 世界模型, 持久记忆
+
+中立派 (大多数研究者):
+  &quot;定义不清楚，无法讨论时间线&quot;
+  依据：每次 AGI 被&quot;快要实现&quot;时，定义就往后挪
+
+Yann LeCun 独立派:
+  &quot;Transformer 永远达不到真正 AGI&quot;
+  主张：世界模型 + 能量模型 (Energy-Based Models) 才是出路
+  他的 JEPA 架构是这个方向的尝试
+</code></pre>
+
+<hr/>
+
+<h2>你应该关注什么 / What You Should Watch</h2>
+
+<p>作为工程师，这些是近期最值得关注的：</p>
+
+<p>1. <strong>推理时 scaling</strong> — o3/DeepSeek-R1 类模型在复杂任务上的进展</p>
+<p>2. <strong>多模态 + 具身 AI</strong> — 能感知和操控物理世界的 AI（机器人方向）</p>
+<p>3. <strong>内存与持久学习</strong> — 超越 context window 的长期记忆机制</p>
+<p>4. <strong>能效提升</strong> — 同等能力用更少算力（量化、蒸馏、稀疏激活）</p>
+
+<hr/>
+
+<h2>简单 Python 代码演示 / Python Demo</h2>
+
+<p>演示 Test-Time Compute 的核心思路：多次尝试 + 自我验证：</p>
+
+<pre><code>
+import anthropic  # pip install anthropic
+
+def solve_with_test_time_compute(problem: str, n_attempts: int = 3) -&gt; str:
+    &quot;&quot;&quot;
+    Simple test-time compute: try N times, verify each, return best
+    In practice: o1 uses MCTS + internal reward model, much more complex
+    &quot;&quot;&quot;
+    client = anthropic.Anthropic()
+    attempts = []
+
+    for i in range(n_attempts):
+        # Each attempt uses CoT
+        response = client.messages.create(
+            model=&quot;claude-opus-4-5&quot;,
+            max_tokens=1024,
+            messages=[{
+                &quot;role&quot;: &quot;user&quot;,
+                &quot;content&quot;: f&quot;Think step by step: {problem}&quot;
+            }]
+        )
+        attempts.append(response.content[0].text)
+
+    # Self-verification: ask model to pick best answer
+    verify_prompt = f&quot;These are {n_attempts} solutions. Which is most likely correct?\n&quot;
+    for i, a in enumerate(attempts):
+        verify_prompt += f&quot;\nSolution {i+1}: {a[:200]}...&quot;
+
+    verdict = client.messages.create(
+        model=&quot;claude-opus-4-5&quot;,
+        max_tokens=256,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: verify_prompt}]
+    )
+    return verdict.content[0].text
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- 🔗 [Yann LeCun&#x27;s World Model Vision — Meta AI](https://ai.meta.com/research/publications/a-path-towards-autonomous-machine-intelligence/)</p>
+<p>- 🔗 [Mamba: Linear-Time Sequence Modeling](https://arxiv.org/abs/2312.00752)</p>
+<p>- 🔗 [Scaling LLMs with Test-Time Compute (DeepMind)](https://arxiv.org/abs/2408.03314)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>AGI 的争论就像争论&quot;什么时候能造出会真正思考的机器&quot;。</p>
+
+<p>现在的 AI（LLM）就像一个读了所有书的人，记性超好，能写作文，但：</p>
+<p>- 没有真正理解物理世界（不知道&quot;把球推下去，球会滚&quot;）</p>
+<p>- 没有长期记忆（每次对话都是第一次见面）</p>
+<p>- 遇到没见过的题目容易乱答</p>
+
+<p>新架构（Mamba、MoE、Test-Time Scaling）就像给这个人加上了：</p>
+<p>- 更高效的大脑（Mamba：不用每次把所有记忆翻一遍）</p>
+<p>- 专科专家团队（MoE：遇到数学题找数学专家，遇到写作题找写作专家）</p>
+<p>- 多想一会儿的能力（Test-Time Compute：难题多思考几步再回答）</p>
+
+<p>AGI 什么时候来？聪明人们争论了几十年，结论只有一个：<strong>定义不同，答案不同。</strong> 🤷</p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-06-29</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-06-29</guid>
+      <pubDate>Mon, 29 Jun 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 77</h2>
+<h2>设计 AI 聊天平台（ChatGPT 量级）/ Design an AI Chatbot Platform (ChatGPT-scale)</h2>
+
+<p>&gt; ⏱️ 阅读时间约 3 分钟 / ~3 min read</p>
+
+<hr/>
+
+<h3>🎬 场景导入 / Real-World Scenario</h3>
+
+<p>想象你在 OpenAI 的基础设施团队。产品刚刚宣布 ChatGPT 对所有人免费开放——你的系统需要在<strong>几分钟内</strong>从 100 万用户扩展到 1 亿用户。每个请求都是长连接 streaming，每个 token 都要实时推送。</p>
+
+<p>Imagine you&#x27;re on OpenAI&#x27;s infra team. ChatGPT just went free for everyone — your system needs to scale from 1M to 100M users in minutes. Every request is a long-lived streaming connection, every token pushed in real time.</p>
+
+<hr/>
+
+<h3>🏛️ ASCII 架构图 / Architecture</h3>
+
+<pre><code>
+User Browser / App
+        │  WebSocket / SSE
+        ▼
+┌─────────────────────────────────┐
+│         API Gateway             │  ← Auth, Rate Limiting, Routing
+│   (Kong / NGINX / Envoy)        │
+└──────────┬──────────────────────┘
+           │
+    ┌──────▼──────┐
+    │  Chat API   │  ← FastAPI/Go service
+    │  Service    │    Stateless, auto-scaled
+    └──────┬──────┘
+           │ enqueue
+    ┌──────▼──────────────┐
+    │   Inference Queue   │  ← Kafka / SQS (priority lanes)
+    └──────┬──────────────┘
+           │ pull
+    ┌──────▼──────────────────────────┐
+    │     Inference Cluster           │
+    │  ┌─────────┐  ┌─────────┐       │
+    │  │ vLLM    │  │ vLLM    │  ...  │  ← A100/H100 GPU pods
+    │  │ node 1  │  │ node 2  │       │
+    │  └─────────┘  └─────────┘       │
+    └──────┬──────────────────────────┘
+           │ SSE token stream
+    ┌──────▼──────┐
+    │  Streaming  │  ← Server-Sent Events relay
+    │  Service    │    per-user connection manager
+    └──────┬──────┘
+           │
+    ┌──────▼──────┐    ┌──────────────┐
+    │  History DB │    │  Vector DB   │
+    │  (Postgres) │    │  (pgvector)  │  ← RAG / memory
+    └─────────────┘    └──────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>⚖️ 核心权衡 / Key Tradeoffs</h3>
+
+<p><strong>为什么用队列而不是直接调 GPU？/ Why queue instead of direct GPU call?</strong></p>
+<p>- 直接调用：延迟低，但 GPU 过载时请求直接失败</p>
+<p>- 队列：增加~50ms 延迟，但提供背压（backpressure）保护，允许优先级调度（付费用户 &gt; 免费用户）</p>
+<p>- Direct: lower latency but fails under load; Queue: ~50ms overhead but enables priority scheduling</p>
+
+<p><strong>流式输出 SSE vs WebSocket？/ SSE vs WebSocket?</strong></p>
+<p>- ChatGPT 用 SSE：单向、HTTP 友好、CDN 可缓存心跳、浏览器原生支持</p>
+<p>- WebSocket 适合双向实时（游戏、协作编辑）；纯 LLM 流式输出 SSE 足够</p>
+<p>- ChatGPT uses SSE: unidirectional, HTTP-friendly, no upgrade handshake</p>
+
+<p><strong>KV Cache 共享 / Shared KV Cache:</strong></p>
+<p>- vLLM 的 PagedAttention 允许多请求共享 prompt prefix 的 KV cache，显著提升 throughput</p>
+<p>- vLLM&#x27;s PagedAttention shares prompt prefix KV cache across requests — critical for system prompts</p>
+
+<hr/>
+
+<h3>🚫 别踩这个坑 / Common Mistakes</h3>
+
+<p>1. <strong>把对话历史塞进 context 而不截断</strong> — 超出 context window，直接 crash。正确做法：滑动窗口 + 向量摘要</p>
+<p>Don&#x27;t stuff all history into context — sliding window + vector summary for old turns</p>
+
+<p>2. <strong>单点 GPU 节点不做健康检查</strong> — GPU OOM 是常态，必须有自动剔除 + 重新路由</p>
+<p>GPU OOM is routine — must auto-remove unhealthy nodes and reroute inflight requests</p>
+
+<p>3. <strong>忽略 cold start</strong> — 推理服务启动加载模型要 30-60s，必须预热（keep warm instances）</p>
+<p>Model loading takes 30-60s — keep warm instances, don&#x27;t scale to zero for LLM</p>
+
+<p>4. <strong>Rate limiting 只在 API Gateway 做</strong> — 绕过 Gateway 的内部流量会打穿 GPU</p>
+<p>Rate limit at GPU cluster level too, not just the gateway</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [How ChatGPT is built — OpenAI engineering blog](https://openai.com/research/chatgpt)</p>
+<p>- [vLLM: Easy, Fast, and Cheap LLM Serving](https://vllm.readthedocs.io/)</p>
+<p>- [Server-Sent Events vs WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>把它想成一家超级繁忙的餐厅：API Gateway 是前台收银，Kafka 队列是点单系统，GPU 集群是厨房（很贵，每个厨师一秒钟能出几道菜），SSE 是服务员一道一道把菜端出来的过程。餐厅的关键不是厨师有多快，是<strong>怎么让厨师一直在干活不空等</strong>。</p>
+
+<p>Think of it as a restaurant: the gateway is the cashier, the queue is the order system, GPUs are the (very expensive) chefs, and SSE is the waiter delivering dishes one by one. The key isn&#x27;t chef speed — it&#x27;s keeping chefs busy with zero idle time.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 77</h2>
+<h2>#211 Design Add and Search Words Data Structure (Medium)</h2>
+
+<p>&gt; ⏱️ 阅读时间约 4 分钟 / ~4 min read</p>
+
+<p>🧩 <strong>前缀树模式 (2/3)</strong> — 基于 Day 74 的 Trie 模板继续深化</p>
+<p>Building on the Trie template from Day 74 (#208 Implement Trie)</p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+
+<p>- 🔗 [LeetCode #211](https://leetcode.com/problems/design-add-and-search-words-data-structure/) 🟡 Medium</p>
+<p>- 📹 [NeetCode Video](https://neetcode.io/problems/design-word-search-data-structure)</p>
+<p>- 🧩 <strong>Trie Pattern Block:</strong> #208 Implement Trie → <strong>#211 This Problem</strong> → #212 Word Search II (Hard)</p>
+
+<hr/>
+
+<h3>🌍 现实类比 / Real-World Analogy</h3>
+
+<p>你在写一个 grep 工具，支持 <code>.</code> 通配符：<code>se.rch</code> 能匹配 <code>search</code> 也能匹配 <code>seerch</code>。字典里有几十万个单词，怎么做到 O(L) 匹配？</p>
+
+<p>You&#x27;re building grep with <code>.</code> wildcard: <code>se.rch</code> matches <code>search</code> or <code>seerch</code>. With 500K words in the dictionary, how do you match in O(L)?</p>
+
+<hr/>
+
+<h3>🧩 与模板的关系 / How It Maps to the Template</h3>
+
+<p>上次的模板（#208）：<code>insert</code> + <code>startsWith</code> + <code>search</code>（精确匹配）</p>
+<p>今天的变化（#211）：<code>search</code> 支持 <code>.</code> 通配符 → 需要<strong>DFS 回溯</strong></p>
+
+<p>Day 74&#x27;s template: exact <code>insert</code> + <code>search</code></p>
+<p>Today&#x27;s twist: <code>search(&quot;b.d&quot;)</code> must try ALL children when <code>.</code> is hit → <strong>DFS backtracking</strong></p>
+
+<pre><code>
+模板核心变化 / Key Template Diff:
+
+精确匹配 / Exact:     node = node.children[ch]   (直接跳 / direct jump)
+通配匹配 / Wildcard:  for child in node.children.values():  (遍历全部 / try all)
+                          dfs(child, i+1)
+</code></pre>
+
+<hr/>
+
+<h3>💻 Python 解法 + 追踪 / Solution with Trace</h3>
+
+<pre><code>
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.is_end = False
+
+class WordDictionary:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def addWord(self, word: str) -&gt; None:
+        # Same as Day 74&#x27;s insert template — unchanged
+        node = self.root
+        for ch in word:
+            if ch not in node.children:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.is_end = True
+
+    def search(self, word: str) -&gt; bool:
+        # THE KEY CHANGE: DFS when we hit &#x27;.&#x27;
+        def dfs(node: TrieNode, i: int) -&gt; bool:
+            if i == len(word):
+                return node.is_end
+            ch = word[i]
+            if ch == &#x27;.&#x27;:
+                # Try ALL children — backtracking
+                for child in node.children.values():
+                    if dfs(child, i + 1):
+                        return True
+                return False
+            else:
+                # Exact match — O(1) lookup
+                if ch not in node.children:
+                    return False
+                return dfs(node.children[ch], i + 1)
+
+        return dfs(self.root, 0)
+</code></pre>
+
+<p><strong>追踪 / Trace:</strong> 插入 &quot;bad&quot;, &quot;dad&quot;, &quot;mad&quot;，搜索 &quot;.ad&quot;</p>
+<pre><code>
+root
+ ├─ b → a → d (is_end=True)
+ ├─ d → a → d (is_end=True)
+ └─ m → a → d (is_end=True)
+
+search(&quot;.ad&quot;):
+  i=0, ch=&#x27;.&#x27;: try b, d, m
+    → dfs(b_node, 1): ch=&#x27;a&#x27; → match → dfs(a_node, 2): ch=&#x27;d&#x27; → match → is_end=True ✅
+</code></pre>
+
+<hr/>
+
+<h3>📊 复杂度 / Complexity</h3>
+
+<p>| | 时间 / Time | 空间 / Space |</p>
+<p>|---|---|---|</p>
+<p>| addWord | O(L) | O(L) |</p>
+<p>| search (no wildcard) | O(L) | O(L) recursion |</p>
+<p>| search (all wildcards) | O(N) worst — traverses all nodes | O(L) stack |</p>
+
+<p><strong>实际中 / In practice:</strong> most queries have few <code>.</code> → fast in practice, but O(N) worst case is real for <code>&quot;...&quot;</code> queries.</p>
+
+<hr/>
+
+<h3>举一反三 / Pattern Family</h3>
+
+<p>| 题目 | 关系 | 难点 |</p>
+<p>|---|---|---|</p>
+<p>| #208 Implement Trie | 基础模板 / Base template | 精确匹配 exact match |</p>
+<p>| <strong>#211 This</strong> | 通配符变体 / Wildcard variant | <code>.</code> triggers DFS |</p>
+<p>| #212 Word Search II (Hard) | 2D 版本 / 2D grid version | Trie prunes DFS on grid |</p>
+
+<p><strong>核心洞察 / Insight:</strong> 每次 Trie 遇到&quot;模糊&quot;条件（通配符/近似匹配），精确查找就变成 DFS。理解这个跳跃就理解了 Trie 的全部变种。</p>
+
+<p>Whenever a Trie query becomes &quot;fuzzy,&quot; exact lookup becomes DFS. Master this transition and you understand all Trie variants.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [LeetCode #211 editorial](https://leetcode.com/problems/design-add-and-search-words-data-structure/editorial/)</p>
+<p>- [NeetCode Trie playlist](https://neetcode.io/roadmap)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>普通 Trie 就像走一条有标记的路，每个字母是一个路标，走到终点就找到了。今天加了通配符 <code>.</code>，就像路标模糊了——你得把所有支路都试一遍（DFS），只要有一条路能走通就算找到。代价是通配符越多，要走的路越多。</p>
+
+<p>Normal Trie: follow one road per letter. With <code>.</code> wildcard: the sign is blurry — you try every branch (DFS) until one succeeds. More wildcards = more roads to explore.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 77</h2>
+<h2>描述你如何参与招聘和培养团队 / Describe how you&#x27;ve contributed to hiring and growing a team</h2>
+
+<p>&gt; ⏱️ 阅读时间约 2 分钟 / ~2 min read | 级别 / Level: Staff</p>
+
+<hr/>
+
+<h3>🎯 为什么面试官问这个 / Why Interviewers Ask This</h3>
+
+<p>Staff+ 工程师的影响力靠<strong>乘数效应</strong>——你直接写的代码是线性影响，你培养的人才是指数影响。这道题考察你是否有&quot;建设团队&quot;的意识，而不只是&quot;完成任务&quot;的执行者。</p>
+
+<p>Staff+ engineers have <strong>multiplier impact</strong> — code you write is linear, engineers you grow are exponential. This question tests whether you think like a builder, not just a doer.</p>
+
+<hr/>
+
+<h3>⭐ STAR 拆解 / STAR Breakdown</h3>
+
+<p><strong>Situation（背景）:</strong></p>
+<p>&gt; &quot;我们团队在做一个高并发服务重构，需要扩招两名 backend engineer，同时组内有几个经验较少的工程师需要系统化成长。&quot;</p>
+
+<p><strong>Task（任务）:</strong></p>
+<p>&gt; &quot;我负责技术面试流程的设计，同时作为两位 L4 工程师的 mentor。&quot;</p>
+
+<p><strong>Action（行动）— 这里细节最重要:</strong></p>
+<p>1. <strong>面试设计：</strong> 把 take-home project 从&quot;写一个 REST API&quot;改成&quot;review 这段有问题的 PR&quot;——更真实反映日常工作，减少刷题偏差</p>
+<p>2. <strong>面试一致性：</strong> 制作 rubric，让每位面试官对&quot;Good / Strong / No hire&quot;有统一标准</p>
+<p>3. <strong>培养 mentee：</strong> 不直接给答案，而是每周 1:1 问&quot;你遇到最大的 blocker 是什么&quot;，然后一起 root cause</p>
+<p>4. <strong>传递知识：</strong> 把 oncall runbook 写成 decision tree，让新人能独立处理 80% 的 alert</p>
+
+<p><strong>Result（结果）:</strong></p>
+<p>&gt; &quot;6 个月内团队从 4 人扩展到 8 人，两位 mentee 都在下一个 review cycle 晋升，团队 oncall burden 降低了 40%（通过自动化 + 文档）。&quot;</p>
+
+<hr/>
+
+<h3>❌ Bad vs ✅ Good</h3>
+
+<p>| ❌ 弱回答 | ✅ 强回答 |</p>
+<p>|---|---|</p>
+<p>| &quot;我参加了很多面试&quot; | &quot;我重新设计了面试题，把 false positive 降低了 X%&quot; |</p>
+<p>| &quot;我帮新人 onboard 了&quot; | &quot;我建立了 onboarding checklist，让新人第一周能独立合并 PR&quot; |</p>
+<p>| &quot;我给团队做了分享&quot; | &quot;我发现团队在 X 上反复犯错，设计了一个 workshop + 后续跟进&quot; |</p>
+<p>| 只说投入 | <strong>说出可量化的结果</strong>（晋升、速度、质量指标） |</p>
+
+<hr/>
+
+<h3>👑 Senior/Staff Tips</h3>
+
+<p>- <strong>量化招聘贡献：</strong> offer acceptance rate、time-to-hire、团队 ramp-up time</p>
+<p>- <strong>展示杠杆思维：</strong> &quot;我花 2h 写了文档，节省了未来 6 个人各 1h&quot;</p>
+<p>- <strong>避免英雄主义：</strong> 不要说&quot;我一个人教会了整个团队&quot;——要说你<strong>建立了系统</strong>（checklist、process、rubric）</p>
+<p>- <strong>Staff+ 要提：</strong> 你影响的不只是直接 report，而是整个 org 的工程文化</p>
+
+<p>Quantify hiring contribution. Show leverage thinking. Avoid hero narratives — show systems you built. Staff+ answer affects org-level culture, not just your immediate team.</p>
+
+<hr/>
+
+<h3>🔑 Key Takeaways</h3>
+
+<p>1. 招聘不只是&quot;找到好人&quot;，而是设计公平、高信号的流程</p>
+<p>2. Mentoring 的核心是<strong>问好问题</strong>，而不是给答案</p>
+<p>3. <strong>最强的成长证明 = mentee 晋升</strong> 或可量化的团队效率提升</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [The Manager&#x27;s Path — Camille Fournier](https://www.oreilly.com/library/view/the-managers-path/9781491973882/)</p>
+<p>- [An Elegant Puzzle: Systems of Eng Management — Will Larson](https://lethain.com/elegant-puzzle/)</p>
+<p>- [Staff Engineer: Leadership Beyond Management](https://staffeng.com/book)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>这道题不是问&quot;你有没有招过人&quot;，而是问&quot;你有没有把团队做得更好&quot;。最好的答案是：我不只做了一件事，我<strong>建了一套系统</strong>，让这件事以后可以更顺畅地重复发生。</p>
+
+<p>This isn&#x27;t &quot;did you hire people&quot; — it&#x27;s &quot;did you make the team better?&quot; Best answers show: I built a <em>system</em> so this improvement keeps happening without me.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🎨 Python Craft — Day 77</h2>
+<h2>Context Managers — `__enter__`/`__exit__`, contextlib</h2>
+
+<p>&gt; ⏱️ 阅读时间约 2 分钟 / ~2 min read | 分类 / Category: Python Internals</p>
+
+<hr/>
+
+<h3>🎬 场景导入 / Real Scenario</h3>
+
+<p>你在写一个数据库批量写入服务，需要：打开连接 → 开事务 → 写数据 → 提交/回滚 → 关连接。任何一步出错都要保证资源被释放。如果没有 context manager，这是一堆 try/finally。有了它，一行 <code>with</code> 搞定。</p>
+
+<p>You&#x27;re writing a DB batch write service: open conn → begin txn → write → commit/rollback → close. Any failure must clean up. Without context managers: nested try/finally. With them: one clean <code>with</code>.</p>
+
+<hr/>
+
+<h3>🔍 `with` 语句背后发生了什么 / What `with` Actually Does</h3>
+
+<pre><code>
+with open(&quot;file.txt&quot;) as f:
+    data = f.read()
+
+# Python 展开成 / Python expands this to:
+mgr = open(&quot;file.txt&quot;)
+f = mgr.__enter__()        # setup: returns the &quot;as&quot; value
+try:
+    data = f.read()
+except Exception as e:
+    if not mgr.__exit__(type(e), e, e.__traceback__):
+        raise              # if __exit__ returns False, re-raise
+else:
+    mgr.__exit__(None, None, None)  # no exception path
+</code></pre>
+
+<p><strong><code>__exit__</code> 签名 / signature:</strong> <code>(exc_type, exc_val, exc_tb)</code></p>
+<p>- 返回 <code>True</code> → 吞掉异常（suppress）</p>
+<p>- 返回 <code>False</code>/<code>None</code> → 让异常继续传播</p>
+
+<hr/>
+
+<h3>💻 三种写法 / Three Ways to Write Context Managers</h3>
+
+<p><strong>方式 1：类 / Class-based</strong></p>
+<pre><code>
+class Timer:
+    def __enter__(self):
+        import time
+        self.start = time.perf_counter()
+        return self  # &quot;as&quot; value
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        elapsed = time.perf_counter() - self.start
+        print(f&quot;Elapsed: {elapsed:.3f}s&quot;)
+        return False  # don&#x27;t suppress exceptions
+
+with Timer() as t:
+    expensive_operation()
+</code></pre>
+
+<p><strong>方式 2：<code>@contextmanager</code> — 最简洁 / Cleanest</strong></p>
+<pre><code>
+from contextlib import contextmanager
+
+@contextmanager
+def db_transaction(conn):
+    try:
+        yield conn        # everything before yield = __enter__
+        conn.commit()     # success path
+    except Exception:
+        conn.rollback()   # failure path
+        raise
+    finally:
+        conn.close()      # always runs = __exit__
+
+with db_transaction(get_conn()) as conn:
+    conn.execute(&quot;INSERT ...&quot;)
+</code></pre>
+
+<p><strong>方式 3：<code>contextlib.suppress</code> — 吞异常 / Suppress exceptions</strong></p>
+<pre><code>
+from contextlib import suppress
+
+with suppress(FileNotFoundError):
+    os.remove(&quot;temp.txt&quot;)   # silently skip if file doesn&#x27;t exist
+# equivalent to try/except FileNotFoundError: pass — but cleaner
+</code></pre>
+
+<hr/>
+
+<h3>❌ 常见错误 / Common Mistakes</h3>
+
+<pre><code>
+# ❌ WRONG: forgetting yield in @contextmanager
+@contextmanager
+def bad_mgr():
+    setup()
+    # forgot yield! → GeneratorExit, cleanup never runs
+
+# ✅ RIGHT: always yield exactly once
+@contextmanager
+def good_mgr():
+    setup()
+    try:
+        yield
+    finally:
+        cleanup()
+
+# ❌ WRONG: __exit__ returns True accidentally
+def __exit__(self, *args):
+    self.cleanup()
+    return True  # silently swallows ALL exceptions — hard to debug!
+
+# ✅ RIGHT: only suppress specific exceptions you intend to
+def __exit__(self, exc_type, *args):
+    self.cleanup()
+    return exc_type is KeyboardInterrupt  # only suppress Ctrl+C
+</code></pre>
+
+<hr/>
+
+<h3>🤔 用 / 不用 / When to Use vs Not Use</h3>
+
+<p>| 用 / Use | 不用 / Skip |</p>
+<p>|---|---|</p>
+<p>| 资源获取/释放（文件、锁、DB、网络） | 简单函数，不需要清理 |</p>
+<p>| 需要 setup + guaranteed teardown | 用 <code>try/finally</code> 一次就够 |</p>
+<p>| 多处复用同一个 setup/teardown | 只用一次的一次性代码 |</p>
+<p>| 测试中 mock/patch | - |</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [Python docs: contextlib](https://docs.python.org/3/library/contextlib.html)</p>
+<p>- [Real Python: Context Managers](https://realpython.com/python-with-statement/)</p>
+<p>- [PEP 343 — The &quot;with&quot; Statement](https://peps.python.org/pep-0343/)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p><code>with</code> 语句就像&quot;用完归位&quot;的承诺：不管中间出了什么事，最后一定会做清理。就像借了图书馆的书，不管你读没读完，到期了自动还——你不需要记得&quot;哦我要还书&quot;。</p>
+
+<p><code>with</code> is a &quot;put it back when done&quot; promise: no matter what happens inside, cleanup always runs. Like a library book return — automatic, unconditional, no matter what.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI 动态 / AI News — Day 77</h2>
+<h2>2026 年 6 月 AI 大事件 / June 2026 AI Highlights</h2>
+
+<p>&gt; ⏱️ 阅读时间约 2 分钟 / ~2 min read | 模式 / Mode: NEWS</p>
+
+<hr/>
+
+<h3>📡 本周重大动态 / This Week&#x27;s Big Stories</h3>
+
+<hr/>
+
+<p><strong>1. 🤖 OpenAI 发布 GPT-5.6 系列（限量预览）</strong></p>
+<p><strong>OpenAI Previews GPT-5.6 Family</strong></p>
+
+<p>OpenAI 开始了 GPT-5.6 系列的限量预览，包含三个档位：<strong>Sol</strong>（旗舰）、<strong>Terra</strong>（均衡）、<strong>Luna</strong>（快速低成本）。据报道，GPT-5.6 Sol 在网络安全能力上有显著增强。值得注意的是，此次发布据报道是应美国政府要求分阶段推出——OpenAI 表示这会延迟公众获取这些工具。</p>
+
+<p>OpenAI began a limited preview of GPT-5.6, with three tiers: Sol (flagship), Terra (balanced), and Luna (fast/cheap). Sol reportedly features enhanced cybersecurity capabilities. The staged rollout was reportedly done at US government request — OpenAI expressed reservations about the delay to broader access.</p>
+
+<p>📌 来源 / Source: [OpenAI GPT-5.6 Sol preview](https://openai.com/index/previewing-gpt-5-6-sol/) | [The Guardian](https://www.theguardian.com/technology/2026/jun/26/openai-ai-model-release-trump-us-sam-altman-gpt-anthropic-mythos)</p>
+
+<p><strong>技术视角 / Tech Angle:</strong> 三档定价策略（flagship / balanced / fast）是近期行业标准，类似 Claude Opus/Sonnet/Haiku。这反映了 LLM 经济学向&quot;按需分级&quot;演进。</p>
+
+<hr/>
+
+<p><strong>2. 🍎 苹果宣布 Siri AI — 由 Google Gemini 驱动</strong></p>
+<p><strong>Apple Announces Siri AI Powered by Google Gemini</strong></p>
+
+<p>苹果宣布将语音助手品牌重塑为&quot;Siri AI&quot;，通过数十亿美元的合作将其接入 Google Gemini 模型。新 Siri AI 将作为独立应用运行，据报道能利用 iOS/macOS 应用上下文完成复杂任务。</p>
+
+<p>Apple rebranded its voice assistant to &quot;Siri AI,&quot; backed by a multi-billion dollar deal to power it with Google Gemini models. It runs as a dedicated app and reportedly leverages context from iOS and macOS apps for complex tasks.</p>
+
+<p>📌 来源 / Source: [AI News Briefs June 2026](https://radicaldatascience.wordpress.com/2026/06/27/ai-news-briefs-bulletin-board-for-june-2026/)</p>
+
+<p><strong>技术视角 / Tech Angle:</strong> 苹果把 Gemini 当基础设施、而不是自研，与它一贯的垂直整合策略是重大转变。可能原因：自研大模型成本过高，时间窗口太窄。</p>
+
+<hr/>
+
+<p><strong>3. 💾 OpenAI 推出自研 AI 芯片&quot;Jalapeño&quot;</strong></p>
+<p><strong>OpenAI Reveals Custom AI Chip &quot;Jalapeño&quot;</strong></p>
+
+<p>OpenAI 与 Broadcom 合作推出了首款自研 AI 芯片&quot;Jalapeño&quot;，专为推理优化设计，目标是降低对 NVIDIA GPU 的依赖、提升推理成本效益。</p>
+
+<p>OpenAI unveiled its first custom chip, &quot;Jalapeño,&quot; built with Broadcom. Designed specifically for inference, it aims to reduce NVIDIA GPU dependence and cut per-inference costs.</p>
+
+<p>📌 来源 / Source: [AI key developments June 2026](https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-june-2026)</p>
+
+<p><strong>技术视角 / Tech Angle:</strong> Google 有 TPU，AWS 有 Trainium/Inferentia，现在 OpenAI 也下场了。推理芯片自研=控制成本+供应链。每家顶级 AI 公司最终都会走这条路。</p>
+
+<hr/>
+
+<h3>💡 工程师视角 / Engineer&#x27;s Take</h3>
+
+<p>这周的主题是<strong>垂直整合</strong>：</p>
+<p>- OpenAI 自研芯片 → 控制推理成本</p>
+<p>- Apple 外采 Gemini → 放弃垂直整合（异类！）</p>
+<p>- GPT-5.6 三档定价 → 市场细分成熟化</p>
+
+<p>对于后端工程师，AI 推理正在成为一个<strong>基础设施问题</strong>，而不只是 ML 问题。了解 vLLM、量化、自定义芯片，已经是系统设计的核心知识。</p>
+
+<p>The theme this week: <strong>vertical integration</strong>. OpenAI owns its chips, Apple <em>outsources</em> to Google (unusual!), and tiered pricing signals a mature market. For backend engineers: AI inference is increasingly an <em>infra</em> problem. vLLM, quantization, custom silicon — core systems knowledge now.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [OpenAI GPT-5.6 Sol preview](https://openai.com/index/previewing-gpt-5-6-sol/)</p>
+<p>- [The Guardian — staged AI model release](https://www.theguardian.com/technology/2026/jun/26/openai-ai-model-release-trump-us-sam-altman-gpt-anthropic-mythos)</p>
+<p>- [AI News June 2026 roundup](https://radicaldatascience.wordpress.com/2026/06/27/ai-news-briefs-bulletin-board-for-june-2026/)</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>AI 公司现在不只是在比谁的模型更聪明，还在比谁的<strong>硬件更便宜、运行更快</strong>。就像餐厅不只比菜好不好吃，还要比厨房设备是不是最省电的。OpenAI 造自己的芯片，就像米其林餐厅自己种蔬菜——控制每一个成本环节。</p>
+
+<p>AI companies are now racing on hardware efficiency, not just model quality. OpenAI making its own chip is like a Michelin restaurant growing its own vegetables — controlling every cost in the chain.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-28</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
