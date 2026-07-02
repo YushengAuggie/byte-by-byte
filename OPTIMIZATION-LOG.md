@@ -585,3 +585,19 @@
 - Delivery rate (7d): **5/7** ❌ (missed 06-25 Thu, 06-26 Fri)
 - Cron errors: `byte-by-byte weekday` = timed out (model-call-started); `byte-by-byte optimizer` = error (empty message). Other 5 jobs (health-check, review-and-send, backup-send, saturday, sunday) = ok.
 - State: currentDay=76, lastSentDate=2026-06-27, lastReviewDay=75 (review cadence on track, every 5 days)
+
+## 2026-07-01 Optimization Run
+
+### Issues Found
+- **P0 Critical — none NEW this window.** The 2 missed weekday deliveries (06-25 Thu, 06-26 Fri) were already reported on 2026-06-28. Since then, delivery has fully recovered: 06-27 → 07-01 all delivered (5/5, 5-section weekdays + weekend types on schedule).
+- **P1 Reliability risk (recurring) — `byte-by-byte review-and-send` timed out AGAIN.** lastRunStatus=error, lastError="cron: job execution timed out (last phase: model-call-started)", lastRun 2026-07-01T08:39. Despite already having timeoutSeconds=1800, the model call hung. Delivery was NOT lost today only because **`byte-by-byte backup-send` fired at 09:17** and the 07-01 email went out at 09:18 (5 sections, 2 recipients). So the primary review-and-send path is unreliable — the backup is currently doing the real work. This is a latent P0: if backup-send ever also fails, the day is lost.
+- **P1 Quality:** None observed. All delivered days (06-27 Sat deep dive =1 section, 06-28 Sun review =1 section, 06-29/06-30/07-01 weekdays =5 sections) match day-type design.
+- **P2 Maintenance:**
+  1. **Weekday cron still has `timeoutSeconds=None`** (recommended fix from 2026-06-28 NOT applied). It ran ok on 07-01, but remains at risk of the same hang-to-timeout death that caused the 06-25/06-26 misses. Same for `saturday` and `sunday` jobs (both timeout=None). Recommend setting explicit timeoutSeconds (e.g. 1800) on weekday/saturday/sunday.
+  2. **Optimizer cron-list parse still brittle** (flagged 06-19, 06-28, still unfixed). `openclaw cron list --json` prints a poe `providerAuthEnvVars` deprecation warning to stdout before the JSON. Also `openclaw` is not on PATH in the cron shell — must call `~/.nvm/versions/node/v25.6.1/bin/openclaw`. Both need handling in the Step 0 script.
+  3. **review-and-send vs backup-send role confusion.** review-and-send keeps timing out on the model call; backup-send silently covers. Worth investigating why the review step's model call hangs (prompt too large? review-day logic? no fast-fail) rather than leaning on backup indefinitely.
+
+### Metrics
+- Delivery rate (7d): **5/7** (06-25 Thu, 06-26 Fri missed — both pre-window, already reported). Last 5 consecutive days: **5/5 ✅**
+- Cron errors: `byte-by-byte review-and-send` = timed out (model-call-started) at 08:39. Other 6 jobs (optimizer, health-check, weekday, backup-send, saturday, sunday) = ok.
+- State: currentDay=79, lastSentDate=2026-07-01, lastReviewDay=75 (review cadence every 5 days — next review at Day 80).

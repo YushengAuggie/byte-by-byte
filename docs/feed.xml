@@ -5,8 +5,717 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 30 Jun 2026 15:40:28 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 02 Jul 2026 15:19:15 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-02</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-02</guid>
+      <pubDate>Thu, 02 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 / Review Day — Day 80</h2>
+
+<p>&gt; 📊 NeetCode: 64/150 · SysDesign: 63/40 · Behavioral: 63/40 · Frontend: 37/50 · AI: 31/30</p>
+<p>&gt; 🔥 3-day streak!</p>
+
+<p>今天是复习日！回顾过去4天的内容 (Days 76–79)。</p>
+
+<p><strong>涵盖主题 / Topics covered:</strong></p>
+<p>- 🏗️ System Design: AI Chatbot Platform (ChatGPT-scale)</p>
+<p>- 💻 Algorithms: Trie (Add/Search Words + Wildcard), Word Search II, Kth Largest in Stream (Heap)</p>
+<p>- 🐍 Python Craft: Context Managers, Connection Pooling, Retry with Backoff</p>
+<p>- 🤖 AI: AGI Debates, Emerging Architectures, AI News</p>
+
+<hr/>
+
+<h2>📝 Quick Quiz — 3 Mini-Reviews</h2>
+
+<h3>Q1: [🏗️ System Design] — AI Chatbot Platform</h3>
+
+<p><strong>Question:</strong> In a ChatGPT-scale AI chatbot, why do you need a <strong>streaming gateway</strong> layer separate from the LLM inference backend — and what problem does it solve for clients?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>LLM inference is <strong>slow to start but generates tokens incrementally</strong>. Without streaming, clients would wait 10–30s for the full response, causing timeouts and terrible UX.</p>
+
+<p>The <strong>streaming gateway</strong> (e.g., nginx + SSE or WebSocket proxy) solves this by:</p>
+<p>1. <strong>Forwarding tokens as they&#x27;re generated</strong> — clients start rendering within milliseconds</p>
+<p>2. <strong>Buffering backpressure</strong> — if the client is slow (mobile, weak connection), the gateway queues tokens without stalling the GPU inference worker</p>
+<p>3. <strong>Session affinity</strong> — routes a user&#x27;s follow-up message to the same conversation state (message history, system prompt)</p>
+
+<p><strong>Key tradeoff:</strong> Stateless HTTP is easier to scale, but SSE/WebSocket connections are stateful. You typically pin a user session to a gateway pod and rely on horizontal scaling at the inference tier.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>Q2: [💻 Algorithms] — Word Search II (Trie + Backtracking)</h3>
+
+<p><strong>Question:</strong> Word Search II uses a Trie instead of a Set for the word list. In one sentence, explain <strong>why the Trie is strictly better</strong> than checking <code>if word_so_far in word_set</code> at each DFS step.</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>A <strong>Trie lets you prune entire DFS branches early</strong>: if no word in the list starts with the current prefix, you immediately stop exploring that direction — with a plain <code>set</code>, you&#x27;d have no way to know this and would explore all paths regardless.</p>
+
+<p><strong>Concrete example:</strong> Grid is 5×5, words = [&quot;abc&quot;, &quot;abd&quot;]. With a Trie, once you&#x27;re at a cell where the current path is &quot;xyz...&quot;, you check <code>trie.root.children</code> and find no &quot;x&quot; node → prune immediately. With a set, you&#x27;d continue DFS forming &quot;xyzqr...&quot; and only fail at the full word check.</p>
+
+<p><strong>Template reminder:</strong></p>
+<pre><code>
+def findWords(board, words):
+    trie = Trie()
+    for w in words: trie.insert(w)
+    
+    def dfs(node, r, c, path):
+        if node.word:  # found a complete word
+            res.add(path)
+            node.word = False  # avoid duplicates
+        tmp, board[r][c] = board[r][c], &#x27;#&#x27;  # mark visited
+        for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:
+            nr, nc = r+dr, c+dc
+            if 0&lt;=nr&lt;rows and 0&lt;=nc&lt;cols and board[nr][nc] in node.children:
+                dfs(node.children[board[nr][nc]], nr, nc, path+board[nr][nc])
+        board[r][c] = tmp  # restore
+    ...
+</code></pre>
+<p><strong>Critical optimization:</strong> Delete matched words from the Trie (<code>node.word = False</code>) to avoid re-adding duplicates and to enable Trie pruning after a word is found.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>Q3: [🐍 Python Craft] — Retry with Backoff + Connection Pooling</h3>
+
+<p><strong>Question:</strong> You&#x27;re building a service that calls an external API. You have both <strong>connection pooling</strong> and <strong>retry with exponential backoff</strong> available. A request fails with a <code>ConnectionResetError</code>. In what <strong>order</strong> should these two mechanisms handle it, and why?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>Order: retry logic wraps the pool, not vice versa.</strong></p>
+
+<p>1. <strong>Connection pool</strong> handles acquiring/releasing connections efficiently (reuse TCP connections, manage pool size). When a <code>ConnectionResetError</code> happens, the pool should <strong>discard that broken connection</strong> (not return it to the pool).</p>
+<p>2. <strong>Retry with backoff</strong> then kicks in at the call-site level: it re-attempts the full operation (which will now request a fresh connection from the pool).</p>
+
+<pre><code>
+# Correct layering
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10))
+def call_external_api():
+    with pool.get_connection() as conn:  # pool is INSIDE the retry
+        return conn.request(&quot;GET&quot;, &quot;/endpoint&quot;)
+</code></pre>
+
+<p><strong>Why not the reverse?</strong> If retry logic were <em>inside</em> the pool&#x27;s connection acquisition, you&#x27;d retry getting a pooled connection — which doesn&#x27;t help if the remote server is actually down. You need to retry the <em>business operation</em>, not just the connection handshake.</p>
+
+<p><strong>Key tenacity patterns:</strong></p>
+<p>- <code>stop_after_attempt(3)</code> — max retries</p>
+<p>- <code>wait_exponential(multiplier=1, min=1, max=10)</code> — 1s, 2s, 4s, 8s, 10s...</p>
+<p>- <code>retry=retry_if_exception_type(ConnectionError)</code> — only retry transient errors, NOT <code>ValueError</code> or auth failures</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。</em></p>
+<p>📅 明天继续新内容！</p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-07-01</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-01</guid>
+      <pubDate>Wed, 01 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 79</h2>
+<h2>设计 AI 聊天机器人平台（ChatGPT 规模）/ Design an AI Chatbot Platform (ChatGPT-scale)</h2>
+<p><strong>预计阅读时间 / Est. read time: 3 min</strong></p>
+
+<hr/>
+
+<h2>🌍 真实场景 / Real-World Scenario</h2>
+
+<p>想象你在 2023 年加入 OpenAI 工程团队。ChatGPT 刚刚走红，DAU 从零飙升到 1000 万，而你们只有几周时间来处理这个规模问题。</p>
+
+<p>Imagine joining OpenAI&#x27;s engineering team in 2023. ChatGPT just went viral—DAU jumped from zero to 10M in weeks, and you have a few weeks to handle the scale.</p>
+
+<p><strong>核心挑战 / Core Challenges:</strong></p>
+<p>- 请求是流式的（SSE/WebSocket），不是普通 REST</p>
+<p>- 每个请求耗时 10-60 秒（LLM 推理很慢）</p>
+<p>- 用户期望对话历史持久化</p>
+<p>- 模型推理成本极高（GPU 资源昂贵）</p>
+
+<hr/>
+
+<h2>🏛️ 架构图 / Architecture Diagram</h2>
+
+<pre><code>
+用户 / User
+     │ HTTPS (SSE stream)
+     ▼
+┌─────────────────────────────────────────────┐
+│            API Gateway / Load Balancer       │
+│         (rate limiting, auth, routing)       │
+└────────┬──────────────────────────┬──────────┘
+         │                          │
+    ┌────▼─────┐              ┌─────▼──────┐
+    │ Chat API │              │ Auth Svc    │
+    │ Service  │              │ (JWT/OAuth) │
+    └────┬─────┘              └────────────┘
+         │
+    ┌────▼──────────────────────────────────┐
+    │            Message Queue              │
+    │          (Kafka / SQS)                │
+    └────┬──────────────────────────────────┘
+         │ fan-out
+    ┌────▼──────────────────────────────────┐
+    │         Inference Workers             │
+    │  ┌──────────┐  ┌──────────┐           │
+    │  │ GPU Pod 1│  │ GPU Pod 2│  ...      │
+    │  │ (A100×8) │  │ (A100×8) │           │
+    │  └──────────┘  └──────────┘           │
+    └────┬──────────────────────────────────┘
+         │
+    ┌────▼────────────────────────────────────┐
+    │  Storage Layer                          │
+    │  ┌──────────────┐  ┌──────────────────┐ │
+    │  │ PostgreSQL   │  │  Redis Cache     │ │
+    │  │ (conv history│  │  (session state, │ │
+    │  │  user data)  │  │   rate limits)   │ │
+    │  └──────────────┘  └──────────────────┘ │
+    └─────────────────────────────────────────┘
+         │
+    ┌────▼────────────┐
+    │  KV Cache Store │
+    │  (GPU-side,     │
+    │   prompt cache) │
+    └─────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>⚖️ 关键权衡 / Key Tradeoffs</h2>
+
+<h3>1. 流式响应 vs 批量响应 / Streaming vs Batch</h3>
+<p><strong>为什么选流式？</strong> 用户感知延迟从 30s 降到&quot;首 token&quot; ~500ms，体验天壤之别。</p>
+<p>技术上用 <strong>Server-Sent Events (SSE)</strong> 或 WebSocket；SSE 更简单且天然支持单向流。</p>
+
+<h3>2. KV Cache — GPU 内存的黄金</h3>
+<p>LLM 推理时，同一对话的前缀（prompt）每次都重新计算太浪费。</p>
+<p><strong>KV Cache</strong> 在 GPU 内存里缓存这些 attention key/value 张量，命中时推理速度提升 3-10×。</p>
+<p>代价：GPU 内存昂贵，需要 LRU 驱逐策略。</p>
+
+<h3>3. 会话路由 / Session Affinity</h3>
+<p>为了命中 KV Cache，同一对话的请求要尽量路由到同一 GPU Pod。</p>
+<p>用 <code>conversation_id</code> 做 consistent hashing，不是纯 round-robin。</p>
+
+<h3>4. 背压 / Backpressure</h3>
+<p>GPU 推理是瓶颈。当队列积压，要优雅降级：</p>
+<p>- 返回 503 + Retry-After（不要让用户一直等）</p>
+<p>- 对免费用户限流，优先保障付费用户</p>
+
+<hr/>
+
+<h2>🚫 别踩这个坑 / Common Mistakes</h2>
+
+<p>| 错误 ❌ | 正确 ✅ |</p>
+<p>|--------|--------|</p>
+<p>| 用普通 HTTP 请求等全部生成完再返回 | 用 SSE 流式推送 token |</p>
+<p>| 每次都从头重算 prompt | 用 KV Cache 缓存前缀 |</p>
+<p>| 所有对话请求 round-robin 分发 | 用 conversation_id 做 sticky routing |</p>
+<p>| 忽略 GPU OOM | 设置 max_context_length 硬限制 |</p>
+<p>| 对话历史存 GPU 内存 | 历史存 DB，推理时按需加载 |</p>
+
+<hr/>
+
+<h2>📐 规模估算 / Back-of-Envelope</h2>
+
+<p>- 1000 万 DAU，每人每天 10 条消息 → <strong>1 亿请求/天</strong> ≈ <strong>1160 req/s</strong></p>
+<p>- 每请求平均 20s 推理 → 需要 ~23,200 并发 GPU &quot;slots&quot;</p>
+<p>- A100 8-GPU pod 可处理 ~16 并发请求</p>
+<p>- 需要约 <strong>1450 个 A100 Pod</strong> → 这就是为什么 OpenAI 的 GPU 账单以亿美元计</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+<p>- [OpenAI: How We Scale ChatGPT](https://openai.com/research/scaling-language-models)</p>
+<p>- [ByteDance: How to Serve LLMs Efficiently](https://arxiv.org/abs/2309.06180) — vLLM 论文，KV cache 管理</p>
+<p>- [AWS: Streaming Responses with API Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-lambda-websocket.html)</p>
+
+<h2>🧒 ELI5</h2>
+<p>就像一个超级忙的老师在课堂上同时给 1000 个学生解答问题。</p>
+<p>老师不是等到全部想完才开口，而是边想边说（streaming）。</p>
+<p>还有个小秘诀：老师记住了每个学生之前问过什么（KV cache），这样不用从头理解对话，更快！</p>
+<p>It&#x27;s like a super-busy teacher answering 1000 students simultaneously—speaking while still thinking (streaming), and remembering each student&#x27;s conversation history (KV cache) so they don&#x27;t start from scratch each time.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 79</h2>
+<h2>#703 Kth Largest Element in a Stream (Easy) — Heap / Priority Queue</h2>
+<p><strong>预计阅读时间 / Est. read time: 4 min</strong></p>
+
+<hr/>
+
+<p>🧩 <strong>新模式 / New Pattern: 堆/优先队列模式 (Heap / Priority Queue)</strong></p>
+<p>📍 这个模式块共 7 道题 / This block: 7 problems</p>
+
+<p><strong>什么时候用 / When to use:</strong> Top K 问题、合并 K 个有序序列、动态中位数</p>
+
+<p><strong>识别信号 / Signals:</strong> &quot;top k&quot;, &quot;kth largest/smallest&quot;, &quot;merge k sorted&quot;, &quot;median&quot;, &quot;schedule&quot;</p>
+
+<p><strong>通用模版 / Template:</strong></p>
+<pre><code>
+import heapq
+
+heap = []
+for item in stream:
+    heapq.heappush(heap, item)
+    if len(heap) &gt; k:
+        heapq.heappop(heap)
+# heap[0] is the kth largest element
+</code></pre>
+
+<p><strong>核心洞察 / Key Insight:</strong> 维护大小为 k 的<strong>最小堆</strong> — 堆顶就是第 k 大的元素。比排序整个数组高效得多 (O(n log k) vs O(n log n))。</p>
+
+<hr/>
+
+<p>🔗 [LeetCode #703](https://leetcode.com/problems/kth-largest-element-in-a-stream/) 🟢 Easy | 📹 [NeetCode 解析](https://neetcode.io/problems/kth-largest-integer-in-a-stream)</p>
+
+<hr/>
+
+<h2>🌍 真实类比 / Real-World Analogy</h2>
+
+<p>想象你是一家音乐平台的数据工程师，需要实时追踪&quot;播放量前 K 名歌曲&quot;。每秒都有新的播放数据进来，你不可能每次都把所有歌曲重新排序——太慢了！</p>
+
+<p>You&#x27;re a data engineer at a music platform, tracking &quot;top K songs by plays&quot; in real time. New play counts stream in every second—you can&#x27;t re-sort everything each time.</p>
+
+<p><strong>解法：</strong> 维护一个大小为 K 的最小堆，堆顶就是&quot;第 K 大&quot;的门槛。</p>
+
+<hr/>
+
+<h2>📋 问题描述 / Problem</h2>
+
+<p>设计一个类，找到数据流中第 k 大的元素。注意是第 k 大（排序后倒数第 k 个），不是第 k 个不同的元素。</p>
+
+<p>Design a class <code>KthLargest</code> that:</p>
+<p>- <code>__init__(self, k, nums)</code>: Initialize with k and an initial list</p>
+<p>- <code>add(self, val)</code>: Add a value to the stream, return the kth largest element</p>
+
+<hr/>
+
+<h2>🗺️ 映射到模版 / Map to Template</h2>
+
+<p><strong>为什么用最小堆，不是最大堆？</strong></p>
+<p>- 最大堆堆顶是最大值，找不到&quot;第 k 大&quot;</p>
+<p>- <strong>最小堆大小为 k</strong>：堆顶是堆里最小的，也就是&quot;所有数里第 k 大的&quot;</p>
+<p>- 每次加入新值，如果堆大小 &gt; k，弹出最小值（堆顶），保持堆里永远是&quot;最大的 k 个&quot;</p>
+
+<pre><code>
+示例：k=3, nums=[4,5,8,2]
+初始堆（大小3）：[4, 5, 8] → 最小堆 = [4, 5, 8]
+
+add(3):  堆 = [3,4,5,8] → 弹出3 → [4,5,8] → 返回 4
+add(5):  堆 = [4,5,5,8] → 弹出4 → [5,5,8] → 返回 5
+add(10): 堆 = [5,5,8,10] → 弹出5 → [5,8,10] → 返回 5
+</code></pre>
+
+<hr/>
+
+<h2>🐍 Python 解法 / Solution with Trace</h2>
+
+<pre><code>
+import heapq
+
+class KthLargest:
+    def __init__(self, k: int, nums: list[int]):
+        self.k = k
+        self.heap = []  # min-heap of size k
+        
+        for num in nums:
+            self.add(num)
+    
+    def add(self, val: int) -&gt; int:
+        heapq.heappush(self.heap, val)
+        
+        # Keep only the k largest elements
+        if len(self.heap) &gt; self.k:
+            heapq.heappop(self.heap)  # remove the smallest
+        
+        # heap[0] is always the kth largest
+        return self.heap[0]
+
+# Trace:
+# k=3, nums=[4,5,8,2]
+# After init:
+#   add(4): heap=[4], size&lt;3, return 4 (but k not satisfied yet)
+#   add(5): heap=[4,5], size&lt;3
+#   add(8): heap=[4,5,8], size=3, return 4
+#   add(2): heap=[2,4,5,8] → pop 2 → heap=[4,5,8], return 4
+# 
+# add(3):  heap=[3,4,5,8] → pop 3 → heap=[4,5,8], return 4  ✓
+# add(5):  heap=[4,5,5,8] → pop 4 → heap=[5,5,8], return 5  ✓
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- 时间: O(log k) per <code>add</code> call (heap push/pop)</p>
+<p>- 空间: O(k) — 堆最多存 k 个元素</p>
+
+<hr/>
+
+<h2>🔄 举一反三 / Pattern Variations</h2>
+
+<p>这个模式块的 7 道题，对比理解：</p>
+
+<p>| 题目 | 变化点 / Twist |</p>
+<p>|------|---------------|</p>
+<p>| <strong>#703 Kth Largest in Stream</strong> ← 今天 | 基础模版，最小堆大小 k |</p>
+<p>| <strong>#1046 Last Stone Weight</strong> | 最大堆：每次取两个最大值 |</p>
+<p>| <strong>#973 K Closest Points</strong> | 自定义距离作为 key |</p>
+<p>| <strong>#215 Kth Largest in Array</strong> | 一次性输入，无流式 |</p>
+<p>| <strong>#621 Task Scheduler</strong> | 贪心 + 最大堆调度任务 |</p>
+<p>| <strong>#295 Median from Stream</strong> | <strong>两个堆</strong>：一大一小维护中位数 |</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+<pre><code>
+{&quot;question&quot;:&quot;KthLargest(k=2, nums=[3,1,5]).add(4) returns?&quot;,&quot;options&quot;:[&quot;3&quot;,&quot;4&quot;,&quot;5&quot;,&quot;1&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+<p>- [Python heapq docs](https://docs.python.org/3/library/heapq.html)</p>
+<p>- [NeetCode Heap/Priority Queue playlist](https://neetcode.io/roadmap) — Heap section</p>
+<p>- [Visualgo Heap visualization](https://visualgo.net/en/heap)</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象你要追踪班里前 3 名同学的分数。有新同学进来，你不用给全班重新排名——只需要跟&quot;目前第 3 名&quot;比一比：比他高就换掉他，比他低就不管。这就是最小堆的魔法！</p>
+<p>Imagine tracking the top 3 scores in class. When a new score arrives, you only compare against the 3rd-highest—if it beats it, swap in. That&#x27;s the heap trick!</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 79</h2>
+<h2>描述你如何参与招聘和团队建设 / Describe how you&#x27;ve contributed to hiring and growing a team</h2>
+<p><strong>Level: Staff | Category: Leadership</strong></p>
+<p><strong>预计阅读时间 / Est. read time: 2 min</strong></p>
+
+<hr/>
+
+<h2>💡 为什么这道题很重要 / Why This Matters</h2>
+
+<p>面试官问这道题，背后的问题是：<strong>你是在消耗团队资源，还是在增殖团队资源？</strong></p>
+
+<p>Staff+ 工程师的影响力不只是代码，而是通过招聘和培养人来放大整个团队的产出。如果你只写代码，你是 1×；如果你能招到并培养好工程师，你是 5× 甚至 10×。</p>
+
+<p>Interviewers asking this want to know: <strong>are you a net consumer or a net producer of team resources?</strong> Staff+ engineers multiply team output through hiring and growing people—not just writing code.</p>
+
+<hr/>
+
+<h2>⭐ STAR 框架拆解 / STAR Breakdown</h2>
+
+<p><strong>Situation（背景）:</strong> 具体说明团队规模、招聘压力或增长阶段</p>
+<p><em>e.g., &quot;我们的后端团队只有 4 人，但产品路线图要求在 6 个月内交付 3 个新系统。&quot;</em></p>
+
+<p><strong>Task（职责）:</strong> 你在这件事里担什么角色</p>
+<p><em>e.g., &quot;作为 tech lead，我负责招募 2 名高级工程师，同时带 2 名应届生。&quot;</em></p>
+
+<p><strong>Action（行动）—— 这是面试官最想听的：</strong></p>
+<p>- 你如何<strong>定义招聘标准</strong>？（写 job spec、定义 bar）</p>
+<p>- 你如何<strong>设计面试流程</strong>？（技术轮、系统设计轮）</p>
+<p>- 你如何<strong>做导师 / onboarding</strong>？（30-60-90 day plan）</p>
+<p>- 你如何<strong>培养成长</strong>？（1:1、代码审查、给机会）</p>
+
+<p><strong>Result（结果）:</strong> 量化！招了几人、留存率、新人多久独立上线</p>
+
+<hr/>
+
+<h2>❌ 糟糕回答 vs ✅ 优秀回答</h2>
+
+<p><strong>❌ 糟糕 / Bad:</strong></p>
+<p>&gt; &quot;我参与了很多面试，评估了很多候选人，也帮助了新同事。&quot;</p>
+
+<p>问题：泛泛而谈，没有具体行动，没有结果，面试官听完没有印象。</p>
+
+<p><strong>✅ 优秀 / Good:</strong></p>
+<p>&gt; &quot;当团队准备从 3 人扩到 8 人时，我意识到我们没有系统化的技术面试流程——每个面试官问的问题都不一样。我花了两周设计了一个标准化的系统设计面试框架，包括评分 rubric 和信号说明，并对全组面试官做了培训。在接下来的 6 个月里，我们成功招募了 4 名工程师，其中 3 名在入职 3 个月内独立交付了第一个生产项目。&quot;</p>
+
+<hr/>
+
+<h2>🌟 Staff/Principal 加分点 / Senior+ Tips</h2>
+
+<p>1. <strong>定义 bar，不只是参与面试</strong>：说&quot;我设计了 rubric / leveling criteria&quot;比&quot;我参加了面试&quot; 高一个维度</p>
+
+<p>2. <strong>系统化，不只是个案</strong>：从&quot;帮了某个人&quot;到&quot;建立了 onboarding 体系让所有新人都受益&quot;</p>
+
+<p>3. <strong>测量增长</strong>：能说出 &quot;我的 mentee 在 X 月内晋升到 senior&quot; 的人，比只说&quot;帮他成长了很多&quot;的人更有说服力</p>
+
+<p>4. <strong>影响到招聘决策</strong>：如果你有过&quot;推翻 HC 的决定&quot;或&quot;改变招聘标准&quot;的经历，说出来——这是真正的影响力</p>
+
+<hr/>
+
+<h2>🎯 Key Takeaways</h2>
+
+<p>- 招聘贡献 = 定义标准 + 设计流程 + 做决策，不只是&quot;参加面试&quot;</p>
+<p>- 团队成长 = 系统化 onboarding + 持续 mentorship + 量化结果</p>
+<p>- Staff 工程师的招聘故事要体现<strong>乘数效应</strong>：你的工作让整个团队更强</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+<p>- [Will Larson: Staff Engineer](https://staffeng.com/book) — Staff+ 工程师的影响力框架</p>
+<p>- [Lenny&#x27;s Newsletter: How to Interview Well](https://www.lennysnewsletter.com/p/how-to-interview-well)</p>
+<p>- [Claire Lew: The Art of the One-on-One](https://knowyourteam.com/blog/2017/12/01/how-to-have-an-honest-one-on-one-with-an-employee/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>招聘问题考的不是&quot;你参加了几次面试&quot;，而是&quot;你是那个让整个招聘机器变得更好的人吗？&quot;就像厨师不只是做菜，还要培养下一代大厨——才能让餐厅长期厉害。</p>
+<p>Hiring questions test whether you made the whole hiring machine better, not just whether you interviewed people. Like a chef who also trains the next generation of chefs—that&#x27;s how the restaurant stays great long-term.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 79</h2>
+<h2>Retry with Backoff — tenacity, 手动实现 / Manual Implementation</h2>
+<p><strong>Category: Practical Patterns | Week 7</strong></p>
+<p><strong>预计阅读时间 / Est. read time: 2 min</strong></p>
+
+<hr/>
+
+<h2>🌍 真实场景 / Real-World Scenario</h2>
+
+<p>你在做一个调用第三方 API 的服务（支付、邮件、AI 推理接口）。偶发的网络抖动或 429 Rate Limit 会让请求失败，但这不是永久性错误——重试一下就好。问题是：<strong>怎么重试才对？</strong></p>
+
+<p>You&#x27;re calling third-party APIs (payments, email, AI inference). Flaky networks and 429s cause transient failures—retrying helps, but <em>how</em> you retry matters a lot.</p>
+
+<p><strong>错误做法：</strong> 立刻重试 → 打爆对方服务器 → 自己被封</p>
+<p><strong>正确做法：</strong> 指数退避 + 抖动 (Exponential Backoff + Jitter)</p>
+
+<hr/>
+
+<h2>🔧 方案一：手动实现 / Manual Implementation</h2>
+
+<pre><code>
+import time
+import random
+import requests
+from typing import Callable, Any
+
+def retry_with_backoff(
+    func: Callable,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    max_delay: float = 60.0,
+    jitter: bool = True,
+) -&gt; Any:
+    &quot;&quot;&quot;
+    Retry func with exponential backoff + optional jitter.
+    Raises the last exception if all retries fail.
+    &quot;&quot;&quot;
+    last_exception = None
+    
+    for attempt in range(max_retries + 1):
+        try:
+            return func()
+        except (requests.RequestException, TimeoutError) as e:
+            last_exception = e
+            
+            if attempt == max_retries:
+                break  # no more retries
+            
+            # Exponential backoff: 1s, 2s, 4s, 8s...
+            delay = min(base_delay * (2 ** attempt), max_delay)
+            
+            # Add jitter to avoid thundering herd
+            if jitter:
+                delay *= (0.5 + random.random())  # delay * [0.5, 1.5]
+            
+            print(f&quot;Attempt {attempt + 1} failed: {e}. Retrying in {delay:.1f}s...&quot;)
+            time.sleep(delay)
+    
+    raise last_exception
+
+# Usage
+def call_payment_api():
+    response = requests.post(&quot;https://api.stripe.com/charge&quot;, timeout=5)
+    response.raise_for_status()
+    return response.json()
+
+result = retry_with_backoff(call_payment_api, max_retries=3)
+</code></pre>
+
+<hr/>
+
+<h2>🚀 方案二：tenacity（推荐用于生产）/ tenacity (Production Recommended)</h2>
+
+<pre><code>
+# pip install tenacity
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
+import requests
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=60),
+    retry=retry_if_exception_type(requests.RequestException),
+    reraise=True,  # re-raise the last exception on failure
+)
+def call_openai_api(prompt: str) -&gt; dict:
+    response = requests.post(
+        &quot;https://api.openai.com/v1/chat/completions&quot;,
+        json={&quot;model&quot;: &quot;gpt-4&quot;, &quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}]},
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json()
+
+# tenacity handles: 1s → 2s → 4s backoff automatically
+</code></pre>
+
+<hr/>
+
+<h2>⚖️ 关键对比 / Key Comparison</h2>
+
+<p>| | 手动实现 | tenacity |</p>
+<p>|--|---------|---------|</p>
+<p>| 灵活性 | 完全可控 | 通过装饰器配置 |</p>
+<p>| 可读性 | 需要写样板代码 | 声明式，一目了然 |</p>
+<p>| 功能 | 基础 | before/after 钩子、统计、async 支持 |</p>
+<p>| 适合场景 | 理解原理、极简依赖 | 生产代码 ✅ |</p>
+
+<hr/>
+
+<h2>❌ 别这么做 / What NOT to Do</h2>
+
+<pre><code>
+# ❌ 立刻重试，无退避 — 打垮服务器
+for i in range(3):
+    try:
+        result = call_api()
+        break
+    except Exception:
+        pass  # 立刻再试！
+
+# ❌ 对所有异常都重试 — 包括 400 Bad Request（永远不会成功）
+# 只重试瞬态错误（5xx, 429, timeout），不重试 4xx！
+
+# ✅ 正确：区分可重试 vs 不可重试
+RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+</code></pre>
+
+<hr/>
+
+<h2>🎯 什么时候用 / When to Use</h2>
+
+<p><strong>适合重试的场景：</strong></p>
+<p>- 网络超时 / 抖动</p>
+<p>- HTTP 429 (Rate Limited) — 一定要重试</p>
+<p>- HTTP 5xx (Server Error) — 通常可以重试</p>
+
+<p><strong>不适合重试的场景：</strong></p>
+<p>- HTTP 4xx (Client Error) — 请求本身有问题，重试没用</p>
+<p>- 数据库唯一键冲突 — 重复写入会更糟</p>
+<p>- 幂等性未保证的操作（避免重复扣款！）</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+<p>- [tenacity docs](https://tenacity.readthedocs.io/en/latest/)</p>
+<p>- [AWS: Exponential Backoff and Jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)</p>
+<p>- [Google SRE Book: Handling Overload](https://sre.google/sre-book/handling-overload/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>服务器忙了，你重试请求——但别立刻一遍遍狂刷，那会让它更忙。就像打电话占线，等 1 秒再打，再占线等 2 秒，再等 4 秒……越等越久，给对方喘息的机会。这就是指数退避。</p>
+<p>When a server is busy, don&#x27;t hammer it instantly. Like a busy phone line: wait 1s, then 2s, then 4s... Give the server room to breathe. That&#x27;s exponential backoff.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 79</h2>
+<h2>AI 新闻速递 / AI News Roundup</h2>
+<p><strong>预计阅读时间 / Est. read time: 2 min</strong></p>
+
+<p><em>Sources verified via web search (July 1, 2026)</em></p>
+
+<hr/>
+
+<h2>📰 本周 AI 大事件 / This Week in AI</h2>
+
+<h3>1. 🔒 OpenAI GPT-5.6 三层架构，政府管控发布</h3>
+<p><strong>GPT-5.6 Sol/Terra/Luna — Tiered Release Under Government Oversight</strong></p>
+
+<p>OpenAI 发布了 GPT-5.6 系列，含三个层级：</p>
+<p>- <strong>Sol</strong>（前沿层）：$5/$30 per 1M tokens，新增 &quot;ultra reasoning&quot; 模式，可自动拆解多步骤任务为子代理</p>
+<p>- <strong>Terra</strong>（生产层）：$2.50/$15，约为 GPT-5.5 价格的一半</p>
+<p>- <strong>Luna</strong>（高并发层）：$1/$6，面向大规模低延迟场景</p>
+
+<p><strong>但有一个关键限制</strong>：目前仅对约 20 个经美国政府批准的合作机构开放预览。这是继 Anthropic Claude Fable 5 出口管制之后，第二家美国顶级 AI 实验室以&quot;政府先审、再公开&quot;的模式发布最强模型。OpenAI 公开表示不希望这成为常态，正式公开版预计数周内发布。</p>
+
+<p>The pricing spread is telling: Luna at $1/$6 is clearly targeting Chinese models on cost, not just capability.</p>
+
+<p>🔗 Source: [The Next Web: OpenAI GPT-5.6 Sol limited preview](https://thenextweb.com/news/openai-gpt-5-6-sol-limited-preview-government-approved-partners)</p>
+
+<hr/>
+
+<h3>2. 🔄 Claude Fable 5 重新上线</h3>
+<p><strong>Anthropic&#x27;s Claude Fable 5 Returns After 19-Day Outage</strong></p>
+
+<p>Anthropic 的 Claude Fable 5（此前被称为其最强模型）在离线 19 天后，于 7 月 1 日在 claude.ai、Claude Platform、Claude Code 和 Claude Cowork 上全面恢复可用。此前的下线据报道与出口管制合规审查有关。</p>
+
+<p>Anthropic&#x27;s strongest model went dark for 19 days—reportedly due to export control compliance—and came back online today across all platforms.</p>
+
+<p>🔗 Source: [Substack: This Week in AI, June 25–July 1](https://engincanveske.substack.com/p/this-week-in-ai-june-25-july-1-2026)</p>
+
+<hr/>
+
+<h3>3. 📄 Mistral OCR 4：面向合规场景的文档智能</h3>
+<p><strong>Mistral OCR 4 — Document Intelligence for Regulated Industries</strong></p>
+
+<p>Mistral 据报道发布 OCR 4，支持 170 种语言，可作为<strong>自托管容器</strong>部署（针对有数据隐私需求的企业）。功能包括：段落级 bounding box、置信度分数、块分类、以及适配 RAG pipeline 的结构化输出。</p>
+
+<p>对于需要处理合同、医疗记录、金融文件的团队来说，这是一个重要工具——数据不出企业边界。</p>
+
+<p>Mistral OCR 4 supports 170 languages, runs as a self-hosted container, and outputs citation-ready structured data for RAG pipelines. Key for teams handling sensitive documents.</p>
+
+<hr/>
+
+<h3>4. 🤖 OpenAI 内部 Codex 数据：几乎全员在用</h3>
+<p><strong>OpenAI&#x27;s Internal Codex Stats: Near-Universal Adoption</strong></p>
+
+<p>OpenAI 发布了博客和 arxiv 论文，披露内部 Codex 使用情况：几乎所有员工（包括非工程师）都在使用 Codex，使用量在研究、工程和产品团队中持续攀升。</p>
+
+<p>这是一个信号：AI 编码工具在 AI 公司内部已从&quot;试验性&quot;变为&quot;必备工具&quot;。</p>
+
+<p>OpenAI published evidence that nearly all employees—including non-engineers—now use Codex. The shift from &quot;optional AI tool&quot; to &quot;default workflow&quot; is happening inside AI labs first.</p>
+
+<p>🔗 arxiv: [The Shift to Agentic AI: Evidence from Codex](https://arxiv.org/abs/2606.26959)</p>
+
+<hr/>
+
+<h2>🔍 行业信号 / Industry Signal</h2>
+
+<p><strong>这周最值得关注的趋势：政府 × AI 发布节奏正在形成新常态。</strong></p>
+
+<p>两家顶级美国 AI 实验室（OpenAI 和 Anthropic）已经呈现出同一模式：</p>
+<p>1. 训练完成最强模型</p>
+<p>2. 提交政府审查</p>
+<p>3. 有限发布给合作方</p>
+<p>4. 数周后公开</p>
+
+<p>这对开发者意味着什么：前沿模型的&quot;发布日&quot;将不再是真正的&quot;可用日&quot;。如果你依赖最新模型构建产品，要考虑 <strong>fallback 策略</strong>。</p>
+
+<p>The pattern is becoming routine: train → government review → selective release → public rollout. For developers: &quot;release day&quot; ≠ &quot;available day&quot; anymore. Build with fallback model strategies.</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+<p>- [This Week in AI, June 25–July 1](https://engincanveske.substack.com/p/this-week-in-ai-june-25-july-1-2026)</p>
+<p>- [The Next Web: GPT-5.6 Sol limited preview](https://thenextweb.com/news/openai-gpt-5-6-sol-limited-preview-government-approved-partners)</p>
+<p>- [arxiv: The Shift to Agentic AI](https://arxiv.org/abs/2606.26959)</p>
+<p>- [Wikipedia: GPT-5.6](https://en.wikipedia.org/wiki/GPT-5.6)</p>
+
+<h2>🧒 ELI5</h2>
+<p>这周 AI 圈最大的事不是新模型多厉害，而是&quot;谁能用它&quot;的问题——美国政府开始参与决定哪些公司能第一批用到最强 AI。就像新药上市前需要 FDA 审批，AI 似乎也在走类似的路。</p>
+<p>The biggest AI story this week isn&#x27;t model capabilities—it&#x27;s <em>who gets access</em>. The US government is now a gatekeeper for the most capable models. Like FDA approval for drugs, frontier AI is heading toward a regulated release model.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-06-30</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
