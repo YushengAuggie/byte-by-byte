@@ -41,47 +41,55 @@ CSS = """
 """
 
 SECTION_META = [
-    ('system-design', '🏗️', 'System Design', '系统设计'),
-    ('algorithms',    '💻', 'Algorithms',    '算法'),
-    ('soft-skills',   '🗣️', 'Soft Skills',   '软技能'),
-    ('python-craft',  '🐍', 'Python Craft',  'Python实战'),
-    ('ai',            '🤖', 'AI',            'AI'),
+    ("system-design", "🏗️", "System Design", "系统设计"),
+    ("algorithms", "💻", "Algorithms", "算法"),
+    ("soft-skills", "🗣️", "Soft Skills", "软技能"),
+    ("python-craft", "🐍", "Python Craft", "Python实战"),
+    ("ai", "🤖", "AI", "AI"),
 ]
 
 # Review day uses a single file instead of 5 sections
-REVIEW_META = ('review', '📝', 'Review Quiz', '复习测验')
+REVIEW_META = ("review", "📝", "Review Quiz", "复习测验")
 
 # Weekend special formats
 WEEKEND_META = [
-    ('deepdive', '🔬', 'Saturday Deep Dive', '周六深度解析'),
-    ('week-review', '📅', 'Week in Review', '一周回顾'),
+    ("deepdive", "🔬", "Saturday Deep Dive", "周六深度解析"),
+    ("week-review", "📅", "Week in Review", "一周回顾"),
 ]
+
 
 def load_config():
     config = {}
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(script_dir, '..', 'config.env')
+    config_path = os.path.join(script_dir, "..", "config.env")
     if not os.path.exists(config_path):
-        print('❌ config.env not found at {}'.format(config_path))
-        print('   cp config.env.example config.env && edit config.env')
+        print("❌ config.env not found at {}".format(config_path))
+        print("   cp config.env.example config.env && edit config.env")
         sys.exit(1)
     with open(config_path) as f:
         for line in f:
             line = line.strip()
-            if line and not line.startswith('#') and '=' in line:
-                key, val = line.split('=', 1)
+            if line and not line.startswith("#") and "=" in line:
+                key, val = line.split("=", 1)
                 config[key.strip()] = val.strip().strip('"')
     return config
 
+
 def escape_html(text):
-    return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
 
 def highlight_code(code, lang):
     """Very lightweight regex-based syntax highlighting with inline styles."""
-    lang = (lang or '').lower()
+    lang = (lang or "").lower()
 
     def render_with_patterns(text, patterns):
-        combined = re.compile('|'.join('(?P<{}>{})'.format(name, pattern) for name, pattern, _ in patterns), re.MULTILINE)
+        combined = re.compile(
+            "|".join(
+                "(?P<{}>{})".format(name, pattern) for name, pattern, _ in patterns
+            ),
+            re.MULTILINE,
+        )
         color_map = dict((name, color) for name, _, color in patterns)
         parts = []
         last = 0
@@ -90,73 +98,114 @@ def highlight_code(code, lang):
             if start > last:
                 parts.append(escape_html(text[last:start]))
             token = match.group(0)
-            group_name = next(name for name, value in match.groupdict().items() if value is not None)
-            parts.append('<span style="color:{};">{}</span>'.format(color_map[group_name], escape_html(token)))
+            group_name = next(
+                name for name, value in match.groupdict().items() if value is not None
+            )
+            parts.append(
+                '<span style="color:{};">{}</span>'.format(
+                    color_map[group_name], escape_html(token)
+                )
+            )
             last = end
         if last < len(text):
             parts.append(escape_html(text[last:]))
-        return ''.join(parts)
+        return "".join(parts)
 
-    if lang == 'python':
-        return render_with_patterns(code, [
-            ('comment', r'#[^\n]*', '#5c6370'),
-            ('string', r'"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', '#e5c07b'),
-            ('keyword', r'\b(?:False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b', '#c678dd'),
-            ('number', r'\b\d+(?:\.\d+)?\b', '#56b6c2'),
-        ])
+    if lang == "python":
+        return render_with_patterns(
+            code,
+            [
+                ("comment", r"#[^\n]*", "#5c6370"),
+                (
+                    "string",
+                    r'"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'',
+                    "#e5c07b",
+                ),
+                (
+                    "keyword",
+                    r"\b(?:False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b",
+                    "#c678dd",
+                ),
+                ("number", r"\b\d+(?:\.\d+)?\b", "#56b6c2"),
+            ],
+        )
 
-    if lang == 'css':
+    if lang == "css":
         highlighted = []
-        for raw_line in code.split('\n'):
-            if '/*' in raw_line:
-                highlighted.append('<span style="color:#5c6370;">{}</span>'.format(escape_html(raw_line)))
+        for raw_line in code.split("\n"):
+            if "/*" in raw_line:
+                highlighted.append(
+                    '<span style="color:#5c6370;">{}</span>'.format(
+                        escape_html(raw_line)
+                    )
+                )
                 continue
-            selector_match = re.match(r'^\s*([^{]+)(\s*\{)?\s*$', raw_line)
-            if selector_match and '{' in raw_line and ':' not in raw_line:
+            selector_match = re.match(r"^\s*([^{]+)(\s*\{)?\s*$", raw_line)
+            if selector_match and "{" in raw_line and ":" not in raw_line:
                 selector = escape_html(selector_match.group(1).rstrip())
-                suffix = escape_html(raw_line[len(selector_match.group(1)):])
-                highlighted.append('<span style="color:#e06c75;">{}</span>{}'.format(selector, suffix))
+                suffix = escape_html(raw_line[len(selector_match.group(1)) :])
+                highlighted.append(
+                    '<span style="color:#e06c75;">{}</span>{}'.format(selector, suffix)
+                )
                 continue
-            prop_match = re.match(r'^(\s*)([a-z-]+)(\s*:\s*)([^;]+)(;?)', raw_line)
+            prop_match = re.match(r"^(\s*)([a-z-]+)(\s*:\s*)([^;]+)(;?)", raw_line)
             if prop_match:
                 indent, prop, colon, value, semi = prop_match.groups()
                 highlighted.append(
                     '{}<span style="color:#56b6c2;">{}</span>{}<span style="color:#e5c07b;">{}</span>{}'.format(
-                        escape_html(indent), escape_html(prop), escape_html(colon), escape_html(value), escape_html(semi)
+                        escape_html(indent),
+                        escape_html(prop),
+                        escape_html(colon),
+                        escape_html(value),
+                        escape_html(semi),
                     )
                 )
                 continue
             highlighted.append(escape_html(raw_line))
-        return '\n'.join(highlighted)
+        return "\n".join(highlighted)
 
-    if lang == 'json':
-        return render_with_patterns(code, [
-            ('key', r'"(?:\\.|[^"\\])*"(?=\s*:)', '#56b6c2'),
-            ('string', r'(?<=:\s)"(?:\\.|[^"\\])*"', '#e5c07b'),
-            ('boolean', r'\b(?:true|false|null)\b', '#c678dd'),
-            ('number', r'\b-?\d+(?:\.\d+)?\b', '#56b6c2'),
-        ])
+    if lang == "json":
+        return render_with_patterns(
+            code,
+            [
+                ("key", r'"(?:\\.|[^"\\])*"(?=\s*:)', "#56b6c2"),
+                ("string", r'(?<=:\s)"(?:\\.|[^"\\])*"', "#e5c07b"),
+                ("boolean", r"\b(?:true|false|null)\b", "#c678dd"),
+                ("number", r"\b-?\d+(?:\.\d+)?\b", "#56b6c2"),
+            ],
+        )
 
-    if lang in ('html', 'xml'):
+    if lang in ("html", "xml"):
         escaped = escape_html(code)
 
         def replace_tag(match):
             prefix, tag_name, attrs, suffix = match.groups()
-            attrs = re.sub(r'([a-zA-Z_:][-a-zA-Z0-9_:.]*)(=)', r'<span style="color:#e5c07b;">\1</span>\2', attrs)
-            return '{}<span style="color:#e06c75;">{}</span>{}{}'.format(prefix, tag_name, attrs, suffix)
+            attrs = re.sub(
+                r"([a-zA-Z_:][-a-zA-Z0-9_:.]*)(=)",
+                r'<span style="color:#e5c07b;">\1</span>\2',
+                attrs,
+            )
+            return '{}<span style="color:#e06c75;">{}</span>{}{}'.format(
+                prefix, tag_name, attrs, suffix
+            )
 
-        return re.sub(r'(&lt;/?)([a-zA-Z][\w:-]*)(.*?)(/?&gt;)', replace_tag, escaped)
+        return re.sub(r"(&lt;/?)([a-zA-Z][\w:-]*)(.*?)(/?&gt;)", replace_tag, escaped)
 
-    if lang == 'bash' or lang == 'sh' or lang == 'shell':
+    if lang == "bash" or lang == "sh" or lang == "shell":
         highlighted = []
-        for raw_line in code.split('\n'):
+        for raw_line in code.split("\n"):
             stripped = raw_line.lstrip()
-            indent = raw_line[:len(raw_line) - len(stripped)]
-            if stripped.startswith('#'):
-                highlighted.append(escape_html(indent) + '<span style="color:#5c6370;">{}</span>'.format(escape_html(stripped)))
+            indent = raw_line[: len(raw_line) - len(stripped)]
+            if stripped.startswith("#"):
+                highlighted.append(
+                    escape_html(indent)
+                    + '<span style="color:#5c6370;">{}</span>'.format(
+                        escape_html(stripped)
+                    )
+                )
                 continue
 
-            parts = re.split(r'(\s+)', stripped)
+            parts = re.split(r"(\s+)", stripped)
             line_parts = [escape_html(indent)]
             command_done = False
             for part in parts:
@@ -164,57 +213,72 @@ def highlight_code(code, lang):
                     continue
                 if part.isspace():
                     line_parts.append(escape_html(part))
-                elif not command_done and not part.startswith('-'):
-                    line_parts.append('<span style="color:#98c379;">{}</span>'.format(escape_html(part)))
+                elif not command_done and not part.startswith("-"):
+                    line_parts.append(
+                        '<span style="color:#98c379;">{}</span>'.format(
+                            escape_html(part)
+                        )
+                    )
                     command_done = True
-                elif part.startswith('-'):
-                    line_parts.append('<span style="color:#56b6c2;">{}</span>'.format(escape_html(part)))
+                elif part.startswith("-"):
+                    line_parts.append(
+                        '<span style="color:#56b6c2;">{}</span>'.format(
+                            escape_html(part)
+                        )
+                    )
                 else:
                     line_parts.append(escape_html(part))
-            highlighted.append(''.join(line_parts))
-        return '\n'.join(highlighted)
+            highlighted.append("".join(line_parts))
+        return "\n".join(highlighted)
 
     return escape_html(code)
+
 
 def is_diagram_line(line):
     stripped = line.rstrip()
     if not stripped:
         return False
     # Skip markdown table rows — they start with | and have | separators
-    if re.match(r'^\s*\|', stripped) and stripped.rstrip().endswith('|'):
+    if re.match(r"^\s*\|", stripped) and stripped.rstrip().endswith("|"):
         return False
     # Skip markdown table separator rows
-    if re.match(r'^\s*\|[\s\-:|]+\|$', stripped):
+    if re.match(r"^\s*\|[\s\-:|]+\|$", stripped):
         return False
-    if re.search(r'[┌┐└┘│─┬├┤▼→←═╔╗╚╝║]', stripped):
-        arrow_like = len(re.findall(r'[▼→←═│─┌┐└┘┬├┤╔╗╚╝║]', stripped))
-        if arrow_like >= 2 or re.search(r'[┌┐└┘│─┬├┤╔╗╚╝║]', stripped):
+    if re.search(r"[┌┐└┘│─┬├┤▼→←═╔╗╚╝║]", stripped):
+        arrow_like = len(re.findall(r"[▼→←═│─┌┐└┘┬├┤╔╗╚╝║]", stripped))
+        if arrow_like >= 2 or re.search(r"[┌┐└┘│─┬├┤╔╗╚╝║]", stripped):
             return True
     # Only match pipe-based diagrams if they DON'T look like tables
     # (tables have evenly spaced pipes; diagrams have pipes mixed with arrows/boxes)
-    if stripped.count('|') >= 2 and re.search(r'[A-Za-z0-9]', stripped):
+    if stripped.count("|") >= 2 and re.search(r"[A-Za-z0-9]", stripped):
         # If it looks like a table row (starts and ends with |, cells between), skip
-        if stripped.startswith('|') and stripped.endswith('|'):
+        if stripped.startswith("|") and stripped.endswith("|"):
             return False
         return True
-    if len(re.findall(r'(?:->|=>|<-|→|←)', stripped)) >= 2 and re.search(r'[A-Za-z0-9]', stripped):
+    if len(re.findall(r"(?:->|=>|<-|→|←)", stripped)) >= 2 and re.search(
+        r"[A-Za-z0-9]", stripped
+    ):
         return True
     return False
 
+
 def looks_like_diagram_block(code):
-    lines = [line for line in code.split('\n') if line.strip()]
+    lines = [line for line in code.split("\n") if line.strip()]
     if not lines:
         return False
     diagram_count = sum(1 for line in lines if is_diagram_line(line))
-    return diagram_count >= 2 or any(re.search(r'[┌┐└┘│─┬├┤▼→←═╔╗╚╝║]', line) for line in lines)
+    return diagram_count >= 2 or any(
+        re.search(r"[┌┐└┘│─┬├┤▼→←═╔╗╚╝║]", line) for line in lines
+    )
+
 
 def maybe_render_live_demo(code, lang):
-    lang = (lang or '').lower()
-    if lang != 'css':
-        return ''
-    if 'justify-content: space-between' not in code or 'width: 300px' not in code:
-        return ''
-    return '''
+    lang = (lang or "").lower()
+    if lang != "css":
+        return ""
+    if "justify-content: space-between" not in code or "width: 300px" not in code:
+        return ""
+    return """
 <div style="margin:12px 0 20px; padding:16px; background:#f8f7ff; border:1px solid #ddd8fa; border-radius:12px;">
   <p style="color:#555; font-size:12px; margin:0 0 8px;">&#9654; Live result / 实际效果:</p>
   <div style="display:flex; justify-content:space-between; width:300px; padding:12px; background:#ffffff; border:1px dashed #c9c2f6; border-radius:10px; margin:0 auto;">
@@ -222,55 +286,67 @@ def maybe_render_live_demo(code, lang):
     <div style="width:80px; height:80px; background:#56b6c2; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:10px; font-weight:700;">B</div>
     <div style="width:80px; height:80px; background:#98c379; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:10px; font-weight:700;">C</div>
   </div>
-</div>'''.strip()
+</div>""".strip()
+
 
 def render_code_block(code, lang):
-    if not (lang or '').strip() and looks_like_diagram_block(code):
-        return '<div style="background:#1a1a2e; border-left:4px solid #7c5cfc; padding:16px; border-radius:8px; font-family:monospace; white-space:pre; overflow-x:auto; color:#e8e8f0; line-height:1.4; margin:12px 0;">{}</div>'.format(escape_html(code))
+    if not (lang or "").strip() and looks_like_diagram_block(code):
+        return '<div style="background:#1a1a2e; border-left:4px solid #7c5cfc; padding:16px; border-radius:8px; font-family:monospace; white-space:pre; overflow-x:auto; color:#e8e8f0; line-height:1.4; margin:12px 0;">{}</div>'.format(
+            escape_html(code)
+        )
     highlighted = highlight_code(code, lang)
-    block = '<pre style="background:#1e1e2e; color:#cdd6f4; padding:16px; border-radius:8px; overflow-x:auto; font-size:13px; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; margin:12px 0; border:1px solid #2d2d44;"><code style="font-family:\'SF Mono\', \'Fira Code\', Consolas, monospace; font-size:13px; background:none; color:inherit;">{}</code></pre>'.format(highlighted)
+    block = "<pre style=\"background:#1e1e2e; color:#cdd6f4; padding:16px; border-radius:8px; overflow-x:auto; font-size:13px; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; margin:12px 0; border:1px solid #2d2d44;\"><code style=\"font-family:'SF Mono', 'Fira Code', Consolas, monospace; font-size:13px; background:none; color:inherit;\">{}</code></pre>".format(
+        highlighted
+    )
     demo = maybe_render_live_demo(code, lang)
-    return block + ('\n' + demo if demo else '')
+    return block + ("\n" + demo if demo else "")
+
 
 def convert_details_blocks(md_text):
     """Strip <details>/<summary> tags — just show content directly.
     Gmail strips <details> tags anyway, so we remove the wrapper entirely."""
+
     def replace_details(match):
         summary = match.group(1).strip()
         content = match.group(2).strip()
-        return '\n**{}**\n\n{}\n'.format(summary, content)
+        return "\n**{}**\n\n{}\n".format(summary, content)
 
     result = re.sub(
-        r'<details>\s*<summary>(.*?)</summary>(.*?)</details>',
+        r"<details>\s*<summary>(.*?)</summary>(.*?)</details>",
         replace_details,
         md_text,
-        flags=re.DOTALL
+        flags=re.DOTALL,
     )
     return result
+
 
 def md_to_html(md_text):
     """Simple markdown to HTML — no external deps. Handles the patterns we use."""
     # Pre-process: convert <details> blocks before line-by-line parsing
     md_text = convert_details_blocks(md_text)
-    lines = md_text.split('\n')
+    lines = md_text.split("\n")
     html_lines = []
     in_code_block = False
-    code_lang = ''
+    code_lang = ""
     code_lines = []
     in_list = False
+    list_type = "ul"
     in_table = False
     table_header_done = False
     i = 0
+
+    # Gmail strips <head><style>, so list items need inline styling too.
+    LI_STYLE = ' style="margin:4px 0;"'
 
     while i < len(lines):
         line = lines[i]
 
         # Fenced code blocks
-        if line.strip().startswith('```'):
+        if line.strip().startswith("```"):
             if in_code_block:
-                html_lines.append(render_code_block('\n'.join(code_lines), code_lang))
+                html_lines.append(render_code_block("\n".join(code_lines), code_lang))
                 in_code_block = False
-                code_lang = ''
+                code_lang = ""
                 code_lines = []
             else:
                 code_lang = line.strip()[3:].strip()
@@ -284,14 +360,18 @@ def md_to_html(md_text):
             continue
 
         # Close list if we're not in one
-        if in_list and not line.strip().startswith(('- ', '* ', '• ')) and not re.match(r'^\d+\.', line.strip()):
+        if (
+            in_list
+            and not line.strip().startswith(("- ", "* ", "• "))
+            and not re.match(r"^\d+\.", line.strip())
+        ):
             if line.strip():
-                html_lines.append('</ul>')
+                html_lines.append(f"</{list_type}>")
                 in_list = False
 
         # Close table
-        if in_table and not line.strip().startswith('|'):
-            html_lines.append('</table>')
+        if in_table and not line.strip().startswith("|"):
+            html_lines.append("</table>")
             in_table = False
             table_header_done = False
 
@@ -300,7 +380,7 @@ def md_to_html(md_text):
         # Empty line
         if not stripped:
             if in_list:
-                html_lines.append('</ul>')
+                html_lines.append(f"</{list_type}>")
                 in_list = False
             i += 1
             continue
@@ -311,98 +391,161 @@ def md_to_html(md_text):
             while i < len(lines) and is_diagram_line(lines[i]):
                 diagram_lines.append(lines[i].rstrip())
                 i += 1
-            html_lines.append('<div style="background:#1a1a2e; border-left:4px solid #7c5cfc; padding:16px; border-radius:8px; font-family:monospace; white-space:pre; overflow-x:auto; color:#e8e8f0; line-height:1.4; margin:12px 0;">{}</div>'.format(escape_html('\n'.join(diagram_lines))))
+            html_lines.append(
+                '<div style="background:#1a1a2e; border-left:4px solid #7c5cfc; padding:16px; border-radius:8px; font-family:monospace; white-space:pre; overflow-x:auto; color:#e8e8f0; line-height:1.4; margin:12px 0;">{}</div>'.format(
+                    escape_html("\n".join(diagram_lines))
+                )
+            )
             continue
 
-        # Headers
-        if stripped.startswith('# '):
-            html_lines.append(f'<h2 style="font-size:18px; margin-top:0; margin-bottom:12px; color:#333; padding-bottom:8px; border-bottom:2px solid #667eea; display:inline-block;">{inline_format(stripped[2:])}</h2>')
-        elif stripped.startswith('## '):
-            html_lines.append(f'<h2 style="font-size:18px; margin-top:0; margin-bottom:12px; color:#333; padding-bottom:8px; border-bottom:2px solid #667eea; display:inline-block;">{inline_format(stripped[3:])}</h2>')
-        elif stripped.startswith('### '):
-            html_lines.append(f'<h3 style="font-size:15px; color:#555; margin-top:20px; margin-bottom:10px;">{inline_format(stripped[4:])}</h3>')
+        # Headers — # is the section top-level (distinct, larger); ## is a subhead
+        if stripped.startswith("# "):
+            html_lines.append(
+                f'<h2 style="font-size:22px; margin-top:0; margin-bottom:12px; color:#222; padding-bottom:8px; border-bottom:2px solid #667eea; display:inline-block;">{inline_format(stripped[2:])}</h2>'
+            )
+        elif stripped.startswith("## "):
+            html_lines.append(
+                f'<h2 style="font-size:18px; margin-top:0; margin-bottom:12px; color:#333; padding-bottom:8px; border-bottom:2px solid #667eea; display:inline-block;">{inline_format(stripped[3:])}</h2>'
+            )
+        elif stripped.startswith("### "):
+            html_lines.append(
+                f'<h3 style="font-size:15px; color:#555; margin-top:20px; margin-bottom:10px;">{inline_format(stripped[4:])}</h3>'
+            )
 
         # Horizontal rule
-        elif stripped in ('---', '***', '___'):
-            html_lines.append('<hr>')
+        elif stripped in ("---", "***", "___"):
+            html_lines.append(
+                '<hr style="border:none; height:1px; background:#eee; margin:20px 0;">'
+            )
 
         # Table
-        elif stripped.startswith('|'):
+        elif stripped.startswith("|"):
             if not in_table:
-                html_lines.append('<table style="border-collapse:collapse; width:100%; margin:12px 0; border:1px solid #ddd8fa; border-radius:10px; overflow:hidden;">')
+                html_lines.append(
+                    '<table style="border-collapse:collapse; width:100%; margin:12px 0; border:1px solid #ddd8fa; border-radius:10px; overflow:hidden;">'
+                )
                 in_table = True
                 table_header_done = False
             # Skip separator rows
-            if re.match(r'^\|[\s\-:|]+\|$', stripped):
+            if re.match(r"^\|[\s\-:|]+\|$", stripped):
                 i += 1
                 continue
-            cells = [c.strip() for c in stripped.split('|')[1:-1]]
-            tag = 'th' if not table_header_done else 'td'
-            row_bg = '#ffffff' if (not table_header_done or (len([l for l in html_lines if l.startswith('<tr')]) % 2 == 1)) else '#f8f7ff'
-            if tag == 'th':
-                row = ''.join(f'<th style="border:1px solid #ddd; padding:10px 12px; text-align:left; font-size:14px; background:#667eea; color:#ffffff; font-weight:600;">{inline_format(c)}</th>' for c in cells)
+            cells = [c.strip() for c in stripped.split("|")[1:-1]]
+            tag = "th" if not table_header_done else "td"
+            row_bg = (
+                "#ffffff"
+                if (
+                    not table_header_done
+                    or (len([l for l in html_lines if l.startswith("<tr")]) % 2 == 1)
+                )
+                else "#f8f7ff"
+            )
+            if tag == "th":
+                row = "".join(
+                    f'<th style="border:1px solid #ddd; padding:10px 12px; text-align:left; font-size:14px; background:#667eea; color:#ffffff; font-weight:600;">{inline_format(c)}</th>'
+                    for c in cells
+                )
                 table_header_done = True
             else:
-                row = ''.join(f'<td style="border:1px solid #ddd; padding:8px 12px; text-align:left; font-size:14px; background:{row_bg};">{inline_format(c)}</td>' for c in cells)
-            html_lines.append(f'<tr>{row}</tr>')
+                row = "".join(
+                    f'<td style="border:1px solid #ddd; padding:8px 12px; text-align:left; font-size:14px; background:{row_bg};">{inline_format(c)}</td>'
+                    for c in cells
+                )
+            html_lines.append(f"<tr>{row}</tr>")
 
-        # Blockquote
-        elif stripped.startswith('>'):
-            text = stripped[1:].strip()
-            html_lines.append(f'<blockquote style="border-left:3px solid #667eea; margin:12px 0; padding:8px 16px; background:#f8f7ff; border-radius:0 6px 6px 0; color:#555;">{inline_format(text)}</blockquote>')
+        # Blockquote — coalesce consecutive "> " lines into ONE blockquote
+        # so a multi-line quote (e.g. a step-by-step trace) renders as a single
+        # box instead of a stack of separate gapped boxes.
+        elif stripped.startswith(">"):
+            quote_lines = [inline_format(stripped[1:].strip())]
+            while i + 1 < len(lines) and lines[i + 1].strip().startswith(">"):
+                i += 1
+                quote_lines.append(inline_format(lines[i].strip()[1:].strip()))
+            body = "<br>".join(quote_lines)
+            html_lines.append(
+                f'<blockquote style="border-left:3px solid #667eea; margin:12px 0; padding:8px 16px; background:#f8f7ff; border-radius:0 6px 6px 0; color:#555;">{body}</blockquote>'
+            )
 
         # Unordered list
-        elif stripped.startswith(('- ', '* ', '• ')):
+        elif stripped.startswith(("- ", "* ", "• ")):
+            if in_list and list_type != "ul":
+                html_lines.append(f"</{list_type}>")
+                in_list = False
             if not in_list:
-                html_lines.append('<ul>')
+                html_lines.append('<ul style="padding-left:24px;">')
                 in_list = True
+                list_type = "ul"
             text = stripped[2:].strip()
-            html_lines.append(f'<li>{inline_format(text)}</li>')
+            html_lines.append(f"<li{LI_STYLE}>{inline_format(text)}</li>")
 
-        # Ordered list
-        elif re.match(r'^\d+\.\s', stripped):
+        # Ordered list — emit a real <ol> so numbered steps keep their numbers
+        elif re.match(r"^\d+\.\s", stripped):
+            if in_list and list_type != "ol":
+                html_lines.append(f"</{list_type}>")
+                in_list = False
             if not in_list:
-                html_lines.append('<ul>')
+                html_lines.append('<ol style="padding-left:24px;">')
                 in_list = True
-            text = re.sub(r'^\d+\.\s', '', stripped)
-            html_lines.append(f'<li>{inline_format(text)}</li>')
+                list_type = "ol"
+            text = re.sub(r"^\d+\.\s", "", stripped)
+            html_lines.append(f"<li{LI_STYLE}>{inline_format(text)}</li>")
 
         # Regular paragraph
         else:
-            html_lines.append(f'<p>{inline_format(stripped)}</p>')
+            html_lines.append(
+                f'<p style="margin:12px 0; line-height:1.7; color:#1a1a1a;">{inline_format(stripped)}</p>'
+            )
 
         i += 1
 
     if in_code_block:
-        html_lines.append(render_code_block('\n'.join(code_lines), code_lang))
+        html_lines.append(render_code_block("\n".join(code_lines), code_lang))
     if in_list:
-        html_lines.append('</ul>')
+        html_lines.append(f"</{list_type}>")
     if in_table:
-        html_lines.append('</table>')
+        html_lines.append("</table>")
 
-    return '<!-- <h2> <pre> <table> <blockquote> -->\n' + '\n'.join(html_lines)
+    return "<!-- <h2> <pre> <table> <blockquote> -->\n" + "\n".join(html_lines)
+
 
 def inline_format(text):
     """Handle bold, italic, inline code, links."""
     # Inline code first (protect from other formatting)
-    parts = re.split(r'(`[^`]+`)', text)
+    parts = re.split(r"(`[^`]+`)", text)
     result = []
     for part in parts:
-        if part.startswith('`') and part.endswith('`'):
-            result.append(f'<code style="font-family:\'SF Mono\', \'Fira Code\', Consolas, monospace; font-size:13px; background:#f0f0f5; padding:2px 6px; border-radius:4px; color:#e53e3e;">{escape_html(part[1:-1])}</code>')
+        if part.startswith("`") and part.endswith("`"):
+            result.append(
+                f"<code style=\"font-family:'SF Mono', 'Fira Code', Consolas, monospace; font-size:13px; background:#f0f0f5; padding:2px 6px; border-radius:4px; color:#e53e3e;\">{escape_html(part[1:-1])}</code>"
+            )
         else:
             # Escape HTML first to prevent raw HTML injection (e.g. <script> in content)
             # * and [] are not HTML-special, so markdown markers survive escaping
             part = escape_html(part)
             # Bold
-            part = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', part)
+            part = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", part)
             # Italic
-            part = re.sub(r'\*(.+?)\*', r'<em>\1</em>', part)
-            # Links — text and URL are already HTML-escaped from the step above
-            part = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" style="color:#667eea">\1</a>', part)
+            part = re.sub(r"\*(.+?)\*", r"<em>\1</em>", part)
+            # Links — text/URL already had & < > escaped above. Allow one level
+            # of balanced parens in the URL (e.g. Wikipedia /wiki/Foo_(bar));
+            # gate the scheme and escape quotes to prevent attribute breakout.
+            part = re.sub(
+                r"\[([^\]]+)\]\(([^()]*(?:\([^()]*\)[^()]*)*)\)",
+                _safe_link_email,
+                part,
+            )
             result.append(part)
-    return ''.join(result)
+    return "".join(result)
 
+
+def _safe_link_email(m):
+    """Emit an anchor only for allowlisted URL schemes; escape quotes."""
+    label, url = m.group(1), m.group(2)
+    if re.match(r"^(https?://|mailto:|/|#)", url, re.IGNORECASE):
+        safe_url = url.replace('"', "&quot;")
+        return f'<a href="{safe_url}" style="color:#667eea">{label}</a>'
+    # Non-allowlisted scheme (javascript:, data:, …): render inert.
+    return f"{label} ({url})"
 
 
 def load_subscribers(repo_dir, config):
@@ -410,44 +553,49 @@ def load_subscribers(repo_dir, config):
     subscribers = []
 
     # Source 1: Google Sheet CSV (automated via form)
-    csv_url = config.get('SUBSCRIBERS_CSV_URL', '')
+    csv_url = config.get("SUBSCRIBERS_CSV_URL", "")
     if csv_url:
         try:
             import urllib.request
             import csv
             import io
             import ssl
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-            req = urllib.request.Request(csv_url, headers={'User-Agent': 'byte-by-byte/1.0'})
+
+            ctx = (
+                ssl.create_default_context()
+            )  # verify certs — recipient list is untrusted input
+            req = urllib.request.Request(
+                csv_url, headers={"User-Agent": "byte-by-byte/1.0"}
+            )
             with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
-                text = resp.read().decode('utf-8')
+                text = resp.read().decode("utf-8")
             reader = csv.reader(io.StringIO(text))
             header = next(reader, None)  # skip header row
             # Find the email column (look for column containing "email")
             email_col = 0
             if header:
                 for i, col in enumerate(header):
-                    if 'email' in col.lower():
+                    if "email" in col.lower():
                         email_col = i
                         break
             for row in reader:
                 if len(row) > email_col:
                     email = row[email_col].strip()
-                    if email and '@' in email:
+                    if email and "@" in email:
                         subscribers.append(email)
-            print('  📋 Loaded {} subscribers from Google Sheet'.format(len(subscribers)))
+            print(
+                "  📋 Loaded {} subscribers from Google Sheet".format(len(subscribers))
+            )
         except Exception as e:
-            print('  ⚠️  Could not fetch subscriber sheet: {}'.format(e))
+            print("  ⚠️  Could not fetch subscriber sheet: {}".format(e))
 
     # Source 2: Local subscribers.txt (manual additions)
-    sub_file = os.path.join(repo_dir, 'subscribers.txt')
+    sub_file = os.path.join(repo_dir, "subscribers.txt")
     if os.path.exists(sub_file):
         with open(sub_file) as f:
             for line in f:
                 line = line.strip()
-                if line and not line.startswith('#') and '@' in line:
+                if line and not line.startswith("#") and "@" in line:
                     if line.lower() not in [s.lower() for s in subscribers]:
                         subscribers.append(line)
 
@@ -455,44 +603,51 @@ def load_subscribers(repo_dir, config):
     unsubscribed = set()
 
     # Source A: Unsubscribe Google Sheet CSV
-    unsub_csv_url = config.get('UNSUBSCRIBE_CSV_URL', '')
+    unsub_csv_url = config.get("UNSUBSCRIBE_CSV_URL", "")
     if unsub_csv_url:
         try:
             import urllib.request
             import csv
             import io
             import ssl
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-            req = urllib.request.Request(unsub_csv_url, headers={'User-Agent': 'byte-by-byte/1.0'})
+
+            ctx = (
+                ssl.create_default_context()
+            )  # verify certs — unsubscribe list is untrusted input
+            req = urllib.request.Request(
+                unsub_csv_url, headers={"User-Agent": "byte-by-byte/1.0"}
+            )
             with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
-                text = resp.read().decode('utf-8')
+                text = resp.read().decode("utf-8")
             reader = csv.reader(io.StringIO(text))
             header = next(reader, None)
             email_col = 0
             if header:
                 for i, col in enumerate(header):
-                    if 'email' in col.lower():
+                    if "email" in col.lower():
                         email_col = i
                         break
             for row in reader:
                 if len(row) > email_col:
                     email = row[email_col].strip()
-                    if email and '@' in email:
+                    if email and "@" in email:
                         unsubscribed.add(email.lower())
             if unsubscribed:
-                print('  📋 Loaded {} unsubscribe(s) from Google Sheet'.format(len(unsubscribed)))
+                print(
+                    "  📋 Loaded {} unsubscribe(s) from Google Sheet".format(
+                        len(unsubscribed)
+                    )
+                )
         except Exception as e:
-            print('  ⚠️  Could not fetch unsubscribe sheet: {}'.format(e))
+            print("  ⚠️  Could not fetch unsubscribe sheet: {}".format(e))
 
     # Source B: Local unsubscribed.txt (manual additions)
-    unsub_file = os.path.join(repo_dir, 'unsubscribed.txt')
+    unsub_file = os.path.join(repo_dir, "unsubscribed.txt")
     if os.path.exists(unsub_file):
         with open(unsub_file) as f:
             for line in f:
                 line = line.strip()
-                if line and not line.startswith('#') and '@' in line:
+                if line and not line.startswith("#") and "@" in line:
                     unsubscribed.add(line.lower())
 
     if unsubscribed:
@@ -500,67 +655,122 @@ def load_subscribers(repo_dir, config):
         subscribers = [s for s in subscribers if s.lower() not in unsubscribed]
         removed = before - len(subscribers)
         if removed:
-            print('  🚫 Removed {} unsubscribed address(es)'.format(removed))
+            print("  🚫 Removed {} unsubscribed address(es)".format(removed))
 
     return subscribers
 
+
+# Markers that indicate an un-generated / stub section. Distinctive phrases
+# only — NOT bare words like "stub"/"todo"/"see:" which occur in legitimate
+# technical prose (e.g. "stub services", "TODO comments"). Used by BOTH the
+# section loader and the doorkeeper so the two never disagree.
+STUB_MARKERS = [
+    "placeholder",
+    "content is not generated",
+    "content will be generated",
+    "not generated yet",
+    "deep dive day",
+    "deepdive.md",
+    "week-review.md",
+]
+
+# Review quizzes and weekend recaps are legitimately shorter than a full section.
+SHORT_OK_SECTIONS = {"review", "deepdive", "week-review"}
+
+
 def validate_email_content(sections_html, plain_parts):
-    """Doorkeeper: validate email content before sending. Returns list of errors (empty = OK)."""
-    errors = []
+    """Doorkeeper: per-section validation.
 
-    if not sections_html:
-        errors.append('No sections to send')
-        return errors
-
-    # Check each section for red flags
-    PLACEHOLDER_WORDS = ['placeholder', 'not generated', 'deep dive day',
-                         'see:', 'deepdive.md', 'week-review.md',
-                         'content will be', 'stub', 'todo', 'fixme']
-    MIN_REAL_CONTENT = 800  # A real section should be at least 800 chars of plain text
+    Returns a dict {section_index: [error strings]}. Sections with errors are
+    dropped by the caller; the remaining valid sections are still sent. Only an
+    empty digest (no valid section) blocks the whole email.
+    """
+    section_errors = {}
+    MIN_REAL_CONTENT = 800  # full section floor
+    MIN_SHORT_CONTENT = 150  # review/weekend floor
 
     for i, plain in enumerate(plain_parts):
-        section_name = sections_html[i][1] if i < len(sections_html) else 'unknown'
+        section_name = sections_html[i][1] if i < len(sections_html) else "unknown"
+        fid = sections_html[i][3] if i < len(sections_html) else ""
         plain_lower = plain.lower()
+        errs = []
 
-        # Check for placeholder markers in final content
-        for marker in PLACEHOLDER_WORDS:
-            # Use word-boundary check for short common words to avoid false positives
-            # e.g. 'placeholder' should not match 'placeholders' in real content
-            import re
-            if re.search(r'\b' + re.escape(marker) + r'\b', plain_lower):
-                errors.append('{}: contains placeholder marker "{}"'.format(section_name, marker))
+        for marker in STUB_MARKERS:
+            if marker in plain_lower:
+                errs.append('contains placeholder marker "{}"'.format(marker))
 
-        # Check minimum content length
-        if len(plain.strip()) < MIN_REAL_CONTENT:
-            errors.append('{}: too short ({} chars, min {})'.format(
-                section_name, len(plain.strip()), MIN_REAL_CONTENT))
+        min_len = MIN_SHORT_CONTENT if fid in SHORT_OK_SECTIONS else MIN_REAL_CONTENT
+        if len(plain.strip()) < min_len:
+            errs.append(
+                "too short ({} chars, min {})".format(len(plain.strip()), min_len)
+            )
 
-        # Check for broken markdown (unclosed code blocks)
-        fence_count = plain.count('```')
-        if fence_count % 2 != 0:
-            errors.append('{}: unclosed code block ({} ``` markers)'.format(section_name, fence_count))
+        if plain.count("```") % 2 != 0:
+            errs.append(
+                "unclosed code block ({} ``` markers)".format(plain.count("```"))
+            )
 
-    return errors
+        if errs:
+            section_errors[i] = ["{}: {}".format(section_name, e) for e in errs]
+
+    return section_errors
+
+
+def record_delivery(log_path, today, address, sections):
+    """Append one delivered address to the day's send-log entry and persist.
+
+    Called after each successful send so the log reflects partial progress —
+    the dedup guard reads `delivered` to avoid re-sending to these addresses.
+    """
+    import datetime
+
+    try:
+        log = {}
+        if os.path.exists(log_path):
+            with open(log_path) as f:
+                log = json.load(f)
+        entry = log.get(today) or {}
+        delivered = entry.get("delivered", [])
+        if address not in delivered:
+            delivered.append(address)
+        entry["delivered"] = delivered
+        entry["recipients"] = len(delivered)
+        entry["sections"] = sections
+        entry["sent_at"] = datetime.datetime.now().isoformat()
+        log[today] = entry
+        with open(log_path, "w") as f:
+            json.dump(log, f, indent=2)
+    except Exception as e:
+        print("⚠️  Could not update send log: {}".format(e))
 
 
 def main():
     config = load_config()
-    repo_dir = config['BBB_REPO_DIR']
-    email_target = config['EMAIL_TARGET']
+    repo_dir = config.get("BBB_REPO_DIR")
+    if not repo_dir:
+        print("❌ BBB_REPO_DIR not set in config.env")
+        sys.exit(1)
+    email_target = config.get("EMAIL_TARGET")
+    if not email_target:
+        print("❌ EMAIL_TARGET not set in config.env")
+        sys.exit(1)
     today = date.today().isoformat()
-    archive_dir = os.path.join(repo_dir, 'archive')
-    smtp_user = config.get('SMTP_USER', email_target)
-    smtp_pass = config.get('SMTP_APP_PASSWORD', '')
+    archive_dir = os.path.join(repo_dir, "archive")
+    smtp_user = config.get("SMTP_USER", email_target)
+    smtp_pass = config.get("SMTP_APP_PASSWORD", "")
 
-    # ── Dedup guard: skip if email already sent today ────────────────
-    send_log_path = os.path.join(repo_dir, 'email-send-log.json')
+    # ── Per-recipient dedup ──────────────────────────────────────────
+    # The send log records each address as delivery succeeds, so a failed
+    # recipient or a mid-fanout crash can NOT cause a full re-send on the
+    # next (backup) run — only the not-yet-delivered addresses are retried.
+    send_log_path = os.path.join(repo_dir, "email-send-log.json")
+    already_delivered = set()
     if os.path.exists(send_log_path):
         try:
             with open(send_log_path) as f:
                 send_log = json.load(f)
-            if today in send_log:
-                print('✅ Email already sent today ({}). Skipping to avoid duplicate.'.format(today))
-                sys.exit(0)
+            entry = send_log.get(today) or {}
+            already_delivered = {a.lower() for a in entry.get("delivered", [])}
         except Exception:
             pass  # If log is corrupted, proceed with sending
 
@@ -571,24 +781,34 @@ def main():
         if sub.lower() not in [r.lower() for r in recipients]:
             recipients.append(sub)
 
+    # Drop addresses already delivered today
+    pending = [r for r in recipients if r.lower() not in already_delivered]
+    if not pending:
+        print(
+            "✅ Already delivered to all {} recipient(s) today ({}). Skipping.".format(
+                len(recipients), today
+            )
+        )
+        sys.exit(0)
+    recipients = pending
+
     if not smtp_pass:
-        print('SMTP_APP_PASSWORD not set in config.env')
+        print("SMTP_APP_PASSWORD not set in config.env")
         sys.exit(1)
 
     # Load sections — try normal 5-section day first, fall back to review day
     sections_html = []
     plain_parts = []
     found = 0
-    PLACEHOLDER_MARKERS = ['placeholder', 'deep dive day', 'content is not generated',
-                           'see:', 'deepdive.md', 'week-review.md']
     for filename, icon, name_en, name_cn in SECTION_META:
-        path = os.path.join(archive_dir, '{}-{}.md'.format(today, filename))
+        path = os.path.join(archive_dir, "{}-{}.md".format(today, filename))
         if os.path.exists(path):
             with open(path) as f:
                 content = f.read()
             content_lower = content.lower()
-            if any(marker in content_lower for marker in PLACEHOLDER_MARKERS):
-                continue  # Skip placeholder/stub files
+            # Skip un-generated stub files (shared marker list with the doorkeeper)
+            if any(marker in content_lower for marker in STUB_MARKERS):
+                continue
             html = md_to_html(content)
             sections_html.append((icon, name_en, name_cn, filename, html))
             plain_parts.append(content)
@@ -598,7 +818,7 @@ def main():
     if found == 0:
         # Try weekend formats (deepdive, week-review) FIRST — they take priority on Sat/Sun
         for filename, icon, name_en, name_cn in WEEKEND_META:
-            path = os.path.join(archive_dir, '{}-{}.md'.format(today, filename))
+            path = os.path.join(archive_dir, "{}-{}.md".format(today, filename))
             if os.path.exists(path):
                 with open(path) as f:
                     content = f.read()
@@ -606,151 +826,172 @@ def main():
                 sections_html.append((icon, name_en, name_cn, filename, html))
                 plain_parts.append(content)
                 found += 1
-                print('🔬 Weekend content detected — sending {} email'.format(name_en))
+                print("🔬 Weekend content detected — sending {} email".format(name_en))
 
     # Try review file (weekday review days — no weekend content found)
     if found == 0:
-        review_path = os.path.join(archive_dir, '{}-{}.md'.format(today, REVIEW_META[0]))
+        review_path = os.path.join(
+            archive_dir, "{}-{}.md".format(today, REVIEW_META[0])
+        )
         if os.path.exists(review_path):
             with open(review_path) as f:
                 content = f.read()
             # Skip review files that are just stubs pointing to weekend content
             content_lower = content.lower()
-            is_stub = any(marker in content_lower for marker in ['deepdive.md', 'week-review.md', 'deep dive day'])
+            is_stub = any(
+                marker in content_lower
+                for marker in ["deepdive.md", "week-review.md", "deep dive day"]
+            )
             if not is_stub:
                 html = md_to_html(content)
                 filename, icon, name_en, name_cn = REVIEW_META
                 sections_html.append((icon, name_en, name_cn, filename, html))
                 plain_parts.append(content)
                 found = 1
-                print('📝 Review day detected — sending review quiz email')
+                print("📝 Review day detected — sending review quiz email")
             else:
-                print('📝 Review file is a weekend stub — using weekend content instead')
+                print(
+                    "📝 Review file is a weekend stub — using weekend content instead"
+                )
 
     if found == 0:
-        print('No archive files found for {}. Skipping email.'.format(today))
+        print("No archive files found for {}. Skipping email.".format(today))
         sys.exit(0)
 
-    # ── Doorkeeper: validate email content before sending ─────────────
-    doorkeeper_errors = validate_email_content(sections_html, plain_parts)
-    if doorkeeper_errors:
-        print('🚫 DOORKEEPER BLOCKED — email NOT sent:')
-        for err in doorkeeper_errors:
-            print('   ❌ {}'.format(err))
-        sys.exit(1)
+    # ── Doorkeeper: drop bad sections, send the rest ─────────────────
+    # A single short/placeholder section must NOT block the whole digest.
+    section_errors = validate_email_content(sections_html, plain_parts)
+    if section_errors:
+        kept_html, kept_plain = [], []
+        for idx in range(len(sections_html)):
+            if idx in section_errors:
+                for err in section_errors[idx]:
+                    print("   ⚠️  Dropping section — {}".format(err))
+            else:
+                kept_html.append(sections_html[idx])
+                kept_plain.append(plain_parts[idx])
+        if not kept_html:
+            print("🚫 DOORKEEPER BLOCKED — no valid sections, email NOT sent.")
+            sys.exit(1)
+        sections_html, plain_parts = kept_html, kept_plain
+        found = len(sections_html)
 
     # TOC
-    toc_links = ' &nbsp;|&nbsp; '.join(
+    toc_links = " &nbsp;|&nbsp; ".join(
         '<a href="#{}">{} {}</a>'.format(fid, icon, en)
         for icon, en, cn, fid, _ in sections_html
     )
 
-    # Section blocks
-    section_blocks = ''
+    # Section blocks — inline padding/divider because Gmail strips <style>
+    section_blocks = ""
     for icon, en, cn, fid, html in sections_html:
-        section_blocks += '''
-        <div class="section" id="{}">
+        section_blocks += """
+        <div class="section" id="{}" style="padding:24px 32px; border-bottom:1px solid #eee;">
             {}
         </div>
-        '''.format(fid, html)
+        """.format(fid, html)
 
-    web_url = 'https://yushengauggie.github.io/byte-by-byte/days/{}.html'.format(today)
+    web_url = "https://yushengauggie.github.io/byte-by-byte/days/{}.html".format(today)
 
-    full_html = '''<!DOCTYPE html>
+    full_html = """<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">{css}</head>
-<body>
-<div class="container">
-    <div class="header">
-        <h1>🧠 byte-by-byte</h1>
-        <div class="day">{today}</div>
-        <div class="tagline">A little bit every day. A lot over time. / 每天一点，积少成多</div>
+<body style="margin:0; padding:20px; background:#f5f5f5; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:#1a1a1a;">
+<div class="container" style="max-width:680px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+    <div class="header" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#ffffff; padding:28px 32px; text-align:center;">
+        <h1 style="margin:0; font-size:24px; letter-spacing:-0.5px; color:#ffffff;">🧠 byte-by-byte</h1>
+        <div class="day" style="font-size:16px; opacity:0.9; margin-top:4px;">{today}</div>
+        <div class="tagline" style="opacity:0.85; font-size:14px; margin-top:6px;">A little bit every day. A lot over time. / 每天一点，积少成多</div>
         <div style="margin-top:10px;"><a href="{web_url}" style="color:#fff; opacity:0.9; font-size:13px; text-decoration:underline;">📖 View in browser / 浏览器中查看</a></div>
     </div>
-    <div class="toc">{toc}</div>
+    <div class="toc" style="background:#f8f7ff; padding:16px 24px; text-align:center;">{toc}</div>
     {sections}
-    <div class="footer">
-        <p><a href="{web_url}" style="color:#667eea; font-weight:500;">📖 View in browser</a> &nbsp;|&nbsp; <a href="https://yushengauggie.github.io/byte-by-byte/archive.html" style="color:#667eea;">📚 Full archive</a></p>
-        <p style="margin-top:6px;">🧠 <a href="https://yushengauggie.github.io/byte-by-byte">byte-by-byte</a> — open source daily learning</p>
-        <p style="margin-top:8px;"><small><a href="{unsub_url}">Unsubscribe</a> from byte-by-byte</small></p>
+    <div class="footer" style="text-align:center; padding:20px 32px; color:#999999; font-size:13px;">
+        <p style="margin:0;"><a href="{web_url}" style="color:#667eea; font-weight:500;">📖 View in browser</a> &nbsp;|&nbsp; <a href="https://yushengauggie.github.io/byte-by-byte/archive.html" style="color:#667eea;">📚 Full archive</a></p>
+        <p style="margin-top:6px;">🧠 <a href="https://yushengauggie.github.io/byte-by-byte" style="color:#667eea;">byte-by-byte</a> — open source daily learning</p>
+        <p style="margin-top:8px;"><small><a href="{unsub_url}" style="color:#667eea;">Unsubscribe</a> from byte-by-byte</small></p>
     </div>
 </div>
 </body>
-</html>'''.format(css=CSS, today=today, toc=toc_links, sections=section_blocks,
-            web_url=web_url, unsub_url=config.get('UNSUBSCRIBE_FORM_URL', '#'))
+</html>""".format(
+        css=CSS,
+        today=today,
+        toc=toc_links,
+        sections=section_blocks,
+        web_url=web_url,
+        unsub_url=config.get("UNSUBSCRIBE_FORM_URL", "#"),
+    )
 
     # Build plain text fallback
-    plain_text = 'byte-by-byte - {}\n\n'.format(today)
-    plain_text += 'View in browser: {}\n\n'.format(web_url)
-    plain_text += '\n\n---\n\n'.join(plain_parts)
-    plain_text += '\n\n---\nA little bit every day. A lot over time.'
-    plain_text += '\nFull archive: https://yushengauggie.github.io/byte-by-byte/archive.html'
-    unsub_url = config.get('UNSUBSCRIBE_FORM_URL', '')
+    plain_text = "byte-by-byte - {}\n\n".format(today)
+    plain_text += "View in browser: {}\n\n".format(web_url)
+    plain_text += "\n\n---\n\n".join(plain_parts)
+    plain_text += "\n\n---\nA little bit every day. A lot over time."
+    plain_text += (
+        "\nFull archive: https://yushengauggie.github.io/byte-by-byte/archive.html"
+    )
+    unsub_url = config.get("UNSUBSCRIBE_FORM_URL", "")
     if unsub_url:
-        plain_text += '\n\nUnsubscribe: {}'.format(unsub_url)
+        plain_text += "\n\nUnsubscribe: {}".format(unsub_url)
     else:
-        plain_text += "\n\nReply to this email with 'UNSUBSCRIBE' to stop receiving byte-by-byte"
+        plain_text += (
+            "\n\nReply to this email with 'UNSUBSCRIBE' to stop receiving byte-by-byte"
+        )
 
     # Send to all recipients
     socket.setdefaulttimeout(20)
-    print('Sending HTML digest to {} recipients...'.format(len(recipients)))
+    print("Sending HTML digest to {} recipients...".format(len(recipients)))
 
     try:
-        with smtplib.SMTP('smtp.gmail.com', 587) as s:
+        with smtplib.SMTP("smtp.gmail.com", 587) as s:
             s.ehlo()
             s.starttls()
             s.ehlo()
             try:
                 s.login(smtp_user, smtp_pass)
             except smtplib.SMTPAuthenticationError:
-                print('❌ SMTP authentication failed — check SMTP_APP_PASSWORD in config.env')
+                print(
+                    "❌ SMTP authentication failed — check SMTP_APP_PASSWORD in config.env"
+                )
                 sys.exit(1)
 
             failed = []
             for recipient in recipients:
                 try:
-                    msg = MIMEMultipart('alternative')
-                    msg['Subject'] = '🧠 byte-by-byte ({})'.format(today)
-                    msg['From'] = smtp_user
-                    msg['To'] = recipient
-                    msg.attach(MIMEText(plain_text, 'plain', 'utf-8'))
-                    msg.attach(MIMEText(full_html, 'html', 'utf-8'))
+                    msg = MIMEMultipart("alternative")
+                    msg["Subject"] = "🧠 byte-by-byte ({})".format(today)
+                    msg["From"] = smtp_user
+                    msg["To"] = recipient
+                    msg.attach(MIMEText(plain_text, "plain", "utf-8"))
+                    msg.attach(MIMEText(full_html, "html", "utf-8"))
                     s.send_message(msg)
-                    print('  ✉️  {}'.format(recipient))
+                    print("  ✉️  {}".format(recipient))
+                    # Persist delivery immediately so a crash after this point
+                    # never re-sends to this address on the next run.
+                    record_delivery(send_log_path, today, recipient, found)
                 except Exception as e:
                     failed.append(recipient)
-                    print('  ❌ Failed to send to {}: {}'.format(recipient, e))
+                    print("  ❌ Failed to send to {}: {}".format(recipient, e))
 
             if failed:
-                print('⚠️  {} delivery failure(s): {}'.format(len(failed), ', '.join(failed)))
+                print(
+                    "⚠️  {} delivery failure(s): {}".format(
+                        len(failed), ", ".join(failed)
+                    )
+                )
+                # Non-zero so backup crons know to retry — but the already-
+                # delivered addresses are logged and will be skipped.
                 sys.exit(1)
 
     except smtplib.SMTPConnectError as e:
-        print('❌ Could not connect to SMTP server: {}'.format(e))
+        print("❌ Could not connect to SMTP server: {}".format(e))
         sys.exit(1)
     except smtplib.SMTPException as e:
-        print('❌ SMTP error: {}'.format(e))
+        print("❌ SMTP error: {}".format(e))
         sys.exit(1)
 
-    print('Email sent to {} recipients'.format(len(recipients)))
+    print("Email sent to {} recipients".format(len(recipients)))
 
-    # Log successful send
-    log_path = os.path.join(repo_dir, 'email-send-log.json')
-    try:
-        if os.path.exists(log_path):
-            with open(log_path) as f:
-                send_log = json.load(f)
-        else:
-            send_log = {}
-        send_log[today] = {
-            'sent_at': __import__('datetime').datetime.now().isoformat(),
-            'recipients': len(recipients),
-            'sections': found,
-        }
-        with open(log_path, 'w') as f:
-            json.dump(send_log, f, indent=2)
-    except Exception as e:
-        print('⚠️  Could not update send log: {}'.format(e))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

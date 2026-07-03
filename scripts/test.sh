@@ -139,25 +139,27 @@ done
 echo ""
 echo "📋 Personal info check:"
 TRACKED_FILES=$(git ls-files | grep -v 'config\.env$' | grep -v '\.gitignore')
-# Load personal patterns from config.env dynamically — nothing hardcoded
-PERSONAL_PATTERNS=""
+# Load secret values from config.env dynamically — nothing hardcoded. We check
+# each value with a fixed-string grep (values contain /, ., spaces).
+LEAKS=""
 if [ -f "$REPO_DIR/config.env" ]; then
-  _tg=$(grep '^TELEGRAM_TARGET=' "$REPO_DIR/config.env" 2>/dev/null | cut -d= -f2 | tr -d '"' || true)
-  _em=$(grep '^EMAIL_TARGET=' "$REPO_DIR/config.env" 2>/dev/null | cut -d= -f2 | tr -d '"' || true)
-  _rd=$(grep '^BBB_REPO_DIR=' "$REPO_DIR/config.env" 2>/dev/null | cut -d= -f2 | tr -d '"' || true)
-  [ -n "$_tg" ] && PERSONAL_PATTERNS="$_tg"
-  [ -n "$_em" ] && { [ -n "$PERSONAL_PATTERNS" ] && PERSONAL_PATTERNS="$PERSONAL_PATTERNS\|$_em" || PERSONAL_PATTERNS="$_em"; }
-fi
-if [ -n "$PERSONAL_PATTERNS" ]; then
-  LEAKS=$(echo "$TRACKED_FILES" | xargs grep -il "$PERSONAL_PATTERNS" 2>/dev/null || true)
+  for _key in TELEGRAM_TARGET EMAIL_TARGET SMTP_USER SMTP_APP_PASSWORD \
+              SUBSCRIBERS_CSV_URL UNSUBSCRIBE_CSV_URL UNSUBSCRIBE_FORM_URL; do
+    _val=$(grep "^${_key}=" "$REPO_DIR/config.env" 2>/dev/null | cut -d= -f2- | tr -d '"' || true)
+    # Skip empty values and obvious placeholders from config.env.example
+    case "$_val" in
+      ""|YOUR_*|your@*|xxxx*|/path/to/*) continue;;
+    esac
+    _hit=$(echo "$TRACKED_FILES" | xargs grep -Fil "$_val" 2>/dev/null || true)
+    [ -n "$_hit" ] && LEAKS="$LEAKS\n  $_key leaked in: $_hit"
+  done
 else
-  echo "  ⚠️  No config.env found, skipping personal info check"
-  LEAKS=""
+  echo "  ⚠️  No config.env found, skipping secret leak check"
 fi
 if [ -z "$LEAKS" ]; then
-  pass "No personal info in tracked files"
+  pass "No secrets/personal info in tracked files"
 else
-  fail "Personal info found in: $LEAKS"
+  fail "Secret leak detected:$(printf "%b" "$LEAKS")"
 fi
 
 # --- 6. Placeholder check in cron prompts ---
@@ -170,6 +172,22 @@ for f in cron/*.md; do
     fail "$f — missing placeholders (may be hardcoded)"
   fi
 done
+
+# --- 6b. setup.sh must not wire DEPRECATED prompts ---
+echo ""
+echo "📋 setup.sh wiring:"
+DEPRECATED_REFS=""
+for f in $(grep -rli "DEPRECATED" cron/*.md 2>/dev/null); do
+  base=$(basename "$f")
+  if grep -q "cron/$base" scripts/setup.sh 2>/dev/null; then
+    DEPRECATED_REFS="$DEPRECATED_REFS $base"
+  fi
+done
+if [ -z "$DEPRECATED_REFS" ]; then
+  pass "setup.sh does not wire any DEPRECATED cron prompt"
+else
+  fail "setup.sh wires DEPRECATED prompt(s):$DEPRECATED_REFS"
+fi
 
 # --- 7. Executables ---
 echo ""
@@ -395,8 +413,12 @@ python3 -c "
 import sys, os, json, io
 os.chdir('$REPO_DIR')
 
-# Import the module's functions
-exec(open('scripts/send-email.py').read().replace(\"if __name__ == '__main__':\n    main()\", ''))
+# Import the module's functions WITHOUT running main(): exec in a namespace
+# whose __name__ is not '__main__', so the entry guard stays dormant regardless
+# of quote style. __file__ is set so load_config() (if referenced) resolves.
+_ns = {'__name__': 'se_test', '__file__': 'scripts/send-email.py'}
+exec(open('scripts/send-email.py').read(), _ns)
+globals().update({k: v for k, v in _ns.items() if not k.startswith('__')})
 
 # Test md_to_html with realistic content
 test_md = '''# Test Header
@@ -418,15 +440,17 @@ def hello():
 > blockquote
 '''
 
-html = md_to_html(test_md)
+# Strip the leading debug comment so we match real emitted tags, not the
+# comment's tag names. Use opening-tag prefixes since tags carry inline styles.
+html = md_to_html(test_md).split('-->', 1)[-1]
 checks = {
-    '<h2>': 'header conversion',
+    '<h2': 'header conversion',
     '<strong>': 'bold conversion',
     '<em>': 'italic conversion',
-    '<pre>': 'code block',
-    '<table>': 'table conversion',
-    '<li>': 'list items',
-    '<blockquote>': 'blockquote',
+    '<pre': 'code block',
+    '<table': 'table conversion',
+    '<li': 'list items',
+    '<blockquote': 'blockquote',
 }
 ok = True
 for tag, desc in checks.items():

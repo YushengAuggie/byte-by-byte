@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$REPO_DIR/config.env"
 
-TODAY=$(date +%Y-%m-%d)
+TODAY=$(TZ="${TIMEZONE:-UTC}" date +%Y-%m-%d)
 SEND_LOG="$BBB_REPO_DIR/email-send-log.json"
 
 echo "=== byte-by-byte verify-and-send ==="

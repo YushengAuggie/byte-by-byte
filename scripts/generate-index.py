@@ -115,7 +115,10 @@ main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
   background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
   padding: 16px 24px; display: flex; align-items: center; gap: 12px;
   cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
 }
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 @media (prefers-color-scheme: light) {
   .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
 }
@@ -793,16 +796,25 @@ footer {
 
 SECTION_META = {
     "system-design": {"icon": "🏗️", "label": "System Design", "color": "#7c5cfc"},
-    "algorithms":    {"icon": "💻", "label": "Algorithms",    "color": "#60a5fa"},
-    "soft-skills":   {"icon": "🗣️", "label": "Soft Skills",   "color": "#34d399"},
-    "frontend":      {"icon": "🎨", "label": "Frontend",      "color": "#f472b6"},
-    "ai":            {"icon": "🤖", "label": "AI",            "color": "#fbbf24"},
-    "review":        {"icon": "📝", "label": "Review Quiz",   "color": "#a78bfa"},
-    "deepdive":      {"icon": "🔬", "label": "Deep Dive",     "color": "#f59e0b"},
-    "week-review":   {"icon": "📅", "label": "Week in Review", "color": "#6ee7b7"},
+    "algorithms": {"icon": "💻", "label": "Algorithms", "color": "#60a5fa"},
+    "soft-skills": {"icon": "🗣️", "label": "Soft Skills", "color": "#34d399"},
+    "frontend": {"icon": "🎨", "label": "Frontend", "color": "#f472b6"},
+    "ai": {"icon": "🤖", "label": "AI", "color": "#fbbf24"},
+    "review": {"icon": "📝", "label": "Review Quiz", "color": "#a78bfa"},
+    "deepdive": {"icon": "🔬", "label": "Deep Dive", "color": "#f59e0b"},
+    "week-review": {"icon": "📅", "label": "Week in Review", "color": "#6ee7b7"},
 }
 
-SECTION_ORDER = ["system-design", "algorithms", "soft-skills", "frontend", "ai", "review", "deepdive", "week-review"]
+SECTION_ORDER = [
+    "system-design",
+    "algorithms",
+    "soft-skills",
+    "frontend",
+    "ai",
+    "review",
+    "deepdive",
+    "week-review",
+]
 
 
 def escape_html(text: str) -> str:
@@ -813,7 +825,10 @@ def highlight_code(code: str, lang: str) -> str:
     lang = (lang or "").lower()
 
     def render_with_patterns(text: str, patterns: list[tuple[str, str, str]]) -> str:
-        combined = re.compile("|".join(f"(?P<{name}>{pattern})" for name, pattern, _ in patterns), re.MULTILINE)
+        combined = re.compile(
+            "|".join(f"(?P<{name}>{pattern})" for name, pattern, _ in patterns),
+            re.MULTILINE,
+        )
         color_map = {name: color for name, _, color in patterns}
         parts = []
         last = 0
@@ -821,20 +836,35 @@ def highlight_code(code: str, lang: str) -> str:
             start, end = match.span()
             if start > last:
                 parts.append(escape_html(text[last:start]))
-            group_name = next(name for name, value in match.groupdict().items() if value is not None)
-            parts.append(f'<span style="color:{color_map[group_name]};">{escape_html(match.group(0))}</span>')
+            group_name = next(
+                name for name, value in match.groupdict().items() if value is not None
+            )
+            parts.append(
+                f'<span style="color:{color_map[group_name]};">{escape_html(match.group(0))}</span>'
+            )
             last = end
         if last < len(text):
             parts.append(escape_html(text[last:]))
-        return ''.join(parts)
+        return "".join(parts)
 
     if lang == "python":
-        return render_with_patterns(code, [
-            ("comment", r"#[^\n]*", "#5c6370"),
-            ("string", r'"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', "#e5c07b"),
-            ("keyword", r"\b(?:False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b", "#c678dd"),
-            ("number", r"\b\d+(?:\.\d+)?\b", "#56b6c2"),
-        ])
+        return render_with_patterns(
+            code,
+            [
+                ("comment", r"#[^\n]*", "#5c6370"),
+                (
+                    "string",
+                    r'"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'',
+                    "#e5c07b",
+                ),
+                (
+                    "keyword",
+                    r"\b(?:False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b",
+                    "#c678dd",
+                ),
+                ("number", r"\b\d+(?:\.\d+)?\b", "#56b6c2"),
+            ],
+        )
     if lang == "css":
         highlighted = []
         for line in code.splitlines():
@@ -845,8 +875,10 @@ def highlight_code(code: str, lang: str) -> str:
             selector_match = re.match(r"^\s*([^{]+)(\s*\{)?\s*$", line)
             if selector_match and "{" in line and ":" not in line:
                 selector = escape_html(selector_match.group(1).rstrip())
-                suffix = escape_html(line[len(selector_match.group(1)):])
-                highlighted.append(f'<span style="color:#e06c75;">{selector}</span>{suffix}')
+                suffix = escape_html(line[len(selector_match.group(1)) :])
+                highlighted.append(
+                    f'<span style="color:#e06c75;">{selector}</span>{suffix}'
+                )
                 continue
             prop_match = re.match(r"^(\s*)([a-z-]+)(\s*:\s*)([^;]+)(;?)", line)
             if prop_match:
@@ -859,28 +891,40 @@ def highlight_code(code: str, lang: str) -> str:
             highlighted.append(escaped)
         return "\n".join(highlighted)
     if lang == "json":
-        return render_with_patterns(code, [
-            ("key", r'"(?:\\.|[^"\\])*"(?=\s*:)', "#56b6c2"),
-            ("string", r'(?<=:\s)"(?:\\.|[^"\\])*"', "#e5c07b"),
-            ("boolean", r"\b(?:true|false|null)\b", "#c678dd"),
-            ("number", r"\b-?\d+(?:\.\d+)?\b", "#56b6c2"),
-        ])
+        return render_with_patterns(
+            code,
+            [
+                ("key", r'"(?:\\.|[^"\\])*"(?=\s*:)', "#56b6c2"),
+                ("string", r'(?<=:\s)"(?:\\.|[^"\\])*"', "#e5c07b"),
+                ("boolean", r"\b(?:true|false|null)\b", "#c678dd"),
+                ("number", r"\b-?\d+(?:\.\d+)?\b", "#56b6c2"),
+            ],
+        )
     if lang in {"html", "xml"}:
         escaped = escape_html(code)
 
         def replace_tag(match):
             prefix, tag_name, attrs, suffix = match.groups()
-            attrs = re.sub(r'([a-zA-Z_:][-a-zA-Z0-9_:.]*)(=)', r'<span style="color:#e5c07b;">\1</span>\2', attrs)
-            return f'{prefix}<span style="color:#e06c75;">{tag_name}</span>{attrs}{suffix}'
+            attrs = re.sub(
+                r"([a-zA-Z_:][-a-zA-Z0-9_:.]*)(=)",
+                r'<span style="color:#e5c07b;">\1</span>\2',
+                attrs,
+            )
+            return (
+                f'{prefix}<span style="color:#e06c75;">{tag_name}</span>{attrs}{suffix}'
+            )
 
         return re.sub(r"(&lt;/?)([a-zA-Z][\w:-]*)(.*?)(/?&gt;)", replace_tag, escaped)
     if lang in {"bash", "sh", "shell"}:
         highlighted = []
         for raw_line in code.splitlines():
             stripped = raw_line.lstrip()
-            indent = raw_line[:len(raw_line) - len(stripped)]
+            indent = raw_line[: len(raw_line) - len(stripped)]
             if stripped.startswith("#"):
-                highlighted.append(escape_html(indent) + f'<span style="color:#5c6370;">{escape_html(stripped)}</span>')
+                highlighted.append(
+                    escape_html(indent)
+                    + f'<span style="color:#5c6370;">{escape_html(stripped)}</span>'
+                )
                 continue
             parts = re.split(r"(\s+)", stripped)
             line_parts = [escape_html(indent)]
@@ -891,10 +935,14 @@ def highlight_code(code: str, lang: str) -> str:
                 if part.isspace():
                     line_parts.append(escape_html(part))
                 elif not command_done and not part.startswith("-"):
-                    line_parts.append(f'<span style="color:#98c379;">{escape_html(part)}</span>')
+                    line_parts.append(
+                        f'<span style="color:#98c379;">{escape_html(part)}</span>'
+                    )
                     command_done = True
                 elif part.startswith("-"):
-                    line_parts.append(f'<span style="color:#56b6c2;">{escape_html(part)}</span>')
+                    line_parts.append(
+                        f'<span style="color:#56b6c2;">{escape_html(part)}</span>'
+                    )
                 else:
                     line_parts.append(escape_html(part))
             highlighted.append("".join(line_parts))
@@ -912,7 +960,9 @@ def is_diagram_line(line: str) -> bool:
             return True
     if stripped.count("|") >= 2 and re.search(r"[A-Za-z0-9]", stripped):
         return True
-    if len(re.findall(r"(?:->|=>|<-|→|←)", stripped)) >= 2 and re.search(r"[A-Za-z0-9]", stripped):
+    if len(re.findall(r"(?:->|=>|<-|→|←)", stripped)) >= 2 and re.search(
+        r"[A-Za-z0-9]", stripped
+    ):
         return True
     return False
 
@@ -922,7 +972,9 @@ def looks_like_diagram_block(code: str) -> bool:
     if not lines:
         return False
     diagram_count = sum(1 for line in lines if is_diagram_line(line))
-    return diagram_count >= 2 or any(re.search(r"[┌┐└┘│─┬├┤▼→←═╔╗╚╝║]", line) for line in lines)
+    return diagram_count >= 2 or any(
+        re.search(r"[┌┐└┘│─┬├┤▼→←═╔╗╚╝║]", line) for line in lines
+    )
 
 
 def render_live_demo(code: str, lang: str, section_key: str) -> str:
@@ -963,29 +1015,61 @@ def render_code_block(code: str, lang: str, section_key: str) -> str:
 
 def render_dns_flowchart() -> str:
     steps = [
-        ("1", "flow-node-browser", "你的浏览器 / Browser", "User enters a URL and starts lookup."),
-        ("2", "flow-node-cache", "本地缓存 + hosts / Local Cache + hosts", "Check browser cache, OS cache, and hosts file first."),
-        ("3", "flow-node-resolver", "递归解析器 / Recursive Resolver", "Usually ISP DNS or a public resolver like 8.8.8.8."),
-        ("4", "flow-node-root", "根域名服务器 / Root Nameserver", "Points the resolver toward the right TLD."),
-        ("5", "flow-node-tld", "TLD 服务器 / TLD Nameserver", "For `.com`, `.org`, and other top-level domains."),
-        ("6", "flow-node-authoritative", "权威 DNS / Authoritative Nameserver", "Returns the final IP for `myblog.com`."),
+        (
+            "1",
+            "flow-node-browser",
+            "你的浏览器 / Browser",
+            "User enters a URL and starts lookup.",
+        ),
+        (
+            "2",
+            "flow-node-cache",
+            "本地缓存 + hosts / Local Cache + hosts",
+            "Check browser cache, OS cache, and hosts file first.",
+        ),
+        (
+            "3",
+            "flow-node-resolver",
+            "递归解析器 / Recursive Resolver",
+            "Usually ISP DNS or a public resolver like 8.8.8.8.",
+        ),
+        (
+            "4",
+            "flow-node-root",
+            "根域名服务器 / Root Nameserver",
+            "Points the resolver toward the right TLD.",
+        ),
+        (
+            "5",
+            "flow-node-tld",
+            "TLD 服务器 / TLD Nameserver",
+            "For `.com`, `.org`, and other top-level domains.",
+        ),
+        (
+            "6",
+            "flow-node-authoritative",
+            "权威 DNS / Authoritative Nameserver",
+            "Returns the final IP for `myblog.com`.",
+        ),
     ]
-    parts = ['<div class="flow-chart" role="img" aria-label="DNS resolution flow from browser to authoritative nameserver">']
+    parts = [
+        '<div class="flow-chart" role="img" aria-label="DNS resolution flow from browser to authoritative nameserver">'
+    ]
     for index, color_class, title, subtitle in steps:
         parts.append(
-            f'''
+            f"""
   <div class="flow-node {color_class}">
     <span class="flow-badge" aria-hidden="true">{index}</span>
     <div class="flow-copy">
       <div class="flow-title">{title}</div>
       <div class="flow-subtitle">{subtitle}</div>
     </div>
-  </div>'''.rstrip()
+  </div>""".rstrip()
         )
         if index != "6":
             parts.append('  <div class="flow-arrow" aria-hidden="true"></div>')
     parts.append(
-        '''
+        """
   <div class="flow-node flow-node-return">
     <span class="flow-badge" aria-hidden="true">✓</span>
     <div class="flow-copy">
@@ -993,7 +1077,7 @@ def render_dns_flowchart() -> str:
       <div class="flow-subtitle">The browser can now open a connection to the server.</div>
     </div>
   </div>
-</div>'''.strip()
+</div>""".strip()
     )
     return "\n".join(parts)
 
@@ -1042,13 +1126,28 @@ def enhance_diagrams(html: str, section_key: str) -> str:
         text = re.sub(r"<[^>]+>", "", raw)
         text = text.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
         lowered = text.lower()
-        if any(keyword in lowered for keyword in ["root nameserver", "recursive resolver", "authoritative nameserver", "tld nameserver"]):
+        if any(
+            keyword in lowered
+            for keyword in [
+                "root nameserver",
+                "recursive resolver",
+                "authoritative nameserver",
+                "tld nameserver",
+            ]
+        ):
             return render_dns_flowchart()
-        if "syn" in lowered and "ack" in lowered and "client" in lowered and "server" in lowered:
+        if (
+            "syn" in lowered
+            and "ack" in lowered
+            and "client" in lowered
+            and "server" in lowered
+        ):
             return render_tcp_handshake()
         return match.group(0)
 
-    return re.sub(r'<div class="diagram-block">(.*?)</div>', replace, html, flags=re.DOTALL)
+    return re.sub(
+        r'<div class="diagram-block">(.*?)</div>', replace, html, flags=re.DOTALL
+    )
 
 
 def render_flexbox_playground() -> str:
@@ -1118,7 +1217,19 @@ def render_flexbox_playground() -> str:
 
 
 def render_attention_heatmap() -> str:
-    words = ["The", "animal", "didnt", "cross", "the", "street", "because", "it", "was", "too", "tired"]
+    words = [
+        "The",
+        "animal",
+        "didnt",
+        "cross",
+        "the",
+        "street",
+        "because",
+        "it",
+        "was",
+        "too",
+        "tired",
+    ]
     attention = {
         "The": 0.02,
         "animal": 0.86,
@@ -1132,7 +1243,9 @@ def render_attention_heatmap() -> str:
         "too": 0.1,
         "tired": 0.3,
     }
-    header = "".join(f'<th class="heatmap-axis">{escape_html(word)}</th>' for word in words)
+    header = "".join(
+        f'<th class="heatmap-axis">{escape_html(word)}</th>' for word in words
+    )
     cells = []
     for word in words:
         value = attention[word]
@@ -1171,11 +1284,46 @@ def render_algorithm_trace(section_key: str, text: str) -> str:
         return ""
 
     steps = [
-        ("1", "Start", "Empty counter before scanning any characters.", {}, None, False),
-        ("2", "Scan s", 'Read `anagram` and count each character.', {"a": 3, "n": 1, "g": 1, "r": 1, "m": 1}, "a", False),
-        ("3", "State", "Hash map now stores the required counts.", {"a": 3, "n": 1, "g": 1, "r": 1, "m": 1}, None, False),
-        ("4", "Scan t", 'Read `nagaram` and subtract each character back down.', {"a": 0, "n": 0, "g": 0, "r": 0, "m": 0}, "m", True),
-        ("5", "Finish", "All counts return to zero, so the strings are anagrams.", {"a": 0, "n": 0, "g": 0, "r": 0, "m": 0}, None, True),
+        (
+            "1",
+            "Start",
+            "Empty counter before scanning any characters.",
+            {},
+            None,
+            False,
+        ),
+        (
+            "2",
+            "Scan s",
+            "Read `anagram` and count each character.",
+            {"a": 3, "n": 1, "g": 1, "r": 1, "m": 1},
+            "a",
+            False,
+        ),
+        (
+            "3",
+            "State",
+            "Hash map now stores the required counts.",
+            {"a": 3, "n": 1, "g": 1, "r": 1, "m": 1},
+            None,
+            False,
+        ),
+        (
+            "4",
+            "Scan t",
+            "Read `nagaram` and subtract each character back down.",
+            {"a": 0, "n": 0, "g": 0, "r": 0, "m": 0},
+            "m",
+            True,
+        ),
+        (
+            "5",
+            "Finish",
+            "All counts return to zero, so the strings are anagrams.",
+            {"a": 0, "n": 0, "g": 0, "r": 0, "m": 0},
+            None,
+            True,
+        ),
     ]
 
     step_html = []
@@ -1187,7 +1335,11 @@ def render_algorithm_trace(section_key: str, text: str) -> str:
                 classes.append("active")
             if done and value == 0:
                 classes.append("done")
-            status = "active key" if active_key == key else ("balanced ✓" if done and value == 0 else "count")
+            status = (
+                "active key"
+                if active_key == key
+                else ("balanced ✓" if done and value == 0 else "count")
+            )
             boxes.append(
                 f'''
         <div class="{" ".join(classes)}">
@@ -1207,7 +1359,7 @@ def render_algorithm_trace(section_key: str, text: str) -> str:
 """.rstrip()
             )
         step_html.append(
-            f'''
+            f"""
     <div class="trace-step">
       <div class="trace-step-index" aria-hidden="true">{index}</div>
       <div class="trace-step-copy">
@@ -1219,7 +1371,7 @@ def render_algorithm_trace(section_key: str, text: str) -> str:
 {"".join(boxes)}
         </div>
       </div>
-    </div>'''.rstrip()
+    </div>""".rstrip()
         )
 
     return """
@@ -1307,7 +1459,9 @@ def md_to_html(text: str, section_key: str = "") -> str:
         if line.strip().startswith("|"):
             in_table = True
             if not re.match(r"^\|[\s\-:|]+\|$", line.strip()):
-                table_rows.append([cell.strip() for cell in line.strip().split("|")[1:-1]])
+                table_rows.append(
+                    [cell.strip() for cell in line.strip().split("|")[1:-1]]
+                )
             i += 1
             continue
 
@@ -1334,7 +1488,9 @@ def md_to_html(text: str, section_key: str = "") -> str:
             while i < len(lines) and is_diagram_line(lines[i]):
                 diagram_lines.append(lines[i].rstrip())
                 i += 1
-            html_lines.append(f'<div class="diagram-block">{escape_html(chr(10).join(diagram_lines))}</div>')
+            html_lines.append(
+                f'<div class="diagram-block">{escape_html(chr(10).join(diagram_lines))}</div>'
+            )
             continue
 
         if not line.strip():
@@ -1351,7 +1507,9 @@ def md_to_html(text: str, section_key: str = "") -> str:
         html_lines.append(flush_table())
     if section_key == "frontend" and "flexbox" in text.lower():
         html_lines.append(render_flexbox_playground())
-    if section_key == "ai" and any(keyword in text.lower() for keyword in ["attention", "transformer"]):
+    if section_key == "ai" and any(
+        keyword in text.lower() for keyword in ["attention", "transformer"]
+    ):
         html_lines.append(render_attention_heatmap())
     trace = render_algorithm_trace(section_key, text)
     if trace:
@@ -1359,25 +1517,42 @@ def md_to_html(text: str, section_key: str = "") -> str:
     return enhance_diagrams("\n".join(html_lines), section_key)
 
 
+def _safe_link(m: "re.Match") -> str:
+    """Build an anchor only for allowlisted URL schemes; escape quotes.
+
+    Prevents stored XSS (e.g. javascript: URLs or attribute breakout via ")
+    reaching the public site from LLM/web-search-sourced markdown. `text` has
+    already had & < > escaped by inline_md before this runs.
+    """
+    label, url = m.group(1), m.group(2)
+    if re.match(r"^(https?://|mailto:|/|#)", url, re.IGNORECASE):
+        safe_url = url.replace('"', "&quot;")
+        return f'<a href="{safe_url}">{label}</a>'
+    # Non-allowlisted scheme (javascript:, data:, …): render inert, not a link.
+    return f"{label} ({url})"
+
+
 def inline_md(text: str) -> str:
     """Apply inline markdown: bold, italic, code, links."""
     # HTML escape first
     text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     # Inline code
-    text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
+    text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
     # Bold+italic
-    text = re.sub(r'\*{3}(.+?)\*{3}', r'<strong><em>\1</em></strong>', text)
+    text = re.sub(r"\*{3}(.+?)\*{3}", r"<strong><em>\1</em></strong>", text)
     # Bold
-    text = re.sub(r'\*{2}(.+?)\*{2}', r'<strong>\1</strong>', text)
-    text = re.sub(r'__(.+?)__', r'<strong>\1</strong>', text)
+    text = re.sub(r"\*{2}(.+?)\*{2}", r"<strong>\1</strong>", text)
+    text = re.sub(r"__(.+?)__", r"<strong>\1</strong>", text)
     # Italic
-    text = re.sub(r'\*(.+?)\*', r'<em>\1</em>', text)
-    # Links
-    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', text)
+    text = re.sub(r"\*(.+?)\*", r"<em>\1</em>", text)
+    # Links — allow one level of balanced parens in the URL (e.g. Wikipedia
+    # /wiki/Foo_(bar)); gate the scheme and escape quotes via _safe_link.
+    text = re.sub(r"\[([^\]]+)\]\(([^()]*(?:\([^()]*\)[^()]*)*)\)", _safe_link, text)
     return text
 
 
 # ── Parse archive files ─────────────────────────────────────────────────────────
+
 
 def parse_archive_dir(archive_dir: Path) -> dict:
     """
@@ -1385,7 +1560,7 @@ def parse_archive_dir(archive_dir: Path) -> dict:
         { "2026-03-14": { "system-design": <content str>, "algorithms": ..., ... } }
     """
     days = defaultdict(dict)
-    pattern = re.compile(r'^(\d{4}-\d{2}-\d{2})-(.+)\.md$')
+    pattern = re.compile(r"^(\d{4}-\d{2}-\d{2})-(.+)\.md$")
 
     for f in sorted(archive_dir.glob("*.md")):
         if f.name.startswith("qa-report") or f.name.endswith("-qa-report.md"):
@@ -1404,6 +1579,7 @@ def parse_archive_dir(archive_dir: Path) -> dict:
 
 # ── Generate day HTML ────────────────────────────────────────────────────────────
 
+
 def section_header_text(section_key: str, content: str) -> Tuple[str, str]:
     """Extract a subtitle from the first line of content."""
     meta = SECTION_META[section_key]
@@ -1412,14 +1588,16 @@ def section_header_text(section_key: str, content: str) -> Tuple[str, str]:
     for line in first_lines:
         line = line.strip().lstrip("#").strip()
         if line and not line.startswith("*Date:"):
-            subtitle = re.sub(r'\*.*\*', '', line).strip()
+            subtitle = re.sub(r"\*.*\*", "", line).strip()
             if len(subtitle) > 70:
                 subtitle = subtitle[:67] + "..."
             break
     return meta["label"], subtitle
 
 
-def generate_day_html(date_str: str, sections: dict, prev_date: Optional[str], next_date: Optional[str]) -> str:
+def generate_day_html(
+    date_str: str, sections: dict, prev_date: Optional[str], next_date: Optional[str]
+) -> str:
     """Generate a full HTML page for one day."""
     try:
         dt = datetime.strptime(date_str, "%Y-%m-%d")
@@ -1438,30 +1616,41 @@ def generate_day_html(date_str: str, sections: dict, prev_date: Optional[str], n
         meta = SECTION_META[key]
         label, subtitle = section_header_text(key, sections[key])
         content_html = md_to_html(sections[key], key)
-        open_class = "open" if idx == 0 else ""  # first section open by default
+        # Expand every section by default so the full read is visible without JS
+        # and for screen readers; the toggle is progressive enhancement.
+        open_class = "open"
 
         section_blocks.append(f"""
     <div class="section-block" id="section-{key}">
-      <div class="section-header {open_class}" onclick="toggleSection(this)">
-        <span class="section-header-icon">{meta['icon']}</span>
+      <button type="button" class="section-header {open_class}" aria-expanded="true" aria-controls="content-{key}" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">{meta["icon"]}</span>
         <div>
-          <div class="section-header-title">{meta['icon']} {label}</div>
+          <div class="section-header-title">{meta["icon"]} {label}</div>
           <div class="section-header-sub">{subtitle}</div>
         </div>
-        <span class="section-header-chevron">▼</span>
-      </div>
-      <div class="section-content {open_class}">
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content {open_class}" id="content-{key}">
         {content_html}
       </div>
     </div>""")
 
-    prev_link = f'<a href="{prev_date}.html" class="day-nav-btn">← {prev_date}</a>' if prev_date else '<span></span>'
-    next_link = f'<a href="{next_date}.html" class="day-nav-btn">{next_date} →</a>' if next_date else '<span></span>'
+    prev_link = (
+        f'<a href="{prev_date}.html" class="day-nav-btn">← {prev_date}</a>'
+        if prev_date
+        else "<span></span>"
+    )
+    next_link = (
+        f'<a href="{next_date}.html" class="day-nav-btn">{next_date} →</a>'
+        if next_date
+        else "<span></span>"
+    )
 
     sections_present = [SECTION_META[k] for k in SECTION_ORDER if k in sections]
     section_pills = " ".join(
         f'<a href="#section-{k}" class="nav-day-btn">{SECTION_META[k]["icon"]} {SECTION_META[k]["label"]}</a>'
-        for k in SECTION_ORDER if k in sections
+        for k in SECTION_ORDER
+        if k in sections
     )
 
     return f"""<!DOCTYPE html>
@@ -1470,9 +1659,9 @@ def generate_day_html(date_str: str, sections: dict, prev_date: Optional[str], n
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>byte-by-byte — {date_str}</title>
-  <meta name="description" content="byte-by-byte daily lessons for {human_date}: system design, algorithms, soft skills, frontend, AI." />
+  <meta name="description" content="byte-by-byte daily lessons for {human_date}: system design, algorithms, soft skills, Python craft, AI." />
   <meta property="og:title" content="byte-by-byte — {human_date}" />
-  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, frontend, AI." />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
   <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/{date_str}.html" />
   <style>
 {DAY_CSS}
@@ -1484,8 +1673,8 @@ def generate_day_html(date_str: str, sections: dict, prev_date: Optional[str], n
   <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
   <div class="nav-links">
     <a href="../archive.html">← Archive</a>
-    {prev_link.replace('class="day-nav-btn"', 'style="color:var(--text2)"') if prev_date else ''}
-    {next_link.replace('class="day-nav-btn"', 'style="color:var(--text2)"') if next_date else ''}
+    {prev_link.replace('class="day-nav-btn"', 'style="color:var(--text2)"') if prev_date else ""}
+    {next_link.replace('class="day-nav-btn"', 'style="color:var(--text2)"') if next_date else ""}
   </div>
 </nav>
 
@@ -1511,7 +1700,7 @@ def generate_day_html(date_str: str, sections: dict, prev_date: Optional[str], n
     {next_link}
   </div>
 
-  {''.join(section_blocks)}
+  {"".join(section_blocks)}
 </main>
 
 <footer>
@@ -1526,7 +1715,8 @@ def generate_day_html(date_str: str, sections: dict, prev_date: Optional[str], n
 
 <script>
 function toggleSection(header) {{
-  header.classList.toggle('open');
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   const content = header.nextElementSibling;
   content.classList.toggle('open');
 }}
@@ -1568,6 +1758,7 @@ document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
 
 # ── Generate archive.html ────────────────────────────────────────────────────────
 
+
 def generate_archive_html(days: dict) -> str:
     """Generate the main archive index page."""
     sorted_dates = sorted(days.keys(), reverse=True)
@@ -1584,7 +1775,8 @@ def generate_archive_html(days: dict) -> str:
         day_num = len(sorted_dates) - i  # newest = highest day
         section_badges = " ".join(
             f'<span class="section-badge">{SECTION_META[k]["icon"]} {SECTION_META[k]["label"]}</span>'
-            for k in SECTION_ORDER if k in sections
+            for k in SECTION_ORDER
+            if k in sections
         )
         rows.append(f"""      <div class="archive-day">
         <div>
@@ -1598,10 +1790,14 @@ def generate_archive_html(days: dict) -> str:
       </div>""")
 
     total = len(sorted_dates)
-    rows_html = "\n".join(rows) if rows else """      <div class="empty-state">
+    rows_html = (
+        "\n".join(rows)
+        if rows
+        else """      <div class="empty-state">
         <span class="emoji">📭</span>
         <p>No archive entries yet. Run <code>python3 scripts/generate-index.py</code> after generating some days.</p>
       </div>"""
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1740,7 +1936,7 @@ def generate_archive_html(days: dict) -> str:
   <div class="container">
     <div class="archive-intro">
       <strong>How to use this archive:</strong> Each day has 5 sections — system design, algorithms,
-      soft skills, frontend, and AI. Click any day to read the full lesson.
+      soft skills, Python craft, and AI. Click any day to read the full lesson.
       Newest first.
     </div>
 
@@ -1768,9 +1964,12 @@ def generate_archive_html(days: dict) -> str:
 
 # ── Main ──────────────────────────────────────────────────────────────────────────
 
+
 def main():
     parser = argparse.ArgumentParser(description="Generate byte-by-byte archive index.")
-    parser.add_argument("--archive-dir", default="archive", help="Path to archive/ directory")
+    parser.add_argument(
+        "--archive-dir", default="archive", help="Path to archive/ directory"
+    )
     parser.add_argument("--docs-dir", default="docs", help="Path to docs/ directory")
     args = parser.parse_args()
 
@@ -1795,7 +1994,9 @@ def main():
     if not days:
         print("⚠️  No archive files found. Run generate.sh first to create content.")
         # Still write a placeholder archive.html
-        (docs_dir / "archive.html").write_text(generate_archive_html({}), encoding="utf-8")
+        (docs_dir / "archive.html").write_text(
+            generate_archive_html({}), encoding="utf-8"
+        )
         print(f"✅ Wrote docs/archive.html (empty state)")
         return
 
