@@ -73,37 +73,64 @@ resolve_prompt() {
 
 echo "Creating cron jobs..."
 
-# Job 1: Main daily generation
-DAILY_PROMPT=$(resolve_prompt "$REPO_DIR/cron/daily-prompt.md")
+# Pick the generation prompt for a given weekday. Weekdays (Mon–Fri) use the
+# 5-section weekday prompt (which also handles review days); Sat/Sun use the
+# deep-dive / week-in-review prompts. The legacy combined daily prompt and the
+# legacy QA prompt are DEPRECATED and intentionally NOT wired here.
+GEN_PROMPT_FILE="$REPO_DIR/cron/weekday-prompt.md"
+SAT_PROMPT_FILE="$REPO_DIR/cron/saturday-prompt.md"
+SUN_PROMPT_FILE="$REPO_DIR/cron/sunday-prompt.md"
+REVIEW_SEND_FILE="$REPO_DIR/cron/review-and-send-prompt.md"
+
+# Job 1: Weekday generation (Mon–Fri) — generate content, do NOT send
+WEEKDAY_PROMPT=$(resolve_prompt "$GEN_PROMPT_FILE")
 "$OPENCLAW_BIN" cron add \
-  --name "byte-by-byte daily" \
-  --cron "$CRON_SCHEDULE" \
+  --name "byte-by-byte generate (weekday)" \
+  --cron "$(echo "$CRON_SCHEDULE" | awk '{print $1, $2, $3, $4, "1-5"}')" \
   --tz "$TIMEZONE" \
   --exact \
   --session isolated \
-  --message "$DAILY_PROMPT" \
+  --message "$WEEKDAY_PROMPT" \
   --announce \
   --channel telegram \
   --to "$TELEGRAM_TARGET" \
   --model "$MODEL" 2>&1 | head -3
+echo "✓ Created: byte-by-byte generate (weekday)"
 
-echo "✓ Created: byte-by-byte daily ($CRON_SCHEDULE $TIMEZONE)"
-
-# Job 2: QA reviewer
-QA_PROMPT=$(resolve_prompt "$REPO_DIR/cron/qa-prompt.md")
+# Job 2: Saturday deep dive
+SAT_PROMPT=$(resolve_prompt "$SAT_PROMPT_FILE")
 "$OPENCLAW_BIN" cron add \
-  --name "byte-by-byte QA" \
+  --name "byte-by-byte generate (saturday)" \
+  --cron "$(echo "$CRON_SCHEDULE" | awk '{print $1, $2, $3, $4, "6"}')" \
+  --tz "$TIMEZONE" --exact --session isolated \
+  --message "$SAT_PROMPT" --announce --channel telegram \
+  --to "$TELEGRAM_TARGET" --model "$MODEL" 2>&1 | head -3
+echo "✓ Created: byte-by-byte generate (saturday)"
+
+# Job 3: Sunday week-in-review
+SUN_PROMPT=$(resolve_prompt "$SUN_PROMPT_FILE")
+"$OPENCLAW_BIN" cron add \
+  --name "byte-by-byte generate (sunday)" \
+  --cron "$(echo "$CRON_SCHEDULE" | awk '{print $1, $2, $3, $4, "0"}')" \
+  --tz "$TIMEZONE" --exact --session isolated \
+  --message "$SUN_PROMPT" --announce --channel telegram \
+  --to "$TELEGRAM_TARGET" --model "$MODEL" 2>&1 | head -3
+echo "✓ Created: byte-by-byte generate (sunday)"
+
+# Job 4: Review + send (all days), a few minutes after generation
+REVIEW_PROMPT=$(resolve_prompt "$REVIEW_SEND_FILE")
+"$OPENCLAW_BIN" cron add \
+  --name "byte-by-byte review-and-send" \
   --cron "$QA_SCHEDULE" \
   --tz "$TIMEZONE" \
   --exact \
   --session isolated \
-  --message "$QA_PROMPT" \
+  --message "$REVIEW_PROMPT" \
   --announce \
   --channel telegram \
   --to "$TELEGRAM_TARGET" \
   --model "$MODEL" 2>&1 | head -3
-
-echo "✓ Created: byte-by-byte QA ($QA_SCHEDULE $TIMEZONE)"
+echo "✓ Created: byte-by-byte review-and-send ($QA_SCHEDULE $TIMEZONE)"
 
 # Install pre-commit hook
 echo ""

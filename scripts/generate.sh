@@ -16,7 +16,7 @@ STATE_FILE="$BBB_REPO_DIR/state.json"
 CONTENT_DIR="$BBB_REPO_DIR/content"
 ARCHIVE_DIR="$BBB_REPO_DIR/archive"
 DIFFICULTY_MAP="$CONTENT_DIR/difficulty-map.json"
-TODAY=$(date +%Y-%m-%d)
+TODAY=$(TZ="${TIMEZONE:-UTC}" date +%Y-%m-%d)
 
 mkdir -p "$ARCHIVE_DIR"
 
@@ -26,13 +26,23 @@ get_index() {
 }
 
 get_topic() {
+  # NOTE: no clamping. If the index is past the end of the content file the
+  # track is exhausted — fail loudly (exit 3) rather than silently repeating
+  # the last topic forever. Callers guard with is_exhausted() first.
   python3 -c "
-import json
+import json, sys
 with open('$1') as f:
     items = json.load(f)
-idx = min(int('$2'), len(items) - 1)
+idx = int('$2')
+if idx < 0 or idx >= len(items):
+    sys.stderr.write('EXHAUSTED: index %d out of range for $1 (len %d)\n' % (idx, len(items)))
+    sys.exit(3)
 print(json.dumps(items[idx]))
 "
+}
+
+content_len() {
+  python3 -c "import json; print(len(json.load(open('$1'))))"
 }
 
 extract() {
@@ -144,9 +154,22 @@ rm -f /tmp/bbb-review.txt
 
 # Section 1: System Design
 SD_INDEX=$(get_index "systemDesignIndex")
-SD_TOPIC=$(get_topic "$CONTENT_DIR/system-design.json" "$SD_INDEX")
+SD_LEN=$(content_len "$CONTENT_DIR/system-design.json")
 SD_DAY=$((SD_INDEX + 1))
-cat > /tmp/bbb-section-1.txt << EOF
+if (( SD_INDEX >= SD_LEN )); then
+  cat > /tmp/bbb-section-1.txt << EOF
+SECTION: System Design
+DAY: $SD_DAY
+MODE: SYNTHESIS
+EXHAUSTED: yes
+DIFFICULTY_PHASE: $DIFFICULTY_PHASE
+ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-system-design.md
+INSTRUCTIONS: All $SD_LEN curated System Design topics have been covered. Do NOT repeat a past topic. Instead synthesize/compare across previously covered topics or go deeper on a real-world architecture, at $DIFFICULTY_PHASE level.
+EOF
+  echo "⚠️  Section 1: System Design EXHAUSTED ($SD_INDEX/$SD_LEN) — synthesis mode (index will NOT advance)"
+else
+  SD_TOPIC=$(get_topic "$CONTENT_DIR/system-design.json" "$SD_INDEX")
+  cat > /tmp/bbb-section-1.txt << EOF
 SECTION: System Design
 DAY: $SD_DAY
 TOPIC: $(extract "$SD_TOPIC" "title")
@@ -155,12 +178,26 @@ DIFFICULTY: $(extract "$SD_TOPIC" "difficulty")
 DIFFICULTY_PHASE: $DIFFICULTY_PHASE
 ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-system-design.md
 EOF
-echo "✓ Section 1: System Design Day $SD_DAY — $(extract "$SD_TOPIC" "title")"
+  echo "✓ Section 1: System Design Day $SD_DAY — $(extract "$SD_TOPIC" "title")"
+fi
 
 # Section 2: Algorithms
 LC_INDEX=$(get_index "leetcodeIndex")
-LC_TOPIC=$(get_topic "$CONTENT_DIR/neetcode-150.json" "$LC_INDEX")
+LC_LEN=$(content_len "$CONTENT_DIR/neetcode-150.json")
 LC_DAY=$((LC_INDEX + 1))
+if (( LC_INDEX >= LC_LEN )); then
+  cat > /tmp/bbb-section-2.txt << EOF
+SECTION: Algorithms
+DAY: $LC_DAY
+MODE: SYNTHESIS
+EXHAUSTED: yes
+DIFFICULTY_PHASE: $DIFFICULTY_PHASE
+ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-algorithms.md
+INSTRUCTIONS: All $LC_LEN NeetCode problems have been covered. Do NOT repeat a past problem. Instead synthesize a pattern comparison ("when Two Pointers vs Sliding Window?") or pose a harder mixed-pattern problem, at $DIFFICULTY_PHASE level.
+EOF
+  echo "⚠️  Section 2: Algorithms EXHAUSTED ($LC_INDEX/$LC_LEN) — synthesis mode (index will NOT advance)"
+else
+LC_TOPIC=$(get_topic "$CONTENT_DIR/neetcode-150.json" "$LC_INDEX")
 LC_PATTERN=$(extract "$LC_TOPIC" "pattern")
 
 # Calculate position within pattern block + get template
@@ -222,12 +259,26 @@ ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-algorithms.md
 $PATTERN_INFO
 EOF
 echo "✓ Section 2: Algorithms Day $LC_DAY — #$(extract "$LC_TOPIC" "leetcode_num") $(extract "$LC_TOPIC" "title") [$LC_PATTERN]"
+fi
 
 # Section 3: Soft Skills
 BH_INDEX=$(get_index "behavioralIndex")
-BH_TOPIC=$(get_topic "$CONTENT_DIR/behavioral.json" "$BH_INDEX")
+BH_LEN=$(content_len "$CONTENT_DIR/behavioral.json")
 BH_DAY=$((BH_INDEX + 1))
-cat > /tmp/bbb-section-3.txt << EOF
+if (( BH_INDEX >= BH_LEN )); then
+  cat > /tmp/bbb-section-3.txt << EOF
+SECTION: Soft Skills
+DAY: $BH_DAY
+MODE: SYNTHESIS
+EXHAUSTED: yes
+DIFFICULTY_PHASE: $DIFFICULTY_PHASE
+ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-soft-skills.md
+INSTRUCTIONS: All $BH_LEN curated behavioral questions have been covered. Do NOT repeat a past question. Instead pose a fresh senior/staff-level scenario or synthesize a STAR framework across previously covered themes.
+EOF
+  echo "⚠️  Section 3: Soft Skills EXHAUSTED ($BH_INDEX/$BH_LEN) — synthesis mode (index will NOT advance)"
+else
+  BH_TOPIC=$(get_topic "$CONTENT_DIR/behavioral.json" "$BH_INDEX")
+  cat > /tmp/bbb-section-3.txt << EOF
 SECTION: Soft Skills
 DAY: $BH_DAY
 QUESTION: $(extract "$BH_TOPIC" "question")
@@ -236,13 +287,27 @@ LEVEL: $(extract "$BH_TOPIC" "level")
 DIFFICULTY_PHASE: $DIFFICULTY_PHASE
 ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-soft-skills.md
 EOF
-echo "✓ Section 3: Soft Skills Day $BH_DAY — $(extract "$BH_TOPIC" "category")"
+  echo "✓ Section 3: Soft Skills Day $BH_DAY — $(extract "$BH_TOPIC" "category")"
+fi
 
 # Section 4: Python Craft
 PC_INDEX=$(get_index "pythonCraftIndex")
-PC_TOPIC=$(get_topic "$CONTENT_DIR/python-craft.json" "$PC_INDEX")
+PC_LEN=$(content_len "$CONTENT_DIR/python-craft.json")
 PC_DAY=$((PC_INDEX + 1))
-cat > /tmp/bbb-section-4.txt << EOF
+if (( PC_INDEX >= PC_LEN )); then
+  cat > /tmp/bbb-section-4.txt << EOF
+SECTION: Python Craft
+DAY: $PC_DAY
+MODE: SYNTHESIS
+EXHAUSTED: yes
+DIFFICULTY_PHASE: $DIFFICULTY_PHASE
+ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-python-craft.md
+INSTRUCTIONS: All $PC_LEN curated Python Craft topics have been covered. Do NOT repeat a past topic. Instead go deeper on internals or synthesize across previously covered topics, with runnable code, at $DIFFICULTY_PHASE level.
+EOF
+  echo "⚠️  Section 4: Python Craft EXHAUSTED ($PC_INDEX/$PC_LEN) — synthesis mode (index will NOT advance)"
+else
+  PC_TOPIC=$(get_topic "$CONTENT_DIR/python-craft.json" "$PC_INDEX")
+  cat > /tmp/bbb-section-4.txt << EOF
 SECTION: Python Craft
 DAY: $PC_DAY
 TITLE: $(extract "$PC_TOPIC" "title")
@@ -251,7 +316,8 @@ WEEK: $(extract "$PC_TOPIC" "week")
 DIFFICULTY_PHASE: $DIFFICULTY_PHASE
 ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-python-craft.md
 EOF
-echo "✓ Section 4: Python Craft Day $PC_DAY — $(extract "$PC_TOPIC" "title")"
+  echo "✓ Section 4: Python Craft Day $PC_DAY — $(extract "$PC_TOPIC" "title")"
+fi
 
 # Section 5: AI
 AI_INDEX=$(get_index "aiTopicIndex")
@@ -267,9 +333,22 @@ ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-ai.md
 EOF
   echo "✓ Section 5: AI Day $AI_DAY — NEWS"
 else
-  AI_TOPIC=$(get_topic "$CONTENT_DIR/ai-topics.json" "$AI_INDEX")
-  AI_TITLE=$(extract "$AI_TOPIC" "title")
-  cat > /tmp/bbb-section-5.txt << EOF
+  AI_LEN=$(content_len "$CONTENT_DIR/ai-topics.json")
+  if (( AI_INDEX >= AI_LEN )); then
+    cat > /tmp/bbb-section-5.txt << EOF
+SECTION: AI
+DAY: $AI_DAY
+MODE: SYNTHESIS
+EXHAUSTED: yes
+DIFFICULTY_PHASE: $DIFFICULTY_PHASE
+ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-ai.md
+INSTRUCTIONS: All $AI_LEN curated AI concepts have been covered. Do NOT repeat a past concept. Instead go deeper on a previously covered concept with fresh runnable code, or synthesize across concepts, at $DIFFICULTY_PHASE level.
+EOF
+    echo "⚠️  Section 5: AI CONCEPT EXHAUSTED ($AI_INDEX/$AI_LEN) — synthesis mode (index will NOT advance)"
+  else
+    AI_TOPIC=$(get_topic "$CONTENT_DIR/ai-topics.json" "$AI_INDEX")
+    AI_TITLE=$(extract "$AI_TOPIC" "title")
+    cat > /tmp/bbb-section-5.txt << EOF
 SECTION: AI
 DAY: $AI_DAY
 MODE: CONCEPT
@@ -278,7 +357,8 @@ CATEGORY: $(extract "$AI_TOPIC" "category")
 DIFFICULTY_PHASE: $DIFFICULTY_PHASE
 ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-ai.md
 EOF
-  echo "✓ Section 5: AI Day $AI_DAY — CONCEPT: $AI_TITLE"
+    echo "✓ Section 5: AI Day $AI_DAY — CONCEPT: $AI_TITLE"
+  fi
 fi
 
 echo ""

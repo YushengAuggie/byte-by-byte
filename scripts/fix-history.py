@@ -24,8 +24,17 @@ REPO_DIR = SCRIPT_DIR.parent
 ARCHIVE_DIR = REPO_DIR / "archive"
 STATE_FILE = REPO_DIR / "state.json"
 
-# Section slugs that count toward a "full day"
-NORMAL_SECTIONS = {"system-design", "algorithms", "soft-skills", "frontend", "ai"}
+# A "full day" is the three shared sections plus a 4th that changed when the
+# curriculum migrated frontend → python-craft (around day 46). Accept either.
+CORE_SECTIONS = {"system-design", "algorithms", "soft-skills", "ai"}
+VARIABLE_SECTIONS = {"frontend", "python-craft"}
+NORMAL_SECTIONS = CORE_SECTIONS | VARIABLE_SECTIONS
+
+
+def is_complete_day(secs: set) -> bool:
+    """A complete day = all core sections + exactly one of the variable ones."""
+    return CORE_SECTIONS.issubset(secs) and bool(VARIABLE_SECTIONS & secs)
+
 
 # Maps archive slug → state.json key for extracting titles
 SECTION_TITLE_KEYS = {
@@ -33,6 +42,7 @@ SECTION_TITLE_KEYS = {
     "algorithms": "algorithms",
     "soft-skills": "soft_skills",
     "frontend": "frontend",
+    "python-craft": "python_craft",
     "ai": "ai",
 }
 
@@ -42,7 +52,7 @@ def scan_archive(archive_dir: Path) -> dict:
     Returns dict: date_str → dict of {section_slug: content_text}
     Only includes dates with all 5 normal sections present.
     """
-    pattern = re.compile(r'^(\d{4}-\d{2}-\d{2})-(.+)\.md$')
+    pattern = re.compile(r"^(\d{4}-\d{2}-\d{2})-(.+)\.md$")
     days = {}
     for f in sorted(archive_dir.glob("*.md")):
         m = pattern.match(f.name)
@@ -51,21 +61,26 @@ def scan_archive(archive_dir: Path) -> dict:
         date_str, section = m.group(1), m.group(2)
         if section not in NORMAL_SECTIONS:
             continue
-        days.setdefault(date_str, {})[section] = f.read_text(encoding='utf-8')
+        days.setdefault(date_str, {})[section] = f.read_text(encoding="utf-8")
 
-    # Only return days with all 5 sections
-    return {d: secs for d, secs in days.items() if set(secs.keys()) == NORMAL_SECTIONS}
+    # Only return days that have a complete section set (either schema)
+    return {d: secs for d, secs in days.items() if is_complete_day(set(secs.keys()))}
 
 
 def extract_title(content: str) -> str:
     """Pull the first H1/H2 heading from markdown content as a title."""
     for line in content.splitlines():
         line = line.strip()
-        if line.startswith('# ') or line.startswith('## '):
-            title = re.sub(r'^#{1,3}\s+', '', line)
+        if line.startswith("# ") or line.startswith("## "):
+            title = re.sub(r"^#{1,3}\s+", "", line)
             # Strip emoji prefixes and day labels like "🏗️ Day 7 /"
-            title = re.sub(r'^[\U00010000-\U0010ffff\u2600-\u26FF\u2700-\u27BF\s]+', '', title, flags=re.UNICODE)
-            title = re.sub(r'^Day\s+\d+\s*[/·\-]?\s*', '', title, flags=re.IGNORECASE)
+            title = re.sub(
+                r"^[\U00010000-\U0010ffff\u2600-\u26FF\u2700-\u27BF\s]+",
+                "",
+                title,
+                flags=re.UNICODE,
+            )
+            title = re.sub(r"^Day\s+\d+\s*[/·\-]?\s*", "", title, flags=re.IGNORECASE)
             title = title.strip()
             if title:
                 return title[:120]
@@ -76,15 +91,15 @@ def extract_behavioral_question(content: str) -> str:
     """Extract behavioral question from soft-skills content."""
     # Look for a line starting with "Tell me", "Describe", "How", etc.
     question_patterns = [
-        r'^(Tell me about .+)',
-        r'^(Describe a .+)',
-        r'^(How do you .+)',
-        r'^(How would you .+)',
-        r'^(What .+\?)',
-        r'^(When .+\?)',
+        r"^(Tell me about .+)",
+        r"^(Describe a .+)",
+        r"^(How do you .+)",
+        r"^(How would you .+)",
+        r"^(What .+\?)",
+        r"^(When .+\?)",
     ]
     for line in content.splitlines():
-        line = line.strip().lstrip('#').lstrip('*').strip()
+        line = line.strip().lstrip("#").lstrip("*").strip()
         for pat in question_patterns:
             m = re.match(pat, line, re.IGNORECASE)
             if m:
@@ -93,29 +108,33 @@ def extract_behavioral_question(content: str) -> str:
 
 
 def build_history_entry(day_num: int, date_str: str, sections: dict) -> dict:
-    """Build a history entry dict for a given day."""
-    sd_title = extract_title(sections.get("system-design", ""))
-    algo_title = extract_title(sections.get("algorithms", ""))
-    soft_q = extract_behavioral_question(sections.get("soft-skills", ""))
-    fe_title = extract_title(sections.get("frontend", ""))
-    ai_title = extract_title(sections.get("ai", ""))
+    """Build a history entry dict for a given day (either curriculum schema)."""
+    entry_sections = {
+        "system_design": {"title": extract_title(sections.get("system-design", ""))},
+        "algorithms": {"title": extract_title(sections.get("algorithms", ""))},
+        "soft_skills": {
+            "question": extract_behavioral_question(sections.get("soft-skills", ""))
+        },
+        "ai": {"title": extract_title(sections.get("ai", ""))},
+    }
+    # Whichever 4th section this day used (frontend pre-migration, python-craft after).
+    if "python-craft" in sections:
+        entry_sections["python_craft"] = {
+            "title": extract_title(sections["python-craft"])
+        }
+    if "frontend" in sections:
+        entry_sections["frontend"] = {"title": extract_title(sections["frontend"])}
 
     return {
         "day": day_num,
         "date": date_str,
         "difficultyPhase": "Foundation",
-        "sections": {
-            "system_design": {"title": sd_title},
-            "algorithms": {"title": algo_title},
-            "soft_skills": {"question": soft_q},
-            "frontend": {"title": fe_title},
-            "ai": {"title": ai_title},
-        }
+        "sections": entry_sections,
     }
 
 
 def main():
-    dry_run = '--dry-run' in sys.argv
+    dry_run = "--dry-run" in sys.argv
 
     if not ARCHIVE_DIR.exists():
         print(f"ERROR: archive/ not found at {ARCHIVE_DIR}")
@@ -143,36 +162,38 @@ def main():
     print(f"📋 History has {len(history)} entries")
     print()
 
-    # Determine what day numbers to assign to archive dates
-    # Use existing history to map dates → day numbers where possible,
-    # then assign sequential numbers for new ones.
-    date_to_day = {entry["date"]: entry["day"] for entry in history}
+    # Day numbers must stay consistent with the date ordering: a missing date
+    # gets a number *between* its chronological neighbours, never a fresh number
+    # appended after the latest day (the old bug numbered April dates as Day 81+).
+    # (day, date) pairs sorted by date, used to interpolate.
+    known = sorted(((e["day"], e["date"]) for e in history), key=lambda p: p[1])
 
-    # Figure out the next available day number for gap-filling
-    # We assign day numbers in chronological order, skipping review days (day % 5 == 0)
-    max_existing_day = max((e["day"] for e in history), default=0)
+    def interpolate_day(date_str: str, used: set) -> int | None:
+        prev_day = max((d for d, dt in known if dt < date_str), default=0)
+        next_day = min((d for d, dt in known if dt > date_str), default=None)
+        candidate = prev_day + 1
+        # walk forward past review-day slots and any already-taken numbers
+        while candidate % 5 == 0 or candidate in history_days or candidate in used:
+            candidate += 1
+        if next_day is not None and candidate >= next_day:
+            return None  # no free slot between neighbours — don't corrupt ordering
+        return candidate
 
     added = []
+    used_days: set = set()
     for date_str in sorted_dates:
         if date_str in history_dates:
             continue  # Already in history
 
-        # Determine the day number for this date
-        if date_str in date_to_day:
-            day_num = date_to_day[date_str]
-        else:
-            # Assign next sequential day number, skipping review day slots
-            max_existing_day += 1
-            # Skip review days (day % 5 == 0)
-            while max_existing_day % 5 == 0:
-                max_existing_day += 1
-            day_num = max_existing_day
-
-        # Double-check: if this day_num is a review day, skip
-        if day_num % 5 == 0:
-            print(f"  ⏭️  Skipping {date_str} — Day {day_num} is a review day (day % 5 == 0)")
+        day_num = interpolate_day(date_str, used_days)
+        if day_num is None:
+            print(
+                f"  ⏭️  Skipping {date_str} — no free day slot between neighbours "
+                f"(ambiguous; fix manually)"
+            )
             continue
 
+        used_days.add(day_num)
         entry = build_history_entry(day_num, date_str, complete_days[date_str])
         added.append(entry)
         print(f"  ➕ Will add Day {day_num} ({date_str})")
@@ -183,7 +204,9 @@ def main():
 
     print()
     if dry_run:
-        print(f"DRY RUN: Would add {len(added)} history entries. Use without --dry-run to apply.")
+        print(
+            f"DRY RUN: Would add {len(added)} history entries. Use without --dry-run to apply."
+        )
         return
 
     # Merge new entries into history, sorted by day number
@@ -192,13 +215,13 @@ def main():
 
     state["history"] = all_entries
 
-    with open(STATE_FILE, 'w') as f:
+    with open(STATE_FILE, "w") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
-        f.write('\n')
+        f.write("\n")
 
     print(f"✅ Added {len(added)} history entries to state.json")
     print(f"   Total history entries: {len(all_entries)}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

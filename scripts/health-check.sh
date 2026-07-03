@@ -14,8 +14,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$REPO_DIR/config.env"
 
-TODAY=$(date +%Y-%m-%d)
-DOW=$(date +%u)  # 1=Mon, 7=Sun
+TODAY=$(TZ="${TIMEZONE:-UTC}" date +%Y-%m-%d)
+DOW=$(TZ="${TIMEZONE:-UTC}" date +%u)  # 1=Mon, 7=Sun
 ISSUES=()
 
 log() { echo "[health-check] $*"; }
@@ -128,9 +128,9 @@ done
 
 log "$MSG"
 
-if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
-  python3 "$REPO_DIR/scripts/send-telegram.py" "$MSG" 2>/dev/null || \
-    log "Telegram alert failed"
-fi
+# Alert via the real transport (openclaw + TELEGRAM_TARGET). The old gate on
+# TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID was dead code — those vars don't exist.
+python3 "$REPO_DIR/scripts/send-telegram.py" "$MSG" 2>/dev/null || \
+  log "Telegram alert failed (non-critical)"
 
 exit 1

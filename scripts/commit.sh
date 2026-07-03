@@ -9,7 +9,7 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$REPO_DIR/config.env"
 
 cd "$BBB_REPO_DIR"
-TODAY=$(date +%Y-%m-%d)
+TODAY=$(TZ="${TIMEZONE:-UTC}" date +%Y-%m-%d)
 STATE=$(python3 -c "import json; s=json.load(open('state.json')); print(s['currentDay'],s.get('lastSentDate','?'),s.get('leetcodeIndex',0),s.get('systemDesignIndex',0),s.get('pythonCraftIndex',0),s.get('behavioralIndex',0),s.get('aiTopicIndex',0))")
 CURRENT_DAY=$(echo "$STATE" | cut -d' ' -f1)
 LAST_DATE=$(echo "$STATE" | cut -d' ' -f2)
@@ -18,6 +18,15 @@ SD_IDX=$(echo "$STATE" | cut -d' ' -f4)
 PC_IDX=$(echo "$STATE" | cut -d' ' -f5)
 SOFT_IDX=$(echo "$STATE" | cut -d' ' -f6)
 AI_IDX=$(echo "$STATE" | cut -d' ' -f7)
+
+# Denominators derived from the content files (not hardcoded) so the table can
+# never show a count exceeding its total after a content migration.
+clen() { python3 -c "import json; print(len(json.load(open('content/$1'))))"; }
+ALGO_TOT=$(clen neetcode-150.json)
+SD_TOT=$(clen system-design.json)
+PC_TOT=$(clen python-craft.json)
+SOFT_TOT=$(clen behavioral.json)
+AI_TOT=$(clen ai-topics.json)
 
 # Update README progress table
 python3 - <<PYEOF
@@ -28,11 +37,11 @@ table = """| Field | Value |
 |-------|-------|
 | **Current Day** | Day ${CURRENT_DAY} |
 | **Last Sent** | ${LAST_DATE} |
-| **Algorithms** | ${ALGO_IDX} / 150 (NeetCode 150) |
-| **System Design** | ${SD_IDX} / 40 |
-| **Python Craft** | ${PC_IDX} / 50 |
-| **Soft Skills** | ${SOFT_IDX} / 40 |
-| **AI Topics** | ${AI_IDX} / 30 |"""
+| **Algorithms** | ${ALGO_IDX} / ${ALGO_TOT} (NeetCode 150) |
+| **System Design** | ${SD_IDX} / ${SD_TOT} |
+| **Python Craft** | ${PC_IDX} / ${PC_TOT} |
+| **Soft Skills** | ${SOFT_IDX} / ${SOFT_TOT} |
+| **AI Topics** | ${AI_IDX} / ${AI_TOT} |"""
 readme = re.sub(
     r'(<!-- AUTO-UPDATED.*?-->\n\n)\|.*?\n\n',
     r'\1' + table + '\n\n',

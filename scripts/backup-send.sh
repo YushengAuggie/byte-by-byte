@@ -15,7 +15,7 @@ export BBB_REPO_DIR GMAIL_USER GMAIL_APP_PASSWORD SUBSCRIBERS_CSV_URL \
        EMAIL_TARGET SMTP_USER SMTP_APP_PASSWORD \
        TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID 2>/dev/null || true
 
-TODAY=$(date +%Y-%m-%d)
+TODAY=$(TZ="${TIMEZONE:-UTC}" date +%Y-%m-%d)
 LOG_FILE="$REPO_DIR/email-send-log.json"
 
 log() { echo "[backup-send] $*"; }
@@ -78,11 +78,9 @@ else
     CONTENT_TYPE="normal"
   else
     log "Incomplete content for $TODAY:$MISSING — cannot send."
-    # Notify via Telegram if available
-    if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
-      MSG="⚠️ byte-by-byte backup-send: No content for $TODAY.$MISSING. Review-and-send may have timed out AND content was never generated."
-      python3 "$REPO_DIR/scripts/send-telegram.py" "$MSG" 2>/dev/null || true
-    fi
+    # Notify via the real transport (openclaw + TELEGRAM_TARGET)
+    MSG="⚠️ byte-by-byte backup-send: No content for $TODAY.$MISSING. Review-and-send may have timed out AND content was never generated."
+    python3 "$REPO_DIR/scripts/send-telegram.py" "$MSG" 2>/dev/null || true
     exit 1
   fi
 fi

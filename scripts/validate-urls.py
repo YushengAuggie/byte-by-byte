@@ -22,26 +22,24 @@ TIMEOUT = 5
 
 URL_RE = re.compile(r'https?://[^\s\)\]\'"<>]+')
 
+
 def extract_urls(text: str) -> list:
     urls = URL_RE.findall(text)
     # Clean trailing punctuation that's likely not part of the URL
     cleaned = []
     for url in urls:
-        url = url.rstrip('.,;:!?)]}')
+        url = url.rstrip(".,;:!?)]}")
         if url:
             cleaned.append(url)
     return cleaned
 
+
 def check_url(url: str) -> tuple:
     """Returns (ok: bool, status: str)"""
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()  # verify certs; a bad cert IS a broken link
     try:
         req = urllib.request.Request(
-            url,
-            method='HEAD',
-            headers={'User-Agent': 'byte-by-byte-url-checker/1.0'}
+            url, method="HEAD", headers={"User-Agent": "byte-by-byte-url-checker/1.0"}
         )
         with urllib.request.urlopen(req, timeout=TIMEOUT, context=ctx) as resp:
             code = resp.getcode()
@@ -52,11 +50,12 @@ def check_url(url: str) -> tuple:
         return False, f"HTTP {e.code}"
     except urllib.error.URLError as e:
         reason = str(e.reason)
-        if 'timed out' in reason.lower() or isinstance(e.reason, OSError):
+        if "timed out" in reason.lower() or isinstance(e.reason, OSError):
             return False, f"TIMEOUT/ERROR: {reason}"
         return False, f"URL_ERROR: {reason}"
     except Exception as e:
         return False, f"ERROR: {e}"
+
 
 def main():
     if not ARCHIVE_DIR.exists():
@@ -68,6 +67,7 @@ def main():
         md_files = [Path(f) for f in sys.argv[1:] if Path(f).exists()]
     else:
         from datetime import date
+
         today = date.today().isoformat()
         md_files = sorted(ARCHIVE_DIR.glob(f"{today}-*.md"))
         if not md_files:
@@ -80,7 +80,7 @@ def main():
     # Collect all URLs across all files
     all_urls = {}  # url -> [filenames]
     for f in md_files:
-        text = f.read_text(encoding='utf-8')
+        text = f.read_text(encoding="utf-8")
         for url in extract_urls(text):
             all_urls.setdefault(url, []).append(f.name)
 
@@ -88,7 +88,9 @@ def main():
         print("No URLs found in archive files.")
         sys.exit(0)
 
-    print(f"🔗 Checking {len(all_urls)} unique URLs from {len(md_files)} archive files...")
+    print(
+        f"🔗 Checking {len(all_urls)} unique URLs from {len(md_files)} archive files..."
+    )
     print()
 
     broken = []
@@ -118,5 +120,6 @@ def main():
         print("✅ All URLs are reachable.")
         sys.exit(0)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

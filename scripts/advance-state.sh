@@ -13,7 +13,7 @@ source "$REPO_DIR/config.env"
 STATE_FILE="$BBB_REPO_DIR/state.json"
 CONTENT_DIR="$BBB_REPO_DIR/content"
 ARCHIVE_DIR="$BBB_REPO_DIR/archive"
-TODAY=$(date +%Y-%m-%d)
+TODAY=$(TZ="${TIMEZONE:-UTC}" date +%Y-%m-%d)
 
 echo "=== byte-by-byte: advance state ==="
 echo "Date: $TODAY"
@@ -26,6 +26,16 @@ fi
 
 NEXT_DAY=$(python3 -c "import json; print(json.load(open('/tmp/bbb-day-info.json'))['nextDay'])")
 DIFFICULTY_PHASE=$(python3 -c "import json; print(json.load(open('/tmp/bbb-day-info.json'))['difficultyPhase'])")
+DAY_INFO_DATE=$(python3 -c "import json; print(json.load(open('/tmp/bbb-day-info.json')).get('date',''))")
+
+# Guard against a stale /tmp handoff from a previous day (generate ran
+# yesterday, advance skipped, generate skipped today). Advancing on stale
+# day-info would record the wrong day/titles while verifying today's archives.
+if [ -n "$DAY_INFO_DATE" ] && [ "$DAY_INFO_DATE" != "$TODAY" ]; then
+  echo "❌ /tmp/bbb-day-info.json is for $DAY_INFO_DATE, not today ($TODAY)."
+  echo "   Re-run generate.sh before advancing. Aborting to avoid state/content mismatch."
+  exit 1
+fi
 
 echo "Planned: Day $NEXT_DAY ($DIFFICULTY_PHASE)"
 
@@ -147,16 +157,24 @@ else:
                         k, v = line.split(':', 1)
                         info[k.strip()] = v.strip()
 
-            # Advance index (except AI NEWS mode which doesn't advance)
+            exhausted = info.get('EXHAUSTED') == 'yes'
+
+            # Advance index — but NOT for AI NEWS mode (doesn't consume a topic)
+            # and NOT for an exhausted track in synthesis mode (no topic to consume).
             if index_key and index_key in state:
                 if key == 'ai' and info.get('MODE') == 'NEWS':
-                    pass  # NEWS doesn't consume an ai topic
+                    pass
+                elif exhausted:
+                    pass  # synthesis/review day for an exhausted track
                 else:
                     old_val = state[index_key]
                     state[index_key] = old_val + 1
 
-            # Record title for history
-            if title_field and title_field in info:
+            # Record title for history (soft_skills uses 'question' elsewhere)
+            if exhausted:
+                field = 'question' if key == 'soft_skills' else 'title'
+                sections_data[key] = {field: 'Synthesis / review'}
+            elif title_field and title_field in info:
                 title_key = 'question' if title_field == 'QUESTION' else 'title'
                 sections_data[key] = {title_key: info[title_field]}
             elif key == 'ai':
