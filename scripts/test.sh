@@ -317,9 +317,11 @@ if bash scripts/generate.sh > /tmp/bbb-test-output.txt 2>&1; then
   # State should NOT be advanced yet (generate.sh no longer advances)
   PRE_DAY=$(python3 -c "import json; print(json.load(open('state.json'))['currentDay'])")
 
-  # Create dummy archive files so advance-state.sh can verify them (must be >500 bytes)
-  # Use a temp dir to avoid overwriting real archive files
-  TODAY_TEST=$(date +%Y-%m-%d)
+  # Create dummy archive files so advance-state.sh can verify them (must be >500 bytes).
+  # Derive the date from the canonical handoff file generate.sh just wrote, so it
+  # matches the TIMEZONE the scripts use (a bare `date` here would use the runner's
+  # tz and diverge from the scripts near a tz/midnight boundary — e.g. UTC CI).
+  TODAY_TEST=$(python3 -c "import json; print(json.load(open('/tmp/bbb-day-info.json'))['date'])")
   ARCHIVE_BACKED_UP=false
   for section in system-design algorithms soft-skills python-craft ai; do
     TARGET="archive/${TODAY_TEST}-${section}.md"
