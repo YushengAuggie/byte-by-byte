@@ -143,8 +143,10 @@ TRACKED_FILES=$(git ls-files | grep -v 'config\.env$' | grep -v '\.gitignore')
 # each value with a fixed-string grep (values contain /, ., spaces).
 LEAKS=""
 if [ -f "$REPO_DIR/config.env" ]; then
+  # NOTE: UNSUBSCRIBE_FORM_URL is intentionally public (linked in the site/email),
+  # so it is NOT a secret and is excluded to avoid false positives.
   for _key in TELEGRAM_TARGET EMAIL_TARGET SMTP_USER SMTP_APP_PASSWORD \
-              SUBSCRIBERS_CSV_URL UNSUBSCRIBE_CSV_URL UNSUBSCRIBE_FORM_URL; do
+              SUBSCRIBERS_CSV_URL UNSUBSCRIBE_CSV_URL; do
     _val=$(grep "^${_key}=" "$REPO_DIR/config.env" 2>/dev/null | cut -d= -f2- | tr -d '"' || true)
     # Skip empty values and obvious placeholders from config.env.example
     case "$_val" in

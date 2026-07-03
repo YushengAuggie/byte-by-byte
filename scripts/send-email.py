@@ -7,6 +7,7 @@ import sys
 import os
 import re
 import json
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import date
@@ -665,11 +666,9 @@ def load_subscribers(repo_dir, config):
 # technical prose (e.g. "stub services", "TODO comments"). Used by BOTH the
 # section loader and the doorkeeper so the two never disagree.
 STUB_MARKERS = [
-    "placeholder",
     "content is not generated",
     "content will be generated",
     "not generated yet",
-    "deep dive day",
     "deepdive.md",
     "week-review.md",
 ]
@@ -754,6 +753,15 @@ def main():
     if not email_target:
         print("❌ EMAIL_TARGET not set in config.env")
         sys.exit(1)
+    # Compute "today" in the configured TIMEZONE so it matches the date the
+    # shell scripts used to NAME the archive files (they use TZ=$TIMEZONE date).
+    tz = config.get("TIMEZONE")
+    if tz:
+        os.environ["TZ"] = tz
+        try:
+            time.tzset()
+        except AttributeError:
+            pass  # tzset() unavailable on this platform
     today = date.today().isoformat()
     archive_dir = os.path.join(repo_dir, "archive")
     smtp_user = config.get("SMTP_USER", email_target)
@@ -769,8 +777,18 @@ def main():
         try:
             with open(send_log_path) as f:
                 send_log = json.load(f)
-            entry = send_log.get(today) or {}
-            already_delivered = {a.lower() for a in entry.get("delivered", [])}
+            entry = send_log.get(today)
+            # A pre-existing entry with no per-recipient "delivered" list was
+            # written by the old code path (a completed send). Treat it as fully
+            # delivered so upgrading mid-day never re-blasts the whole list.
+            if entry is not None and "delivered" not in entry:
+                print(
+                    "✅ Email already sent today ({}) [legacy log entry]. Skipping.".format(
+                        today
+                    )
+                )
+                sys.exit(0)
+            already_delivered = {a.lower() for a in (entry or {}).get("delivered", [])}
         except Exception:
             pass  # If log is corrupted, proceed with sending
 

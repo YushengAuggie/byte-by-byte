@@ -170,9 +170,10 @@ else:
                     old_val = state[index_key]
                     state[index_key] = old_val + 1
 
-            # Record title for history
+            # Record title for history (soft_skills uses 'question' elsewhere)
             if exhausted:
-                sections_data[key] = {'title': 'Synthesis / review'}
+                field = 'question' if key == 'soft_skills' else 'title'
+                sections_data[key] = {field: 'Synthesis / review'}
             elif title_field and title_field in info:
                 title_key = 'question' if title_field == 'QUESTION' else 'title'
                 sections_data[key] = {title_key: info[title_field]}

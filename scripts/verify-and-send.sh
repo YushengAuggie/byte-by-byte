@@ -15,27 +15,10 @@ SEND_LOG="$BBB_REPO_DIR/email-send-log.json"
 echo "=== byte-by-byte verify-and-send ==="
 echo "Date: $TODAY"
 
-# ── Step 1: Check if email already sent today ────────────────────────
-if [ -f "$SEND_LOG" ]; then
-  ALREADY_SENT=$(python3 -c "
-import json
-from datetime import date
-today = date.today().isoformat()
-with open('$SEND_LOG') as f:
-    log = json.load(f)
-print('yes' if today in log else 'no')
-" 2>/dev/null || echo "no")
-  if [ "$ALREADY_SENT" = "yes" ]; then
-    echo "✅ Email already sent today."
-    # Still ensure web pages + git are current
-    python3 "$BBB_REPO_DIR/scripts/generate-index.py"
-    bash "$BBB_REPO_DIR/scripts/commit.sh" || true
-    echo "Done."
-    exit 0
-  fi
-fi
-
-echo "📧 Email not sent yet today."
+# NOTE: no coarse "already sent today" short-circuit here. send-email.py now
+# does per-recipient dedup (and skips a fully-delivered / legacy day on its own),
+# so we always let it run — that way a PARTIAL send (some recipients failed) is
+# correctly retried for just the missing addresses instead of being skipped.
 
 # ── Step 2: Verify archive files exist ───────────────────────────────
 ARCHIVE_DIR="$BBB_REPO_DIR/archive"

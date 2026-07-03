@@ -183,8 +183,21 @@ fi
 
 # Section 2: Algorithms
 LC_INDEX=$(get_index "leetcodeIndex")
-LC_TOPIC=$(get_topic "$CONTENT_DIR/neetcode-150.json" "$LC_INDEX")
+LC_LEN=$(content_len "$CONTENT_DIR/neetcode-150.json")
 LC_DAY=$((LC_INDEX + 1))
+if (( LC_INDEX >= LC_LEN )); then
+  cat > /tmp/bbb-section-2.txt << EOF
+SECTION: Algorithms
+DAY: $LC_DAY
+MODE: SYNTHESIS
+EXHAUSTED: yes
+DIFFICULTY_PHASE: $DIFFICULTY_PHASE
+ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-algorithms.md
+INSTRUCTIONS: All $LC_LEN NeetCode problems have been covered. Do NOT repeat a past problem. Instead synthesize a pattern comparison ("when Two Pointers vs Sliding Window?") or pose a harder mixed-pattern problem, at $DIFFICULTY_PHASE level.
+EOF
+  echo "⚠️  Section 2: Algorithms EXHAUSTED ($LC_INDEX/$LC_LEN) — synthesis mode (index will NOT advance)"
+else
+LC_TOPIC=$(get_topic "$CONTENT_DIR/neetcode-150.json" "$LC_INDEX")
 LC_PATTERN=$(extract "$LC_TOPIC" "pattern")
 
 # Calculate position within pattern block + get template
@@ -246,6 +259,7 @@ ARCHIVE_PATH: $ARCHIVE_DIR/${TODAY}-algorithms.md
 $PATTERN_INFO
 EOF
 echo "✓ Section 2: Algorithms Day $LC_DAY — #$(extract "$LC_TOPIC" "leetcode_num") $(extract "$LC_TOPIC" "title") [$LC_PATTERN]"
+fi
 
 # Section 3: Soft Skills
 BH_INDEX=$(get_index "behavioralIndex")
