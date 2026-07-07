@@ -5,8 +5,737 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 07 Jul 2026 02:19:42 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 07 Jul 2026 15:09:23 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-07</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-07</guid>
+      <pubDate>Tue, 07 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计综合 / System Design Synthesis — Day 84</h2>
+
+<p>&gt; <strong>综合模式 / Synthesis Mode</strong> — All 60 curated topics covered. Today: Cross-topic synthesis at Expert level.</p>
+
+<hr/>
+
+<h2>🧩 综合主题：一致性模型的全景对比</h2>
+<h3>**Consistency Models Across Distributed Systems — A Deep Comparative Study**</h3>
+
+<hr/>
+
+<h2>中文部分</h2>
+
+<h3>想象你是一个新任 Staff Engineer</h3>
+
+<p>你刚加入一家公司，发现他们在不同系统中混用了以下技术：</p>
+<p>- <strong>Redis Cluster</strong> — 缓存层</p>
+<p>- <strong>PostgreSQL with read replicas</strong> — 主数据库</p>
+<p>- <strong>Kafka</strong> — 事件流</p>
+<p>- <strong>Elasticsearch</strong> — 搜索索引</p>
+<p>- <strong>DynamoDB</strong> — 用户会话</p>
+
+<p>你的老板问：&quot;这几个系统的一致性模型各是什么？会不会出问题？&quot;</p>
+
+<p>这是一个典型的 Staff-level 问题，要求你<strong>跨系统横向对比</strong>，而不是只会讲单个系统。</p>
+
+<hr/>
+
+<h3>一致性模型对比矩阵</h3>
+
+<pre><code>
+系统                | 一致性模型          | 读己写 | 单调读 | 适用场景
+--------------------|---------------------|--------|--------|------------------
+PostgreSQL Primary  | Strong              | ✅     | ✅     | 金融交易、订单
+PostgreSQL Replica  | Eventual (lag ~ms)  | ❌     | ✅     | 报表、搜索
+Redis (standalone)  | Strong              | ✅     | ✅     | 分布式锁、计数器
+Redis Cluster       | Eventual (partns)   | ❌*    | ❌*    | 缓存（容忍失效）
+Kafka               | At-least-once       | N/A    | N/A    | 事件日志
+Elasticsearch       | Near-real-time (1s) | ❌     | ✅     | 搜索、分析
+DynamoDB (default)  | Eventual            | ❌     | ✅     | 高吞吐读写
+DynamoDB (strong)   | Strong (2x RCU)     | ✅     | ✅     | 强一致要求
+</code></pre>
+
+<p>*Redis Cluster：同一 key slot 内强一致；跨 slot 无事务保证</p>
+
+<hr/>
+
+<h3>最容易踩的坑：读后写不一致</h3>
+
+<pre><code>
+# 场景：用户更新头像后立刻读取
+async def update_avatar(user_id: str, avatar_url: str):
+    # 写入 Primary
+    await db.execute(
+        &quot;UPDATE users SET avatar=? WHERE id=?&quot;,
+        avatar_url, user_id
+    )
+    
+    # ❌ 立即读 Replica — 可能看到旧数据（replication lag）
+    user = await db_replica.fetch(&quot;SELECT * FROM users WHERE id=?&quot;, user_id)
+    return user.avatar  # 可能返回旧头像！
+
+    # ✅ 正确：写后读 Primary，或用 read-your-writes session token
+    user = await db_primary.fetch(&quot;SELECT * FROM users WHERE id=?&quot;, user_id)
+    return user.avatar
+</code></pre>
+
+<hr/>
+
+<h3>分布式系统一致性的三个关键问题</h3>
+
+<p><strong>Q1: 什么时候选 Eventual Consistency？</strong></p>
+<p>- 用户的朋友圈点赞数 ± 几个无所谓</p>
+<p>- 搜索索引延迟 1-2 秒可接受</p>
+<p>- 缓存失效后会 fallback 到 DB</p>
+<p>- <strong>关键词</strong>：高吞吐、高可用比一致性更重要</p>
+
+<p><strong>Q2: 什么时候必须 Strong Consistency？</strong></p>
+<p>- 金融余额、库存扣减（超卖是灾难）</p>
+<p>- 权限/认证检查（旧数据 = 安全漏洞）</p>
+<p>- 分布式锁（多个节点同时持锁 = bug）</p>
+<p>- <strong>关键词</strong>：correctness &gt; availability</p>
+
+<p><strong>Q3: 如何在不改架构的情况下提升一致性？</strong></p>
+<pre><code>
+策略 1: Sticky sessions — 同一用户总路由到同一副本
+策略 2: Version vectors — 每次写附带版本号，读时校验
+策略 3: Write-through cache — 写 DB 同时更新 cache
+策略 4: CQRS — 命令走 Primary，查询走 Replica + 明确 SLA
+</code></pre>
+
+<hr/>
+
+<h3>Staff Engineer 的思维框架</h3>
+
+<p>面试时遇到一致性问题，用这个框架：</p>
+
+<pre><code>
+1. CLASSIFY: 这个数据的一致性需求是什么等级？
+   → 金融/库存 = Strong
+   → 社交/内容 = Eventual OK
+   → 搜索/缓存 = Eventual + TTL
+
+2. SCOPE: 哪些操作需要强一致，哪些不需要？
+   → 写操作 + 读己写 = Strong
+   → 后台统计 = Eventual
+
+3. TRADEOFF: 强一致的代价是什么？
+   → 更高延迟 (2PC, quorum reads)
+   → 更低吞吐 (DynamoDB strong read = 2x 费用)
+   → 可用性降低 (CAP theorem: CP tradeoff)
+
+4. MONITOR: 如何检测不一致？
+   → Replication lag metrics
+   → Read-after-write test probes
+   → Data reconciliation jobs
+</code></pre>
+
+<hr/>
+
+<h3>真实事故案例</h3>
+
+<p><strong>GitHub 2012</strong>: MySQL 主从延迟导致代码仓库数据短暂不一致，用户在 push 后刷新看到旧 commit。</p>
+<p><strong>解法</strong>: 引入 &quot;read your writes&quot; session 保证，写操作后一段时间内强制走 Primary。</p>
+
+<p><strong>Amazon DynamoDB</strong>: 默认 eventually consistent 读导致订单系统超卖。</p>
+<p><strong>解法</strong>: 高价值操作改用 <code>ConsistentRead=True</code>，接受 2x RCU 成本。</p>
+
+<hr/>
+
+<h2>English Summary</h2>
+
+<p><strong>The Core Question</strong>: Across your stack, which systems give you strong consistency, which are eventual, and <strong>what are the failure modes at the boundary?</strong></p>
+
+<p><strong>Key Insight</strong>: Most production incidents at scale don&#x27;t come from a single system failing — they come from <strong>assuming consistency across systems that have different guarantees</strong>. The user updates their profile (strong, via Primary), then reads from Elasticsearch (eventual, 1s lag) and sees stale data.</p>
+
+<p><strong>Interview Signal</strong>: When a Staff-level candidate talks about consistency, they should:</p>
+<p>1. Know the model of each system in their stack</p>
+<p>2. Identify the &quot;boundary&quot; where consistency guarantees differ</p>
+<p>3. Have concrete mitigation strategies (sticky read, version checks, CQRS)</p>
+<p>4. Cite real operational experience, not just theory</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Jepsen: Distributed Systems Safety Analysis](https://jepsen.io/analyses)</p>
+<p>- [AWS DynamoDB Strong Consistency Docs](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html)</p>
+<p>- [PostgreSQL Replication Docs](https://www.postgresql.org/docs/current/warm-standby.html)</p>
+<p>- [Martin Kleppmann — Designing Data-Intensive Applications](https://dataintensive.net/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>Imagine 3 kids copying notes in class. The &quot;strong&quot; kid copies instantly and perfectly. The &quot;eventual&quot; kid copies eventually but might miss a word for a few seconds. The &quot;at-least-once&quot; kid makes sure they write everything down but might write the same thing twice. Your job as Staff Engineer is to know which kid is copying which notes — and never accidentally trust the &quot;eventual&quot; kid for your math test answers.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 84</h2>
+<h2>#621 Task Scheduler (Medium) — Heap / Priority Queue</h2>
+
+<p>🧩 <strong>堆/优先队列模式 (5/7)</strong> — 在 Kth Largest in Stream、Last Stone Weight、K Closest Points 的基础上进阶</p>
+
+<hr/>
+
+<h2>中文部分</h2>
+
+<h3>🔗 链接</h3>
+<p>- LeetCode: https://leetcode.com/problems/task-scheduler/ 🟡 Medium</p>
+<p>- NeetCode: https://neetcode.io/problems/task-scheduling</p>
+
+<hr/>
+
+<h3>🧩 模板回顾 (5/7)</h3>
+
+<p>上次我们用最小堆处理了 &quot;K Closest Points&quot;（维护大小为 k 的堆）。今天的 Task Scheduler 是一个<strong>不同的堆变体</strong>：我们需要贪心地总是选&quot;剩余最多的任务&quot;来最小化总时间。</p>
+
+<pre><code>
+第 1 题: #703 Kth Largest in Stream → 维护大小 k 的最小堆
+第 2 题: #1046 Last Stone Weight    → 最大堆 + 模拟
+第 3 题: #973 K Closest Points      → 维护大小 k 的最大堆（反转距离）
+第 4 题: #215 Kth Largest in Array  → QuickSelect 或堆
+第 5 题: #621 Task Scheduler         → 最大堆 + 等待队列（今天）
+第 6 题: #355 Design Twitter         → 堆合并多个 feed
+第 7 题: #295 Find Median            → 双堆（最大+最小）
+</code></pre>
+
+<p><strong>今天的变体</strong>：不是 top-k，而是&quot;贪心调度 + 冷却时间&quot;。</p>
+
+<hr/>
+
+<h3>🎯 问题理解</h3>
+
+<p>给你一个任务列表（如 <code>[&#x27;A&#x27;,&#x27;A&#x27;,&#x27;A&#x27;,&#x27;B&#x27;,&#x27;B&#x27;,&#x27;B&#x27;]</code>）和冷却时间 <code>n</code>。</p>
+<p>同一任务两次执行之间必须间隔 ≥ n 个时间单位。求完成所有任务的最少时间。</p>
+
+<p><strong>真实场景类比</strong>：CPU 调度。高频任务（如缓存刷新）不能连续执行，需要冷却防止过热。</p>
+
+<pre><code>
+n=2, tasks = [A,A,A,B,B,B]
+
+时间轴: A → B → idle → A → B → idle → A → B
+         1   2    3     4   5    6      7   8
+结果: 8 个时间单位
+</code></pre>
+
+<hr/>
+
+<h3>💡 核心洞察：为什么用堆？</h3>
+
+<p><strong>贪心规则</strong>：每次优先执行剩余次数最多的任务 → 最小化 idle 时间。</p>
+<p><strong>堆的作用</strong>：在 O(log k) 内找到当前最高频任务。</p>
+
+<hr/>
+
+<h3>🐍 Python 解法（堆 + 等待队列）</h3>
+
+<pre><code>
+import heapq
+from collections import Counter, deque
+
+def leastInterval(tasks: list[str], n: int) -&gt; int:
+    # Step 1: Count frequencies
+    freq = Counter(tasks)
+    
+    # Max-heap: Python&#x27;s heapq is min-heap, so negate counts
+    # heap: [-count, task]
+    max_heap = [-cnt for cnt in freq.values()]
+    heapq.heapify(max_heap)
+    
+    # Wait queue: [(available_time, -count)]
+    wait_queue = deque()
+    
+    time = 0
+    
+    while max_heap or wait_queue:
+        time += 1
+        
+        if max_heap:
+            # Execute the most frequent task
+            neg_cnt = heapq.heappop(max_heap)
+            neg_cnt += 1  # count decreases by 1 (neg becomes less negative)
+            
+            if neg_cnt != 0:
+                # Task still has remaining count; can run again at time + n
+                wait_queue.append((time + n, neg_cnt))
+        
+        # Check if any task in wait queue is now available
+        if wait_queue and wait_queue[0][0] == time:
+            _, neg_cnt = wait_queue.popleft()
+            heapq.heappush(max_heap, neg_cnt)
+    
+    return time
+
+# Trace for tasks = [A,A,A,B,B,B], n=2
+# Heap initial: [-3, -3] (A=3, B=3)
+# t=1: pop A (-3→-2), wait until t=3. Heap: [-3]. Wait: [(3,-2)]
+# t=2: pop B (-3→-2), wait until t=4. Heap: []. Wait: [(3,-2),(4,-2)]
+# t=3: Heap empty → idle. But (3,-2) is available → push back. Heap: [-2]
+# t=4: pop A (-2→-1), wait until t=6. (4,-2) available → push B. Heap: [-2]
+# t=5: pop B (-2→-1), wait until t=7. Heap: []. Wait: [(6,-1),(7,-1)]
+# t=6: Heap empty → idle. (6,-1) available → push A. Heap: [-1]
+# t=7: pop A (-1→0), done. (7,-1) available → push B. Heap: [-1]
+# t=8: pop B, done. Total: 8 ✅
+</code></pre>
+
+<p><strong>时间复杂度</strong>: O(n log k)，n = 任务总数，k = 不同任务种类数（≤26）</p>
+<p><strong>空间复杂度</strong>: O(k)</p>
+
+<hr/>
+
+<h3>🔗 与模式中其他题目对比</h3>
+
+<p>| 题目 | 堆类型 | 核心操作 | 关键差异 |</p>
+<p>|------|--------|----------|----------|</p>
+<p>| #703 Kth Largest Stream | 最小堆(大小k) | 维护 top-k | 固定堆大小 |</p>
+<p>| #1046 Last Stone Weight | 最大堆 | 弹出两个合并 | 两次 pop |</p>
+<p>| #973 K Closest Points | 最大堆(大小k) | 维护 k 近 | 距离比较 |</p>
+<p>| <strong>#621 Task Scheduler</strong> | <strong>最大堆+队列</strong> | <strong>调度+等待</strong> | <strong>时间轴 + 冷却</strong> |</p>
+<p>| #355 Design Twitter | 堆合并 | 多路归并 | 跨 feed |</p>
+<p>| #295 Find Median | 双堆 | 平衡两堆 | 维护中位数 |</p>
+
+<p><strong>Task Scheduler 的独特性</strong>：引入了&quot;时间&quot;维度。不只是从堆里取最大，还要考虑冷却窗口，用 deque 追踪何时可以重新调度。</p>
+
+<hr/>
+
+<h3>举一反三</h3>
+
+<p><strong>相同模式的变种</strong>：</p>
+<p>- &quot;Design Twitter&quot; (#355) — 同样需要从多个频率列表调度</p>
+<p>- &quot;Reorganize String&quot; (#767) — 类似的贪心，确保相邻字符不同</p>
+
+<p><strong>数学捷径</strong>（面试中可以提到）：</p>
+<pre><code>
+def leastInterval_math(tasks, n):
+    freq = Counter(tasks)
+    max_freq = max(freq.values())
+    max_count = sum(1 for v in freq.values() if v == max_freq)
+    # Formula: max((max_freq-1)*(n+1) + max_count, len(tasks))
+    return max((max_freq - 1) * (n + 1) + max_count, len(tasks))
+</code></pre>
+<p>但面试时优先展示堆解法，更能体现你的思维过程。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [LeetCode #621 Discussion](https://leetcode.com/problems/task-scheduler/solutions/)</p>
+<p>- [NeetCode Video Explanation](https://neetcode.io/problems/task-scheduling)</p>
+<p>- [Heap Pattern Overview — NeetCode](https://neetcode.io/roadmap)</p>
+
+<h2>🧒 ELI5</h2>
+<p>Imagine you have a robot that can cook pasta (A), pasta (A), pasta (A), soup (B), soup (B), soup (B). But the pasta pot needs 2 minutes to cool before you use it again. The robot should always cook the dish it has the most of next — so it never wastes time waiting. That&#x27;s the heap trick: always pick the most-needed dish that&#x27;s cooled down enough!</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 84</h2>
+
+<p>&gt; <strong>综合模式 / Synthesis Mode</strong> — All 60 behavioral questions covered. Today: Fresh senior/staff-level scenario synthesizing multiple themes.</p>
+
+<hr/>
+
+<h2>🆕 新场景：技术债务、优先级、团队冲突的三角困境</h2>
+<h3>**The Tech Debt Trilemma: Balancing Deadlines, Quality, and Team Dynamics**</h3>
+
+<hr/>
+
+<h2>中文部分</h2>
+
+<h3>场景题（全新）</h3>
+
+<p>&gt; <strong>&quot;Tell me about a time you were caught between three competing pressures simultaneously: a hard deadline from leadership, significant technical debt that could cause production risk, and two senior engineers on your team who fundamentally disagreed on the solution approach.&quot;</strong></p>
+
+<p>这个题目综合了我们之前覆盖的三大主题：</p>
+<p>- <strong>技术债务处理</strong>（Day 16: How do you handle technical debt?）</p>
+<p>- <strong>优先级冲突</strong>（Day 12: How do you decide what to work on?）</p>
+<p>- <strong>团队冲突解决</strong>（Day 23: Conflict between team members）</p>
+
+<hr/>
+
+<h3>STAR 框架拆解</h3>
+
+<p><strong>Situation（情境）</strong>：</p>
+<p>要有三个关键元素同时存在：</p>
+<p>- 固定 deadline（不可移动，来自业务/产品/领导）</p>
+<p>- 已知的技术风险（不是假设，有具体证据）</p>
+<p>- 团队内部意见分歧（两个有经验的人各有道理）</p>
+
+<p><strong>示例情境</strong>：</p>
+<p>&gt; &quot;我们需要在 6 周内将支付系统迁移到新的 API 版本。老的 SDK 将在 Q3 末 EOL（end of life），这是硬截止日期。但我们的支付模块积累了 3 年的技术债务：有一层没有文档的 monkey-patching，两个 senior engineer 分别主张&#x27;逐步迁移&#x27;和&#x27;一次性重写&#x27;。&quot;</p>
+
+<p><strong>Task（任务）</strong>：</p>
+<p>&gt; &quot;作为 Tech Lead，我需要在不延期的情况下做出技术决策，同时保持团队对决策的 buy-in。&quot;</p>
+
+<p><strong>Action（行动）</strong> — 这是重点，展示 Staff-level 思维：</p>
+
+<pre><code>
+第一步：量化风险，不是直觉
+→ 我花了 2 天做 spike：
+  - monkey-patching 影响的代码路径数量（发现只有 12 个 call site）
+  - 估算&quot;逐步迁移&quot; vs &quot;重写&quot;的风险矩阵
+
+第二步：设定决策框架，而不是裁判谁对
+→ 组织了一个 1 小时的 &quot;PRE-MORTEM&quot; 会议
+→ 问题不是&quot;谁的方案更好&quot;，而是&quot;如果我们失败了，最可能的原因是什么？&quot;
+→ 这把对话从 ego 拉回到 evidence
+
+第三步：做出有时间边界的决定
+→ &quot;我们做逐步迁移，但定义明确的 checkpoints。如果第 2 周 checkpoint 未达标，切换到快速重写路径。&quot;
+→ 这给了两个 engineer 都能接受的 hedge
+
+第四步：明确记录 + 向上对齐
+→ 写了一个 1-pager 给 VP Engineering
+→ 包括: 风险、决策、contingency plan
+→ 不是要求批准，而是透明度
+</code></pre>
+
+<p><strong>Result（结果）</strong>：</p>
+<p>&gt; &quot;按期完成迁移，没有生产事故。更重要的是，两个 senior engineer 在后续回顾中都认可了决策过程（即使有人仍觉得自己的方案更好）。这建立了&#x27;用数据决策&#x27;的文化先例。&quot;</p>
+
+<hr/>
+
+<h3>❌ 常见错误 vs ✅ 正确做法</h3>
+
+<p><strong>❌ 弱回答</strong>：</p>
+<p>- &quot;我和大家开了个会讨论了一下，最后我们选了一个方案。&quot;</p>
+<p>- 没有量化风险，没有展示决策框架，没有提到如何处理分歧</p>
+
+<p><strong>✅ 强回答信号</strong>：</p>
+<p>- 提到具体的风险量化方法（spike、metrics、impact analysis）</p>
+<p>- 展示&quot;把冲突转化为数据驱动决策&quot;的过程</p>
+<p>- 有 contingency plan（不是盲目自信）</p>
+<p>- 结果包括团队关系，而不只是项目结果</p>
+
+<hr/>
+
+<h3>Senior/Staff Tips</h3>
+
+<p><strong>Staff+ 的加分项</strong>：</p>
+<p>1. <strong>记录决策过程</strong>：1-pager/RFC，让分歧变成可追溯的历史</p>
+<p>2. <strong>Disagree and Commit</strong>：团队可以不同意但必须执行，这是职业成熟度的体现</p>
+<p>3. <strong>向上透明，不是向上升级</strong>：告诉 VP 风险和你的应对计划，而不是把决策踢给他们</p>
+<p>4. <strong>Pre-mortem 而非 Post-mortem</strong>：在失败前想象失败，质量更高</p>
+
+<p><strong>关键 Takeaway</strong>：</p>
+<p>&gt; 在三角困境中，最重要的不是&quot;选对方案&quot;，而是&quot;建立一个让团队信服的决策过程&quot;。方案可以有争议，但过程必须公正透明。</p>
+
+<hr/>
+
+<h2>English Summary</h2>
+
+<p><strong>The Core Skill</strong>: When facing a trilemma (deadline + tech debt + team conflict), the Staff+ move is to:</p>
+<p>1. <strong>Quantify before deciding</strong> — turn subjective debate into measurable risk</p>
+<p>2. <strong>Reframe the conflict</strong> — from &quot;who&#x27;s right&quot; to &quot;what&#x27;s the failure mode&quot;</p>
+<p>3. <strong>Time-box the decision</strong> — choose with checkpoints, not blind commitment</p>
+<p>4. <strong>Communicate up with transparency</strong> — not for approval, but for alignment</p>
+
+<p><strong>Interview Signal</strong>: The strongest candidates show they can hold multiple competing pressures simultaneously without freezing, without picking favorites, and without delegating the decision upward.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Amazon Leadership Principles: Bias for Action](https://www.amazon.jobs/content/en/our-workplace/leadership-principles)</p>
+<p>- [Google Engineering Practices: Making Decisions](https://google.github.io/eng-practices/)</p>
+<p>- [Staff Engineer: Leadership Beyond the Management Track](https://staffeng.com/book)</p>
+
+<h2>🧒 ELI5</h2>
+<p>Imagine you&#x27;re captain of a soccer team. You need to win today&#x27;s game (deadline), but the field is muddy and slippery (tech debt), and your two best players disagree on whether to play offense or defense. A good captain doesn&#x27;t just pick a side — they say &quot;let&#x27;s try offense for the first half and see the score, then decide.&quot; That way everyone plays hard, and you adjust based on what&#x27;s actually happening.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 84</h2>
+<h2>依赖注入 — 不依赖框架 / Dependency Injection — Without Frameworks</h2>
+
+<hr/>
+
+<h2>中文部分</h2>
+
+<h3>为什么 Python 开发者经常忽视 DI？</h3>
+
+<p>很多 Python 开发者觉得依赖注入是 Java Spring 的东西，Python 不需要。</p>
+<p><strong>事实</strong>：Python 不需要框架，但 DI 的思想非常有用，特别是在：</p>
+<p>- 编写可测试的代码（替换真实 DB/HTTP 为 mock）</p>
+<p>- 管理跨模块的共享资源（DB 连接池、配置）</p>
+<p>- 避免全局状态和隐式依赖</p>
+
+<hr/>
+
+<h3>什么是依赖注入？</h3>
+
+<pre><code>
+# ❌ 没有 DI：硬编码依赖
+class UserService:
+    def __init__(self):
+        self.db = PostgresDB(host=&quot;prod-db.company.com&quot;)  # 隐式依赖！
+        self.cache = Redis(host=&quot;prod-redis.company.com&quot;)  # 无法替换！
+    
+    def get_user(self, user_id: str):
+        cached = self.cache.get(f&quot;user:{user_id}&quot;)
+        if not cached:
+            return self.db.query(f&quot;SELECT * FROM users WHERE id={user_id}&quot;)
+        return cached
+
+# 问题：
+# - 测试时会真的连接 prod DB
+# - 无法注入 mock
+# - 高耦合，改 DB 就要改这个类
+</code></pre>
+
+<pre><code>
+# ✅ 有 DI：依赖从外部注入
+from typing import Protocol
+
+class Database(Protocol):
+    def query(self, sql: str) -&gt; dict: ...
+
+class Cache(Protocol):
+    def get(self, key: str) -&gt; dict | None: ...
+    def set(self, key: str, value: dict) -&gt; None: ...
+
+class UserService:
+    def __init__(self, db: Database, cache: Cache):
+        self.db = db      # 注入进来，不自己创建
+        self.cache = cache
+    
+    def get_user(self, user_id: str):
+        cached = self.cache.get(f&quot;user:{user_id}&quot;)
+        if not cached:
+            result = self.db.query(f&quot;SELECT * FROM users WHERE id={user_id}&quot;)
+            self.cache.set(f&quot;user:{user_id}&quot;, result)
+            return result
+        return cached
+</code></pre>
+
+<hr/>
+
+<h3>三种 DI 模式（不用框架）</h3>
+
+<p>#### 1️⃣ 构造函数注入（最常用）</p>
+
+<pre><code>
+# production
+service = UserService(db=PostgresDB(), cache=RedisCache())
+
+# testing
+service = UserService(db=FakeDB(), cache=FakeCache())
+
+# 优点：依赖清晰可见，无隐式魔法
+</code></pre>
+
+<p>#### 2️⃣ 简单 DI 容器（手写）</p>
+
+<pre><code>
+class Container:
+    &quot;&quot;&quot;A dead-simple DI container.&quot;&quot;&quot;
+    
+    def __init__(self):
+        self._factories: dict = {}
+        self._instances: dict = {}
+    
+    def register(self, name: str, factory, singleton: bool = True):
+        self._factories[name] = (factory, singleton)
+    
+    def resolve(self, name: str):
+        factory, singleton = self._factories[name]
+        
+        if singleton:
+            if name not in self._instances:
+                self._instances[name] = factory(self)
+            return self._instances[name]
+        
+        return factory(self)  # new instance each time
+
+# Usage
+container = Container()
+container.register(&quot;db&quot;, lambda c: PostgresDB(host=&quot;localhost&quot;))
+container.register(&quot;cache&quot;, lambda c: RedisCache(host=&quot;localhost&quot;))
+container.register(
+    &quot;user_service&quot;,
+    lambda c: UserService(db=c.resolve(&quot;db&quot;), cache=c.resolve(&quot;cache&quot;))
+)
+
+# App startup
+user_service = container.resolve(&quot;user_service&quot;)
+
+# Test override
+test_container = Container()
+test_container.register(&quot;db&quot;, lambda c: FakeDB())
+test_container.register(&quot;cache&quot;, lambda c: FakeCache())
+test_container.register(
+    &quot;user_service&quot;,
+    lambda c: UserService(db=c.resolve(&quot;db&quot;), cache=c.resolve(&quot;cache&quot;))
+)
+</code></pre>
+
+<p>#### 3️⃣ 函数式 DI（适合 FastAPI/异步）</p>
+
+<pre><code>
+# FastAPI 风格的依赖注入
+from functools import lru_cache
+
+@lru_cache  # singleton
+def get_db_connection():
+    return PostgresDB(host=settings.DB_HOST)
+
+@lru_cache
+def get_cache():
+    return RedisCache(host=settings.REDIS_HOST)
+
+# 函数接受依赖作为参数（便于测试时替换）
+def get_user(
+    user_id: str,
+    db: Database = None,
+    cache: Cache = None
+) -&gt; dict:
+    db = db or get_db_connection()
+    cache = cache or get_cache()
+    # ... rest of logic
+
+# Test
+def test_get_user():
+    result = get_user(&quot;123&quot;, db=FakeDB(), cache=FakeCache())
+    assert result[&quot;id&quot;] == &quot;123&quot;
+</code></pre>
+
+<hr/>
+
+<h3>什么时候用 vs 不用</h3>
+
+<pre><code>
+✅ 用 DI 的场景:
+- 组件需要在测试中被替换 (DB, HTTP, email)
+- 配置因环境不同而变化 (dev/staging/prod)
+- 组件是共享资源 (连接池, 配置)
+- 遵循 SOLID 原则的生产代码
+
+❌ 不需要 DI 的场景:
+- 简单脚本, 一次性工具
+- 没有外部依赖的纯函数
+- 框架已经处理 (Django views, FastAPI dependencies)
+</code></pre>
+
+<hr/>
+
+<h3>与框架对比</h3>
+
+<pre><code>
+手写 DI         vs   FastAPI Depends   vs   Python-inject/dependency-injector
+简单, 无魔法        语法优雅, async 友好      功能完整, 适合大项目
+测试最简单          FastAPI 绑定             学习曲线较高
+适合中小项目         推荐用于 FastAPI 项目     适合企业级应用
+</code></pre>
+
+<hr/>
+
+<h2>English Summary</h2>
+
+<p><strong>The Big Idea</strong>: Dependency Injection is just &quot;pass your dependencies in, don&#x27;t create them inside&quot;. In Python, you don&#x27;t need a framework — constructor injection + a simple container gets you 90% of the benefits.</p>
+
+<p><strong>Key Benefits</strong>:</p>
+<p>- Testability: swap real DB for fake in tests</p>
+<p>- Flexibility: change implementations without changing business logic</p>
+<p>- Visibility: dependencies are explicit in <code>__init__</code>, not hidden</p>
+
+<p><strong>Production Pattern</strong>: Use a simple container at app startup to wire everything together. In tests, build your own container with fake implementations.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Python DI without frameworks — Real Python](https://realpython.com/python-dependency-injection/)</p>
+<p>- [FastAPI Dependency Injection](https://fastapi.tiangolo.com/tutorial/dependencies/)</p>
+<p>- [dependency-injector PyPI](https://python-dependency-injector.ets-labs.org/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>Imagine you&#x27;re building a toy car. A car with &quot;no DI&quot; comes with its engine glued in — you can never swap it. A car with DI has a slot where you can plug in any engine. Want to test without a real engine? Plug in a fake one! Want to upgrade to a faster engine later? Just swap the plug. That&#x27;s dependency injection — design your code to accept parts from outside instead of building them in.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI 新闻 / AI News — Day 84</h2>
+<h2>July 7, 2026 Roundup</h2>
+
+<hr/>
+
+<h2>中文部分</h2>
+
+<h3>🗞️ 本周 AI 要闻</h3>
+
+<hr/>
+
+<p><strong>1. OpenAI + Broadcom 发布 &quot;Jalapeño&quot; 推理芯片</strong></p>
+
+<p>OpenAI 与 Broadcom 在 2026 年 6 月底联合揭晓了 OpenAI 首款自研推理加速器，内部代号 &quot;Jalapeño&quot;。据报道，该芯片专为 LLM 推理（而非训练）优化，在相同能耗下性能据称显著优于当前主流方案。OpenAI 计划将其部署在 2026 年底建设的吉瓦级数据中心中。</p>
+
+<p>来源: https://www.storagenewsletter.com/2026/07/07/openai-and-broadcom-unveil-llm-optimized-inference-chip/</p>
+
+<p><strong>为什么重要</strong>：自研芯片意味着 OpenAI 将降低对 NVIDIA 的依赖，掌控推理成本——这是 AI 产品长期竞争力的关键。</p>
+
+<hr/>
+
+<p><strong>2. 联合国 AI 治理全球对话在日内瓦开幕</strong></p>
+
+<p>2026 年 7 月 6 日，联合国 AI 治理全球对话在日内瓦正式开幕，各成员国讨论 AI 国际监管框架。同日，联合国与国际电信联盟（ITU）宣布成立&quot;AI for Good 全球委员会&quot;，成员包括多家主要 AI 公司的 CEO。</p>
+
+<p>来源: https://news.un.org/en/story/2026/07/1167848</p>
+
+<p><strong>为什么重要</strong>：AI 监管的国际博弈正式升级。这将影响模型出口、数据跨境流动以及企业合规成本。</p>
+
+<hr/>
+
+<p><strong>3. 伊利诺伊州签署《AI 安全措施法》</strong></p>
+
+<p>美国伊利诺伊州州长 Pritzker 于 7 月 6 日签署 AI Safety Measures Act，要求模型开发者发布&quot;灾难性风险&quot;识别框架并报告重大事故。该法案效仿加州和纽约的类似立法，截至 7 月 1 日，美国各州已通过 109 部 AI 相关法律。</p>
+
+<p>来源: https://news.wttw.com/2026/07/06/pritzker-signs-landmark-ai-regulation-bill-aims-mitigate-risks</p>
+
+<p><strong>为什么重要</strong>：美国 AI 监管正从联邦层面的滞后转向州级快速立法，合规碎片化成为企业新挑战。</p>
+
+<hr/>
+
+<p><strong>4. 开源 LLM 追赶闭源：GLM-5.2 &amp; DeepSeek V4 Pro</strong></p>
+
+<p>据报道，Zhipu AI 的 GLM-5.2（MIT 许可）在 SWE-bench Pro 等编程基准上据报道接近主流闭源模型水平。DeepSeek V4 Pro 同样被评为高性价比选项，支持自部署。开源与闭源 LLM 的性能差距正在持续缩小。</p>
+
+<p>来源: https://llm-stats.com/llm-updates</p>
+
+<p><strong>为什么重要</strong>：对于工程团队，这意味着&quot;自托管高质量模型&quot;的可行性越来越高，数据隐私和成本控制有了更多选项。</p>
+
+<hr/>
+
+<h3>📊 本周关键趋势</h3>
+
+<pre><code>
+AI Governance  ████████████  升温（UN + 州立法）
+Open Source    ████████████  快速追赶闭源
+Inference Chip ████████████  OpenAI 首款自研
+Enterprise     ████████████  78% 组织已部署 AI（Stanford HAI）
+</code></pre>
+
+<hr/>
+
+<h2>English Summary</h2>
+
+<p><strong>4 Stories This Week:</strong></p>
+
+<p>1. <strong>Jalapeño Chip</strong> — OpenAI + Broadcom unveiled LLM inference accelerator, targeting gigawatt-scale datacenters by end of 2026. Source: storagenewsletter.com</p>
+
+<p>2. <strong>UN AI Governance</strong> — Global Dialogue opened in Geneva July 6; UN launched AI for Good Global Commission with major AI CEO members. Source: news.un.org</p>
+
+<p>3. <strong>Illinois AI Safety Act</strong> — Gov. Pritzker signed mandatory risk framework disclosure for AI model developers; 109 US state AI laws now enacted. Source: wttw.com</p>
+
+<p>4. <strong>Open Source Closing Gap</strong> — GLM-5.2 (MIT) and DeepSeek V4 Pro reportedly approaching closed-model performance on coding benchmarks; self-hosting becomes increasingly viable. Source: llm-stats.com</p>
+
+<p><strong>The Big Thread</strong>: AI is maturing from research to infrastructure — and with that comes chips, governance, and serious enterprise investment.</p>
+
+<hr/>
+
+<h2>📚 Sources</h2>
+<p>- https://www.storagenewsletter.com/2026/07/07/openai-and-broadcom-unveil-llm-optimized-inference-chip/</p>
+<p>- https://news.un.org/en/story/2026/07/1167848</p>
+<p>- https://news.wttw.com/2026/07/06/pritzker-signs-landmark-ai-regulation-bill-aims-mitigate-risks</p>
+<p>- https://llm-stats.com/llm-updates</p>
+<p>- https://digitalbrightfuture.com/ai-weekly-roundup-june-28-july-4-2026/</p>
+
+<h2>🧒 ELI5</h2>
+<p>Imagine AI is like a new kind of electricity. This week: a company built a special power socket just for AI (the chip), the UN opened a meeting about how countries should share the electricity fairly (governance), a state made rules that power companies must tell you if there&#x27;s a risk of blackout (safety law), and cheaper alternatives to the big power company are getting almost as good (open source). The electricity is real now — the world is figuring out the rules.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-06</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
