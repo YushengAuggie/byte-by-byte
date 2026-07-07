@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-07-06</title>
+  <meta name="description" content="byte-by-byte daily lessons for Monday, July 6, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Monday, July 6, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-07-06.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-07-03.html" style="color:var(--text2)">← 2026-07-03</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-07-06</span>
+    <h1>Monday, July 6, 2026</h1>
+    <div class="page-header-meta">
+      <span>6 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a> <a href="#section-deepdive" class="nav-day-btn">🔬 Deep Dive</a> <a href="#section-week-review" class="nav-day-btn">📅 Week in Review</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-07-03.html" class="day-nav-btn">← 2026-07-03</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 83 · Expert Synthesis</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>🏗️ 系统设计 / System Design — Day 83 · Expert Synthesis</h1>
+
+<p><strong>主题 / Topic:</strong> 综合对比 — 当系统撞上系统：设计决策的跨系统矩阵</p>
+<p><strong>Synthesis: When Systems Collide — Cross-Architecture Decision Matrix</strong></p>
+
+<hr/>
+
+<h2>想象一下 / Real-World Scenario</h2>
+
+<p>你是一家独角兽公司的 Staff Engineer。CTO 问你："我们要同时支持实时聊天、视频流、支付处理，以及搜索自动补全。这四个能共用同一套基础设施吗？"</p>
+
+<p>You're a Staff Engineer at a unicorn. CTO asks: "We need real-time chat, video streaming, payment processing, and search autocomplete simultaneously. Can they share infrastructure?"</p>
+
+<p><strong>答案不是"能"或"不能"—— 而是"哪些层可以共享，哪些必须隔离"。</strong></p>
+<p>The answer isn't yes or no — it's "which layers can share, which must isolate."</p>
+
+<hr/>
+
+<h2>四大系统的核心约束对比 / Core Constraints Comparison</h2>
+
+<div class="diagram-block">System         | Latency  | Throughput | Consistency | Storage     | Protocol
+---------------|----------|------------|-------------|-------------|----------
+Chat (Slack)   | &lt;100ms   | Medium     | Eventual OK | Hot+Archive | WebSocket
+Video (Netflix)| &lt;200ms   | Very High  | Eventual OK | CDN-heavy   | HLS/DASH
+Payment        | &lt;500ms   | Low-Med    | STRONG ⚠️   | ACID DB     | HTTPS/REST
+Autocomplete   | &lt;50ms    | Very High  | Stale OK    | In-Memory   | HTTP/REST
+
+                          ↑
+              Payment is the odd one out:
+              it CANNOT share eventual-consistency infra</div>
+
+<hr/>
+
+<h2>架构决策矩阵 / What Can Be Shared</h2>
+
+<div class="diagram-block">                     ┌────────────────────────────────────┐
+                     │           Shared Layer              │
+                     │  ┌──────────┐  ┌────────────────┐  │
+                     │  │   API    │  │   Auth/AuthZ   │  │
+                     │  │ Gateway  │  │  (JWT, OAuth)  │  │
+                     │  └──────────┘  └────────────────┘  │
+                     │  ┌──────────┐  ┌────────────────┐  │
+                     │  │ CDN/Edge │  │  Observability │  │
+                     │  │ (static) │  │  (logs/traces) │  │
+                     │  └──────────┘  └────────────────┘  │
+                     └────────────────────────────────────┘
+                                      │
+         ┌────────────────────────────┼──────────────────────────┐
+         ▼                            ▼                          ▼
+  ┌─────────────┐             ┌──────────────┐          ┌──────────────┐
+  │  Chat + Video│             │   Payment    │          │ Autocomplete │
+  │  (eventual)  │             │ (isolated!)  │          │  (read-only) │
+  │  Kafka+Redis │             │ Postgres+2PC │          │ Redis/Trie   │
+  └─────────────┘             └──────────────┘          └──────────────┘</div>
+
+<h3>✅ 可以共享 / Can Share:</h3>
+<ul><li>API Gateway (rate limiting, routing)</li><li>CDN (static assets)</li><li>Authentication service</li><li>Distributed tracing (Jaeger/OpenTelemetry)</li><li>Object storage (S3) for artifacts</li></ul>
+
+<h3>❌ 不能混用 / Must Isolate:</h3>
+<ul><li><strong>Payment</strong> ← MUST have its own ACID database, cannot share eventual-consistency Kafka pipeline</li><li><strong>Autocomplete</strong> ← Must be read-optimized; never co-locate with write-heavy workloads</li><li><strong>Video transcoding</strong> ← CPU-bound; isolate in separate worker pools</li></ul>
+
+<hr/>
+
+<h2>关键权衡 / Key Tradeoffs</h2>
+
+<h3>1. 一致性隔离 / Consistency Isolation</h3>
+<p><strong>Chat</strong> 可以接受"消息延迟几秒"(最终一致性)，但 <strong>Payment</strong> 必须保证"扣款只发生一次"(强一致性)。把它们放在同一个数据库里会让 Chat 的性能拖慢 Payment，或让 Payment 的锁机制拖慢 Chat。</p>
+
+<p>Chat can tolerate "message delayed by seconds" (eventual consistency), but Payment demands "charge happens exactly once" (strong consistency). Mixing them either kills Chat performance via Payment's locking, or compromises Payment's correctness.</p>
+
+<h3>2. 流量模式 / Traffic Pattern Mismatch</h3>
+<ul><li>Autocomplete: 每秒百万次读取，极低写入 → Redis sorted sets, in-memory only</li><li>Video: 大块字节流 → 不走应用服务器，直接 CDN-to-client</li><li>Chat: 小包高频 → WebSocket long-lived connections</li></ul>
+
+<h3>3. 故障域隔离 / Blast Radius</h3>
+<div class="diagram-block">❌ Bad: Payment service shares DB connection pool with Chat
+   → Chat traffic spike exhausts connections → Payment fails
+
+✅ Good: Bulkhead pattern — each system has independent connection pools
+   → Chat DB slow → only Chat degrades; Payment unaffected</div>
+
+<hr/>
+
+<h2>综合架构原则 / Synthesis Principles (Staff-Level)</h2>
+
+<ol><li><strong>按一致性需求划分数据边界</strong> — 强一致性系统永远隔离</li></ol>
+<p>   Partition data boundaries by consistency requirement — strong-consistency systems always isolated</p>
+
+<ol><li><strong>共享无状态层，隔离有状态层</strong> — API Gateway/Auth 可共享；数据库不行</li></ol>
+<p>   Share stateless layers, isolate stateful ones — API Gateway/Auth can share; databases cannot</p>
+
+<ol><li><strong>识别"写放大"风险</strong> — 视频上传触发转码队列，转码队列不能与支付队列共用 worker</li></ol>
+<p>   Identify write amplification risks — video upload → transcode queue must not share workers with payment queue</p>
+
+<ol><li><strong>降级策略需匹配</strong> — 聊天系统降级 = 消息缓冲几秒（可接受）；支付系统降级 = 拒绝请求（不能丢单）</li></ol>
+<p>   Degradation strategies must match business requirements — chat buffering is OK; payment must reject, never silently lose</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="❌ 把 Kafka 当&quot;万能总线&quot;接入支付流程&#10;   Using Kafka as universal bus for payment — at-least-once delivery ≠ exactly-once billing&#10;&#10;❌ 让搜索索引和业务数据库共用同一个 Postgres&#10;   Sharing Postgres between search index and business data — vacuum/autovacuum conflicts&#10;&#10;❌ 跨系统共享缓存 key 空间 (Redis)&#10;   Sharing Redis key namespace across systems — cache eviction policies conflict&#10;&#10;✅ 正确做法: 每个系统独立的 Redis instance 或 cluster，通过 prefix + TTL policy 隔离&#10;   Each system gets its own Redis cluster/namespace with independent eviction policy">Copy</button>
+  <pre><code class="language-text">❌ 把 Kafka 当"万能总线"接入支付流程
+   Using Kafka as universal bus for payment — at-least-once delivery ≠ exactly-once billing
+
+❌ 让搜索索引和业务数据库共用同一个 Postgres
+   Sharing Postgres between search index and business data — vacuum/autovacuum conflicts
+
+❌ 跨系统共享缓存 key 空间 (Redis)
+   Sharing Redis key namespace across systems — cache eviction policies conflict
+
+✅ 正确做法: 每个系统独立的 Redis instance 或 cluster，通过 prefix + TTL policy 隔离
+   Each system gets its own Redis cluster/namespace with independent eviction policy</code></pre>
+</div>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li><a href="https://github.com/donnemartin/system-design-primer#consistency-patterns">System Design Primer — Consistency Patterns</a></li><li><a href="https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html">AWS Well-Architected Framework — Reliability Pillar</a></li><li><a href="https://dataintensive.net/">Martin Kleppmann — Designing Data-Intensive Applications</a> (Chapter 5, Replication)</li><li><a href="https://netflixtechblog.com/embracing-the-differences-inside-the-netflix-api-redesign-15fd8b3dc49d">Netflix TechBlog — Embracing the Differences: Inside the Netflix API Redesign</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象四家餐厅共用一栋大楼：</p>
+<ul><li>快餐店（聊天）：效率第一，偶尔上错菜没关系</li><li>电影院小卖部（视频）：卖大爆米花桶，走量</li><li>银行柜台（支付）：每一笔账必须准确，绝不能错</li><li>糖果店（搜索）：只卖不进货，货架永远满着</li></ul>
+
+<p>快餐店和电影院可以共用仓库，但<strong>银行柜台绝对不能跟快餐店共用收银机</strong>。</p>
+
+<p>Imagine four restaurants in one building. The cash register at the bank counter can NEVER be shared with the fast-food counter — even if it looks like the same hardware. Isolation is about trust and correctness, not just hardware cost.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 83 · #973 K Closest Points to Origin (Medium)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>💻 算法 / Algorithms — Day 83 · #973 K Closest Points to Origin (Medium)</h1>
+
+<p>🧩 <strong>堆/优先队列模式 (3/7)</strong> — building on the template from Day 79 (Kth Largest in Stream) and Day 81 (Last Stone Weight)</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 <a href="https://leetcode.com/problems/k-closest-points-to-origin/">LeetCode #973</a> 🟡 Medium  </p>
+<p>📹 <a href="https://neetcode.io/problems/k-closest-points-to-origin">NeetCode Solution</a></p>
+
+<p><strong>今天的变化 / What's different from previous problems in this block:</strong></p>
+<ul><li>Day 79 (Kth Largest in Stream): 1D stream, max-heap with size-k filter</li><li>Day 81 (Last Stone Weight): simulation, always pop 2 max elements</li><li><strong>Today</strong>: 2D distance comparison, need to return K points (not just count/value)</li></ul>
+
+<p><strong>关键变化</strong>: 堆的 key 不再是值本身，而是<strong>距离</strong> — 且需要存储原始点以便返回结果。</p>
+<p><strong>Key shift</strong>: heap key is now a <em>derived metric</em> (distance), not the raw value, and we must store the original point.</p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>你在做外卖 APP。用户要找最近的 K 家餐厅。暴力方法：把全城餐厅按距离排序。聪明方法：维护一个大小为 K 的"候选最近列表"，遍历餐厅时，如果有更近的就换掉最远的那家。</p>
+
+<p>You're building a delivery app. Find the K nearest restaurants. Brute force: sort all restaurants by distance. Smart: maintain a "top-K nearest" heap, swap out the farthest whenever you find something closer.</p>
+
+<hr/>
+
+<h2>模版映射 / Mapping to the Pattern Template</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# 通用模版 / General Template (from Day 79):&#10;heap = []&#10;for item in stream:&#10;    heapq.heappush(heap, item)&#10;    if len(heap) &gt; k:&#10;        heapq.heappop(heap)&#10;&#10;# 今天的应用 / Today's Application:&#10;# item → (-distance, x, y)  ← 取负值让 heapq (min-heap) 行为像 max-heap&#10;# 维护大小为k的&quot;最大距离堆&quot; → pop掉最远的 → 留下最近的k个">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># 通用模版 / General Template (from Day 79):</span>
+heap = []
+<span style="color:#c678dd;">for</span> item <span style="color:#c678dd;">in</span> stream:
+    heapq.heappush(heap, item)
+    <span style="color:#c678dd;">if</span> len(heap) &gt; k:
+        heapq.heappop(heap)
+
+<span style="color:#5c6370;"># 今天的应用 / Today's Application:</span>
+<span style="color:#5c6370;"># item → (-distance, x, y)  ← 取负值让 heapq (min-heap) 行为像 max-heap</span>
+<span style="color:#5c6370;"># 维护大小为k的"最大距离堆" → pop掉最远的 → 留下最近的k个</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>解法 / Solution with Trace</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import heapq&#10;from typing import List&#10;&#10;def kClosest(points: List[List[int]], k: int) -&gt; List[List[int]]:&#10;    # Max-heap trick: negate distance so Python's min-heap pops the FARTHEST point&#10;    heap = []  # stores (-dist_squared, x, y)&#10;    &#10;    for x, y in points:&#10;        dist = x*x + y*y  # skip sqrt — monotonic, doesn't affect ordering&#10;        heapq.heappush(heap, (-dist, x, y))&#10;        if len(heap) &gt; k:&#10;            heapq.heappop(heap)  # remove the farthest point&#10;    &#10;    return [[x, y] for _, x, y in heap]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> heapq
+<span style="color:#c678dd;">from</span> typing <span style="color:#c678dd;">import</span> List
+
+<span style="color:#c678dd;">def</span> kClosest(points: List[List[int]], k: int) -&gt; List[List[int]]:
+    <span style="color:#5c6370;"># Max-heap trick: negate distance so Python's min-heap pops the FARTHEST point</span>
+    heap = []  <span style="color:#5c6370;"># stores (-dist_squared, x, y)</span>
+    
+    <span style="color:#c678dd;">for</span> x, y <span style="color:#c678dd;">in</span> points:
+        dist = x*x + y*y  <span style="color:#5c6370;"># skip sqrt — monotonic, doesn't affect ordering</span>
+        heapq.heappush(heap, (-dist, x, y))
+        <span style="color:#c678dd;">if</span> len(heap) &gt; k:
+            heapq.heappop(heap)  <span style="color:#5c6370;"># remove the farthest point</span>
+    
+    <span style="color:#c678dd;">return</span> [[x, y] <span style="color:#c678dd;">for</span> _, x, y <span style="color:#c678dd;">in</span> heap]</code></pre>
+</div>
+
+<p><strong>逐步追踪 / Trace</strong> — <code>points = [[1,3],[-2,2],[3,1],[0,1]]</code>, <code>k = 2</code></p>
+
+<div class="diagram-block">Point [1,3]:  dist=10, heap=[(-10, 1, 3)]         size=1 ≤ k, no pop
+Point [-2,2]: dist=8,  heap=[(-10,1,3),(-8,-2,2)] size=2 ≤ k, no pop
+Point [3,1]:  dist=10, heap adds (-10,3,1) → size=3 &gt; k
+              pop farthest: (-10,1,3) or (-10,3,1) [tied] → one removed
+              heap=[(-10,3,1),(-8,-2,2)]  ← still has dist=10 point!
+Point [0,1]:  dist=1,  heap adds (-1,0,1) → size=3 &gt; k
+              pop farthest: (-10,3,1) removed
+              heap=[(-8,-2,2),(-1,0,1)]
+
+Result: [[-2,2],[0,1]]  ✓</div>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<ul><li>Time: <strong>O(n log k)</strong> — n points, each heap op is O(log k)</li><li>Space: <strong>O(k)</strong> — heap stores at most k+1 points</li></ul>
+
+<hr/>
+
+<h2>为什么不用排序？/ Why Not Just Sort?</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# ❌ 暴力排序 / Brute force sort&#10;points.sort(key=lambda p: p[0]**2 + p[1]**2)&#10;return points[:k]  # O(n log n) — slower for large n, small k&#10;&#10;# ✅ 堆方法 / Heap approach  &#10;# O(n log k) — much faster when k &lt;&lt; n&#10;# Example: n=1,000,000, k=10&#10;# Sort: 1M * 20 = 20M ops&#10;# Heap: 1M * log(10) ≈ 3.3M ops  ← 6x faster">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># ❌ 暴力排序 / Brute force sort</span>
+points.sort(key=<span style="color:#c678dd;">lambda</span> p: p[<span style="color:#56b6c2;">0</span>]**<span style="color:#56b6c2;">2</span> + p[<span style="color:#56b6c2;">1</span>]**<span style="color:#56b6c2;">2</span>)
+<span style="color:#c678dd;">return</span> points[:k]  <span style="color:#5c6370;"># O(n log n) — slower for large n, small k</span>
+
+<span style="color:#5c6370;"># ✅ 堆方法 / Heap approach  </span>
+<span style="color:#5c6370;"># O(n log k) — much faster when k &lt;&lt; n</span>
+<span style="color:#5c6370;"># Example: n=1,000,000, k=10</span>
+<span style="color:#5c6370;"># Sort: 1M * 20 = 20M ops</span>
+<span style="color:#5c6370;"># Heap: 1M * log(10) ≈ 3.3M ops  ← 6x faster</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>举一反三 / Connect to Pattern Block</h2>
+
+<div class="diagram-block">Block so far:
+#703 Kth Largest in Stream  → size-k min-heap, return top element
+#1046 Last Stone Weight     → always pop 2 max, simulate
+#973 K Closest Points ←     → size-k max-heap (negated), return all k elements
+
+Coming next:
+#215 Kth Largest in Array   → same as #703 but not streaming — can use QuickSelect O(n) average!
+#621 Task Scheduler         → heap for scheduling, not just finding — frequency counting
+#355 Design Twitter         → heap merge (K sorted streams)
+#295 Find Median            → TWO heaps (max-heap + min-heap)</div>
+
+<p><strong>进阶挑战 / Pro Challenge:</strong> Can you solve this with QuickSelect in O(n) average? (Hint: partition around k-th distance)</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li><a href="https://leetcode.com/problems/k-closest-points-to-origin/">LeetCode #973 — K Closest Points to Origin</a></li><li><a href="https://neetcode.io/problems/k-closest-points-to-origin">NeetCode Video — K Closest Points</a></li><li><a href="https://docs.python.org/3/library/heapq.html">Python heapq docs</a></li><li><a href="https://en.wikipedia.org/wiki/Quickselect">QuickSelect Algorithm</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>你有一堆弹珠，要找离你最近的3颗。  </p>
+<p>方法1：把所有弹珠按距离排好序，取前3个（慢）。  </p>
+<p>方法2：拿一个只能装3颗的小盒子。遍历每颗弹珠，如果比盒子里最远的还近，就换进去。  </p>
+<p>最后盒子里剩的就是答案！堆就是那个"智能小盒子"。</p>
+
+<p>You have a bag of marbles. Find the 3 closest to you. Method 2: keep a box that holds only 3 marbles. If you find one closer than the farthest in the box, swap it in. The heap IS that smart box.</p>
+
+<hr/>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 83 · Expert Synthesis</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>🗣️ 软技能 / Soft Skills — Day 83 · Expert Synthesis</h1>
+
+<p><strong>主题 / Topic:</strong> 综合场景 — 当技术债、团队文化、商业压力同时撞上你</p>
+<p><strong>Synthesis Scenario: When Tech Debt, Team Culture, and Business Pressure Collide Simultaneously</strong></p>
+
+<hr/>
+
+<h2>为什么这个场景最难 / Why This Is the Hardest Scenario</h2>
+
+<p>在 Staff+ 层面，最难的不是单个挑战——而是<strong>三件事同时发生</strong>：</p>
+<ul><li>线上系统有技术债需要还（工程判断）</li><li>团队士气因为一直"填坑"在下滑（人的问题）</li><li>新 feature 业务方催得很急（商业压力）</li></ul>
+
+<p>At Staff+ level, the hardest challenges aren't singular — they're <strong>compound</strong>:</p>
+<ul><li>Legacy tech debt threatening reliability (engineering judgment)</li><li>Team morale declining from perpetual firefighting (people problem)</li><li>Business stakeholders demanding new features now (commercial pressure)</li></ul>
+
+<p><strong>面试官真正在测什么</strong>: 你能否在不消耗团队信用的情况下，同时推进这三条线？</p>
+
+<hr/>
+
+<h2>STAR 分解 / STAR Framework</h2>
+
+<h3>Situation (背景)</h3>
+<p>"在我的上一个团队，我们有一个 5 年历史的单体 Python 服务。它支撑了公司 40% 的营收，但部署一次需要 45 分钟，P99 延迟在大促期间会飙到 8 秒。与此同时，产品路线图上有 6 个新特性等着交付，团队的工程师开始在 1:1 里提到'感觉一直在擦屁股'。"</p>
+
+<p>"My previous team owned a 5-year-old Python monolith supporting 40% of company revenue. Each deploy took 45 minutes, P99 spiked to 8s during peak. Meanwhile, 6 new features sat on the roadmap, and engineers in 1:1s were saying 'we're always firefighting.'"</p>
+
+<h3>Task (任务)</h3>
+<p>同时解决三个问题：降低技术债风险、修复团队士气、交付业务需求。</p>
+<p>Simultaneously: reduce tech debt risk, fix team morale, deliver business features.</p>
+
+<h3>Action (行动)</h3>
+<p><strong>第一步：量化，不要定性</strong> / Quantify, don't moralize</p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="❌ &quot;我们的技术债很严重，需要重构&quot;  (谁来判断？)&#10;✅ &quot;每个新特性因为历史包袱多花3周，上季度我们损失了9周 = 2.25个工程师月&quot;&#10;   &quot;Each new feature costs 3 extra weeks. Last quarter: 9 wasted weeks = 2.25 eng-months lost&quot;">Copy</button>
+  <pre><code class="language-text">❌ "我们的技术债很严重，需要重构"  (谁来判断？)
+✅ "每个新特性因为历史包袱多花3周，上季度我们损失了9周 = 2.25个工程师月"
+   "Each new feature costs 3 extra weeks. Last quarter: 9 wasted weeks = 2.25 eng-months lost"</code></pre>
+</div>
+
+<p><strong>第二步：捆绑利益，不要单独提案</strong> / Bundle interests, don't silo proposals</p>
+<ul><li>告诉 PM：重构 = 下个季度特性速度提升 2x</li><li>告诉 CTO：不重构的风险 = 大促崩溃，损失 $2M ARR</li><li>告诉团队：重构计划 = 你们主导，不是我指挥</li></ul>
+
+<p><strong>第三步：20% 时间规则</strong> / 20% refactor rule</p>
+<p>每个 Sprint 划出 20% 的时间（约 1 天/工程师/周）专门用于还技术债。这个预算不需要业务审批——它是工程团队的"运营开销"。</p>
+<p>Reserve 20% of each Sprint for debt reduction. This budget doesn't require business approval — it's engineering "operating cost."</p>
+
+<p><strong>第四步：可见性</strong> / Make progress visible</p>
+<p>建一个"技术健康仪表盘"（部署时间、P99、代码覆盖率），每周 standup 一分钟汇报。团队能看到自己的工作成果 → 士气回升。</p>
+<p>Build a "tech health dashboard" (deploy time, P99, test coverage). One-minute standup update weekly. Engineers see impact of their work → morale recovers.</p>
+
+<h3>Result (结果)</h3>
+<p>6个月后：</p>
+<ul><li>部署时间：45分钟 → 8分钟</li><li>P99 大促峰值：8秒 → 1.2秒</li><li>特性交付速度：提升 1.8x</li><li>2 名工程师提到这是他们"最好的6个月工作体验"</li></ul>
+
+<hr/>
+
+<h2>❌ 弱回答 vs ✅ 强回答</h2>
+
+<p>❌ <strong>弱</strong>: "我们做了一个技术债冲刺，然后就好了"</p>
+<ul><li>没有量化</li><li>没有展示跨职能对齐</li><li>没有可持续机制</li></ul>
+
+<p>✅ <strong>强</strong>: 展示<strong>系统性思维</strong> — 不是"修一个问题"，而是"改变了技术债如何被优先级排序的游戏规则"</p>
+
+<p>❌ Weak: "We did a tech debt sprint and fixed it."</p>
+<p>✅ Strong: Show <em>systemic thinking</em> — you changed HOW tech debt gets prioritized, not just addressed one instance.</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分项 / Senior+ Differentiators</h2>
+
+<ol><li><strong>你主动发现了这个问题，而不是被指派去解决它</strong> — Proactive pattern recognition</li><li><strong>你创造了可持续的机制</strong>（20% 规则），而不是一次性冲刺 — Durable systems beat one-time heroics</li><li><strong>你会说服 PM 和 CTO，不只是工程团队</strong> — Cross-functional influence</li><li><strong>你把工程健康变成了可量化的业务指标</strong> — Translation between eng and business language</li></ol>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<ul><li>技术债故事的 Staff 级别框架：<strong>量化损失 → 捆绑业务利益 → 建立可持续机制 → 公开进度</strong></li><li>最强的 STAR 故事不是"我解决了一个难题"，而是"我改变了问题被处理的方式"</li><li>The strongest STAR stories aren't "I solved a hard problem" — they're "I changed how the problem gets handled"</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li><a href="https://staffeng.com/book">Will Larson — Staff Engineer: Leadership Beyond the Management Track</a></li><li><a href="https://martinfowler.com/bliki/TechnicalDebtQuadrant.html">Martin Fowler — Technical Debt Quadrant</a></li><li><a href="https://rework.withgoogle.com/guides/managers-identify-what-makes-a-great-manager/steps/learn-about-googles-manager-research/">Google re:Work — Manager feedback survey</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>你家的水管漏水但还能用，同时老板让你装修新卧室，同时你的家人说"每天都在修水管太烦了"。  </p>
+<p>聪明做法：告诉老板"修水管能让装修快2倍"，每周抽1天专门修管道，贴进度条让全家人都能看到。三件事同时推进，而不是硬选一个。</p>
+
+<p>Your pipes are leaking but functional, your boss wants a new bedroom, and your family says "we're always fixing pipes." Smart move: tell the boss fixing pipes makes remodeling 2x faster, dedicate 1 day/week to pipes, post a progress board everyone can see. Advance all three simultaneously.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 83 · 最新动态 / AI News Roundup (July 2026)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>🤖 AI — Day 83 · 最新动态 / AI News Roundup (July 2026)</h1>
+
+<blockquote>📰 NEWS MODE — sourced from web search conducted July 6, 2026</blockquote>
+
+<hr/>
+
+<h2>本周 AI 三大新闻 / Top 3 AI Stories This Week</h2>
+
+<hr/>
+
+<h3>1. 🚀 OpenAI 预览 GPT-5.6 家族，但访问受限</h3>
+<p><strong>OpenAI Previews GPT-5.6 Family, Access Restricted to ~20 Partners</strong></p>
+
+<p>OpenAI 预览了 GPT-5.6 系列，包含三个层次：Sol（旗舰）、Terra（平衡）、Luna（快速经济）。据报道，目前访问仅限约 20 家政府审查的合作伙伴，更广泛的开放预计在 7 月中下旬。</p>
+
+<p>OpenAI previewed the GPT-5.6 family with three tiers: Sol (flagship), Terra (balanced), and Luna (fast/affordable). Access is reportedly limited to ~20 government-vetted partner organizations, with broader availability expected mid-to-late July.</p>
+
+<p><strong>值得注意 / Notable:</strong> OpenAI 计划将 GPT-5.6 Sol 部署在 Cerebras 基础设施上，据报道可达到约 750 token/秒的生成速度 — 比标准部署快 5-10 倍。</p>
+
+<p>OpenAI plans to deploy GPT-5.6 Sol on Cerebras infrastructure, reportedly enabling ~750 tokens/second — 5-10x faster than standard deployments.</p>
+
+<p>📎 来源 / Source: <a href="https://www.tlt.com/insights-and-events/insight/tlts-ai-brief-july-2026">TLT AI Brief July 2026</a></p>
+
+<hr/>
+
+<h3>2. ⚖️ Anthropic Claude Sonnet 5 成为新默认，监管阴云犹在</h3>
+<p><strong>Anthropic Launches Claude Sonnet 5 as New Default; Regulatory Cloud Lingers</strong></p>
+
+<p>Anthropic 发布了 Claude Sonnet 5，成为所有 Free 和 Pro 用户的新默认模型。与此同时，更早的 Claude Fable 5 和 Mythos 5 因美国出口管控指令（发现了能够识别软件漏洞的越狱方式）而遭到临时暂停，目前部分恢复，但 Mythos 5 仍限于经批准的美国机构。</p>
+
+<p>Anthropic launched Claude Sonnet 5 as the new default for Free and Pro users. Earlier, Claude Fable 5 and Mythos 5 faced temporary suspension under a U.S. export control directive after a jailbreak demonstrated the models' ability to identify software vulnerabilities. Access was partially restored, with Mythos 5 still restricted to approved U.S. organizations.</p>
+
+<p><strong>工程师视角 / Engineer's Take:</strong> 这标志着政府直接干预 AI 模型发布的先例 — 不只是事后监管，而是<strong>预防性限制</strong>。对于依赖 API 的产品，需要关注模型访问的不确定性风险。</p>
+
+<p>This sets a precedent for government <em>preemptive</em> restrictions on model releases — not just post-hoc regulation. Product teams relying on API access need to plan for availability uncertainty.</p>
+
+<p>📎 来源 / Source: <a href="https://aicentral.substack.com/p/the-ai-landscape-july-2026">AI Central Substack — The AI Landscape July 2026</a></p>
+
+<hr/>
+
+<h3>3. 📍 Illinois 签署 AI 安全法，美国 AI 立法进入多州竞赛</h3>
+<p><strong>Illinois Signs AI Safety Act; U.S. State-Level AI Regulation Accelerates</strong></p>
+
+<p>伊利诺伊州州长 JB Pritzker 签署《人工智能安全措施法》，建立针对能够造成"灾难性伤害"的大型 AI 模型的护栏和报告标准。这与加州、纽约的类似立法呼应，标志着美国 AI 监管从联邦缺位转向<strong>州级竞赛</strong>。</p>
+
+<p>Illinois Governor JB Pritzker signed the Artificial Intelligence Safety Measures Act, establishing guardrails and reporting standards for large AI models capable of causing "catastrophic harm." This mirrors similar legislation in California and New York — signaling that U.S. AI regulation is shifting from federal inaction to state-level competition.</p>
+
+<p><strong>实际影响 / Practical Impact:</strong> AI 公司可能面临各州不一致的合规要求 — 类似 GDPR 在欧洲落地时给工程团队带来的挑战（地理路由、数据本地化、审计日志）。</p>
+
+<p>AI companies may face inconsistent state-level compliance requirements — similar to how GDPR fragmented engineering practices (geo-routing, data localization, audit logs).</p>
+
+<p>📎 来源 / Source: <a href="https://news.wttw.com/2026/07/06/pritzker-signs-landmark-ai-regulation-bill-aims-mitigate-risks">WTTW News — Pritzker signs AI regulation bill</a></p>
+
+<hr/>
+
+<h2>📊 本周 AI 格局速览 / Quick Landscape Snapshot</h2>
+
+<div class="diagram-block">Provider    | Latest Model      | Context | Notable
+------------|-------------------|---------|---------------------------
+OpenAI      | GPT-5.6 Sol       | TBD     | 750 tok/s on Cerebras (limited)
+Anthropic   | Claude Sonnet 5   | 200K    | New default; Mythos 5 restricted
+Google      | Gemini 3.1 Pro    | 1M      | Cost-efficient reasoning
+Open Source | GLM-5.2           | -       | Freely downloadable, rival proprietary</div>
+
+<hr/>
+
+<h2>工程师必知 / Engineer's Takeaway</h2>
+
+<p><strong>速度军备竞赛</strong>: 750 tok/s 不只是炫耀数字 — 它让实时 AI 应用（实时字幕、代码补全、语音 AI）成为可能。当前 GPT-4 约 30-50 tok/s，差距约 15-25 倍。</p>
+
+<p><strong>合规新现实</strong>: 如果你在美国构建 AI 产品，需要开始跟踪各州 AI 安全法。2026 年的格局：加州 + 纽约 + 伊利诺伊已有立法，更多州在路上。</p>
+
+<p>Speed arms race: 750 tok/s enables real-time AI applications impossible at current speeds.</p>
+<p>Compliance reality: U.S.-based AI products now need state-by-state compliance tracking.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li><a href="https://www.tlt.com/insights-and-events/insight/tlts-ai-brief-july-2026">TLT AI Brief July 2026</a></li><li><a href="https://aicentral.substack.com/p/the-ai-landscape-july-2026">AI Central Substack</a></li><li><a href="https://news.wttw.com/2026/07/06/pritzker-signs-landmark-ai-regulation-bill-aims-mitigate-risks">WTTW — Illinois AI Safety Act</a></li><li><a href="https://digitalbrightfuture.com/ai-weekly-roundup-june-28-july-4-2026/">Digital Bright Future — AI Weekly Roundup</a></li></ul>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>OpenAI 做了一个超快的新 AI，但只给少数人用（像是新电影只在部分影院放映）。  </p>
+<p>Anthropic 的新模型面向所有人，但老模型因为"会找安全漏洞"被政府叫停了一段时间。  </p>
+<p>伊利诺伊州通过了法律，要求危险 AI 系统必须登记报告 — 就像汽车需要年检一样。</p>
+
+<p>OpenAI made a super-fast new AI but only a few people can use it. Anthropic's new model is for everyone, but their older model got temporarily banned because it could find security holes. Illinois passed a law requiring dangerous AI systems to report themselves — like cars needing a safety inspection.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-deepdive">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-deepdive" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🔬</span>
+        <div>
+          <div class="section-header-title">🔬 Deep Dive</div>
+          <div class="section-header-sub">🔬</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-deepdive">
+        <p>🔬 <strong>Saturday Deep Dive: 堆 / 优先队列 — 从 K 个最近点到数据流中位数 (18 min read)</strong></p>
+<p>📊 NeetCode: 65/150 · SysDesign: 64/40 · Behavioral: 64/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 持续精进中！</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>为什么堆很重要？</strong></p>
+
+<p>堆（优先队列）是面试中频率极高的数据结构——只要题目出现 "top K"、"K 个最小/最大"、"合并 K 个有序序列"、"动态中位数" 这类关键词，第一反应就应该是堆。</p>
+
+<p>核心价值：<strong>不需要对整个数组排序（O(n log n)），只维护一个大小为 k 的堆（O(n log k)）</strong>。当 k &lt;&lt; n 时，性能差异巨大。</p>
+
+<p>本期深度讲解三个层次：</p>
+<ol><li>基础：K 个最近点（中等，热身）</li><li>进阶：数组第 K 大元素（中等，多种解法对比）</li><li>巅峰：数据流中位数（困难，双堆经典）</li></ol>
+
+<p><strong>Why heaps matter:</strong></p>
+
+<p>The heap (priority queue) pattern shows up whenever you need to efficiently maintain the "top K" of a dynamic dataset. The insight is powerful: instead of re-sorting everything, you maintain a bounded heap that does O(log k) work per element instead of O(log n). For "find median from a stream" this becomes the two-heap trick — one of the most elegant data structure designs in interview canon.</p>
+
+<p>🔗 <a href="https://leetcode.com/problems/k-closest-points-to-origin/">K Closest Points to Origin — LeetCode #973</a></p>
+<p>🔗 <a href="https://leetcode.com/problems/find-median-from-data-stream/">Find Median from Data Stream — LeetCode #295</a></p>
+<p>📹 <a href="https://www.youtube.com/watch?v=rI2EBUEMfTk">NeetCode — K Closest Points</a></p>
+<p>📹 <a href="https://www.youtube.com/watch?v=itmhHWaHupI">NeetCode — Find Median from Data Stream</a></p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>堆的本质 / The Heap Mental Model</h3>
+
+<p>Python 的 <code>heapq</code> 是<strong>最小堆</strong>：最小值永远在堆顶（index 0）。</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="最小堆示例:&#10;        1&#10;       / \&#10;      3   2&#10;     / \&#10;    4   5">Copy</button>
+  <pre><code class="language-text">最小堆示例:
+        1
+       / \
+      3   2
+     / \
+    4   5</code></pre>
+</div>
+
+<p><strong>关键技巧：用最小堆模拟最大堆 → 存入负值</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import heapq&#10;&#10;# Min-heap (default)&#10;min_heap = [3, 1, 4, 1, 5]&#10;heapq.heapify(min_heap)&#10;print(heapq.heappop(min_heap))  # 1&#10;&#10;# Max-heap trick: negate values&#10;max_heap = [-3, -1, -4, -1, -5]&#10;heapq.heapify(max_heap)&#10;print(-heapq.heappop(max_heap))  # 5">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> heapq
+
+<span style="color:#5c6370;"># Min-heap (default)</span>
+min_heap = [<span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">4</span>, <span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">5</span>]
+heapq.heapify(min_heap)
+print(heapq.heappop(min_heap))  <span style="color:#5c6370;"># 1</span>
+
+<span style="color:#5c6370;"># Max-heap trick: negate values</span>
+max_heap = [-<span style="color:#56b6c2;">3</span>, -<span style="color:#56b6c2;">1</span>, -<span style="color:#56b6c2;">4</span>, -<span style="color:#56b6c2;">1</span>, -<span style="color:#56b6c2;">5</span>]
+heapq.heapify(max_heap)
+print(-heapq.heappop(max_heap))  <span style="color:#5c6370;"># 5</span></code></pre>
+</div>
+
+<p><strong>三种堆的使用模式 / Three Heap Patterns:</strong></p>
+
+<table><thead><tr><th>场景</th><th>用什么堆</th><th>核心操作</th></tr></thead><tbody><tr><td>Top K 最大值</td><td>大小为 k 的最小堆</td><td>若新元素 &gt; 堆顶 → 替换堆顶</td></tr><tr><td>Top K 最小值</td><td>大小为 k 的最大堆</td><td>若新元素 &lt; 堆顶 → 替换堆顶</td></tr><tr><td>动态中位数</td><td>两个堆（大小各半）</td><td>平衡两堆大小</td></tr></tbody></table>
+
+<p><strong>为什么维护 K 个最大值要用最小堆？/ Why use a min-heap for top-K largest?</strong></p>
+
+<p>想象你有一个"门卫"在守住前 K 名。新来一个候选人，需要问：<strong>"你比现有 K 人里最弱的那个强吗？"</strong> 最小堆的堆顶就是那个"最弱"的人——O(1) 时间就能检查，O(log k) 时间踢掉并加入新人。</p>
+
+<p>The min-heap's root is always the <em>weakest</em> element in your top-K set. It's your bouncer. Every new element only gets in if it beats the current weakest. This is the core insight for all "Top K" problems.</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>2.1 K Closest Points to Origin (Medium)</h3>
+
+<p><strong>问题</strong>：给定 n 个点，返回距离原点最近的 k 个点。距离 = √(x² + y²)（比较时可省略 √）。</p>
+
+<p><strong>方法一：直接排序（简单但非最优）</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def kClosest_sort(points: list[list[int]], k: int) -&gt; list[list[int]]:&#10;    # Sort all points by squared distance, take first k&#10;    # Time: O(n log n), Space: O(n)&#10;    points.sort(key=lambda p: p[0]**2 + p[1]**2)&#10;    return points[:k]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> kClosest_sort(points: list[list[int]], k: int) -&gt; list[list[int]]:
+    <span style="color:#5c6370;"># Sort all points by squared distance, take first k</span>
+    <span style="color:#5c6370;"># Time: O(n log n), Space: O(n)</span>
+    points.sort(key=<span style="color:#c678dd;">lambda</span> p: p[<span style="color:#56b6c2;">0</span>]**<span style="color:#56b6c2;">2</span> + p[<span style="color:#56b6c2;">1</span>]**<span style="color:#56b6c2;">2</span>)
+    <span style="color:#c678dd;">return</span> points[:k]</code></pre>
+</div>
+
+<p><strong>方法二：最大堆，维护 K 个最小值（面试首选）</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import heapq&#10;&#10;def kClosest(points: list[list[int]], k: int) -&gt; list[list[int]]:&#10;    # Use a max-heap of size k&#10;    # Python only has min-heap, so negate distance to simulate max-heap&#10;    # Time: O(n log k), Space: O(k)&#10;    &#10;    max_heap = []  # stores (-distance_squared, x, y)&#10;    &#10;    for x, y in points:&#10;        dist_sq = x*x + y*y&#10;        # Push negative distance (max-heap trick)&#10;        heapq.heappush(max_heap, (-dist_sq, x, y))&#10;        &#10;        # If heap exceeds size k, remove the farthest point (heap root = largest dist)&#10;        if len(max_heap) &gt; k:&#10;            heapq.heappop(max_heap)  # removes the most negative = largest distance&#10;    &#10;    # Extract points (discard distance)&#10;    return [[x, y] for (_, x, y) in max_heap]&#10;&#10;&#10;# Trace through example: points = [[1,3],[-2,2],[5,-1]], k = 2&#10;# &#10;# Process [1,3]: dist=10  → heap=[(-10, 1, 3)]           size=1 ≤ k, no pop&#10;# Process [-2,2]: dist=8  → heap=[(-10,1,3),(-8,-2,2)]   size=2 ≤ k, no pop&#10;# Process [5,-1]: dist=26 → heap=[(-26,5,-1),(-8,-2,2),(-10,1,3)]  size=3 &gt; k&#10;#   pop max → removes (-26, 5, -1)  [farthest point]&#10;#   heap=[(-10,1,3),(-8,-2,2)]&#10;# &#10;# Result: [[1,3],[-2,2]] ✓">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> heapq
+
+<span style="color:#c678dd;">def</span> kClosest(points: list[list[int]], k: int) -&gt; list[list[int]]:
+    <span style="color:#5c6370;"># Use a max-heap of size k</span>
+    <span style="color:#5c6370;"># Python only has min-heap, so negate distance to simulate max-heap</span>
+    <span style="color:#5c6370;"># Time: O(n log k), Space: O(k)</span>
+    
+    max_heap = []  <span style="color:#5c6370;"># stores (-distance_squared, x, y)</span>
+    
+    <span style="color:#c678dd;">for</span> x, y <span style="color:#c678dd;">in</span> points:
+        dist_sq = x*x + y*y
+        <span style="color:#5c6370;"># Push negative distance (max-heap trick)</span>
+        heapq.heappush(max_heap, (-dist_sq, x, y))
+        
+        <span style="color:#5c6370;"># If heap exceeds size k, remove the farthest point (heap root = largest dist)</span>
+        <span style="color:#c678dd;">if</span> len(max_heap) &gt; k:
+            heapq.heappop(max_heap)  <span style="color:#5c6370;"># removes the most negative = largest distance</span>
+    
+    <span style="color:#5c6370;"># Extract points (discard distance)</span>
+    <span style="color:#c678dd;">return</span> [[x, y] <span style="color:#c678dd;">for</span> (_, x, y) <span style="color:#c678dd;">in</span> max_heap]
+
+
+<span style="color:#5c6370;"># Trace through example: points = [[1,3],[-2,2],[5,-1]], k = 2</span>
+<span style="color:#5c6370;"># </span>
+<span style="color:#5c6370;"># Process [1,3]: dist=10  → heap=[(-10, 1, 3)]           size=1 ≤ k, no pop</span>
+<span style="color:#5c6370;"># Process [-2,2]: dist=8  → heap=[(-10,1,3),(-8,-2,2)]   size=2 ≤ k, no pop</span>
+<span style="color:#5c6370;"># Process [5,-1]: dist=26 → heap=[(-26,5,-1),(-8,-2,2),(-10,1,3)]  size=3 &gt; k</span>
+<span style="color:#5c6370;">#   pop max → removes (-26, 5, -1)  [farthest point]</span>
+<span style="color:#5c6370;">#   heap=[(-10,1,3),(-8,-2,2)]</span>
+<span style="color:#5c6370;"># </span>
+<span style="color:#5c6370;"># Result: [[1,3],[-2,2]] ✓</span></code></pre>
+</div>
+
+<p><strong>方法三：Quick Select（最优平均，O(n) 平均）</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import random&#10;&#10;def kClosest_quickselect(points: list[list[int]], k: int) -&gt; list[list[int]]:&#10;    # Partition-based selection — O(n) average, O(n²) worst&#10;    # Not recommended in interviews unless specifically asked&#10;    &#10;    def dist(p):&#10;        return p[0]**2 + p[1]**2&#10;    &#10;    def partition(left, right, pivot_idx):&#10;        pivot_dist = dist(points[pivot_idx])&#10;        # Move pivot to end&#10;        points[pivot_idx], points[right] = points[right], points[pivot_idx]&#10;        store = left&#10;        for i in range(left, right):&#10;            if dist(points[i]) &lt;= pivot_dist:&#10;                points[store], points[i] = points[i], points[store]&#10;                store += 1&#10;        # Move pivot to final position&#10;        points[store], points[right] = points[right], points[store]&#10;        return store&#10;    &#10;    left, right = 0, len(points) - 1&#10;    while left &lt; right:&#10;        pivot_idx = random.randint(left, right)&#10;        pivot_final = partition(left, right, pivot_idx)&#10;        if pivot_final == k:&#10;            break&#10;        elif pivot_final &lt; k:&#10;            left = pivot_final + 1&#10;        else:&#10;            right = pivot_final - 1&#10;    &#10;    return points[:k]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> random
+
+<span style="color:#c678dd;">def</span> kClosest_quickselect(points: list[list[int]], k: int) -&gt; list[list[int]]:
+    <span style="color:#5c6370;"># Partition-based selection — O(n) average, O(n²) worst</span>
+    <span style="color:#5c6370;"># Not recommended in interviews unless specifically asked</span>
+    
+    <span style="color:#c678dd;">def</span> dist(p):
+        <span style="color:#c678dd;">return</span> p[<span style="color:#56b6c2;">0</span>]**<span style="color:#56b6c2;">2</span> + p[<span style="color:#56b6c2;">1</span>]**<span style="color:#56b6c2;">2</span>
+    
+    <span style="color:#c678dd;">def</span> partition(left, right, pivot_idx):
+        pivot_dist = dist(points[pivot_idx])
+        <span style="color:#5c6370;"># Move pivot to end</span>
+        points[pivot_idx], points[right] = points[right], points[pivot_idx]
+        store = left
+        <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(left, right):
+            <span style="color:#c678dd;">if</span> dist(points[i]) &lt;= pivot_dist:
+                points[store], points[i] = points[i], points[store]
+                store += <span style="color:#56b6c2;">1</span>
+        <span style="color:#5c6370;"># Move pivot to final position</span>
+        points[store], points[right] = points[right], points[store]
+        <span style="color:#c678dd;">return</span> store
+    
+    left, right = <span style="color:#56b6c2;">0</span>, len(points) - <span style="color:#56b6c2;">1</span>
+    <span style="color:#c678dd;">while</span> left &lt; right:
+        pivot_idx = random.randint(left, right)
+        pivot_final = partition(left, right, pivot_idx)
+        <span style="color:#c678dd;">if</span> pivot_final == k:
+            <span style="color:#c678dd;">break</span>
+        <span style="color:#c678dd;">elif</span> pivot_final &lt; k:
+            left = pivot_final + <span style="color:#56b6c2;">1</span>
+        <span style="color:#c678dd;">else</span>:
+            right = pivot_final - <span style="color:#56b6c2;">1</span>
+    
+    <span style="color:#c678dd;">return</span> points[:k]</code></pre>
+</div>
+
+<p><strong>解法对比 / Comparison:</strong></p>
+
+<table><thead><tr><th>解法</th><th>时间复杂度</th><th>空间复杂度</th><th>何时用</th></tr></thead><tbody><tr><td>排序</td><td>O(n log n)</td><td>O(1)</td><td>k 接近 n 时</td></tr><tr><td>最大堆</td><td>O(n log k)</td><td>O(k)</td><td><strong>面试首选</strong></td></tr><tr><td>Quick Select</td><td>O(n) 平均</td><td>O(1)</td><td>追求最优、可接受最坏情况</td></tr></tbody></table>
+
+<hr/>
+
+<h3>2.2 Find Median from Data Stream (Hard) — 双堆经典</h3>
+
+<p><strong>问题</strong>：设计一个数据结构，支持：</p>
+<ul><li><code>addNum(num)</code>: 加入一个整数</li><li><code>findMedian()</code>: 返回所有已加入整数的中位数</li></ul>
+
+<p><strong>核心思路 / Core Insight:</strong></p>
+
+<p>把数据分成两半：</p>
+<ul><li>左半部分 → <strong>最大堆</strong>（堆顶 = 左半最大值）</li><li>右半部分 → <strong>最小堆</strong>（堆顶 = 右半最小值）</li></ul>
+
+<p>中位数 = 两堆堆顶的均值（或较大堆的堆顶）</p>
+
+<div class="diagram-block">数据: [1, 2, 3, 4, 5]
+
+左半 (max-heap): [1, 2]  → 堆顶 = 2
+右半 (min-heap): [3, 4, 5] → 堆顶 = 3
+
+中位数 = (2 + 3) / 2 = 2.5 ✓
+    
+           2  |  3
+          1   |   4
+              |     5
+     max-heap | min-heap</div>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import heapq&#10;&#10;class MedianFinder:&#10;    &quot;&quot;&quot;&#10;    Two-heap approach for dynamic median.&#10;    &#10;    Invariant:&#10;      1. max_heap (left) stores the smaller half — as negatives (min-heap trick)&#10;      2. min_heap (right) stores the larger half&#10;      3. len(max_heap) == len(min_heap)  OR  len(max_heap) == len(min_heap) + 1&#10;         (max_heap can have at most 1 extra element)&#10;    &#10;    Time: O(log n) per addNum, O(1) per findMedian&#10;    Space: O(n)&#10;    &quot;&quot;&quot;&#10;    &#10;    def __init__(self):&#10;        self.max_heap = []  # left half — stored as negatives&#10;        self.min_heap = []  # right half&#10;    &#10;    def addNum(self, num: int) -&gt; None:&#10;        # Step 1: Always push to max_heap first&#10;        heapq.heappush(self.max_heap, -num)&#10;        &#10;        # Step 2: Balance — ensure max_heap top ≤ min_heap top&#10;        # If max_heap's largest &gt; min_heap's smallest, move it over&#10;        if self.min_heap and (-self.max_heap[0]) &gt; self.min_heap[0]:&#10;            val = -heapq.heappop(self.max_heap)&#10;            heapq.heappush(self.min_heap, val)&#10;        &#10;        # Step 3: Rebalance sizes — max_heap can have at most 1 extra&#10;        if len(self.max_heap) &gt; len(self.min_heap) + 1:&#10;            val = -heapq.heappop(self.max_heap)&#10;            heapq.heappush(self.min_heap, val)&#10;        elif len(self.min_heap) &gt; len(self.max_heap):&#10;            val = heapq.heappop(self.min_heap)&#10;            heapq.heappush(self.max_heap, -val)&#10;    &#10;    def findMedian(self) -&gt; float:&#10;        # If odd total: max_heap has the extra element (middle value)&#10;        if len(self.max_heap) &gt; len(self.min_heap):&#10;            return float(-self.max_heap[0])&#10;        # If even total: average of both tops&#10;        return (-self.max_heap[0] + self.min_heap[0]) / 2.0&#10;&#10;&#10;# ── Trace through: addNum(1), addNum(2), addNum(3) ──&#10;#&#10;# addNum(1):&#10;#   push -1 to max_heap → max_heap=[-1], min_heap=[]&#10;#   no balance needed (min_heap empty)&#10;#   sizes: 1 vs 0 → ok (max_heap can have +1)&#10;#   state: max_heap=[-1], min_heap=[]&#10;#&#10;# addNum(2):&#10;#   push -2 to max_heap → max_heap=[-2,-1], min_heap=[]&#10;#   balance check: -(-2)=2 &gt; nothing (min_heap empty) → skip&#10;#   size check: len(max_heap)=2 &gt; len(min_heap)+1=1 → move top of max to min&#10;#     pop -2 from max_heap → push 2 to min_heap&#10;#   state: max_heap=[-1], min_heap=[2]&#10;#&#10;# addNum(3):&#10;#   push -3 to max_heap → max_heap=[-3,-1], min_heap=[2]&#10;#   balance check: -(-3)=3 &gt; min_heap[0]=2 → move 3 to min_heap&#10;#     pop -3 from max_heap → push 3 to min_heap&#10;#   max_heap=[-1], min_heap=[2,3]&#10;#   size check: len(min_heap)=2 &gt; len(max_heap)=1 → move min top to max&#10;#     pop 2 from min_heap → push -2 to max_heap&#10;#   state: max_heap=[-2,-1], min_heap=[3]  → wait sizes 2 vs 1, max_heap has +1 ✓&#10;#&#10;# findMedian():&#10;#   len(max_heap)=2 &gt; len(min_heap)=1 → return -max_heap[0] = -(-2) = 2 ✓&#10;#   Actual data: [1,2,3] → median = 2 ✓">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> heapq
+
+<span style="color:#c678dd;">class</span> MedianFinder:
+    <span style="color:#e5c07b;">"""
+    Two-heap approach for dynamic median.
+    
+    Invariant:
+      1. max_heap (left) stores the smaller half — as negatives (min-heap trick)
+      2. min_heap (right) stores the larger half
+      3. len(max_heap) == len(min_heap)  OR  len(max_heap) == len(min_heap) + 1
+         (max_heap can have at most 1 extra element)
+    
+    Time: O(log n) per addNum, O(1) per findMedian
+    Space: O(n)
+    """</span>
+    
+    <span style="color:#c678dd;">def</span> __init__(self):
+        self.max_heap = []  <span style="color:#5c6370;"># left half — stored as negatives</span>
+        self.min_heap = []  <span style="color:#5c6370;"># right half</span>
+    
+    <span style="color:#c678dd;">def</span> addNum(self, num: int) -&gt; <span style="color:#c678dd;">None</span>:
+        <span style="color:#5c6370;"># Step 1: Always push to max_heap first</span>
+        heapq.heappush(self.max_heap, -num)
+        
+        <span style="color:#5c6370;"># Step 2: Balance — ensure max_heap top ≤ min_heap top</span>
+        <span style="color:#5c6370;"># If max_heap's largest &gt; min_heap's smallest, move it over</span>
+        <span style="color:#c678dd;">if</span> self.min_heap <span style="color:#c678dd;">and</span> (-self.max_heap[<span style="color:#56b6c2;">0</span>]) &gt; self.min_heap[<span style="color:#56b6c2;">0</span>]:
+            val = -heapq.heappop(self.max_heap)
+            heapq.heappush(self.min_heap, val)
+        
+        <span style="color:#5c6370;"># Step 3: Rebalance sizes — max_heap can have at most 1 extra</span>
+        <span style="color:#c678dd;">if</span> len(self.max_heap) &gt; len(self.min_heap) + <span style="color:#56b6c2;">1</span>:
+            val = -heapq.heappop(self.max_heap)
+            heapq.heappush(self.min_heap, val)
+        <span style="color:#c678dd;">elif</span> len(self.min_heap) &gt; len(self.max_heap):
+            val = heapq.heappop(self.min_heap)
+            heapq.heappush(self.max_heap, -val)
+    
+    <span style="color:#c678dd;">def</span> findMedian(self) -&gt; float:
+        <span style="color:#5c6370;"># If odd total: max_heap has the extra element (middle value)</span>
+        <span style="color:#c678dd;">if</span> len(self.max_heap) &gt; len(self.min_heap):
+            <span style="color:#c678dd;">return</span> float(-self.max_heap[<span style="color:#56b6c2;">0</span>])
+        <span style="color:#5c6370;"># If even total: average of both tops</span>
+        <span style="color:#c678dd;">return</span> (-self.max_heap[<span style="color:#56b6c2;">0</span>] + self.min_heap[<span style="color:#56b6c2;">0</span>]) / <span style="color:#56b6c2;">2.0</span>
+
+
+<span style="color:#5c6370;"># ── Trace through: addNum(1), addNum(2), addNum(3) ──</span>
+<span style="color:#5c6370;">#</span>
+<span style="color:#5c6370;"># addNum(1):</span>
+<span style="color:#5c6370;">#   push -1 to max_heap → max_heap=[-1], min_heap=[]</span>
+<span style="color:#5c6370;">#   no balance needed (min_heap empty)</span>
+<span style="color:#5c6370;">#   sizes: 1 vs 0 → ok (max_heap can have +1)</span>
+<span style="color:#5c6370;">#   state: max_heap=[-1], min_heap=[]</span>
+<span style="color:#5c6370;">#</span>
+<span style="color:#5c6370;"># addNum(2):</span>
+<span style="color:#5c6370;">#   push -2 to max_heap → max_heap=[-2,-1], min_heap=[]</span>
+<span style="color:#5c6370;">#   balance check: -(-2)=2 &gt; nothing (min_heap empty) → skip</span>
+<span style="color:#5c6370;">#   size check: len(max_heap)=2 &gt; len(min_heap)+1=1 → move top of max to min</span>
+<span style="color:#5c6370;">#     pop -2 from max_heap → push 2 to min_heap</span>
+<span style="color:#5c6370;">#   state: max_heap=[-1], min_heap=[2]</span>
+<span style="color:#5c6370;">#</span>
+<span style="color:#5c6370;"># addNum(3):</span>
+<span style="color:#5c6370;">#   push -3 to max_heap → max_heap=[-3,-1], min_heap=[2]</span>
+<span style="color:#5c6370;">#   balance check: -(-3)=3 &gt; min_heap[0]=2 → move 3 to min_heap</span>
+<span style="color:#5c6370;">#     pop -3 from max_heap → push 3 to min_heap</span>
+<span style="color:#5c6370;">#   max_heap=[-1], min_heap=[2,3]</span>
+<span style="color:#5c6370;">#   size check: len(min_heap)=2 &gt; len(max_heap)=1 → move min top to max</span>
+<span style="color:#5c6370;">#     pop 2 from min_heap → push -2 to max_heap</span>
+<span style="color:#5c6370;">#   state: max_heap=[-2,-1], min_heap=[3]  → wait sizes 2 vs 1, max_heap has +1 ✓</span>
+<span style="color:#5c6370;">#</span>
+<span style="color:#5c6370;"># findMedian():</span>
+<span style="color:#5c6370;">#   len(max_heap)=2 &gt; len(min_heap)=1 → return -max_heap[0] = -(-2) = 2 ✓</span>
+<span style="color:#5c6370;">#   Actual data: [1,2,3] → median = 2 ✓</span></code></pre>
+</div>
+
+<p><strong>为什么这样设计不会出错？/ Why does this invariant work?</strong></p>
+
+<p>关键是两个堆维护了一个"有序分割线"：</p>
+<ul><li>max_heap 里所有元素 ≤ min_heap 里所有元素（Step 2 保证）</li><li>两堆大小差最多为 1（Step 3 保证）</li><li>因此中位数始终在堆顶，O(1) 可读</li></ul>
+
+<p>The invariant guarantees that after every <code>addNum</code>, the heaps are sorted relative to each other AND balanced in size. The median is always at one or both heap tops — no scanning needed.</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>K Closest Points:</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Edge case 1: k == len(points) → return all points&#10;# Edge case 2: points on same distance → any k of them valid&#10;# Edge case 3: k == 1 → heap of size 1 = just track current minimum&#10;# GOTCHA: Don't sqrt! x*x + y*y is sufficient for comparison&#10;# GOTCHA: Tuple comparison — heapq compares tuples element by element&#10;#   (-dist, x, y) works because dist disambiguates before x, y are checked">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Edge case 1: k == len(points) → return all points</span>
+<span style="color:#5c6370;"># Edge case 2: points on same distance → any k of them valid</span>
+<span style="color:#5c6370;"># Edge case 3: k == 1 → heap of size 1 = just track current minimum</span>
+<span style="color:#5c6370;"># GOTCHA: Don't sqrt! x*x + y*y is sufficient for comparison</span>
+<span style="color:#5c6370;"># GOTCHA: Tuple comparison — heapq compares tuples element by element</span>
+<span style="color:#5c6370;">#   (-dist, x, y) works because dist disambiguates before x, y are checked</span></code></pre>
+</div>
+
+<p><strong>Find Median from Data Stream:</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Edge case 1: single element → return float(that element)&#10;# Edge case 2: two elements → return their average&#10;# Edge case 3: all same values → median is that value&#10;&#10;# GOTCHA 1: Don't forget the negation when extracting from max_heap&#10;#   return -self.max_heap[0]  ← the minus sign is easy to forget!&#10;&#10;# GOTCHA 2: The balance condition order matters&#10;#   Always push to max_heap FIRST, then check cross-heap ordering,&#10;#   THEN balance sizes. Reversing steps leads to subtle bugs.&#10;&#10;# GOTCHA 3: Python's heapq doesn't support decrease-key&#10;#   If you need to remove arbitrary elements, use a lazy deletion pattern&#10;#   or use sortedcontainers.SortedList instead (O(log n) insert+delete)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Edge case 1: single element → return float(that element)</span>
+<span style="color:#5c6370;"># Edge case 2: two elements → return their average</span>
+<span style="color:#5c6370;"># Edge case 3: all same values → median is that value</span>
+
+<span style="color:#5c6370;"># GOTCHA 1: Don't forget the negation when extracting from max_heap</span>
+<span style="color:#5c6370;">#   return -self.max_heap[0]  ← the minus sign is easy to forget!</span>
+
+<span style="color:#5c6370;"># GOTCHA 2: The balance condition order matters</span>
+<span style="color:#5c6370;">#   Always push to max_heap FIRST, then check cross-heap ordering,</span>
+<span style="color:#5c6370;">#   THEN balance sizes. Reversing steps leads to subtle bugs.</span>
+
+<span style="color:#5c6370;"># GOTCHA 3: Python's heapq doesn't support decrease-key</span>
+<span style="color:#5c6370;">#   If you need to remove arbitrary elements, use a lazy deletion pattern</span>
+<span style="color:#5c6370;">#   or use sortedcontainers.SortedList instead (O(log n) insert+delete)</span></code></pre>
+</div>
+
+<p><strong>通用堆陷阱 / General heap gotchas:</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# heapq.heappush / heappop work on lists in-place&#10;# heapq does NOT sort the list visually — internal array != sorted order!&#10;import heapq&#10;h = [3, 1, 4, 1, 5, 9]&#10;heapq.heapify(h)&#10;print(h)  # [1, 1, 4, 3, 5, 9] — NOT [1,1,3,4,5,9]!&#10;# But heappop() always returns the minimum correctly">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># heapq.heappush / heappop work on lists in-place</span>
+<span style="color:#5c6370;"># heapq does NOT sort the list visually — internal array != sorted order!</span>
+<span style="color:#c678dd;">import</span> heapq
+h = [<span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">4</span>, <span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">5</span>, <span style="color:#56b6c2;">9</span>]
+heapq.heapify(h)
+print(h)  <span style="color:#5c6370;"># [1, 1, 4, 3, 5, 9] — NOT [1,1,3,4,5,9]!</span>
+<span style="color:#5c6370;"># But heappop() always returns the minimum correctly</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>K Closest Points → 地理空间查询 / Geospatial Queries</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="场景：Uber 司机派单系统&#10;- 每秒有数千个乘客发出打车请求&#10;- 需要找到距离每个乘客最近的 K 个空闲司机&#10;- 直接暴力排序所有司机：O(n log n) 每次请求&#10;- 堆方案：O(n log k)，当 k=5 时快 100x&#10;&#10;实际实现通常结合地理索引（geohash/quadtree）先缩小候选集，&#10;再用堆做最终 K 个筛选。">Copy</button>
+  <pre><code class="language-text">场景：Uber 司机派单系统
+- 每秒有数千个乘客发出打车请求
+- 需要找到距离每个乘客最近的 K 个空闲司机
+- 直接暴力排序所有司机：O(n log n) 每次请求
+- 堆方案：O(n log k)，当 k=5 时快 100x
+
+实际实现通常结合地理索引（geohash/quadtree）先缩小候选集，
+再用堆做最终 K 个筛选。</code></pre>
+</div>
+
+<p><strong>Find Median from Data Stream → 实时监控 / Real-time Monitoring</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="场景：Datadog / Prometheus 实时 P50 延迟&#10;- 服务每秒产生数千次 API 调用延迟数据&#10;- 需要实时展示 P50（中位数）延迟&#10;- 不能存所有历史数据再排序（内存有限）&#10;- 双堆方案：O(log n) 插入，O(1) 读取中位数&#10;- 类似地可以用 T-Digest 或 HDRHistogram 做近似中位数&#10;&#10;相关拓展：&#10;- Redis ZSET：内部用跳表，支持 O(log n) rank 查询&#10;- Apache Kafka Streams：内置滑动窗口统计">Copy</button>
+  <pre><code class="language-text">场景：Datadog / Prometheus 实时 P50 延迟
+- 服务每秒产生数千次 API 调用延迟数据
+- 需要实时展示 P50（中位数）延迟
+- 不能存所有历史数据再排序（内存有限）
+- 双堆方案：O(log n) 插入，O(1) 读取中位数
+- 类似地可以用 T-Digest 或 HDRHistogram 做近似中位数
+
+相关拓展：
+- Redis ZSET：内部用跳表，支持 O(log n) rank 查询
+- Apache Kafka Streams：内置滑动窗口统计</code></pre>
+</div>
+
+<p><strong>Heap 在生产系统中的常见用途 / Heap uses in production:</strong></p>
+
+<table><thead><tr><th>系统</th><th>堆的用途</th></tr></thead><tbody><tr><td>OS 任务调度</td><td>优先级队列调度进程</td></tr><tr><td>Dijkstra 最短路</td><td>最小堆取当前最近节点</td></tr><tr><td>Huffman 编码</td><td>合并最小频率节点</td></tr><tr><td>Top-K 日志分析</td><td>维护 K 个最高频错误</td></tr><tr><td>推荐系统</td><td>维护用户 Top-K 候选集</td></tr></tbody></table>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Q1: K Closest Points 时间复杂度是多少？什么时候用排序更好？</strong></p>
+
+<blockquote>堆方案 O(n log k)，排序方案 O(n log n)。当 k 很大（k ≈ n）时，排序不一定更慢，因为常数因子更小；当 k &lt;&lt; n（比如 k=10, n=1000000）时，堆方案快很多。面试时两种都说，然后给 tradeoff。</blockquote>
+
+<p><strong>Q2: Find Median 如果允许 O(n) 空间但要 O(1) addNum，能做到吗？</strong></p>
+
+<blockquote>不能在最坏情况下保证 O(1) addNum + O(1) median。堆方案已经是最优了：O(log n) addNum，O(1) median。如果只需要近似中位数，可以用 T-Digest（流式统计算法），但精确中位数无法比 O(log n) 更快。</blockquote>
+
+<p><strong>Q3: 如何扩展双堆方案支持删除某个特定数字？</strong></p>
+
+<blockquote>标准堆不支持 O(log n) 随机删除。解法：<strong>懒删除（Lazy Deletion）</strong>——用一个 Counter 记录"已删除但还在堆里"的元素，heappop 时检查并跳过。时间复杂度均摊 O(log n)。或者用 <code>SortedList</code>（sortedcontainers 库），O(log n) 支持任意插入删除。</blockquote>
+
+<p><strong>Q4: 数组第 K 大（LeetCode #215）有更快的解法吗？</strong></p>
+
+<blockquote>Quick Select 平均 O(n)，最坏 O(n²)。堆方案 O(n log k)。对于固定 k 值，堆通常更可预测（无最坏情况）。面试时如果面试官追问"能做到线性吗"，则答 Quick Select。</blockquote>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def findKthLargest(nums: list[int], k: int) -&gt; int:&#10;    # Min-heap of size k — top is the kth largest&#10;    # Time: O(n log k), Space: O(k)&#10;    heap = []&#10;    for n in nums:&#10;        heapq.heappush(heap, n)&#10;        if len(heap) &gt; k:&#10;            heapq.heappop(heap)&#10;    return heap[0]  # kth largest is the smallest in our top-k heap">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> findKthLargest(nums: list[int], k: int) -&gt; int:
+    <span style="color:#5c6370;"># Min-heap of size k — top is the kth largest</span>
+    <span style="color:#5c6370;"># Time: O(n log k), Space: O(k)</span>
+    heap = []
+    <span style="color:#c678dd;">for</span> n <span style="color:#c678dd;">in</span> nums:
+        heapq.heappush(heap, n)
+        <span style="color:#c678dd;">if</span> len(heap) &gt; k:
+            heapq.heappop(heap)
+    <span style="color:#c678dd;">return</span> heap[<span style="color:#56b6c2;">0</span>]  <span style="color:#5c6370;"># kth largest is the smallest in our top-k heap</span></code></pre>
+</div>
+
+<p><strong>Q5: 如果数据流数据量超大（PB 级），如何设计分布式中位数？</strong></p>
+
+<blockquote>单机双堆不够用时：</blockquote>
+<blockquote>1. <strong>采样方案</strong>：随机采样 + 排序，给近似中位数（Reservoir Sampling）</blockquote>
+<blockquote>2. <strong>分段汇总</strong>：每台机器维护本地直方图（histogram），汇总时合并直方图找中位数（Spark/Flink 的实现思路）</blockquote>
+<blockquote>3. <strong>T-Digest</strong>：Databricks/Spark 用的流式近似中位数算法，空间 O(1/epsilon²)，精度可配置</blockquote>
+
+<hr/>
+
+<h2>🗺️ 本模式剩余问题 / Remaining Pattern Problems</h2>
+
+<div class="diagram-block">Heap / Priority Queue 完整路径 (共 7 题):
+  ✅ #703 Kth Largest Element in a Stream (Easy)   ← Day 79
+  ✅ #1046 Last Stone Weight (Easy)                 ← Day 81
+  ✅ #973 K Closest Points to Origin (Medium)       ← Today (Day 82)
+  ⬜ #215 Kth Largest Element in an Array (Medium) ← Next
+  ⬜ #621 Task Scheduler (Medium)
+  ⬜ #355 Design Twitter (Medium)
+  ⬜ #295 Find Median from Data Stream (Hard)       ← 本期深度解析</div>
+
+<hr/>
+
+<p><em>byte-by-byte · Day 82 · Saturday Deep Dive</em></p>
+<p><em>🔗 <a href="https://leetcode.com/problems/k-closest-points-to-origin/">K Closest Points</a> · <a href="https://leetcode.com/problems/find-median-from-data-stream/">Find Median from Data Stream</a></em></p>
+<p><em>📹 <a href="https://www.youtube.com/watch?v=rI2EBUEMfTk">NeetCode K Closest</a> · <a href="https://www.youtube.com/watch?v=itmhHWaHupI">NeetCode Median</a></em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-week-review">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-week-review" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">📅</span>
+        <div>
+          <div class="section-header-title">📅 Week in Review</div>
+          <div class="section-header-sub">📅</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-week-review">
+        <p>📅 <strong>Week in Review — Week 28 (10 min read)</strong></p>
+<p>📊 NeetCode: 67/150 · SysDesign: 64/40 · Behavioral: 64/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 坚持精进，复合成长！</p>
+
+<hr/>
+
+<h2>🗓️ 本周回顾 / This Week's Journey</h2>
+
+<table><thead><tr><th>日期 / Date</th><th>主题摘要 / Summary</th></tr></thead><tbody><tr><td>周一 Jun 30 (Day 78)</td><td>AI 聊天平台深度拆解；Word Search II（Trie + DFS 终极 Boss）；连接池实战；AGI 与新兴架构</td></tr><tr><td>周二 Jul 1 (Day 79)</td><td>ChatGPT 规模架构（流式+KV Cache）；Heap 新模式 — Kth Largest in Stream；Retry with Backoff；AI 新闻：GPT-5.6 + Fable 5 复出</td></tr><tr><td>周三 Jul 2 (Day 80)</td><td>📚 复习日 — Trie + DFS、连接池与重试的正确分层、AI Chatbot 流式架构</td></tr><tr><td>周四 Jul 3 (Day 81)</td><td>AI 聊天平台第三遍巩固；Last Stone Weight（Max-Heap 模拟）；Circuit Breaker 保护下游；AI 监管新动态</td></tr><tr><td>周六 Jul 6 (Day 82+83)</td><td>🔬 Saturday Deep Dive：堆专题（K Closest + 数据流中位数）；专家级综合：多系统共存架构 + 技术债三方博弈 + Rate Limiting 实现</td></tr></tbody></table>
+
+<hr/>
+
+<h2>🧠 系统设计：核心要点 / System Design: Key Takeaways</h2>
+
+<p>本周系统设计以 <strong>AI 推理系统</strong>为主线，并以一节专家级综合收尾。</p>
+
+<p><strong>1. 流式输出是 LLM 系统的第一原则 / Streaming is non-negotiable for LLM systems</strong></p>
+
+<ul><li>SSE（Server-Sent Events）单向流，CDN 友好，自带断线重连 — 比 WebSocket 更适合 LLM 推理的单向输出场景</li><li>Continuous Batching（vLLM）：GPU 利用率从 30% → 80%+，这是 AI 系统降本的核心杠杆</li><li>Prefix KV Cache：对系统 prompt 的 attention key/value 预计算缓存，节省 ~20% 推理计算量</li></ul>
+
+<p><strong>2. Session Affinity + 分层存储 / Session Routing + Tiered Storage</strong></p>
+
+<ul><li>用 <code>conversation_id</code> 做 Consistent Hashing，而不是 round-robin — 保证同一对话命中同一 GPU 上的 KV Cache</li><li>分层存储策略：Redis（24h 热数据）→ PostgreSQL（30 天温数据）→ S3（历史冷数据）</li></ul>
+
+<p><strong>3. 多系统共存的架构原则（Expert Synthesis）/ Multi-System Architecture Principles</strong></p>
+
+<p>三条跨系统设计的铁律：</p>
+<ul><li><strong>按一致性需求划分数据边界</strong> — 支付系统（强一致性 ACID）绝不能与聊天/视频（最终一致性 Kafka）共用数据库</li><li><strong>共享无状态层，隔离有状态层</strong> — API Gateway / Auth / CDN 可以共享；数据库和 Redis 必须隔离 key namespace</li><li><strong>故障域隔离（Bulkhead）</strong> — 每个系统独立连接池，Chat 流量洪峰不影响 Payment 可用性</li></ul>
+
+<p><strong>三者的联系</strong>：LLM 推理系统本身就是一个极致的"读路径优化"案例 —— KV Cache、模型路由、SSE 流式，都是在已知 GPU 是唯一瓶颈的前提下，把整条链路的效率压榨到极限。这和 Autocomplete 系统的设计哲学（读多写少、内存优先）是同一类思维。</p>
+
+<hr/>
+
+<h2>💻 算法：模式总结 / Algorithms: Patterns Mastered</h2>
+
+<p>本周完整开启了 <strong>Heap / Priority Queue</strong> 模式块（7 题），并用 Saturday Deep Dive 做了系统深挖。</p>
+
+<h3>堆模式核心模版 / Core Template</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import heapq&#10;&#10;heap = []&#10;for item in stream:&#10;    heapq.heappush(heap, item)&#10;    if len(heap) &gt; k:&#10;        heapq.heappop(heap)&#10;# heap[0] is the kth largest">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> heapq
+
+heap = []
+<span style="color:#c678dd;">for</span> item <span style="color:#c678dd;">in</span> stream:
+    heapq.heappush(heap, item)
+    <span style="color:#c678dd;">if</span> len(heap) &gt; k:
+        heapq.heappop(heap)
+<span style="color:#5c6370;"># heap[0] is the kth largest</span></code></pre>
+</div>
+
+<table><thead><tr><th>题目</th><th>变化点</th><th>关键洞察</th></tr></thead><tbody><tr><td>#703 Kth Largest in Stream (Day 79)</td><td>基础模版，min-heap 大小为 k</td><td>堆顶 = 第 k 大的门槛</td></tr><tr><td>#1046 Last Stone Weight (Day 81)</td><td>Max-heap（取反），每次 pop 2 个</td><td>Python 无 max-heap，全部取反模拟</td></tr><tr><td>#973 K Closest Points (Day 83)</td><td>Key 是派生指标（距离），非原始值</td><td>skip sqrt — 距离单调，不影响排序</td></tr><tr><td>#212 Word Search II (Day 78)</td><td>Trie + DFS 终章</td><td>找到单词后<strong>删除 Trie 叶节点</strong>是关键剪枝优化</td></tr></tbody></table>
+
+<p><strong>Week 28 最重要的算法洞察</strong>：</p>
+
+<p>Word Search II 的核心优化 —— 在 DFS 找到单词后，从 Trie 删除该叶节点（<code>del node.children[ch]</code>）。这让 Trie 随着搜索过程越来越小，后续剪枝越来越激进。这是一个"搜索过程中动态优化搜索结构"的经典技巧。</p>
+
+<hr/>
+
+<h2>🗣️ 软技能：重点练习 / Soft Skills: What to Practice</h2>
+
+<p>本周软技能聚焦在同一个高频题上：<strong>招聘与团队建设（Hiring &amp; Growing a Team）</strong>，并以周末的复合压力综合场景收尾。</p>
+
+<p><strong>核心分级框架 / Leveling Framework:</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Junior: &quot;我做了 X 次面试&quot;&#10;Senior: &quot;我设计了面试流程，效率提升了 Y%&quot;&#10;Staff:  &quot;我建立了跨团队可复用的招聘框架，并 mentor 了 3 个面试官&quot;">Copy</button>
+  <pre><code class="language-text">Junior: "我做了 X 次面试"
+Senior: "我设计了面试流程，效率提升了 Y%"
+Staff:  "我建立了跨团队可复用的招聘框架，并 mentor 了 3 个面试官"</code></pre>
+</div>
+
+<p><strong>本周提炼的三个关键信号（面试中要体现）:</strong></p>
+<ol><li><strong>系统化，不只是个案</strong> — 说"我建立了结构化 rubric 和 onboarding checklist"，而不是"我帮了某个新人"</li><li><strong>量化结果</strong> — Offer 接受率从 40% → 68%、新人 2.5 个月独立上手（vs 行业平均 4-5 个月）</li><li><strong>乘数效应思维</strong> — 你的一次投入，让整个团队未来几年都更强</li></ol>
+
+<p><strong>复合压力场景（Expert Synthesis）的核心框架:</strong></p>
+
+<p>技术债 + 团队士气 + 业务压力同时来袭时，最强的 Staff 级回答不是"我解决了一个难题"，而是"<strong>我改变了问题被处理的方式</strong>"：</p>
+<ul><li>量化损失（"上季度浪费了 9 工程师周"）→ 说服 PM 和 CTO</li><li>建立可持续机制（每个 Sprint 20% 时间还技术债）</li><li>让进度可见（技术健康仪表盘：部署时间、P99、覆盖率）</li></ul>
+
+<p><strong>需要继续练习的场景</strong>: 招聘故事需要更具体的数字和结构。建议准备一个完整的 STAR 稿，包含明确的 Situation 规模、Action 的三个具体步骤、以及两个量化 Result。</p>
+
+<hr/>
+
+<h2>🎨 前端（Python Craft）：知识巩固 / Python Craft: Concepts to Lock In</h2>
+
+<p>本周 Python Craft 完成了"弹性模式"三件套，是后端工程实战中最高频使用的组合：</p>
+
+<p><strong>三件套总览 / The Resilience Trio:</strong></p>
+
+<table><thead><tr><th>模式</th><th>解决的问题</th><th>关键参数</th></tr></thead><tbody><tr><td><strong>Connection Pooling</strong> (Day 78)</td><td>TCP 握手重复开销（50-200ms × QPS）</td><td><code>pool_size</code>, <code>max_overflow</code>, <code>pool_recycle</code> + <code>pool_pre_ping</code></td></tr><tr><td><strong>Retry with Backoff</strong> (Day 79)</td><td>瞬态失败（网络抖动、429、5xx）</td><td><code>tenacity</code>：<code>wait_exponential</code> + <code>retry_if_exception_type</code></td></tr><tr><td><strong>Circuit Breaker</strong> (Day 81)</td><td>下游雪崩（超时堆积 → 级联崩溃）</td><td>三状态：CLOSED → OPEN → HALF-OPEN</td></tr></tbody></table>
+
+<p><strong>正确的分层顺序</strong> (Day 80 复习题的核心洞察)：</p>
+<div class="diagram-block">Retry (外层) 
+  └─ Connection Pool (内层)
+       └─ 实际请求</div>
+<p>Retry 包裹 Pool —— 失败时重新从池里借连接，而不是重试拿连接的动作。</p>
+
+<p><strong>Rate Limiting 实现（Day 83）— 快速自检：</strong></p>
+<ul><li>Token Bucket：允许突发（burst），O(1) 内存，适合有合法流量峰值的 API</li><li>Sliding Window Log：精确，O(requests) 内存，适合严格 per-user 限制</li><li>分布式版本：Redis sorted set + pipeline（原子性 + 低延迟）</li><li>记住：只重试 5xx + 429，<strong>绝不重试 4xx</strong></li></ul>
+
+<hr/>
+
+<h2>🤖 AI：本周知识点 / AI: What Stuck</h2>
+
+<p>本周 AI 内容跨越了两个维度：<strong>架构前沿</strong>（Day 78）和<strong>行业监管新动态</strong>（Day 79, 81, 83）。</p>
+
+<p><strong>架构前沿 / Architecture Frontier (Day 78 — CONCEPT)</strong></p>
+
+<p>三个正在重塑 AI 推理的新兴方向：</p>
+<ul><li><strong>State Space Models (Mamba)</strong>：O(N²) attention → O(N) linear recurrence，长序列场景的计算效率革命</li><li><strong>Mixture of Experts (MoE)</strong>：GPT-4 据报道是 MoE 架构（8 专家，每次激活 2 个）—— 参数量大、推理计算小</li><li><strong>Test-Time Compute Scaling</strong>：o1/o3/DeepSeek-R1 的核心思路 —— 难题多给思考时间，而不是只追求更大的模型</li></ul>
+
+<p><em>注意：GPT-4 MoE 架构细节系据报道（据报道），非 OpenAI 官方确认。</em></p>
+
+<p><strong>AI 监管加速 / Regulatory Acceleration (Day 79, 81, 83 — NEWS)</strong></p>
+
+<p>本周最值得工程师关注的趋势 — 据报道：</p>
+<ul><li>GPT-5.6 Sol/Terra/Luna 以"政府审查先行"模式发布，~20 家机构优先访问，标志着前沿模型发布节奏正在制度化（据报道来自 The Next Web 等来源）</li><li>Anthropic Claude Fable 5 因出口管制审查暂停 19 天后复出，新增安全分类器（据报道）</li><li>Illinois 签署 AI 安全措施法；加州、纽约已有类似立法 —— 美国 AI 合规正从联邦缺位走向州级竞赛</li><li><strong>工程师的实际含义</strong>：前沿 API 访问不再稳定，需要 fallback 模型策略；"release day" ≠ "available day"</li></ul>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<p><strong>最弱的区域 / Weakest Areas:</strong></p>
+
+<ol><li><strong>Heap 变体的细节区分</strong> — 三道题看起来相似，但 Key 的含义完全不同：原始值 vs 派生距离 vs 需要返回原始点。建议对比 #703 / #1046 / #973 的代码结构，手写一遍模版变体。</li></ol>
+
+<ol><li><strong>软技能：招聘故事结构化</strong> — 连续三天（Day 78/79/81）都是同一个问题。趁热打铁，现在花 30 分钟准备一个完整 STAR 稿。特别注意 Action 要分 3 个具体步骤，Result 要有 2+ 个量化指标。</li></ol>
+
+<ol><li><strong>Rate Limiting 算法的使用场景</strong> — Token Bucket vs Sliding Window Log vs Sliding Window Counter 的选择逻辑，尤其是"什么时候需要允许 burst"这个判断点，值得再过一遍。</li></ol>
+
+<ol><li><strong>系统设计：一致性边界</strong> — Expert Synthesis 中"支付系统必须隔离"的直觉很重要。下次碰到 multi-system 设计题，第一个问题要是"哪个子系统对一致性要求最强？"</li></ol>
+
+<p><strong>具体建议 / Specific Next Steps:</strong></p>
+<ul><li>在 30 分钟内手写 #973 K Closest Points 的完整解法（含 trace）</li><li>准备招聘 STAR 故事稿（目标：2 分钟讲完，含 3 个 Action 和 2 个数字 Result）</li></ul>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p><strong>Week 28 的最大亮点：AI 专题知识体系完整收官。</strong></p>
+
+<p>AI 模块（aiTopicIndex: 30/30）在本周正式画上句号，从最早的 Transformer 工作原理、Tokenization、Embeddings，到 RAG、Vector Databases、MoE，再到 AI Agents、Test-Time Compute、以及本周的 AGI 争论与监管新格局 —— 30 个 AI 话题形成了一条清晰的技术认知链。</p>
+
+<p>加上 Saturday Deep Dive 完整攻克堆专题（K Closest + 数据流中位数双堆），以及 Expert Synthesis 将系统设计、软技能、Python Craft 三条线整合成一个完整的 Staff Engineer 思维框架 ——</p>
+
+<p><strong>这是整个 byte-by-byte 旅程中内容密度最高的一周。</strong> 🎯</p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p>根据当前进度（Day 83，Expert 阶段），下周将继续 Heap 模式块剩余题目，并开始 Greedy 或 Dynamic Programming 等新算法模式：</p>
+
+<ul><li><strong>算法</strong> — Heap 剩余 4 题：#215 Kth Largest in Array、#621 Task Scheduler、#355 Design Twitter、#295 Find Median from Data Stream（双堆经典 Boss 战）</li><li><strong>系统设计</strong> — Expert 阶段后续深化，可能包括更多分布式系统专题</li><li><strong>Python Craft</strong> — 新的工程模式块开启（Week 8 预计进入 Testing 或 Observability 主题）</li><li><strong>软技能</strong> — 新一轮行为问题（可能涵盖"技术决策复盘"或"跨团队对齐"场景）</li></ul>
+
+<p><strong>特别关注</strong>：#295 Find Median from Data Stream 是 Heap 模式块的终极 Boss，双堆设计是面试高频考点，值得提前预习 NeetCode 视频。</p>
+
+<hr/>
+
+<p><em>Byte by byte, week by week. 🚀</em></p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
