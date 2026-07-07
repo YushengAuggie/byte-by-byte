@@ -601,3 +601,19 @@
 - Delivery rate (7d): **5/7** (06-25 Thu, 06-26 Fri missed — both pre-window, already reported). Last 5 consecutive days: **5/5 ✅**
 - Cron errors: `byte-by-byte review-and-send` = timed out (model-call-started) at 08:39. Other 6 jobs (optimizer, health-check, weekday, backup-send, saturday, sunday) = ok.
 - State: currentDay=79, lastSentDate=2026-07-01, lastReviewDay=75 (review cadence every 5 days — next review at Day 80).
+
+## 2026-07-06 Optimization Run
+
+### Issues Found
+- **P0 Critical — 2 missed weekend deliveries (07-04 Sat, 07-05 Sun).** No email sent on **2026-07-04 (Saturday deep dive)** or **2026-07-05 (Sunday review)**. email-send-log jumps 07-03 → 07-06. The content was **caught up late on Monday 07-06**: git commit `f5c99ee` and state history show **Day 82 (deepdive) AND Day 83 (regular) both dated 2026-07-06** — i.e. the Saturday deep dive was generated 2 days late and bundled with Monday's send. So subscribers got nothing Sat/Sun and a double-load Monday. NOTE: the `saturday` (`0 8 * * 6`) and `sunday` (`0 8 * * 0`) crons currently report `lastRunStatus=ok` with **empty lastRun/lastError**, so this isn't a captured timeout — the jobs may not have fired at all, or fired without producing content. Needs manual check of why Sat/Sun didn't deliver.
+- **P1 Delivery — 07-06 reached only 1 of 2 recipients.** The 07-06 log entry is `{"delivered": ["<subscriber-1>"], "recipients": 1, "sections": 5}` — every prior day this window was `recipients: 2`. The second subscriber appears to have been dropped from the 07-06 send. Also the log **schema changed** for 07-06 (`delivered`/no `sent_at` vs. the `sent_at`/`recipients` shape used 06-23→07-03) — worth confirming the send path wasn't partially rewritten.
+- **P1 Quality:** None observed in delivered content. Sections match day-type (weekdays 5-section, deep dive/review 1-section by design).
+- **P2 Maintenance:**
+  1. **All 7 cron jobs still have `timeoutSeconds=None`** — the explicit-timeout fix recommended on 06-28 and 07-01 has **still not been applied**. weekday/saturday/sunday/review-and-send/backup-send all fall back to the gateway default and can die mid model-call. Given the Sat/Sun misses, saturday+sunday are the priority.
+  2. **Optimizer Step 0 script still brittle** (flagged 06-19, 06-28, 07-01 — still unfixed). `openclaw cron list --json` prints a poe `providerAuthEnvVars` deprecation warning to stdout before the JSON, so `json.load(sys.stdin)` crashes; and `openclaw` is not on PATH in the cron shell (must use `~/.nvm/versions/node/v25.6.1/bin/openclaw`). Also the email-gap Python uses `date.today()`, which risks env/TZ drift vs. the pipeline's own date source.
+  3. **Day-number / date drift continues.** Day 82 and Day 83 both carry date 2026-07-06 (double-label), same pattern as prior Day 72/76 double-commits. Day counter isn't 1:1 with calendar dates.
+
+### Metrics
+- Delivery rate (7d): **5/7** ❌ (missed 07-04 Sat, 07-05 Sun)
+- Cron errors: none captured — all 7 jobs report `lastRunStatus=ok` (but saturday/sunday have empty lastRun despite the missed weekend sends → silent no-fire suspected).
+- State: currentDay=83, lastSentDate=2026-07-06, lastReviewDay=80 (review cadence every 5 days — next at Day 85). 07-06 delivered to only 1/2 recipients.
