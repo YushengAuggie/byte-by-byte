@@ -5,8 +5,140 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 07 Jul 2026 15:09:23 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 08 Jul 2026 15:32:06 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-08</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-08</guid>
+      <pubDate>Wed, 08 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 / Review Day 85</h2>
+<p><strong>日期 / Date:</strong> 2026-07-08</p>
+<p><strong>回顾 / Covering:</strong> Days 81–84</p>
+
+<hr/>
+
+<h2>📊 进度 / Progress</h2>
+<p>NeetCode: 68/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 2-day streak!</p>
+
+<hr/>
+
+<p>今天是复习日！回顾过去4天的内容。</p>
+<p>Today is a review day! Let&#x27;s revisit the last 4 days.</p>
+
+<p><strong>涵盖主题 / Topics covered:</strong></p>
+<p>- Day 81: Circuit Breaker · Last Stone Weight · Heap/Priority Queue pattern</p>
+<p>- Day 82: Heap Deep Dive (K Closest Points + Find Median from Data Stream)</p>
+<p>- Day 83: K Closest Points to Origin · Rate Limiting (Token Bucket, Sliding Window)</p>
+<p>- Day 84: Task Scheduler · Dependency Injection (Without Frameworks)</p>
+
+<hr/>
+
+<h2>📝 Quick Quiz — 3 Mini-Reviews</h2>
+
+<hr/>
+
+<p><strong>Q1: [💻 Algorithms — Heap Pattern]</strong></p>
+
+<p>你有任务列表 <code>[&#x27;A&#x27;,&#x27;A&#x27;,&#x27;A&#x27;,&#x27;B&#x27;,&#x27;B&#x27;,&#x27;B&#x27;]</code> 和冷却时间 <code>n=2</code>。Task Scheduler 的解法核心是什么？为什么需要一个 <code>wait_queue</code>（等待队列），而不是简单地从堆里反复取最大元素？</p>
+
+<p>You have tasks <code>[&#x27;A&#x27;,&#x27;A&#x27;,&#x27;A&#x27;,&#x27;B&#x27;,&#x27;B&#x27;,&#x27;B&#x27;]</code> and cooldown <code>n=2</code>. What&#x27;s the core insight of Task Scheduler? Why do we need a <code>wait_queue</code> alongside the heap?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>贪心 + 冷却跟踪 / Greedy + Cooldown Tracking</strong></p>
+
+<p>核心洞察：每次优先执行剩余次数最多的任务，能最小化 idle 时间（贪心）。但同一任务两次执行之间必须间隔 ≥ n 个时间单位——这就是 <code>wait_queue</code> 的作用。</p>
+
+<p>The key insight is <strong>greedy scheduling</strong>: always run the most-frequent available task to minimize idle time. But a task can&#x27;t re-run for <code>n</code> time units after it executes. The <code>wait_queue</code> (a deque) tracks <code>(available_at_time, neg_count)</code> — when the current <code>time</code> matches a task&#x27;s <code>available_at_time</code>, the task gets pushed back to the heap.</p>
+
+<p>Without <code>wait_queue</code>, you&#x27;d re-schedule tasks too early and violate the cooldown constraint. The deque acts as a time-aware holding area: items enter in order and are released at the right moment.</p>
+
+<pre><code>
+时间轴: A→B→idle→A→B→idle→A→B = 8 steps
+公式捷径: max((max_freq-1)*(n+1) + max_count, len(tasks)) = max(7, 6) = 8
+</code></pre>
+
+<p><strong>面试要点</strong>: 堆解法 O(n log k)，数学公式 O(n)，面试时展示堆解法更能体现思维过程。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [🐍 Python Craft — Dependency Injection]</strong></p>
+
+<p>为什么说 Python 开发者&quot;不需要 DI 框架，但需要 DI 思想&quot;？给一个具体的例子说明没有 DI 时会遇到什么问题，以及如何用构造函数注入解决它。</p>
+
+<p>Why do Python devs &quot;not need a DI framework but need DI thinking&quot;? Give a concrete example of what breaks without DI and how constructor injection fixes it.</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>可测试性 vs 隐式耦合 / Testability vs Implicit Coupling</strong></p>
+
+<p>没有 DI 时：类内部硬编码依赖（如 <code>PostgresDB(host=&quot;prod&quot;)</code>）。问题：</p>
+<p>1. 单元测试会真的连生产数据库</p>
+<p>2. 无法替换实现（换 MySQL？要改每个类）</p>
+<p>3. 依赖隐藏在构造函数内部，代码难以理解</p>
+
+<p>With no DI, dependencies are hard-coded inside <code>__init__</code>. This means tests hit real databases, implementations can&#x27;t be swapped, and dependencies are invisible from the outside.</p>
+
+<p><strong>构造函数注入解决方案:</strong></p>
+<pre><code>
+# 依赖通过 __init__ 传入，不在内部创建
+class UserService:
+    def __init__(self, db: Database, cache: Cache):
+        self.db = db      # 外部注入
+        self.cache = cache
+
+# 生产
+svc = UserService(db=PostgresDB(), cache=RedisCache())
+# 测试
+svc = UserService(db=FakeDB(), cache=FakeCache())  # 无需改 UserService
+</code></pre>
+
+<p><strong>三种无框架 DI 模式</strong>: 构造函数注入（最常用）、手写容器（中型项目）、函数式 DI（FastAPI 风格）。Python 的 <code>Protocol</code> 类让接口定义不需要继承，非常优雅。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [🏗️ System Design — Circuit Breaker]</strong></p>
+
+<p>断路器（Circuit Breaker）的三个状态是什么？在什么情况下它从&quot;半开&quot;状态转换回&quot;开路&quot;状态？它和简单的&quot;重试 + 退避&quot;有什么本质区别？</p>
+
+<p>What are the 3 states of a Circuit Breaker? When does it transition from HALF-OPEN back to OPEN? What&#x27;s the fundamental difference between Circuit Breaker and simple &quot;retry with backoff&quot;?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>三态状态机 / Three-State FSM</strong></p>
+
+<p>| 状态 | 行为 | 转换条件 |</p>
+<p>|------|------|---------|</p>
+<p>| <strong>CLOSED</strong> (正常) | 所有请求通过，记录失败次数 | 失败率超阈值 → OPEN |</p>
+<p>| <strong>OPEN</strong> (断路) | 快速失败，不调用下游 | 等待冷却时间 → HALF-OPEN |</p>
+<p>| <strong>HALF-OPEN</strong> (探测) | 放行少量请求测试下游 | 成功 → CLOSED；失败 → OPEN |</p>
+
+<p><strong>HALF-OPEN → OPEN</strong>: If the test request(s) fail while in HALF-OPEN state, the circuit immediately trips back to OPEN (resets the cooldown timer). This prevents hammering a still-recovering downstream service.</p>
+
+<p><strong>Circuit Breaker vs Retry+Backoff 的本质区别:</strong></p>
+<p>- <strong>Retry+Backoff</strong>: 假设&quot;下游暂时有问题，多等一会儿可能好&quot;——适合短暂抖动（网络抖动、单次超时）</p>
+<p>- <strong>Circuit Breaker</strong>: 假设&quot;下游可能持续故障，我要保护自己和下游&quot;——适合系统性故障</p>
+
+<p>Retry keeps hammering a dead service. Circuit Breaker <strong>fails fast</strong> during outages, protecting your own resources (threads, connections) and giving the downstream service time to recover without extra load. Use both together: Circuit Breaker wraps Retry (retry inside closed state only).</p>
+
+<p><strong>真实场景</strong>: Resilience4j (Java), Hystrix (deprecated), <code>circuitbreaker</code> in Python <code>tenacity</code>.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。Review reinforces memory — each pass deepens understanding.</em></p>
+
+<p>📅 明天继续新内容！New content resumes tomorrow!</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-07</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

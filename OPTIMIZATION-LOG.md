@@ -617,3 +617,20 @@
 - Delivery rate (7d): **5/7** ❌ (missed 07-04 Sat, 07-05 Sun)
 - Cron errors: none captured — all 7 jobs report `lastRunStatus=ok` (but saturday/sunday have empty lastRun despite the missed weekend sends → silent no-fire suspected).
 - State: currentDay=83, lastSentDate=2026-07-06, lastReviewDay=80 (review cadence every 5 days — next at Day 85). 07-06 delivered to only 1/2 recipients.
+
+## 2026-07-07 Optimization Run
+
+### Issues Found
+- **P0 Critical — none NEW this window.** The 2 missed weekend deliveries (07-04 Sat, 07-05 Sun) were already reported on 2026-07-06. Since then delivery recovered: 07-06 and 07-07 both sent (5 sections each).
+- **P1 Delivery (RECURRING, now confirmed persistent) — recipient count stuck at 1/2.** Both **07-06 AND 07-07** delivered to only `["Auggie1024.d@gmail.com"]` (recipients: 1). Every day 06-01→07-03 was recipients: 2. The 07-06 single-recipient send was flagged last run as a possible one-off; it has now repeated on 07-07, so the second subscriber has been **persistently dropped**. This needs a manual check of the subscriber list / send path — either a subscriber was intentionally removed, or the send is silently failing for recipient #2.
+- **P1 Reliability — optimizer's own cron job reports `lastRunStatus=error`.** The `byte-by-byte optimizer` job (this one) shows error status with empty lastError, consistent with the brittle Step 0 parse below crashing before completing on prior runs.
+- **P1 Quality:** None observed. Delivered content matches day-type design (07-06/07-07 weekdays = 5 sections).
+- **P2 Maintenance:**
+  1. **Optimizer Step 0 script STILL brittle** (flagged 06-19, 06-28, 07-01, 07-06 — still unfixed). `openclaw cron list --json` emits a poe `providerAuthEnvVars` deprecation warning to stdout before the JSON → `json.load(sys.stdin)` crashed AGAIN this run (had to fall back to the `cron` tool for status). Also `openclaw` is not on PATH in the cron shell (must use `~/.nvm/versions/node/v25.6.1/bin/openclaw`). The Step 0 block needs (a) full path to openclaw and (b) slice-from-first-`{` before parsing.
+  2. **Cron jobs likely still `timeoutSeconds=None`** — explicit-timeout fix recommended 06-28/07-01/07-06 presumably still unapplied (could not fully enumerate this run due to parse crash). Latent risk for weekday/saturday/sunday hangs.
+  3. **Day-number / date drift continues.** currentDay=84 for 07-07; earlier Day 82/83 both dated 07-06. Day counter still not 1:1 with calendar dates.
+
+### Metrics
+- Delivery rate (7d): **5/7** (missed 07-04 Sat, 07-05 Sun — both pre-window, already reported). Last 2 days delivered but **recipients: 1/2** on both.
+- Cron errors: `byte-by-byte optimizer` = lastRunStatus=error (empty lastError; consistent with Step 0 parse crash). Full multi-job status not enumerable this run due to the same parse issue.
+- State: currentDay=84, lastSentDate=2026-07-07, lastReviewDay=80, systemDesignIndex/behavioralIndex clamped at 60. Review cadence every 5 days — next at Day 85.
