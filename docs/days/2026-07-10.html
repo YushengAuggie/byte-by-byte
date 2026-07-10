@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-07-10</title>
+  <meta name="description" content="byte-by-byte daily lessons for Friday, July 10, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Friday, July 10, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-07-10.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-07-09.html" style="color:var(--text2)">← 2026-07-09</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-07-10</span>
+    <h1>Friday, July 10, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-07-09.html" class="day-nav-btn">← 2026-07-09</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">System Design Synthesis: Event-Driven vs. Request-Response Architec...</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>System Design Synthesis: Event-Driven vs. Request-Response Architectures</h1>
+<p><em>Day 87 — Expert Synthesis | 2026-07-10</em></p>
+
+<hr/>
+
+<h2>🏗️ 系统设计综合 / System Design Synthesis</h2>
+
+<h3>事件驱动 vs 请求-响应架构深度对比</h3>
+<h3>Event-Driven vs. Request-Response Architecture Deep Dive</h3>
+
+<hr/>
+
+<p>想象你已经覆盖了 60 个系统设计主题。从 URL Shortener 到 LLM 推理服务，你脑海中有大量架构蓝图。但面试官真正想考察的，是你能不能跨主题做出有依据的<strong>架构决策</strong>。</p>
+<p><em>Imagine you've covered 60 system design topics — from TinyURL to LLM inference. Interviewers want to see you make <strong>principled architectural decisions</strong> across topics, not just recall patterns.</em></p>
+
+<hr/>
+
+<h3>核心问题 / The Core Question</h3>
+
+<blockquote>什么时候选择<strong>请求-响应</strong>？什么时候选择<strong>事件驱动</strong>？</blockquote>
+<blockquote><em>When do you choose request-response? When do you choose event-driven?</em></blockquote>
+
+<hr/>
+
+<h3>架构对比 / Side-by-Side</h3>
+
+<div class="diagram-block">请求-响应 (Request-Response)
+──────────────────────────────────────────────────
+  Client ──── HTTP/gRPC ──▶ Service ──▶ DB
+              ◀────────────── (sync reply)
+
+典型系统: URL Shortener, Rate Limiter, Auth
+
+事件驱动 (Event-Driven)
+──────────────────────────────────────────────────
+  Producer ──▶ [Message Queue] ──▶ Consumer A
+                    │                Consumer B
+                    └──────────────▶ Consumer C
+
+典型系统: Notification System, Web Crawler,
+          Payment System, Content Moderation</div>
+
+<hr/>
+
+<h3>关键权衡 / Key Tradeoffs</h3>
+
+<table><thead><tr><th>维度</th><th>请求-响应</th><th>事件驱动</th></tr></thead><tbody><tr><td><strong>延迟</strong></td><td>低 (ms级)</td><td>更高 (秒级)</td></tr><tr><td><strong>耦合</strong></td><td>紧耦合</td><td>松耦合</td></tr><tr><td><strong>一致性</strong></td><td>强一致性容易实现</td><td>最终一致性</td></tr><tr><td><strong>调试</strong></td><td>简单，有栈追踪</td><td>复杂，需分布式追踪</td></tr><tr><td><strong>扩展</strong></td><td>水平扩展有上限</td><td>消费者独立扩展</td></tr><tr><td><strong>错误处理</strong></td><td>即时反馈</td><td>需要 DLQ + 重试逻辑</td></tr></tbody></table>
+
+<hr/>
+
+<h3>跨系统模式识别 / Cross-System Pattern Recognition</h3>
+
+<p>从你学过的系统中提炼规律：</p>
+
+<p><strong>必须同步（请求-响应）的场景：</strong></p>
+<ul><li>认证/授权（用户等待登录结果）</li><li>Rate Limiter（每个请求都需要实时决策）</li><li>搜索/查询（用户期待即时结果）</li></ul>
+
+<p><strong>应该异步（事件驱动）的场景：</strong></p>
+<ul><li>通知发送（Email/SMS 不需要用户等）</li><li>内容审核（批量处理，人工复审）</li><li>支付后处理（对账、报表生成）</li><li>日志/监控（高吞吐，非关键路径）</li></ul>
+
+<hr/>
+
+<h3>典型陷阱 / Common Mistakes</h3>
+
+<p><strong>❌ 错误：把事件驱动用于强一致性场景</strong></p>
+<div class="diagram-block">用户下单 → Kafka → 扣库存 (异步)
+问题: 如果消费者宕机，库存未扣但订单已确认</div>
+
+<p><strong>✅ 正确：Saga Pattern 保证分布式一致性</strong></p>
+<div class="diagram-block">用户下单 → 同步创建 Order (PENDING)
+         → 发送事件到 Kafka
+         → 库存服务消费、扣减、回调确认
+         → Order 状态 → CONFIRMED</div>
+
+<p><strong>❌ 错误：事件驱动系统忽略消息顺序</strong></p>
+<div class="diagram-block">用户账户: 创建 → 充值 → 消费
+若乱序处理 "消费" 先到 → 余额为负
+解决: Kafka partition key = user_id (保证同用户有序)</div>
+
+<hr/>
+
+<h3>Staff 工程师视角 / Staff Engineer Lens</h3>
+
+<p>在实际系统中，两种架构<strong>共存</strong>才是常态：</p>
+
+<div class="diagram-block">前端请求 ──▶ API Gateway (同步，低延迟)
+                │
+                ├── Auth Service (同步，必须)
+                ├── Core Business Logic (同步)
+                └── Side Effects ──▶ Kafka (异步)
+                                      ├── Audit Log Service
+                                      ├── Analytics Pipeline
+                                      ├── Email Notification
+                                      └── Cache Invalidation</div>
+
+<p><strong>决策框架（面试时说这个）：</strong></p>
+<ol><li>用户需要<strong>立即知道结果</strong>吗？→ 同步</li><li>操作是<strong>核心业务</strong>还是<strong>副作用</strong>？→ 副作用用异步</li><li>需要<strong>扇出</strong>给多个下游？→ 事件驱动</li><li>需要<strong>峰值削峰</strong>？→ 消息队列</li></ol>
+
+<hr/>
+
+<h3>📚 深度资料 / References</h3>
+
+<ul><li><a href="https://martinfowler.com/articles/201701-event-driven.html">Martin Fowler: Event-Driven Architecture</a></li><li><a href="https://aws.amazon.com/compare/the-difference-between-sqs-sns-and-eventbridge/">AWS: Choosing between messaging services</a></li><li><a href="https://www.confluent.io/blog/event-driven-microservices-with-kafka/">Confluent: Event-Driven Microservices</a></li></ul>
+
+<h3>🧒 ELI5</h3>
+
+<p>你去餐厅吃饭：</p>
+<ul><li><strong>请求-响应</strong> = 服务员站你旁边等你点餐，你说什么，他马上记下来（同步）</li><li><strong>事件驱动</strong> = 你把菜单投进一个槽里，厨房各部门各自看到自己该做什么（异步，松耦合）</li></ul>
+
+<p>大餐厅（高流量系统）两种都要用！</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">Algorithms: Find Median from Data Stream</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>Algorithms: Find Median from Data Stream</h1>
+<p><em>Day 87 — #295 Hard — Heap / Priority Queue (7/7) | 2026-07-10</em></p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms</h2>
+
+<p>🧩 <strong>堆/优先队列模式 (7/7)</strong> — 收官之作，模式的终极形态</p>
+<p><em>The final problem of this pattern block — the pattern's ultimate form.</em></p>
+
+<blockquote>本块回顾 / Block recap: #703 → #1046 → #973 → #215 → #621 → #355 → <strong>#295 (今天)</strong></blockquote>
+<blockquote>前 6 题都在"从流/数组中维护 top-K"，今天是<strong>双堆技巧</strong>，维护动态中位数。</blockquote>
+<blockquote><em>Previous 6 problems all maintained top-K. Today: two-heap trick for dynamic median.</em></blockquote>
+
+<hr/>
+
+<h3>题目 / Problem</h3>
+
+<p>🔗 <a href="https://leetcode.com/problems/find-median-from-data-stream/">LeetCode #295 — Find Median from Data Stream</a> 🔴 Hard</p>
+<p>📹 <a href="https://neetcode.io/problems/find-median-in-a-data-stream">NeetCode 讲解</a></p>
+
+<p><strong>题意：</strong> 设计一个数据结构，支持：</p>
+<ul><li><code>addNum(num)</code> — 向数据流中添加一个数</li><li><code>findMedian()</code> — 返回当前所有数字的中位数</li></ul>
+
+<p><em>Design a data structure supporting addNum(num) and findMedian().</em></p>
+
+<hr/>
+
+<h3>真实场景 / Real-World Analogy</h3>
+
+<p>想象你是一个系统监控工程师，需要<strong>实时</strong>统计服务器响应时间的中位数。每毫秒都有新数据涌入，你不能每次都对全量数据排序（O(n log n) 太慢），你需要一个 O(log n) 的动态解法。</p>
+
+<p><em>Imagine monitoring server response times in real-time — you need the median of a data stream without re-sorting every time a new data point arrives.</em></p>
+
+<hr/>
+
+<h3>核心洞察：双堆 / Key Insight: Two Heaps</h3>
+
+<div class="diagram-block">数据流中所有数字想象成两半：
+左半部分（较小的数）用 max-heap 维护 → 堆顶是左边最大值
+右半部分（较大的数）用 min-heap 维护 → 堆顶是右边最小值
+
+[1, 2, 3] | [4, 5, 6, 7]
+max-heap    min-heap
+
+中位数 = 两个堆顶的平均值（偶数）
+       = 较大堆的堆顶（奇数）
+
+不变量 (Invariant):
+1. len(max_heap) == len(min_heap) 或
+   len(max_heap) == len(min_heap) + 1
+2. max(max_heap) &lt;= min(min_heap)</div>
+
+<hr/>
+
+<h3>如何映射到模式模板 / Mapping to Template</h3>
+
+<p>基础模板只维护 <strong>单个堆</strong> 来追踪 top-K：</p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import heapq&#10;heap = []&#10;heapq.heappush(heap, item)&#10;if len(heap) &gt; k:&#10;    heapq.heappop(heap)">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> heapq
+heap = []
+heapq.heappush(heap, item)
+<span style="color:#c678dd;">if</span> len(heap) &gt; k:
+    heapq.heappop(heap)</code></pre>
+</div>
+
+<p>今天的变体：<strong>维护两个相互平衡的堆</strong>，一个 max-heap（左），一个 min-heap（右），通过动态重平衡维护中位数不变量。这是堆模式的<strong>最复杂形态</strong>。</p>
+
+<hr/>
+
+<h3>Python 解法 / Solution</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import heapq&#10;&#10;class MedianFinder:&#10;    def __init__(self):&#10;        # max-heap for left half (store negatives for Python's min-heap)&#10;        self.left = []   # max-heap (negated)&#10;        # min-heap for right half&#10;        self.right = []  # min-heap&#10;&#10;    def addNum(self, num: int) -&gt; None:&#10;        # Step 1: always push to left first&#10;        heapq.heappush(self.left, -num)&#10;        &#10;        # Step 2: ensure left's max &lt;= right's min&#10;        if self.left and self.right and (-self.left[0] &gt; self.right[0]):&#10;            val = -heapq.heappop(self.left)&#10;            heapq.heappush(self.right, val)&#10;        &#10;        # Step 3: rebalance sizes (left can be at most 1 larger)&#10;        if len(self.left) &gt; len(self.right) + 1:&#10;            val = -heapq.heappop(self.left)&#10;            heapq.heappush(self.right, val)&#10;        if len(self.right) &gt; len(self.left):&#10;            val = heapq.heappop(self.right)&#10;            heapq.heappush(self.left, -val)&#10;&#10;    def findMedian(self) -&gt; float:&#10;        if len(self.left) &gt; len(self.right):&#10;            return -self.left[0]  # odd total: left has one more&#10;        return (-self.left[0] + self.right[0]) / 2  # even total: average tops&#10;&#10;# --- Trace ---&#10;mf = MedianFinder()&#10;mf.addNum(1)  # left=[-1], right=[]       → median = 1.0&#10;mf.addNum(2)  # left=[-1], right=[2]      → median = 1.5&#10;mf.addNum(3)  # left=[-2,-1], right=[3]   → median = 2.0&#10;print(mf.findMedian())  # 2.0">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> heapq
+
+<span style="color:#c678dd;">class</span> MedianFinder:
+    <span style="color:#c678dd;">def</span> __init__(self):
+        <span style="color:#5c6370;"># max-heap for left half (store negatives for Python's min-heap)</span>
+        self.left = []   <span style="color:#5c6370;"># max-heap (negated)</span>
+        <span style="color:#5c6370;"># min-heap for right half</span>
+        self.right = []  <span style="color:#5c6370;"># min-heap</span>
+
+    <span style="color:#c678dd;">def</span> addNum(self, num: int) -&gt; <span style="color:#c678dd;">None</span>:
+        <span style="color:#5c6370;"># Step 1: always push to left first</span>
+        heapq.heappush(self.left, -num)
+        
+        <span style="color:#5c6370;"># Step 2: ensure left's max &lt;= right's min</span>
+        <span style="color:#c678dd;">if</span> self.left <span style="color:#c678dd;">and</span> self.right <span style="color:#c678dd;">and</span> (-self.left[<span style="color:#56b6c2;">0</span>] &gt; self.right[<span style="color:#56b6c2;">0</span>]):
+            val = -heapq.heappop(self.left)
+            heapq.heappush(self.right, val)
+        
+        <span style="color:#5c6370;"># Step 3: rebalance sizes (left can be at most 1 larger)</span>
+        <span style="color:#c678dd;">if</span> len(self.left) &gt; len(self.right) + <span style="color:#56b6c2;">1</span>:
+            val = -heapq.heappop(self.left)
+            heapq.heappush(self.right, val)
+        <span style="color:#c678dd;">if</span> len(self.right) &gt; len(self.left):
+            val = heapq.heappop(self.right)
+            heapq.heappush(self.left, -val)
+
+    <span style="color:#c678dd;">def</span> findMedian(self) -&gt; float:
+        <span style="color:#c678dd;">if</span> len(self.left) &gt; len(self.right):
+            <span style="color:#c678dd;">return</span> -self.left[<span style="color:#56b6c2;">0</span>]  <span style="color:#5c6370;"># odd total: left has one more</span>
+        <span style="color:#c678dd;">return</span> (-self.left[<span style="color:#56b6c2;">0</span>] + self.right[<span style="color:#56b6c2;">0</span>]) / <span style="color:#56b6c2;">2</span>  <span style="color:#5c6370;"># even total: average tops</span>
+
+<span style="color:#5c6370;"># --- Trace ---</span>
+mf = MedianFinder()
+mf.addNum(<span style="color:#56b6c2;">1</span>)  <span style="color:#5c6370;"># left=[-1], right=[]       → median = 1.0</span>
+mf.addNum(<span style="color:#56b6c2;">2</span>)  <span style="color:#5c6370;"># left=[-1], right=[2]      → median = 1.5</span>
+mf.addNum(<span style="color:#56b6c2;">3</span>)  <span style="color:#5c6370;"># left=[-2,-1], right=[3]   → median = 2.0</span>
+print(mf.findMedian())  <span style="color:#5c6370;"># 2.0</span></code></pre>
+</div>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<ul><li><code>addNum</code>: Time O(log n) — heap push/pop</li><li><code>findMedian</code>: Time O(1) — just read tops</li><li>Space O(n) — store all elements</li></ul>
+
+<hr/>
+
+<h3>举一反三 / Pattern Connections</h3>
+
+<p>本块 7 道题的<strong>难度梯度</strong>很有启发性：</p>
+
+<table><thead><tr><th>题目</th><th>技巧</th><th>难度</th></tr></thead><tbody><tr><td>#703 Kth Largest in Stream</td><td>单 min-heap 固定大小</td><td>Easy</td></tr><tr><td>#1046 Last Stone Weight</td><td>单 max-heap</td><td>Easy</td></tr><tr><td>#973 K Closest Points</td><td>单 max-heap, 距离比较</td><td>Medium</td></tr><tr><td>#215 Kth Largest in Array</td><td>QuickSelect 或堆</td><td>Medium</td></tr><tr><td>#621 Task Scheduler</td><td>频率计数 + 贪心</td><td>Medium</td></tr><tr><td>#355 Design Twitter</td><td>多路归并 + heap</td><td>Medium</td></tr><tr><td><strong>#295 Median from Stream</strong></td><td><strong>双堆平衡</strong></td><td><strong>Hard</strong></td></tr></tbody></table>
+
+<p>规律：<strong>越复杂的问题，需要维护的堆越多，不变量越精妙。</strong></p>
+
+<hr/>
+
+<h3>面试常见追问 / Follow-up Questions</h3>
+
+<p><strong>Q: 如果数据流极大（无法全部放内存），怎么办？</strong></p>
+<p>A: 用两个文件做外部排序，或 <strong>t-digest</strong> 算法做近似中位数，牺牲精确度换内存。</p>
+
+<p><strong>Q: 如果要维护 P99 而不是中位数？</strong></p>
+<p>A: 同样的双堆思路，只是左右堆的大小比例不是 50/50，而是 99/1。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li><a href="https://leetcode.com/problems/find-median-from-data-stream/">LeetCode #295</a></li><li><a href="https://neetcode.io/problems/find-median-in-a-data-stream">NeetCode 视频讲解</a></li><li><a href="https://docs.python.org/3/library/heapq.html">Python heapq docs</a></li></ul>
+
+<h3>🧒 ELI5</h3>
+
+<p>把所有数字排成一排，中位数就是最中间的那个。但每次新来一个数，我不想重新排序。我的技巧：用两个魔法盒子。<strong>左边盒子</strong>装较小的数，随时能告诉我最大值。<strong>右边盒子</strong>装较大的数，随时能告诉我最小值。每次加数，我维持两个盒子大小相近，中位数就是两个盒盖上的数！</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">Soft Skills Synthesis: The "Multiplier" Impact Framework</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>Soft Skills Synthesis: The "Multiplier" Impact Framework</h1>
+<p><em>Day 87 — Expert Synthesis | 2026-07-10</em></p>
+
+<hr/>
+
+<h2>🗣️ 软技能综合 / Soft Skills Synthesis</h2>
+
+<h3>Staff 工程师的"乘数效应"：如何回答影响力类问题</h3>
+<h3>The "Force Multiplier" Framework: Answering Impact Questions at Staff+</h3>
+
+<hr/>
+
+<p>你已经练习了 60 道行为题。到了 Staff/Principal 面试，这些题目本质上都在问一件事：</p>
+
+<blockquote><strong>"你是怎么放大整个组织的影响力的？"</strong></blockquote>
+<blockquote><em>"How did you multiply the organization's output beyond yourself?"</em></blockquote>
+
+<hr/>
+
+<h3>为什么这个问题那么重要 / Why This Matters</h3>
+
+<p>Senior 工程师 = 自己产出好代码</p>
+<p>Staff 工程师 = 让整个团队产出更好的代码</p>
+<p>Principal 工程师 = 让整个组织做出更好的技术决策</p>
+
+<p>面试官听的不是你做了什么，而是<strong>你的影响辐射范围</strong>。</p>
+
+<hr/>
+
+<h3>乘数效应框架 / Force Multiplier Framework</h3>
+
+<p>把过去 60 道题的主题归类为四种乘数：</p>
+
+<div class="diagram-block">┌─────────────────────────────────────────────────────┐
+│           Staff Engineer Force Multipliers           │
+│                                                     │
+│  1. 技术方向 (Technical Direction)                  │
+│     设计系统、制定技术路线图、驱动 ADR               │
+│     → "我写了这份设计文档，影响了后续3个季度的方向"  │
+│                                                     │
+│  2. 人员赋能 (People Enablement)                    │
+│     Onboarding、代码审查文化、mentoring             │
+│     → "我建立了这个实践，整个团队的 PR 质量提升了"   │
+│                                                     │
+│  3. 流程改善 (Process Improvement)                  │
+│     CI/CD、on-call、incident response               │
+│     → "MTTR 从 4h 降到 40min"                      │
+│                                                     │
+│  4. 跨团队协调 (Cross-Team Alignment)               │
+│     平台标准化、API 协议、组织级决策                 │
+│     → "我统一了 3 个团队的认证方案，减少了重复建设"  │
+└─────────────────────────────────────────────────────┘</div>
+
+<hr/>
+
+<h3>综合 STAR 示例 / Synthesis STAR</h3>
+
+<p><strong>题目：</strong> 描述你作为技术乘数（force multiplier）最有代表性的一个例子。</p>
+
+<p><strong>S (Situation):</strong> 我们团队有 5 个服务，每个服务都自己实现了日志方案，incident 时无法做跨服务追踪。</p>
+
+<p><strong>T (Task):</strong> 需要在不阻塞各团队正常迭代的情况下，推动统一可观测性标准。</p>
+
+<p><strong>A (Action):</strong></p>
+<ul><li>先做 POC，而不是直接要求大家切换（降低阻力）</li><li>写了一份 RFC，列出迁移成本和收益，用数据说服而非权威压制</li><li>识别出两个"盟友团队"提前试点，积累案例</li><li>做了 office hours，帮助其他团队迁移，不是只发文档</li></ul>
+
+<p><strong>R (Result):</strong></p>
+<ul><li>6 个月内所有服务迁移到统一 structured logging</li><li>P99 incident 响应时间从 4h 降至 40min</li><li>这套方案后来被另外两个 org 采用</li></ul>
+
+<hr/>
+
+<h3>❌ Senior 的答案 vs ✅ Staff 的答案</h3>
+
+<p><strong>❌ Senior:</strong> "我重构了这个服务，性能提升了 50%。"</p>
+<p>✅ <strong>Staff:</strong> "我重构了这个服务，然后把模式抽成文档，另外 4 个团队用相同方法优化了他们的服务。组织整体收益放大了 5 倍。"</p>
+
+<p>关键词升级：</p>
+<ul><li>~~"我做了"~~ → "我推动了 / 赋能了 / 对齐了"</li><li>~~"我的团队"~~ → "跨团队 / 跨 org"</li><li>~~"功能上线"~~ → "建立了可复用的模式/框架/标准"</li></ul>
+
+<hr/>
+
+<h3>面试中的高频追问 / Common Follow-ups</h3>
+
+<p><strong>Q: "你怎么在没有权力的情况下推动改变？"</strong></p>
+<div class="diagram-block">A: 数据优先（RFC with metrics）→ 找早期盟友 → 小范围试点 → 展示案例 → 扩大推广。不用权力，用信任和证据。</div>
+
+<p><strong>Q: "如果没人跟你走，怎么办？"</strong></p>
+<p>A: 承认这种情况发生过。诚实地说你调整了策略：缩小范围，先解决最痛的人的问题，再逐步扩展。</p>
+
+<hr/>
+
+<h3>Key Takeaways</h3>
+
+<ol><li><strong>量化影响范围</strong> — "影响了 N 个工程师/团队/季度"比"提升了性能"更有力</li><li><strong>区分输出和影响</strong> — Output: 代码上线。Outcome: 团队/用户得到了什么</li><li><strong>展示复制性</strong> — 你做的能被他人复用 = Staff 级别的标志</li><li><strong>承认失败</strong> — 展示你学到了什么，比假装成功更真实可信</li></ol>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li><a href="https://staffeng.com/guides/what-do-staff-engineers-actually-do">StaffEng: What Staff Engineers Actually Do</a></li><li><a href="https://lethain.com/staff-engineer-archetypes/">Lethain: Staff Engineer's Path</a></li><li><a href="https://www.levels.fyi/blog/swe-levels.html">The Engineering Ladder at Meta/Google</a></li></ul>
+
+<h3>🧒 ELI5</h3>
+
+<p>Senior 工程师就像一个很厉害的厨师，做出了一道美食。Staff 工程师是那个写菜谱的人——让 100 个厨师都能做出同样的美食。面试官在找那个<strong>写菜谱的人</strong>。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">AI News Roundup</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>AI News Roundup</h1>
+<p><em>Day 87 — AI News | 2026-07-10</em></p>
+
+<hr/>
+
+<h2>🤖 AI 新闻速递 / AI News Roundup</h2>
+
+<p><em>本期新闻来源于本周网络搜索结果，所有具体数据均来自已验证来源。</em></p>
+<p><em>All stories sourced from web searches conducted today. Figures only from verified sources.</em></p>
+
+<hr/>
+
+<h3>📰 Story 1: OpenAI 发布 GPT-Live 全双工语音模型</h3>
+<h3>OpenAI Launches GPT-Live Full-Duplex Voice Models</h3>
+
+<p><strong>来源 / Source:</strong> <a href="https://venturebeat.com/technology/openai-launches-gpt-live-a-full-duplex-voice-upgrade-that-lets-chatgpt-talk-more-like-a-person">VentureBeat</a> | <a href="https://www.marktechpost.com/2026/07/08/openai-releases-gpt-live-and-gpt-live-1-mini-full-duplex-voice-models-that-delegate-deeper-reasoning-to-gpt-5-5/">MarktechPost</a></p>
+
+<p>OpenAI 于 7 月 8 日正式发布了新一代语音模型 <strong>GPT-Live-1</strong> 和 <strong>GPT-Live-1 mini</strong>，取代此前的 Advanced Voice Mode。最大的技术突破是<strong>全双工（Full-Duplex）交互</strong>——AI 可以同时听和说，实现真正自然的对话（而不是轮流说话的机械感）。</p>
+
+<p><em>OpenAI launched GPT-Live-1 and GPT-Live-1 mini on July 8, replacing Advanced Voice Mode with <strong>full-duplex</strong> interaction — the AI can listen and speak simultaneously, enabling natural interruptions and conversational cues.</em></p>
+
+<p><strong>技术架构亮点 / Architecture Highlight:</strong></p>
+
+<div class="diagram-block">用户说话 ──▶ GPT-Live-1 (对话管理层)
+                │
+                ├── 简单回答 → 直接响应
+                └── 复杂任务 ──▶ GPT-5.5 (后台推理)
+                                    │
+                              结果回传给对话层</div>
+
+<p>GPT-Live 管理对话流程，复杂推理委托给后台的 GPT-5.5——类似<strong>前端 + 后端</strong>的分工。这意味着对话不需要暂停等待深度思考。</p>
+
+<p><em>GPT-Live acts as a conversation manager, delegating complex reasoning to GPT-5.5 in the background — like frontend/backend separation for AI voice.</em></p>
+
+<p><strong>对工程师的意义 / Engineering Takeaway:</strong></p>
+<p>全双工语音 + 后台推理委托，是构建实时 AI 语音应用的新范式。API 将陆续开放。</p>
+
+<hr/>
+
+<h3>📰 Story 2: Google Gemma 4 开源模型生态爆发</h3>
+<h3>Google Gemma 4 Open-Source Model Ecosystem Booming</h3>
+
+<p><strong>来源 / Source:</strong> <a href="https://en.wikipedia.org/wiki/Gemma_(language_model)">Wikipedia: Gemma (language model)</a> | <a href="https://cloud.google.com/blog/products/ai-machine-learning/gemma-4-available-on-google-cloud">Google Cloud Blog</a></p>
+
+<p>今年 4 月发布的 <strong>Gemma 4</strong> 系列（Apache 2.0 许可）已积累超过 <strong>4 亿次下载</strong>，社区构建了超过 <strong>10 万个</strong>定制变体。</p>
+
+<p><em>Gemma 4 (released April 2026, Apache 2.0 license) has reportedly accumulated over 400 million downloads with 100,000+ community-built variants.</em></p>
+
+<p>主要规格 / Key specs:</p>
+<ul><li>大小范围：E2B（手机可运行）到 31B Dense</li><li>支持音频输入（E2B/E4B/12B）</li><li>上下文窗口：最高 256K tokens</li><li>支持 140+ 语言</li></ul>
+
+<p><strong>开源 vs 闭源模型的权衡 / Open vs Closed:</strong></p>
+
+<div class="diagram-block">开源 (Gemma/Llama)        闭源 (GPT-5/Claude)
+──────────────────────    ──────────────────────
+✅ 本地部署，数据不出境    ✅ 最先进的能力
+✅ 可 fine-tune            ✅ 无需运维
+✅ 成本可控                ✅ 持续更新
+❌ 需要自己运维            ❌ 数据隐私风险
+❌ 能力略逊前沿模型         ❌ 成本不可预测</div>
+
+<p><strong>工程师实战建议 / Practical Tip:</strong></p>
+<p>合规敏感场景（医疗、金融、企业内网）优先考虑开源自部署；通用产品功能用闭源 API 更快。</p>
+
+<hr/>
+
+<h3>📰 Story 3: 开源生态加速 — MiniMax M3 支持 1M Token 上下文</h3>
+<h3>Open-Source Surge: MiniMax M3 with 1M Token Context Window</h3>
+
+<p><strong>来源 / Source:</strong> <a href="https://radicaldatascience.wordpress.com/2026/07/08/ai-news-briefs-bulletin-board-for-july-2026/">radicaldatascience.wordpress.com AI News Briefs July 2026</a></p>
+
+<p>MiniMax M3（6 月发布）是一款开放权重模型，据报道支持 <strong>100 万 token</strong> 上下文窗口，结合前沿编码能力和原生多模态（文字、图像、视频）。</p>
+
+<p><em>MiniMax M3 (June 2026) reportedly features a 1 million token context window with frontier-level coding and native multimodal capabilities — text, images, and video.</em></p>
+
+<p><strong>100 万 token 上下文意味着什么 / What 1M Context Means:</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# 1M tokens ≈ 750,000 words ≈ 3,000 pages of text&#10;# 实际应用场景:&#10;# - 整个代码库放进上下文&#10;# - 几个月的对话历史&#10;# - 完整的法律合同 + 相关判例&#10;# - 视频帧序列分析">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># 1M tokens ≈ 750,000 words ≈ 3,000 pages of text</span>
+<span style="color:#5c6370;"># 实际应用场景:</span>
+<span style="color:#5c6370;"># - 整个代码库放进上下文</span>
+<span style="color:#5c6370;"># - 几个月的对话历史</span>
+<span style="color:#5c6370;"># - 完整的法律合同 + 相关判例</span>
+<span style="color:#5c6370;"># - 视频帧序列分析</span></code></pre>
+</div>
+
+<p>但要注意：<strong>长上下文 ≠ 无限制</strong>。"Lost in the Middle"问题（模型对上下文中间部分的注意力衰减）仍然是活跃研究方向。</p>
+
+<hr/>
+
+<h3>💡 本周 AI 技术趋势总结 / Weekly Trend Summary</h3>
+
+<ol><li><strong>语音 AI 从 turn-based 走向 full-duplex</strong> — 更接近人类对话体验</li><li><strong>开源模型缩小与闭源的差距</strong> — 在特定任务上已可比肩前沿</li><li><strong>上下文窗口持续扩大</strong> — 从 128K 到 1M，整个代码库进上下文成为现实</li><li><strong>AI 分层架构</strong> — 轻量对话层 + 重量推理层，类似微服务思想</li></ol>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li><a href="https://venturebeat.com/technology/openai-launches-gpt-live-a-full-duplex-voice-upgrade-that-lets-chatgpt-talk-more-like-a-person">VentureBeat: OpenAI GPT-Live</a></li><li><a href="https://en.wikipedia.org/wiki/Gemma_(language_model)">Wikipedia: Gemma model</a></li><li><a href="https://cloud.google.com/blog/products/ai-machine-learning/gemma-4-available-on-google-cloud">Google Cloud: Gemma 4</a></li><li><a href="https://radicaldatascience.wordpress.com/2026/07/08/ai-news-briefs-bulletin-board-for-july-2026/">AI News Briefs July 2026</a></li></ul>
+
+<h3>🧒 ELI5</h3>
+
+<p>本周 AI 大事：</p>
+<ol><li><strong>ChatGPT 的语音</strong>升级了 — 现在它能像真人一样打断你、说"嗯嗯"，不再等你说完才回应</li><li><strong>Google 的免费 AI 模型</strong>越来越受欢迎，下载量超过 4 亿次，任何人都能拿去改造</li><li><strong>一个新模型</strong>能记住 100 万个单词的对话历史 — 相当于 3000 页书</li></ol>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>

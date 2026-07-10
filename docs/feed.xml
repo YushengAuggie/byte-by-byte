@@ -5,8 +5,1425 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 08 Jul 2026 15:32:06 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 10 Jul 2026 15:09:38 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-10</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-10</guid>
+      <pubDate>Fri, 10 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>System Design Synthesis: Event-Driven vs. Request-Response Architectures</h2>
+<p><em>Day 87 — Expert Synthesis | 2026-07-10</em></p>
+
+<hr/>
+
+<h2>🏗️ 系统设计综合 / System Design Synthesis</h2>
+
+<h3>事件驱动 vs 请求-响应架构深度对比</h3>
+<h3>Event-Driven vs. Request-Response Architecture Deep Dive</h3>
+
+<hr/>
+
+<p>想象你已经覆盖了 60 个系统设计主题。从 URL Shortener 到 LLM 推理服务，你脑海中有大量架构蓝图。但面试官真正想考察的，是你能不能跨主题做出有依据的<strong>架构决策</strong>。</p>
+<p><em>Imagine you&#x27;ve covered 60 system design topics — from TinyURL to LLM inference. Interviewers want to see you make <strong>principled architectural decisions</strong> across topics, not just recall patterns.</em></p>
+
+<hr/>
+
+<h3>核心问题 / The Core Question</h3>
+
+<p>&gt; 什么时候选择<strong>请求-响应</strong>？什么时候选择<strong>事件驱动</strong>？</p>
+<p>&gt; <em>When do you choose request-response? When do you choose event-driven?</em></p>
+
+<hr/>
+
+<h3>架构对比 / Side-by-Side</h3>
+
+<pre><code>
+请求-响应 (Request-Response)
+──────────────────────────────────────────────────
+  Client ──── HTTP/gRPC ──▶ Service ──▶ DB
+              ◀────────────── (sync reply)
+
+典型系统: URL Shortener, Rate Limiter, Auth
+
+事件驱动 (Event-Driven)
+──────────────────────────────────────────────────
+  Producer ──▶ [Message Queue] ──▶ Consumer A
+                    │                Consumer B
+                    └──────────────▶ Consumer C
+
+典型系统: Notification System, Web Crawler,
+          Payment System, Content Moderation
+</code></pre>
+
+<hr/>
+
+<h3>关键权衡 / Key Tradeoffs</h3>
+
+<p>| 维度 | 请求-响应 | 事件驱动 |</p>
+<p>|------|-----------|----------|</p>
+<p>| <strong>延迟</strong> | 低 (ms级) | 更高 (秒级) |</p>
+<p>| <strong>耦合</strong> | 紧耦合 | 松耦合 |</p>
+<p>| <strong>一致性</strong> | 强一致性容易实现 | 最终一致性 |</p>
+<p>| <strong>调试</strong> | 简单，有栈追踪 | 复杂，需分布式追踪 |</p>
+<p>| <strong>扩展</strong> | 水平扩展有上限 | 消费者独立扩展 |</p>
+<p>| <strong>错误处理</strong> | 即时反馈 | 需要 DLQ + 重试逻辑 |</p>
+
+<hr/>
+
+<h3>跨系统模式识别 / Cross-System Pattern Recognition</h3>
+
+<p>从你学过的系统中提炼规律：</p>
+
+<p><strong>必须同步（请求-响应）的场景：</strong></p>
+<p>- 认证/授权（用户等待登录结果）</p>
+<p>- Rate Limiter（每个请求都需要实时决策）</p>
+<p>- 搜索/查询（用户期待即时结果）</p>
+
+<p><strong>应该异步（事件驱动）的场景：</strong></p>
+<p>- 通知发送（Email/SMS 不需要用户等）</p>
+<p>- 内容审核（批量处理，人工复审）</p>
+<p>- 支付后处理（对账、报表生成）</p>
+<p>- 日志/监控（高吞吐，非关键路径）</p>
+
+<hr/>
+
+<h3>典型陷阱 / Common Mistakes</h3>
+
+<p><strong>❌ 错误：把事件驱动用于强一致性场景</strong></p>
+<pre><code>
+用户下单 → Kafka → 扣库存 (异步)
+问题: 如果消费者宕机，库存未扣但订单已确认
+</code></pre>
+
+<p><strong>✅ 正确：Saga Pattern 保证分布式一致性</strong></p>
+<pre><code>
+用户下单 → 同步创建 Order (PENDING)
+         → 发送事件到 Kafka
+         → 库存服务消费、扣减、回调确认
+         → Order 状态 → CONFIRMED
+</code></pre>
+
+<p><strong>❌ 错误：事件驱动系统忽略消息顺序</strong></p>
+<pre><code>
+用户账户: 创建 → 充值 → 消费
+若乱序处理 &quot;消费&quot; 先到 → 余额为负
+解决: Kafka partition key = user_id (保证同用户有序)
+</code></pre>
+
+<hr/>
+
+<h3>Staff 工程师视角 / Staff Engineer Lens</h3>
+
+<p>在实际系统中，两种架构<strong>共存</strong>才是常态：</p>
+
+<pre><code>
+前端请求 ──▶ API Gateway (同步，低延迟)
+                │
+                ├── Auth Service (同步，必须)
+                ├── Core Business Logic (同步)
+                └── Side Effects ──▶ Kafka (异步)
+                                      ├── Audit Log Service
+                                      ├── Analytics Pipeline
+                                      ├── Email Notification
+                                      └── Cache Invalidation
+</code></pre>
+
+<p><strong>决策框架（面试时说这个）：</strong></p>
+<p>1. 用户需要<strong>立即知道结果</strong>吗？→ 同步</p>
+<p>2. 操作是<strong>核心业务</strong>还是<strong>副作用</strong>？→ 副作用用异步</p>
+<p>3. 需要<strong>扇出</strong>给多个下游？→ 事件驱动</p>
+<p>4. 需要<strong>峰值削峰</strong>？→ 消息队列</p>
+
+<hr/>
+
+<h3>📚 深度资料 / References</h3>
+
+<p>- [Martin Fowler: Event-Driven Architecture](https://martinfowler.com/articles/201701-event-driven.html)</p>
+<p>- [AWS: Choosing between messaging services](https://aws.amazon.com/compare/the-difference-between-sqs-sns-and-eventbridge/)</p>
+<p>- [Confluent: Event-Driven Microservices](https://www.confluent.io/blog/event-driven-microservices-with-kafka/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>你去餐厅吃饭：</p>
+<p>- <strong>请求-响应</strong> = 服务员站你旁边等你点餐，你说什么，他马上记下来（同步）</p>
+<p>- <strong>事件驱动</strong> = 你把菜单投进一个槽里，厨房各部门各自看到自己该做什么（异步，松耦合）</p>
+
+<p>大餐厅（高流量系统）两种都要用！</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>Algorithms: Find Median from Data Stream</h2>
+<p><em>Day 87 — #295 Hard — Heap / Priority Queue (7/7) | 2026-07-10</em></p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms</h2>
+
+<p>🧩 <strong>堆/优先队列模式 (7/7)</strong> — 收官之作，模式的终极形态</p>
+<p><em>The final problem of this pattern block — the pattern&#x27;s ultimate form.</em></p>
+
+<p>&gt; 本块回顾 / Block recap: #703 → #1046 → #973 → #215 → #621 → #355 → <strong>#295 (今天)</strong></p>
+<p>&gt; 前 6 题都在&quot;从流/数组中维护 top-K&quot;，今天是<strong>双堆技巧</strong>，维护动态中位数。</p>
+<p>&gt; <em>Previous 6 problems all maintained top-K. Today: two-heap trick for dynamic median.</em></p>
+
+<hr/>
+
+<h3>题目 / Problem</h3>
+
+<p>🔗 [LeetCode #295 — Find Median from Data Stream](https://leetcode.com/problems/find-median-from-data-stream/) 🔴 Hard</p>
+<p>📹 [NeetCode 讲解](https://neetcode.io/problems/find-median-in-a-data-stream)</p>
+
+<p><strong>题意：</strong> 设计一个数据结构，支持：</p>
+<p>- <code>addNum(num)</code> — 向数据流中添加一个数</p>
+<p>- <code>findMedian()</code> — 返回当前所有数字的中位数</p>
+
+<p><em>Design a data structure supporting addNum(num) and findMedian().</em></p>
+
+<hr/>
+
+<h3>真实场景 / Real-World Analogy</h3>
+
+<p>想象你是一个系统监控工程师，需要<strong>实时</strong>统计服务器响应时间的中位数。每毫秒都有新数据涌入，你不能每次都对全量数据排序（O(n log n) 太慢），你需要一个 O(log n) 的动态解法。</p>
+
+<p><em>Imagine monitoring server response times in real-time — you need the median of a data stream without re-sorting every time a new data point arrives.</em></p>
+
+<hr/>
+
+<h3>核心洞察：双堆 / Key Insight: Two Heaps</h3>
+
+<pre><code>
+数据流中所有数字想象成两半：
+左半部分（较小的数）用 max-heap 维护 → 堆顶是左边最大值
+右半部分（较大的数）用 min-heap 维护 → 堆顶是右边最小值
+
+[1, 2, 3] | [4, 5, 6, 7]
+max-heap    min-heap
+
+中位数 = 两个堆顶的平均值（偶数）
+       = 较大堆的堆顶（奇数）
+
+不变量 (Invariant):
+1. len(max_heap) == len(min_heap) 或
+   len(max_heap) == len(min_heap) + 1
+2. max(max_heap) &lt;= min(min_heap)
+</code></pre>
+
+<hr/>
+
+<h3>如何映射到模式模板 / Mapping to Template</h3>
+
+<p>基础模板只维护 <strong>单个堆</strong> 来追踪 top-K：</p>
+<pre><code>
+import heapq
+heap = []
+heapq.heappush(heap, item)
+if len(heap) &gt; k:
+    heapq.heappop(heap)
+</code></pre>
+
+<p>今天的变体：<strong>维护两个相互平衡的堆</strong>，一个 max-heap（左），一个 min-heap（右），通过动态重平衡维护中位数不变量。这是堆模式的<strong>最复杂形态</strong>。</p>
+
+<hr/>
+
+<h3>Python 解法 / Solution</h3>
+
+<pre><code>
+import heapq
+
+class MedianFinder:
+    def __init__(self):
+        # max-heap for left half (store negatives for Python&#x27;s min-heap)
+        self.left = []   # max-heap (negated)
+        # min-heap for right half
+        self.right = []  # min-heap
+
+    def addNum(self, num: int) -&gt; None:
+        # Step 1: always push to left first
+        heapq.heappush(self.left, -num)
+        
+        # Step 2: ensure left&#x27;s max &lt;= right&#x27;s min
+        if self.left and self.right and (-self.left[0] &gt; self.right[0]):
+            val = -heapq.heappop(self.left)
+            heapq.heappush(self.right, val)
+        
+        # Step 3: rebalance sizes (left can be at most 1 larger)
+        if len(self.left) &gt; len(self.right) + 1:
+            val = -heapq.heappop(self.left)
+            heapq.heappush(self.right, val)
+        if len(self.right) &gt; len(self.left):
+            val = heapq.heappop(self.right)
+            heapq.heappush(self.left, -val)
+
+    def findMedian(self) -&gt; float:
+        if len(self.left) &gt; len(self.right):
+            return -self.left[0]  # odd total: left has one more
+        return (-self.left[0] + self.right[0]) / 2  # even total: average tops
+
+# --- Trace ---
+mf = MedianFinder()
+mf.addNum(1)  # left=[-1], right=[]       → median = 1.0
+mf.addNum(2)  # left=[-1], right=[2]      → median = 1.5
+mf.addNum(3)  # left=[-2,-1], right=[3]   → median = 2.0
+print(mf.findMedian())  # 2.0
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- <code>addNum</code>: Time O(log n) — heap push/pop</p>
+<p>- <code>findMedian</code>: Time O(1) — just read tops</p>
+<p>- Space O(n) — store all elements</p>
+
+<hr/>
+
+<h3>举一反三 / Pattern Connections</h3>
+
+<p>本块 7 道题的<strong>难度梯度</strong>很有启发性：</p>
+
+<p>| 题目 | 技巧 | 难度 |</p>
+<p>|------|------|------|</p>
+<p>| #703 Kth Largest in Stream | 单 min-heap 固定大小 | Easy |</p>
+<p>| #1046 Last Stone Weight | 单 max-heap | Easy |</p>
+<p>| #973 K Closest Points | 单 max-heap, 距离比较 | Medium |</p>
+<p>| #215 Kth Largest in Array | QuickSelect 或堆 | Medium |</p>
+<p>| #621 Task Scheduler | 频率计数 + 贪心 | Medium |</p>
+<p>| #355 Design Twitter | 多路归并 + heap | Medium |</p>
+<p>| <strong>#295 Median from Stream</strong> | <strong>双堆平衡</strong> | <strong>Hard</strong> |</p>
+
+<p>规律：<strong>越复杂的问题，需要维护的堆越多，不变量越精妙。</strong></p>
+
+<hr/>
+
+<h3>面试常见追问 / Follow-up Questions</h3>
+
+<p><strong>Q: 如果数据流极大（无法全部放内存），怎么办？</strong></p>
+<p>A: 用两个文件做外部排序，或 <strong>t-digest</strong> 算法做近似中位数，牺牲精确度换内存。</p>
+
+<p><strong>Q: 如果要维护 P99 而不是中位数？</strong></p>
+<p>A: 同样的双堆思路，只是左右堆的大小比例不是 50/50，而是 99/1。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [LeetCode #295](https://leetcode.com/problems/find-median-from-data-stream/)</p>
+<p>- [NeetCode 视频讲解](https://neetcode.io/problems/find-median-in-a-data-stream)</p>
+<p>- [Python heapq docs](https://docs.python.org/3/library/heapq.html)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>把所有数字排成一排，中位数就是最中间的那个。但每次新来一个数，我不想重新排序。我的技巧：用两个魔法盒子。<strong>左边盒子</strong>装较小的数，随时能告诉我最大值。<strong>右边盒子</strong>装较大的数，随时能告诉我最小值。每次加数，我维持两个盒子大小相近，中位数就是两个盒盖上的数！</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>Soft Skills Synthesis: The &quot;Multiplier&quot; Impact Framework</h2>
+<p><em>Day 87 — Expert Synthesis | 2026-07-10</em></p>
+
+<hr/>
+
+<h2>🗣️ 软技能综合 / Soft Skills Synthesis</h2>
+
+<h3>Staff 工程师的&quot;乘数效应&quot;：如何回答影响力类问题</h3>
+<h3>The &quot;Force Multiplier&quot; Framework: Answering Impact Questions at Staff+</h3>
+
+<hr/>
+
+<p>你已经练习了 60 道行为题。到了 Staff/Principal 面试，这些题目本质上都在问一件事：</p>
+
+<p>&gt; <strong>&quot;你是怎么放大整个组织的影响力的？&quot;</strong></p>
+<p>&gt; <em>&quot;How did you multiply the organization&#x27;s output beyond yourself?&quot;</em></p>
+
+<hr/>
+
+<h3>为什么这个问题那么重要 / Why This Matters</h3>
+
+<p>Senior 工程师 = 自己产出好代码</p>
+<p>Staff 工程师 = 让整个团队产出更好的代码</p>
+<p>Principal 工程师 = 让整个组织做出更好的技术决策</p>
+
+<p>面试官听的不是你做了什么，而是<strong>你的影响辐射范围</strong>。</p>
+
+<hr/>
+
+<h3>乘数效应框架 / Force Multiplier Framework</h3>
+
+<p>把过去 60 道题的主题归类为四种乘数：</p>
+
+<pre><code>
+┌─────────────────────────────────────────────────────┐
+│           Staff Engineer Force Multipliers           │
+│                                                     │
+│  1. 技术方向 (Technical Direction)                  │
+│     设计系统、制定技术路线图、驱动 ADR               │
+│     → &quot;我写了这份设计文档，影响了后续3个季度的方向&quot;  │
+│                                                     │
+│  2. 人员赋能 (People Enablement)                    │
+│     Onboarding、代码审查文化、mentoring             │
+│     → &quot;我建立了这个实践，整个团队的 PR 质量提升了&quot;   │
+│                                                     │
+│  3. 流程改善 (Process Improvement)                  │
+│     CI/CD、on-call、incident response               │
+│     → &quot;MTTR 从 4h 降到 40min&quot;                      │
+│                                                     │
+│  4. 跨团队协调 (Cross-Team Alignment)               │
+│     平台标准化、API 协议、组织级决策                 │
+│     → &quot;我统一了 3 个团队的认证方案，减少了重复建设&quot;  │
+└─────────────────────────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>综合 STAR 示例 / Synthesis STAR</h3>
+
+<p><strong>题目：</strong> 描述你作为技术乘数（force multiplier）最有代表性的一个例子。</p>
+
+<p><strong>S (Situation):</strong> 我们团队有 5 个服务，每个服务都自己实现了日志方案，incident 时无法做跨服务追踪。</p>
+
+<p><strong>T (Task):</strong> 需要在不阻塞各团队正常迭代的情况下，推动统一可观测性标准。</p>
+
+<p><strong>A (Action):</strong></p>
+<p>- 先做 POC，而不是直接要求大家切换（降低阻力）</p>
+<p>- 写了一份 RFC，列出迁移成本和收益，用数据说服而非权威压制</p>
+<p>- 识别出两个&quot;盟友团队&quot;提前试点，积累案例</p>
+<p>- 做了 office hours，帮助其他团队迁移，不是只发文档</p>
+
+<p><strong>R (Result):</strong></p>
+<p>- 6 个月内所有服务迁移到统一 structured logging</p>
+<p>- P99 incident 响应时间从 4h 降至 40min</p>
+<p>- 这套方案后来被另外两个 org 采用</p>
+
+<hr/>
+
+<h3>❌ Senior 的答案 vs ✅ Staff 的答案</h3>
+
+<p><strong>❌ Senior:</strong> &quot;我重构了这个服务，性能提升了 50%。&quot;</p>
+<p>✅ <strong>Staff:</strong> &quot;我重构了这个服务，然后把模式抽成文档，另外 4 个团队用相同方法优化了他们的服务。组织整体收益放大了 5 倍。&quot;</p>
+
+<p>关键词升级：</p>
+<p>- ~~&quot;我做了&quot;~~ → &quot;我推动了 / 赋能了 / 对齐了&quot;</p>
+<p>- ~~&quot;我的团队&quot;~~ → &quot;跨团队 / 跨 org&quot;</p>
+<p>- ~~&quot;功能上线&quot;~~ → &quot;建立了可复用的模式/框架/标准&quot;</p>
+
+<hr/>
+
+<h3>面试中的高频追问 / Common Follow-ups</h3>
+
+<p><strong>Q: &quot;你怎么在没有权力的情况下推动改变？&quot;</strong></p>
+<p>A: 数据优先（RFC with metrics）→ 找早期盟友 → 小范围试点 → 展示案例 → 扩大推广。不用权力，用信任和证据。</p>
+
+<p><strong>Q: &quot;如果没人跟你走，怎么办？&quot;</strong></p>
+<p>A: 承认这种情况发生过。诚实地说你调整了策略：缩小范围，先解决最痛的人的问题，再逐步扩展。</p>
+
+<hr/>
+
+<h3>Key Takeaways</h3>
+
+<p>1. <strong>量化影响范围</strong> — &quot;影响了 N 个工程师/团队/季度&quot;比&quot;提升了性能&quot;更有力</p>
+<p>2. <strong>区分输出和影响</strong> — Output: 代码上线。Outcome: 团队/用户得到了什么</p>
+<p>3. <strong>展示复制性</strong> — 你做的能被他人复用 = Staff 级别的标志</p>
+<p>4. <strong>承认失败</strong> — 展示你学到了什么，比假装成功更真实可信</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [StaffEng: What Staff Engineers Actually Do](https://staffeng.com/guides/what-do-staff-engineers-actually-do)</p>
+<p>- [Lethain: Staff Engineer&#x27;s Path](https://lethain.com/staff-engineer-archetypes/)</p>
+<p>- [The Engineering Ladder at Meta/Google](https://www.levels.fyi/blog/swe-levels.html)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>Senior 工程师就像一个很厉害的厨师，做出了一道美食。Staff 工程师是那个写菜谱的人——让 100 个厨师都能做出同样的美食。面试官在找那个<strong>写菜谱的人</strong>。</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Python Craft: Logging Best Practices — structlog, Correlation IDs</h2>
+<p><em>Day 87 — Python Craft #31 | 2026-07-10</em></p>
+
+<hr/>
+
+<h2>🐍 Python 工程实践 / Python Craft</h2>
+
+<h3>生产级日志：structlog + 关联 ID</h3>
+<h3>Production Logging: structlog + Correlation IDs</h3>
+
+<hr/>
+
+<h3>真实场景 / Real Scenario</h3>
+
+<p>你在做一个微服务 dashboard，用户反馈&quot;偶发 500 错误&quot;。你打开日志，看到的是：</p>
+
+<pre><code>
+ERROR: database connection failed
+ERROR: user not found
+ERROR: timeout after 30s
+</code></pre>
+
+<p>这些日志没有任何<strong>上下文</strong>——你不知道是哪个请求、哪个用户、哪次调用链出了问题。</p>
+
+<p><strong>结构化日志 + Correlation ID</strong> 就是解决这个问题的工具。</p>
+
+<hr/>
+
+<h3>为什么用 structlog / Why structlog</h3>
+
+<pre><code>
+# ❌ 传统日志：字符串拼接，无法机器解析
+import logging
+logging.error(f&quot;User {user_id} login failed: {error}&quot;)
+# 输出: ERROR User 12345 login failed: db timeout
+
+# ✅ structlog：结构化，每个字段独立
+import structlog
+log = structlog.get_logger()
+log.error(&quot;login_failed&quot;, user_id=user_id, error=str(error), duration_ms=42)
+# 输出: {&quot;event&quot;: &quot;login_failed&quot;, &quot;user_id&quot;: 12345, &quot;error&quot;: &quot;db timeout&quot;, &quot;duration_ms&quot;: 42}
+</code></pre>
+
+<p>结构化日志的好处：</p>
+<p>- <strong>可查询</strong>：<code>jq &#x27;.[] | select(.error == &quot;db timeout&quot;)&#x27;</code></p>
+<p>- <strong>可聚合</strong>：Datadog/Grafana 直接解析 JSON 字段</p>
+<p>- <strong>一致性</strong>：所有服务用相同格式，统一告警规则</p>
+
+<hr/>
+
+<h3>Correlation ID：跨服务追踪 / Correlation ID: Cross-Service Tracing</h3>
+
+<pre><code>
+import uuid
+import structlog
+from contextvars import ContextVar
+
+# Thread-safe context variable (works with asyncio too)
+correlation_id_var: ContextVar[str] = ContextVar(&#x27;correlation_id&#x27;, default=&#x27;&#x27;)
+
+def get_logger():
+    return structlog.get_logger().bind(
+        correlation_id=correlation_id_var.get()
+    )
+
+# Middleware: inject correlation ID on every request
+class CorrelationIdMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        # Use incoming header or generate new one
+        headers = dict(scope.get(&quot;headers&quot;, []))
+        corr_id = headers.get(b&quot;x-correlation-id&quot;, b&quot;&quot;).decode()
+        if not corr_id:
+            corr_id = str(uuid.uuid4())
+        
+        # Set for this request&#x27;s context
+        token = correlation_id_var.set(corr_id)
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            correlation_id_var.reset(token)
+
+# Usage in your service
+log = get_logger()
+log.info(&quot;payment_processed&quot;, amount=100, currency=&quot;USD&quot;)
+# Output: {&quot;event&quot;: &quot;payment_processed&quot;, &quot;amount&quot;: 100, 
+#           &quot;currency&quot;: &quot;USD&quot;, &quot;correlation_id&quot;: &quot;abc-123-def&quot;}
+</code></pre>
+
+<hr/>
+
+<h3>完整 structlog 配置 / Full Setup</h3>
+
+<pre><code>
+import logging
+import structlog
+
+def configure_logging(env: str = &quot;production&quot;):
+    shared_processors = [
+        structlog.contextvars.merge_contextvars,          # thread-local context
+        structlog.processors.add_log_level,               # add &quot;level&quot; field
+        structlog.processors.TimeStamper(fmt=&quot;iso&quot;),      # ISO timestamp
+        structlog.stdlib.add_logger_name,                 # add logger name
+    ]
+    
+    if env == &quot;development&quot;:
+        # Human-readable in dev
+        processors = shared_processors + [
+            structlog.dev.ConsoleRenderer()
+        ]
+    else:
+        # JSON in production (parseable by log aggregators)
+        processors = shared_processors + [
+            structlog.processors.dict_tracebacks,         # structured exceptions
+            structlog.processors.JSONRenderer()
+        ]
+    
+    structlog.configure(
+        processors=processors,
+        wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(),
+    )
+
+# pip install structlog
+</code></pre>
+
+<hr/>
+
+<h3>❌ vs ✅ 常见错误 / Common Mistakes</h3>
+
+<p><strong>❌ 在日志中记录敏感信息</strong></p>
+<pre><code>
+log.info(&quot;user_authenticated&quot;, password=user.password, token=jwt_token)
+</code></pre>
+
+<p><strong>✅ 只记录标识符，不记录内容</strong></p>
+<pre><code>
+log.info(&quot;user_authenticated&quot;, user_id=user.id, token_prefix=jwt_token[:8])
+</code></pre>
+
+<p><strong>❌ 日志级别乱用</strong></p>
+<pre><code>
+log.error(&quot;user not found&quot;)  # 这只是 404，不是 error
+</code></pre>
+
+<p><strong>✅ 合理的日志级别</strong></p>
+<pre><code>
+DEBUG  → 开发调试，生产关闭
+INFO   → 正常业务事件（请求完成、任务执行）
+WARNING → 非预期但可恢复（重试、降级）
+ERROR  → 需要人工介入（DB 连接失败、第三方超时）
+CRITICAL → 系统级故障（OOM、数据损坏）
+</code></pre>
+
+<hr/>
+
+<h3>When to Use / When NOT to Use</h3>
+
+<p><strong>✅ 用结构化日志：</strong></p>
+<p>- 任何生产环境服务</p>
+<p>- 需要 Datadog/ELK/Grafana 集成</p>
+<p>- 微服务架构（必须有 correlation ID）</p>
+
+<p><strong>❌ 不适合：</strong></p>
+<p>- 简单脚本（logging.basicConfig 够用）</p>
+<p>- 性能极端敏感的热路径（日志序列化有开销）</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [structlog docs](https://www.structlog.org/en/stable/)</p>
+<p>- [12-Factor App: Logs](https://12factor.net/logs)</p>
+<p>- [Datadog: Structured Logging Best Practices](https://www.datadoghq.com/blog/python-logging-best-practices/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象你要找医院里某个病人的所有记录。传统日志就像护士把所有事都写在一张大纸上，字迹潦草。结构化日志像电子病历——每个字段分开存，一键搜索&quot;张三的所有检查记录&quot;。Correlation ID 就是病历号，让所有医生的记录都能关联到同一个病人。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>AI News Roundup</h2>
+<p><em>Day 87 — AI News | 2026-07-10</em></p>
+
+<hr/>
+
+<h2>🤖 AI 新闻速递 / AI News Roundup</h2>
+
+<p><em>本期新闻来源于本周网络搜索结果，所有具体数据均来自已验证来源。</em></p>
+<p><em>All stories sourced from web searches conducted today. Figures only from verified sources.</em></p>
+
+<hr/>
+
+<h3>📰 Story 1: OpenAI 发布 GPT-Live 全双工语音模型</h3>
+<h3>OpenAI Launches GPT-Live Full-Duplex Voice Models</h3>
+
+<p><strong>来源 / Source:</strong> [VentureBeat](https://venturebeat.com/technology/openai-launches-gpt-live-a-full-duplex-voice-upgrade-that-lets-chatgpt-talk-more-like-a-person) | [MarktechPost](https://www.marktechpost.com/2026/07/08/openai-releases-gpt-live-and-gpt-live-1-mini-full-duplex-voice-models-that-delegate-deeper-reasoning-to-gpt-5-5/)</p>
+
+<p>OpenAI 于 7 月 8 日正式发布了新一代语音模型 <strong>GPT-Live-1</strong> 和 <strong>GPT-Live-1 mini</strong>，取代此前的 Advanced Voice Mode。最大的技术突破是<strong>全双工（Full-Duplex）交互</strong>——AI 可以同时听和说，实现真正自然的对话（而不是轮流说话的机械感）。</p>
+
+<p><em>OpenAI launched GPT-Live-1 and GPT-Live-1 mini on July 8, replacing Advanced Voice Mode with <strong>full-duplex</strong> interaction — the AI can listen and speak simultaneously, enabling natural interruptions and conversational cues.</em></p>
+
+<p><strong>技术架构亮点 / Architecture Highlight:</strong></p>
+
+<pre><code>
+用户说话 ──▶ GPT-Live-1 (对话管理层)
+                │
+                ├── 简单回答 → 直接响应
+                └── 复杂任务 ──▶ GPT-5.5 (后台推理)
+                                    │
+                              结果回传给对话层
+</code></pre>
+
+<p>GPT-Live 管理对话流程，复杂推理委托给后台的 GPT-5.5——类似<strong>前端 + 后端</strong>的分工。这意味着对话不需要暂停等待深度思考。</p>
+
+<p><em>GPT-Live acts as a conversation manager, delegating complex reasoning to GPT-5.5 in the background — like frontend/backend separation for AI voice.</em></p>
+
+<p><strong>对工程师的意义 / Engineering Takeaway:</strong></p>
+<p>全双工语音 + 后台推理委托，是构建实时 AI 语音应用的新范式。API 将陆续开放。</p>
+
+<hr/>
+
+<h3>📰 Story 2: Google Gemma 4 开源模型生态爆发</h3>
+<h3>Google Gemma 4 Open-Source Model Ecosystem Booming</h3>
+
+<p><strong>来源 / Source:</strong> [Wikipedia: Gemma (language model)](https://en.wikipedia.org/wiki/Gemma_(language_model)) | [Google Cloud Blog](https://cloud.google.com/blog/products/ai-machine-learning/gemma-4-available-on-google-cloud)</p>
+
+<p>今年 4 月发布的 <strong>Gemma 4</strong> 系列（Apache 2.0 许可）已积累超过 <strong>4 亿次下载</strong>，社区构建了超过 <strong>10 万个</strong>定制变体。</p>
+
+<p><em>Gemma 4 (released April 2026, Apache 2.0 license) has reportedly accumulated over 400 million downloads with 100,000+ community-built variants.</em></p>
+
+<p>主要规格 / Key specs:</p>
+<p>- 大小范围：E2B（手机可运行）到 31B Dense</p>
+<p>- 支持音频输入（E2B/E4B/12B）</p>
+<p>- 上下文窗口：最高 256K tokens</p>
+<p>- 支持 140+ 语言</p>
+
+<p><strong>开源 vs 闭源模型的权衡 / Open vs Closed:</strong></p>
+
+<pre><code>
+开源 (Gemma/Llama)        闭源 (GPT-5/Claude)
+──────────────────────    ──────────────────────
+✅ 本地部署，数据不出境    ✅ 最先进的能力
+✅ 可 fine-tune            ✅ 无需运维
+✅ 成本可控                ✅ 持续更新
+❌ 需要自己运维            ❌ 数据隐私风险
+❌ 能力略逊前沿模型         ❌ 成本不可预测
+</code></pre>
+
+<p><strong>工程师实战建议 / Practical Tip:</strong></p>
+<p>合规敏感场景（医疗、金融、企业内网）优先考虑开源自部署；通用产品功能用闭源 API 更快。</p>
+
+<hr/>
+
+<h3>📰 Story 3: 开源生态加速 — MiniMax M3 支持 1M Token 上下文</h3>
+<h3>Open-Source Surge: MiniMax M3 with 1M Token Context Window</h3>
+
+<p><strong>来源 / Source:</strong> [radicaldatascience.wordpress.com AI News Briefs July 2026](https://radicaldatascience.wordpress.com/2026/07/08/ai-news-briefs-bulletin-board-for-july-2026/)</p>
+
+<p>MiniMax M3（6 月发布）是一款开放权重模型，据报道支持 <strong>100 万 token</strong> 上下文窗口，结合前沿编码能力和原生多模态（文字、图像、视频）。</p>
+
+<p><em>MiniMax M3 (June 2026) reportedly features a 1 million token context window with frontier-level coding and native multimodal capabilities — text, images, and video.</em></p>
+
+<p><strong>100 万 token 上下文意味着什么 / What 1M Context Means:</strong></p>
+
+<pre><code>
+# 1M tokens ≈ 750,000 words ≈ 3,000 pages of text
+# 实际应用场景:
+# - 整个代码库放进上下文
+# - 几个月的对话历史
+# - 完整的法律合同 + 相关判例
+# - 视频帧序列分析
+</code></pre>
+
+<p>但要注意：<strong>长上下文 ≠ 无限制</strong>。&quot;Lost in the Middle&quot;问题（模型对上下文中间部分的注意力衰减）仍然是活跃研究方向。</p>
+
+<hr/>
+
+<h3>💡 本周 AI 技术趋势总结 / Weekly Trend Summary</h3>
+
+<p>1. <strong>语音 AI 从 turn-based 走向 full-duplex</strong> — 更接近人类对话体验</p>
+<p>2. <strong>开源模型缩小与闭源的差距</strong> — 在特定任务上已可比肩前沿</p>
+<p>3. <strong>上下文窗口持续扩大</strong> — 从 128K 到 1M，整个代码库进上下文成为现实</p>
+<p>4. <strong>AI 分层架构</strong> — 轻量对话层 + 重量推理层，类似微服务思想</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [VentureBeat: OpenAI GPT-Live](https://venturebeat.com/technology/openai-launches-gpt-live-a-full-duplex-voice-upgrade-that-lets-chatgpt-talk-more-like-a-person)</p>
+<p>- [Wikipedia: Gemma model](https://en.wikipedia.org/wiki/Gemma_(language_model))</p>
+<p>- [Google Cloud: Gemma 4](https://cloud.google.com/blog/products/ai-machine-learning/gemma-4-available-on-google-cloud)</p>
+<p>- [AI News Briefs July 2026](https://radicaldatascience.wordpress.com/2026/07/08/ai-news-briefs-bulletin-board-for-july-2026/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>本周 AI 大事：</p>
+<p>1. <strong>ChatGPT 的语音</strong>升级了 — 现在它能像真人一样打断你、说&quot;嗯嗯&quot;，不再等你说完才回应</p>
+<p>2. <strong>Google 的免费 AI 模型</strong>越来越受欢迎，下载量超过 4 亿次，任何人都能拿去改造</p>
+<p>3. <strong>一个新模型</strong>能记住 100 万个单词的对话历史 — 相当于 3000 页书</p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-07-09</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-09</guid>
+      <pubDate>Thu, 09 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>系统设计综合 / System Design Synthesis — Day 86</h2>
+
+<h2>🏗️ 系统设计 / System Design — 专家级综合：设计原则的统一视角</h2>
+
+<h3>综合主题：当你面对&quot;设计任何系统&quot;时，头脑中应该有的框架</h3>
+
+<p><em>Expert Synthesis: The unified mental model for &quot;design any system&quot;</em></p>
+
+<hr/>
+
+<h3>想象你在面试中被问到：设计一个实时协作 AI 编辑器</h3>
+
+<p>这道题综合了我们过去学过的几乎所有主题：实时协作（Google Docs）+ AI 推理服务 + 分布式缓存 + CDN + 监控系统。</p>
+
+<p><em>Imagine you&#x27;re asked in an interview: &quot;Design a real-time collaborative AI editor.&quot; This single question synthesizes nearly every topic we&#x27;ve covered.</em></p>
+
+<hr/>
+
+<h3>📐 高维框架：五个维度，任何系统都适用</h3>
+
+<pre><code>
+          READ HEAVY          WRITE HEAVY
+          ────────────────────────────────
+高一致性  │  Google Search     │  Bank Transfer
+          │  CDN + Cache       │  2PC / Saga Pattern
+低一致性  │  Social Feed       │  Real-time Collab
+          │  Eventual + CRDT   │  OT / WebSocket
+</code></pre>
+
+<p><strong>维度 1 — 读写比</strong> (Read/Write Ratio)</p>
+<p>- 读多写少 → CDN、缓存、读副本 (replicas)</p>
+<p>- 写多读少 → 异步队列、批写入、LSM Tree (Cassandra)</p>
+<p>- 平衡 → 主从复制 + 缓存层</p>
+
+<p><strong>维度 2 — 一致性要求</strong> (Consistency Requirement)</p>
+<p>- 强一致性 → Raft/Paxos、2PC、单主写</p>
+<p>- 最终一致性 → Gossip 协议、CRDT、版本向量</p>
+<p>- 经验法则：<strong>写钱用强一致性，写帖子用最终一致性</strong></p>
+
+<p><strong>维度 3 — 规模量级</strong> (Scale)</p>
+<p>- &lt; 1M DAU：单体 + 垂直扩展先行</p>
+<p>- 1M~100M DAU：水平扩展 + 分片 + 缓存</p>
+<p>- &gt; 100M DAU：多区域 Active-Active + 全球负载均衡</p>
+
+<p><strong>维度 4 — 延迟 SLA</strong> (Latency SLA)</p>
+<p>- p99 &lt; 10ms → 内存数据库 (Redis)、连接池、预计算</p>
+<p>- p99 &lt; 100ms → 合理缓存 + 索引优化</p>
+<p>- p99 &lt; 1s → 异步处理可接受</p>
+
+<p><strong>维度 5 — 失败模式</strong> (Failure Mode)</p>
+<p>- 关键路径 → 熔断器 + 重试 + 降级</p>
+<p>- 数据持久 → WAL + 多副本 + 跨区域备份</p>
+<p>- 幂等设计 → 所有写操作带唯一 ID</p>
+
+<hr/>
+
+<h3>🔗 各系统的核心取舍回顾</h3>
+
+<p>| 系统 | 核心挑战 | 关键决策 |</p>
+<p>|------|----------|----------|</p>
+<p>| URL Shortener | 读多写少，全球分布 | 一致性哈希 + CDN |</p>
+<p>| Chat (WhatsApp) | 实时推送，在线状态 | WebSocket + Presence Service |</p>
+<p>| YouTube | 视频转码，CDN 分发 | Async pipeline + Edge cache |</p>
+<p>| Rate Limiter | 分布式计数，低延迟 | Redis + Token Bucket |</p>
+<p>| Notification | 多渠道，可靠投递 | Message Queue + Retry |</p>
+<p>| Search Autocomplete | 低延迟，前缀匹配 | Trie in Redis + 预热 |</p>
+<p>| Distributed Cache | 驱逐策略，一致性 | Consistent Hashing + LRU |</p>
+<p>| LLM Serving | 显存瓶颈，长尾延迟 | KV Cache + Continuous Batching |</p>
+
+<hr/>
+
+<h3>🎯 面试答题的七步法</h3>
+
+<p><strong>当你拿到任何系统设计题：</strong></p>
+
+<pre><code>
+1. 澄清需求 (2 min)
+   └─ QPS / DAU / 数据量 / SLA / 地理分布
+
+2. 估算规模 (2 min)
+   └─ 存储量 = QPS × 数据大小 × 保留时间
+   └─ 带宽 = QPS × 请求大小
+
+3. 高层设计 (5 min)
+   └─ Client → LB → API Gateway → Service → DB/Cache
+
+4. 数据模型 (3 min)
+   └─ SQL vs NoSQL 选择依据
+   └─ 关键表结构 / 索引设计
+
+5. 深入细节 (8 min)
+   └─ 针对面试官关注点展开（通常是最难的那个）
+
+6. 扩展与优化 (3 min)
+   └─ 瓶颈在哪？如何水平扩展？
+
+7. 权衡总结 (2 min)
+   └─ &quot;我选择 X 而不是 Y，因为在当前场景下...&quot;
+</code></pre>
+
+<hr/>
+
+<h3>⚠️ 高频陷阱（综合版）</h3>
+
+<p>1. <strong>过早优化</strong> — 不问规模就上分布式，面试官扣分</p>
+<p>2. <strong>忽略 CAP 取舍</strong> — 说&quot;强一致+高可用+分区容忍&quot;三者全选，不现实</p>
+<p>3. <strong>数据库选错</strong> — 关系型数据用 MongoDB，图数据用 PostgreSQL，都是减分项</p>
+<p>4. <strong>单点故障</strong> — 设计中没有 LB、没有副本，面试官会追问</p>
+<p>5. <strong>不说数字</strong> — &quot;会很慢&quot;不如&quot;p99 &gt; 500ms 时触发报警&quot;</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [System Design Primer](https://github.com/donnemartin/system-design-primer)</p>
+<p>- [Designing Data-Intensive Applications (DDIA)](https://dataintensive.net/)</p>
+<p>- [The Architecture of Open Source Applications](https://aosabook.org)</p>
+<p>- [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>设计系统就像搭乐高。你要先问：要搭多大？能倒塌吗？谁会来玩？</p>
+<p>然后选对积木块（数据库、缓存、队列），按顺序搭起来，最后检查每块会不会掉。</p>
+
+<p><em>Designing systems is like building with LEGO. First ask: how big? Can it fall? Who will use it? Then pick the right pieces (database, cache, queue), stack them in order, and check which pieces might fall.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>算法 / Algorithms — Day 86 (LeetCode #355)</h2>
+
+<h2>💻 算法 / Algorithms — #355 Design Twitter (Medium) — Heap / Priority Queue</h2>
+
+<p>🧩 <strong>堆/优先队列模式 (6/7)</strong> — building on the template from the pattern start</p>
+
+<p>这是第 6 题，模式的最后一道 Medium 难度。下一题（#295 Find Median from Data Stream）将是 Hard 收官。</p>
+
+<p><em>This is problem 6/7 in the Heap/Priority Queue block. We&#x27;re applying the same top-K pattern in a social media context.</em></p>
+
+<hr/>
+
+<p>🔗 [LeetCode #355](https://leetcode.com/problems/design-twitter/) 🟡 Medium</p>
+<p>📹 [NeetCode Video](https://neetcode.io/problems/design-twitter-feed)</p>
+
+<hr/>
+
+<h3>🌍 真实场景类比</h3>
+
+<p>想象你在构建 Twitter/X 的&quot;首页时间线&quot;功能：</p>
+<p>- 每个用户关注了多人</p>
+<p>- 每条关注的 Feed 都是时间有序的推文列表</p>
+<p>- 首页需要合并所有关注者的推文，按时间倒序显示 <strong>最新 10 条</strong></p>
+
+<p>这正是&quot;合并 K 个有序序列取前 K 个&quot;的堆经典应用场景。</p>
+
+<p><em>Building a social media feed = merging K sorted timelines and extracting the top-10 most recent posts.</em></p>
+
+<hr/>
+
+<h3>🧩 模式映射</h3>
+
+<p>回顾堆模板：</p>
+<pre><code>
+import heapq
+heap = []
+for item in stream:
+    heapq.heappush(heap, item)
+    if len(heap) &gt; k:
+        heapq.heappop(heap)
+</code></pre>
+
+<p>本题变体：<strong>不是单一数据流，而是 K 个独立的有序列表（每个被关注者的推文列表）</strong></p>
+
+<p>变化点：</p>
+<p>- 之前（#703, #1046, #973, #621）：单一流或固定集合 → 维护大小 K 的堆</p>
+<p>- 今天（#355）：K 个独立列表的合并 → <strong>最大堆 + 按时间戳倒序合并</strong></p>
+
+<hr/>
+
+<h3>🐍 Python 解法（带注释）</h3>
+
+<pre><code>
+import heapq
+from collections import defaultdict
+
+class Twitter:
+    def __init__(self):
+        self.count = 0                    # Global timestamp (decreasing for max-heap trick)
+        self.tweets = defaultdict(list)   # userId -&gt; list of [-count, tweetId]
+        self.followMap = defaultdict(set) # userId -&gt; set of followeeIds
+
+    def postTweet(self, userId: int, tweetId: int) -&gt; None:
+        # Use negative count so Python&#x27;s min-heap acts as max-heap by time
+        self.tweets[userId].append([-self.count, tweetId])
+        self.count += 1
+
+    def getNewsFeed(self, userId: int) -&gt; list[int]:
+        # Merge tweets from user + all followees
+        minHeap = []
+        
+        # Include self
+        self.followMap[userId].add(userId)
+        
+        for followeeId in self.followMap[userId]:
+            if followeeId in self.tweets:
+                # Start with the most recent tweet (last in list)
+                idx = len(self.tweets[followeeId]) - 1
+                count, tweetId = self.tweets[followeeId][idx]
+                # Push: [timestamp, tweetId, followeeId, tweet_index]
+                heapq.heappush(minHeap, [count, tweetId, followeeId, idx - 1])
+        
+        result = []
+        while minHeap and len(result) &lt; 10:
+            count, tweetId, followeeId, idx = heapq.heappop(minHeap)
+            result.append(tweetId)
+            
+            # If this followee has more tweets, push their next most recent
+            if idx &gt;= 0:
+                count, tweetId = self.tweets[followeeId][idx]
+                heapq.heappush(minHeap, [count, tweetId, followeeId, idx - 1])
+        
+        return result
+
+    def follow(self, followerId: int, followeeId: int) -&gt; None:
+        self.followMap[followerId].add(followeeId)
+
+    def unfollow(self, followerId: int, followeeId: int) -&gt; None:
+        if followeeId in self.followMap[followerId]:
+            self.followMap[followerId].discard(followeeId)
+</code></pre>
+
+<hr/>
+
+<h3>🔍 执行跟踪</h3>
+
+<pre><code>
+postTweet(1, 5)  → tweets[1] = [[-0, 5]]
+postTweet(1, 3)  → tweets[1] = [[-0, 5], [-1, 3]]
+follow(1, 2)     → followMap[1] = {2}
+postTweet(2, 101)→ tweets[2] = [[-2, 101]]
+
+getNewsFeed(1):
+  followees = {1, 2}
+  Initial heap: [[-1, 3, 1, 0], [-2, 101, 2, -1]]
+  
+  Pop [-1, 3, 1, 0]:  result=[3], push [-0, 5, 1, -1]
+  Pop [-0, 5, 1, -1]: result=[3, 5], no more from user 1
+  Pop [-2, 101, 2, -1]: result=[3, 5, 101], no more from user 2
+  
+  → 等等，注意 -0 &lt; -1 &lt; -2，所以堆顺序是：
+  正确：tweet(count=2) 最新 → 负数 -2 最小 → 先出堆
+  Result: [101, 3, 5]  (最新的先出)
+</code></pre>
+
+<p><strong>复杂度:</strong></p>
+<p>- <code>postTweet</code>: O(1)</p>
+<p>- <code>getNewsFeed</code>: O(N log K) — N 条推文，K 个被关注者</p>
+<p>- <code>follow/unfollow</code>: O(1)</p>
+
+<hr/>
+
+<h3>🔁 举一反三 — 本 Pattern 对比</h3>
+
+<p>| 题目 | 核心变化 | 堆操作 |</p>
+<p>|------|----------|--------|</p>
+<p>| #703 Kth Largest in Stream | 单流，动态插入 | 大小 K 的 min-heap |</p>
+<p>| #1046 Last Stone Weight | 每次取最大两个 | max-heap |</p>
+<p>| #973 K Closest Points | 距离作 key | 大小 K 的 max-heap |</p>
+<p>| #621 Task Scheduler | 贪心，最高频先调度 | max-heap by count |</p>
+<p>| <strong>#355 Design Twitter</strong> | <strong>K 个有序列表合并</strong> | <strong>多指针 + min-heap</strong> |</p>
+<p>| #295 Find Median (Next!) | 动态中位数 | 两个 heap 配合 |</p>
+
+<p><strong>关键洞察：</strong> 当问题从&quot;一个流&quot;变成&quot;多个有序列表合并&quot;时，堆里要存的不只是值，还要存&quot;这个值来自哪个列表的哪个位置&quot;（指针）。</p>
+
+<p><em>Key insight: When merging K sorted lists, store (value, list_id, pointer) in the heap, not just the value.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [LeetCode #355 - Design Twitter](https://leetcode.com/problems/design-twitter/)</p>
+<p>- [NeetCode - Design Twitter Solution](https://neetcode.io/problems/design-twitter-feed)</p>
+<p>- [Merge K Sorted Lists Pattern](https://leetcode.com/problems/merge-k-sorted-lists/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象你订阅了 5 个 YouTube 频道，每个频道都有视频列表（最新在最后）。你想看最新的 10 条视频。</p>
+<p>方法：在每个频道的&quot;最新一条&quot;上贴便利贴，每次从便利贴里挑最新的一条看，然后把那个频道的下一条贴上便利贴，重复 10 次。</p>
+<p>这就是&quot;多指针 + 最小堆&quot;。</p>
+
+<p><em>You subscribed to 5 YouTube channels. Each has a sorted video list. To get the 10 newest: put a bookmark on each channel&#x27;s latest video, always pick the newest bookmark, then advance that channel&#x27;s bookmark. Repeat 10 times. That&#x27;s the multi-pointer heap.</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>软技能 / Soft Skills — Day 86</h2>
+
+<h2>🗣️ 软技能 / Soft Skills — 专家级综合：行为面试的元框架</h2>
+
+<h3>综合主题：如何在 30 秒内让面试官知道你是 Staff 级别的人</h3>
+
+<p><em>Expert Synthesis: The meta-framework for behavioral interviews at Staff+ level</em></p>
+
+<hr/>
+
+<h3>为什么 Senior 和 Staff 的回答看起来不同？</h3>
+
+<p>你已经练习了 60 道行为面试题。现在我们来讨论一个更深层的问题：<strong>为什么同一个故事，Senior 讲出来和 Staff 讲出来感觉完全不同？</strong></p>
+
+<p><em>You&#x27;ve practiced 60 behavioral questions. Now let&#x27;s discuss why the same story sounds completely different from a Senior vs. a Staff engineer.</em></p>
+
+<hr/>
+
+<h3>📊 三层影响力框架</h3>
+
+<pre><code>
+Staff/Principal 的故事
+├── 组织层面 (Org Impact)
+│   ├── &quot;改变了团队的工作方式&quot;
+│   ├── &quot;影响了其他 3 个团队的决策&quot;
+│   └── &quot;成为公司内部最佳实践&quot;
+├── 系统层面 (System Impact)
+│   ├── &quot;简化了架构，减少了 30% 的维护成本&quot;
+│   └── &quot;提升了系统可靠性，SLA 从 99.9% 到 99.99%&quot;
+└── 团队层面 (Team Impact)
+    ├── &quot;帮助 2 名工程师晋升&quot;
+    └── &quot;代码 review 减少了 40% 的 bug 率&quot;
+
+Senior 的故事（也很好）
+└── 个人层面 (Individual Impact)
+    └── &quot;我解决了这个难题，系统变快了&quot;
+</code></pre>
+
+<hr/>
+
+<h3>🎭 STAR+S 框架（S = Systemic Impact）</h3>
+
+<p>我们之前学过 STAR。Staff 面试要升级到 <strong>STAR+S</strong>：</p>
+
+<p>| 传统 STAR | Staff 升级版 STAR+S |</p>
+<p>|-----------|---------------------|</p>
+<p>| Situation: 我的团队遇到... | 背景要包含：业务影响、涉及的组织范围 |</p>
+<p>| Task: 我需要... | 要说明：为什么是你来解决这个，而不是 IC |</p>
+<p>| Action: 我做了... | 要突出：如何协调、影响、说服多方 |</p>
+<p>| Result: 结果是... | <strong>+Systemic: 这个解决方案现在如何持续产生价值</strong> |</p>
+
+<hr/>
+
+<h3>🆕 新题目：处理&quot;技术负债 vs 新功能&quot;的全公司拉锯战</h3>
+
+<p>&gt; <strong>Staff 级新题：</strong></p>
+<p>&gt; &quot;产品、工程、Business 三方对技术债的优先级争论了 6 个月没有结果。你作为技术负责人，如何打破僵局？&quot;</p>
+
+<p><strong>❌ Senior 级的回答（不够）：</strong></p>
+<p>&quot;我开了一个会议，列出了所有技术债，然后我们按优先级排了列表，产品经理同意了前 5 项。&quot;</p>
+
+<p><strong>✅ Staff 级的回答：</strong></p>
+
+<p><strong>Situation (含组织背景)：</strong></p>
+<p>&quot;我们的产品路线图每个季度都要新增功能，但基础设施的故障率逐年上升。三个季度内有两次 P1 outage 都源于同一个遗留模块，但 PM 的 OKR 是 feature velocity，CFO 看的是 NPS，没人对基础设施可靠性有 KPI 归属。这是一个组织激励错位问题，不是一个技术问题。&quot;</p>
+
+<p><strong>Task (为什么是你)：</strong></p>
+<p>&quot;作为横跨多团队的 Staff engineer，我既有技术视角，也有足够的业务理解，能把技术债翻译成业务语言。&quot;</p>
+
+<p><strong>Action (协调多方)：</strong></p>
+<p>1. 把技术债分类为：<strong>可靠性债</strong>（影响 SLA）、<strong>速度债</strong>（让新功能变慢 2x）、<strong>合规债</strong>（法律风险）</p>
+<p>2. 用每类的业务成本量化：<code>&quot;这个模块每次修改需要额外 2 周，我们每季度改 4 次 = 8 周工程师时间 = $X 成本&quot;</code></p>
+<p>3. 提议&quot;可靠性税&quot;概念：每个 sprint 默认保留 20% 用于基础设施，不需要争论</p>
+
+<p><strong>Result + Systemic：</strong></p>
+<p>&quot;第一个季度减少了 60% 的 hotfix 工单。更重要的是，<code>20% 可靠性税</code> 成为公司工程标准，现在所有新团队入职都会介绍这个框架。&quot;</p>
+
+<hr/>
+
+<h3>💡 高频信号词 — Staff 面试官在听什么</h3>
+
+<p><strong>听到这些 → 加分：</strong></p>
+<p>- &quot;我意识到这不是技术问题，而是...&quot; (归因到组织/流程)</p>
+<p>- &quot;我建立了一个...&quot; (系统性解法)</p>
+<p>- &quot;现在已经...&quot; (持续影响)</p>
+<p>- &quot;其他团队后来也...&quot; (扩散影响)</p>
+
+<p><strong>听到这些 → 扣分：</strong></p>
+<p>- &quot;我独自完成了...&quot; (Staff 要放大他人，不是独行侠)</p>
+<p>- &quot;当时 PM 不懂技术，所以...&quot; (不要贬低合作者)</p>
+<p>- &quot;结果还不错&quot; (模糊，量化！)</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [StaffEng - Stories from Staff Engineers](https://staffeng.com/stories)</p>
+<p>- [Will Larson - An Elegant Puzzle](https://lethain.com/an-elegant-puzzle/)</p>
+<p>- [Gergely Orosz - The Pragmatic Engineer](https://newsletter.pragmaticengineer.com/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>Senior 工程师说：&quot;我修好了那个漏水的水管。&quot;</p>
+<p>Staff 工程师说：&quot;我修好了水管，还写了一份指南让整栋楼的人都知道怎么提前发现漏水，现在楼里没有人因为漏水被淹了。&quot;</p>
+
+<p><em>Senior says: &quot;I fixed the leaking pipe.&quot; Staff says: &quot;I fixed the pipe AND created a system so the whole building catches leaks early — no one gets flooded anymore.&quot;</em></p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Python Craft — Day 86</h2>
+
+<h2>🎨 前端 / Python Craft — 配置管理：pydantic-settings &amp; 12-Factor App</h2>
+
+<h3>真实场景</h3>
+
+<p>你在做一个后端服务，需要在本地、staging 和 production 环境中使用不同的数据库、API key 和日志级别。如何让配置管理既安全又方便？</p>
+
+<p><em>You&#x27;re building a backend service that needs different DB URLs, API keys, and log levels across local/staging/production. How do you manage this cleanly and securely?</em></p>
+
+<hr/>
+
+<h3>🌍 12-Factor App 配置原则</h3>
+
+<p>12-Factor App（Heroku 提出的云原生最佳实践）的第三条规则：</p>
+
+<p>&gt; <strong>&quot;将配置存储在环境变量中&quot;</strong></p>
+
+<p>这意味着：</p>
+<p>- ❌ 不要把配置写死在代码里 (<code>DB_URL = &quot;localhost:5432&quot;</code>)</p>
+<p>- ❌ 不要把 secrets 提交到 Git</p>
+<p>- ✅ 用环境变量 + <code>.env</code> 文件（开发用）+ Secret Manager（生产用）</p>
+
+<hr/>
+
+<h3>🔧 代码示例：pydantic-settings</h3>
+
+<pre><code>
+# pip install pydantic-settings python-dotenv
+
+from pydantic_settings import BaseSettings
+from pydantic import PostgresDsn, HttpUrl, field_validator
+from functools import lru_cache
+
+class Settings(BaseSettings):
+    # Required — will raise error if missing
+    database_url: PostgresDsn
+    secret_key: str
+    
+    # Optional with defaults
+    debug: bool = False
+    log_level: str = &quot;INFO&quot;
+    api_rate_limit: int = 100
+    
+    # Nested config
+    redis_url: str = &quot;redis://localhost:6379/0&quot;
+    
+    @field_validator(&quot;log_level&quot;)
+    @classmethod
+    def validate_log_level(cls, v: str) -&gt; str:
+        allowed = {&quot;DEBUG&quot;, &quot;INFO&quot;, &quot;WARNING&quot;, &quot;ERROR&quot;}
+        if v.upper() not in allowed:
+            raise ValueError(f&quot;log_level must be one of {allowed}&quot;)
+        return v.upper()
+    
+    class Config:
+        # Load from .env file automatically
+        env_file = &quot;.env&quot;
+        env_file_encoding = &quot;utf-8&quot;
+        # Prefix all env vars: APP_DATABASE_URL, APP_SECRET_KEY
+        env_prefix = &quot;APP_&quot;
+        case_sensitive = False
+
+# Singleton pattern — parse once, reuse everywhere
+@lru_cache()
+def get_settings() -&gt; Settings:
+    return Settings()
+
+# Usage
+settings = get_settings()
+print(settings.database_url)   # postgresql://user:pass@localhost:5432/db
+print(settings.debug)           # False (or True if APP_DEBUG=true)
+</code></pre>
+
+<p><strong>.env 文件（不要提交到 Git！）</strong></p>
+
+<pre><code>
+APP_DATABASE_URL=postgresql://user:pass@localhost:5432/mydb
+APP_SECRET_KEY=dev-secret-not-for-production
+APP_DEBUG=true
+APP_LOG_LEVEL=DEBUG
+</code></pre>
+
+<p><strong>.gitignore：</strong></p>
+
+<pre><code>
+.env
+.env.local
+*.env
+</code></pre>
+
+<hr/>
+
+<h3>❌ 常见错误 vs ✅ 正确做法</h3>
+
+<p><strong>❌ 错误：</strong></p>
+<pre><code>
+# Hardcoded config
+DB_URL = &quot;postgresql://admin:password123@prod.db.example.com/mydb&quot;
+API_KEY = &quot;sk-abc123def456&quot;
+</code></pre>
+
+<p><strong>✅ 正确：</strong></p>
+<pre><code>
+# pydantic-settings loads from environment
+settings = get_settings()
+# DB_URL and API_KEY come from env vars or Secret Manager
+</code></pre>
+
+<p><strong>❌ 错误：多套 if/else 判断环境</strong></p>
+<pre><code>
+if os.environ.get(&quot;ENV&quot;) == &quot;production&quot;:
+    DB_URL = &quot;...&quot;
+elif os.environ.get(&quot;ENV&quot;) == &quot;staging&quot;:
+    DB_URL = &quot;...&quot;
+</code></pre>
+
+<p><strong>✅ 正确：每个环境有自己的环境变量文件</strong></p>
+<pre><code>
+.env.local     → 开发
+.env.staging   → staging CI/CD 注入
+production     → Secret Manager (AWS SSM / HashiCorp Vault)
+</code></pre>
+
+<hr/>
+
+<h3>🧪 猜猜输出什么？</h3>
+
+<pre><code>
+import os
+os.environ[&quot;APP_DEBUG&quot;] = &quot;1&quot;
+os.environ[&quot;APP_LOG_LEVEL&quot;] = &quot;debug&quot;
+
+settings = Settings()
+print(type(settings.debug), settings.debug)
+print(settings.log_level)
+</code></pre>
+
+<p><strong>A.</strong> <code>&lt;class &#x27;str&#x27;&gt; &quot;1&quot;</code>, <code>&quot;debug&quot;</code></p>
+<p><strong>B.</strong> <code>&lt;class &#x27;bool&#x27;&gt; True</code>, <code>&quot;DEBUG&quot;</code></p>
+<p><strong>C.</strong> <code>&lt;class &#x27;bool&#x27;&gt; True</code>, <code>&quot;debug&quot;</code></p>
+<p><strong>D.</strong> Error: invalid log_level</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+<p><strong>B.</strong> pydantic-settings 会自动将 <code>&quot;1&quot;</code> 强制转换为 <code>bool True</code>，<code>field_validator</code> 将 <code>&quot;debug&quot;</code> 转换为大写 <code>&quot;DEBUG&quot;</code>。类型强制转换是 pydantic 的核心特性。</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>🤔 何时用 / 何时不用</h3>
+
+<p><strong>✅ 用 pydantic-settings 当：</strong></p>
+<p>- FastAPI / Django / 任何 Python 后端项目</p>
+<p>- 需要类型验证的配置</p>
+<p>- 团队需要清晰的配置文档</p>
+
+<p><strong>⚠️ 考虑额外方案当：</strong></p>
+<p>- Production secrets → 用 AWS SSM Parameter Store / GCP Secret Manager + 在启动时注入环境变量</p>
+<p>- 超复杂的分层配置（多个 override 层）→ 考虑 Dynaconf 或 Hydra (ML 项目)</p>
+<p>- 微服务配置中心 → 用 Consul / etcd + 动态刷新</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [pydantic-settings 官方文档](https://docs.pydantic.dev/latest/concepts/pydantic_settings/)</p>
+<p>- [The Twelve-Factor App - Config](https://12factor.net/config)</p>
+<p>- [FastAPI Settings &amp; Environment Variables](https://fastapi.tiangolo.com/advanced/settings/)</p>
+<p>- [AWS SSM Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>配置就像食谱里的&quot;盐&quot;。不同的厨房（本地/生产）需要不同的量。</p>
+<p>pydantic-settings 就是一个智能容器：你告诉它&quot;我需要盐（类型：克，范围：0-100）&quot;，它去冰箱（环境变量）拿，还会检查你拿的是不是真的盐。</p>
+
+<p><em>Config is like &quot;salt&quot; in a recipe. Different kitchens (local/prod) need different amounts. pydantic-settings is a smart container: you declare what you need (type + validation), it fetches from the environment, and verifies it&#x27;s actually salt.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>AI — Day 86</h2>
+
+<h2>🤖 AI — 专家级 AI 新闻 &amp; 行业动态（2026 年 7 月）</h2>
+
+<p><em>Expert Synthesis: AI News Roundup — July 2026</em></p>
+
+<hr/>
+
+<h3>本周 AI 大事件</h3>
+
+<hr/>
+
+<p><strong>📰 1. xAI 发布 Grok 4.5</strong></p>
+
+<p>xAI 于 7 月 8 日发布了 <strong>Grok 4.5</strong>。据报道，该模型在编程和推理任务上有显著提升，是 Grok 系列的最新迭代。</p>
+
+<p>来源：[AI News Bulletin Board – July 2026](https://radicaldatascience.wordpress.com/2026/07/08/ai-news-briefs-bulletin-board-for-july-2026/)</p>
+
+<p><strong>关键点：</strong></p>
+<p>- Grok 4.5 定位为 xAI 当前旗舰模型（据报道 Grok 5 仍在训练中）</p>
+<p>- 在 X (Twitter) 平台集成，用户可直接调用</p>
+
+<hr/>
+
+<p><strong>📰 2. 伊利诺伊州通过 AI 安全法 — 强制年度审计</strong></p>
+
+<p>美国伊利诺伊州州长于 7 月 6 日签署了《人工智能安全措施法案》（Senate Bill 315），要求大型 AI 公司每年进行安全审计，才能公开发布模型。</p>
+
+<p>来源：[Illinois Governor Signs AI Safety Law](https://www.pymnts.com/news/artificial-intelligence/2026/illinois-governor-signs-ai-safety-law-requiring-yearly-llm-audits/)</p>
+
+<p><strong>关键点：</strong></p>
+<p>- 继 EU AI Act 后，美国州级 AI 监管开始落地</p>
+<p>- 覆盖&quot;高风险 AI 系统&quot;，年度审计为强制要求</p>
+<p>- 预计将影响 OpenAI、Anthropic 等在伊利诺伊州运营的公司</p>
+
+<hr/>
+
+<p><strong>📰 3. GPT-5 家族持续演进 + OpenAI 发布 GPT-Live 语音模型</strong></p>
+
+<p>OpenAI 近期动作频繁：</p>
+<p>- <strong>GPT-5 家族</strong>（含 GPT-5.5，发布于 2026 年 4 月）因其强推理和多模态能力被广泛采用</p>
+<p>- <strong>GPT-Live</strong> 已发布，据报道采用全双工 (full-duplex) 架构，实现更自然的语音对话</p>
+<p>- GPT-5.6（Sol/Terra/Luna 三层）在限定预览中，据报道由政府协调访问</p>
+
+<p>来源：[GPT-Live on OpenAI](https://openai.com/index/introducing-gpt-live/)、[AI Model Landscape July 2026](https://www.zonetechify.com/blog/ai-news-july-2026-latest-ai-developments)</p>
+
+<hr/>
+
+<p><strong>📰 4. 开源 LLM 格局：Qwen 3、GLM-5.2、DeepSeek R1 强势崛起</strong></p>
+
+<p>开源模型正在缩小与闭源模型的差距：</p>
+<p>- <strong>Qwen 3 235B-A22B</strong>（阿里云）：目前开源推理/编程综合排名靠前</p>
+<p>- <strong>GLM-5.2</strong>（Z.ai，6 月 13 日发布）：旗舰开源编程模型，支持 1M 上下文窗口，可自部署</p>
+<p>- <strong>DeepSeek R1</strong>：深度数学推理最强开源选项之一</p>
+
+<p>来源：[Best Open Source LLMs 2026](https://techsy.io/en/blog/best-open-source-llms-2026)、[Best AI Models July 2026](https://www.buildfastwithai.com/blogs/best-ai-models-july-2026-ranked)</p>
+
+<hr/>
+
+<h3>🔭 深度思考：AI 监管 + 开源，这对工程师意味着什么？</h3>
+
+<pre><code>
+监管趋势
+├── EU AI Act → 高风险系统合规义务
+├── 伊利诺伊 SB 315 → 年度安全审计
+└── 中国 AI 法规 → 生成内容标注要求
+
+实践影响（对后端工程师）
+├── AI 功能上线前需要&quot;风险评估文档&quot;
+├── 模型输出需要可追溯 (audit trail)
+├── 开源模型 self-hosting 可能绕过部分合规风险
+└── 但 self-host 意味着你自己承担安全责任
+</code></pre>
+
+<p><strong>务实建议：</strong></p>
+<p>如果你在面试中被问到&quot;如何在产品中集成 AI 功能&quot;，现在的标准答案需要加一条：</p>
+<p>&gt; &quot;需要评估模型输出的可解释性、数据留存策略和监管合规要求。&quot;</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [xAI Grok 4.5 Release — July 8, 2026](https://radicaldatascience.wordpress.com/2026/07/08/ai-news-briefs-bulletin-board-for-july-2026/)</p>
+<p>- [Illinois AI Safety Law (SB 315)](https://www.pymnts.com/news/artificial-intelligence/2026/illinois-governor-signs-ai-safety-law-requiring-yearly-llm-audits/)</p>
+<p>- [OpenAI GPT-Live](https://openai.com/index/introducing-gpt-live/)</p>
+<p>- [Best AI Models July 2026](https://www.buildfastwithai.com/blogs/best-ai-models-july-2026-ranked)</p>
+<p>- [Open Source LLMs 2026](https://techsy.io/en/blog/best-open-source-llms-2026)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>AI 世界这周：有人发布了新的聪明机器人（Grok 4.5），美国一个州规定大公司每年要让别人检查他们的机器人是否安全，中国的开源机器人越来越厉害，已经快追上付费的了。</p>
+
+<p><em>This week in AI: someone released a smarter robot (Grok 4.5), a US state now requires big companies to let others check if their robots are safe each year, and China&#x27;s open-source robots are getting so good they&#x27;re nearly catching up to the paid ones.</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-08</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
