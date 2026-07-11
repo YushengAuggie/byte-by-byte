@@ -634,3 +634,16 @@
 - Delivery rate (7d): **5/7** (missed 07-04 Sat, 07-05 Sun — both pre-window, already reported). Last 2 days delivered but **recipients: 1/2** on both.
 - Cron errors: `byte-by-byte optimizer` = lastRunStatus=error (empty lastError; consistent with Step 0 parse crash). Full multi-job status not enumerable this run due to the same parse issue.
 - State: currentDay=84, lastSentDate=2026-07-07, lastReviewDay=80, systemDesignIndex/behavioralIndex clamped at 60. Review cadence every 5 days — next at Day 85.
+
+## 2026-07-10 Optimization Run
+
+### Issues Found
+- P0: None critical. All 7 byte-by-byte cron jobs report status=ok (weekday, saturday, sunday, review-audit, backup-send, health-check, optimizer). No cron errors.
+- P1: Weekend delivery gap — email-send-log missing 2026-07-04 (Sat) and 2026-07-05 (Sun). Git history shows Day 82–83 content was generated on Mon 2026-07-06 as catch-up, implying the Sat/Sun sends did not fire/log at their scheduled time. Worth confirming the saturday (0 8 * * 6) and sunday (0 8 * * 0) jobs actually delivered vs. relying on Monday batch.
+- P2: None new.
+
+### Metrics
+- Delivery rate (7d): 5/7 (missed 07-04 Sat, 07-05 Sun; weekend content batched to 07-06)
+- Cron errors: none
+- Current day: 87 | lastSentDate: 2026-07-10
+- Indices: SD=60, LC=70, behavioral=60, frontend=37, AI=30, pythonCraft=31

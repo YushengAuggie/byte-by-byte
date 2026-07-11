@@ -5,8 +5,830 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 10 Jul 2026 15:09:38 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 11 Jul 2026 15:08:15 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-11</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-11</guid>
+      <pubDate>Sat, 11 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 88 · Expert Synthesis</h2>
+
+<p><strong>主题 / Topic:</strong> Saturday Deep Dive Week — 回溯与系统设计的交叉点</p>
+
+<hr/>
+
+<h2>综合视角 / Synthesis Perspective</h2>
+
+<p>今天是 Saturday Deep Dive，重点在回溯算法。系统设计综合思考：</p>
+
+<p><strong>回溯思维在系统设计中的映射 / Backtracking Thinking in System Design:</strong></p>
+
+<p>系统设计本质上也是回溯：你提出一个方案，发现某个约束被违反（延迟太高、成本太贵、扩展性不够），然后&quot;回退&quot;到上一个决策节点，选择另一条路。</p>
+
+<p><strong>具体类比 / Concrete Analogies:</strong></p>
+
+<p>1. <strong>数据库选型</strong> — 选了 SQL → 遇到 schema 变化频繁的问题 → 回退 → 换 NoSQL</p>
+<p>2. <strong>缓存策略</strong> — Write-through 发现写延迟不可接受 → 回退 → Write-behind</p>
+<p>3. <strong>服务拆分</strong> — 过度微服务化发现运维复杂度爆炸 → 回退 → 合并为模块化单体</p>
+<p>4. <strong>API 设计</strong> — REST → 发现实时推送需求 → 回退 → 加 WebSocket 层</p>
+
+<p><strong>剪枝的系统设计等价物 / Pruning in System Design:</strong></p>
+<p>- &quot;This violates the latency SLA&quot; → prune the branch</p>
+<p>- &quot;This exceeds our ops team capacity&quot; → prune</p>
+<p>- &quot;CAP theorem: you can&#x27;t have both strong consistency AND high availability here&quot; → prune</p>
+
+<p>The difference: in coding, backtracking is explicit. In system design, it&#x27;s called &quot;iterating on the design.&quot;</p>
+
+<p><em>Today&#x27;s Saturday deep dive covers: backtracking algorithms — Subsets through N-Queens.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 88 · #78 Subsets (Medium) [Backtracking]</h2>
+
+<p>🧩 <strong>回溯模式 (1/9)</strong> — Saturday: Full backtracking guide in today&#x27;s deep dive</p>
+
+<hr/>
+
+<p><strong>今日题目 / Today&#x27;s Problem:</strong> LeetCode #78 — Subsets</p>
+
+<p><strong>模式 / Pattern:</strong> Backtracking — 选择 → 递归 → 撤销</p>
+
+<p>🔗 [LeetCode #78](https://leetcode.com/problems/subsets/) | 📹 [NeetCode](https://www.youtube.com/watch?v=REOH22Xwdkk)</p>
+
+<hr/>
+
+<h2>核心解法 / Core Solution</h2>
+
+<pre><code>
+def subsets(nums: list[int]) -&gt; list[list[int]]:
+    result = []
+
+    def backtrack(start: int, path: list[int]):
+        result.append(path[:])  # collect at every node
+        for i in range(start, len(nums)):
+            path.append(nums[i])
+            backtrack(i + 1, path)
+            path.pop()
+
+    backtrack(0, [])
+    return result
+</code></pre>
+
+<p><strong>Time:</strong> O(n · 2ⁿ) | <strong>Space:</strong> O(n)</p>
+
+<p><strong>关键点 / Key Points:</strong></p>
+<p>- 每个节点都是合法子集，在每次调用时都收集结果</p>
+<p>- <code>start</code> 参数防止重复，确保只向右扩展</p>
+<p>- <code>path[:]</code> 浅复制必须有，否则最终结果都是空列表</p>
+
+<hr/>
+
+<p><em>For the complete backtracking deep dive covering all 5 problem types (Subsets, Combination Sum, Permutations, Subsets II, N-Queens), see today&#x27;s deep dive archive.</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 88 · Expert Synthesis</h2>
+
+<p><strong>主题 / Topic:</strong> Saturday Deep Dive Week — 回溯思维在工程决策中的应用</p>
+
+<hr/>
+
+<h2>综合场景 / Synthesis Scenario</h2>
+
+<p><strong>场景 / Scenario:</strong></p>
+<p>你作为 Staff Engineer 正在主导一个关键系统的重构。你已经推进了 6 周，团队刚刚发现这个方向有一个根本性的问题。如何优雅地&quot;回溯&quot;？</p>
+
+<p><strong>STAR 框架回答模板 / STAR Framework Template:</strong></p>
+
+<p><strong>Situation:</strong> 6 weeks into a major architectural refactor, we discovered the new design couldn&#x27;t meet our latency SLOs due to an unforeseen cross-region call pattern.</p>
+
+<p><strong>Task:</strong> I needed to make the call: push forward and try to optimize, or backtrack and rethink the foundation.</p>
+
+<p><strong>Action:</strong></p>
+<p>1. Called an emergency design review with the team — no blame, just diagnosis</p>
+<p>2. Built a quick proof-of-concept to validate whether optimization was viable (it wasn&#x27;t)</p>
+<p>3. Documented what we&#x27;d learned from the 6 weeks — not wasted, it was discovery</p>
+<p>4. Proposed a revised design incorporating the new constraints</p>
+<p>5. Communicated transparently to stakeholders: &quot;We found a better path, and here&#x27;s why pivoting now saves us 3 months later&quot;</p>
+
+<p><strong>Result:</strong> New design shipped 8 weeks later, 40% faster than the original would have been with patches. Team morale stayed high because I normalized backtracking as learning, not failure.</p>
+
+<hr/>
+
+<p><strong>核心原则 / Core Principle:</strong></p>
+<p>在工程中，&quot;回溯&quot;不是失败，是信息积累后的理性决策。好的工程师把它框架为&quot;我们学到了 X，因此现在能做出更好的决定&quot;，而不是&quot;我们浪费了 6 周&quot;。</p>
+
+<p><em>Saturday deep dive: today&#x27;s deep dive archive covers backtracking algorithms from Subsets to N-Queens.</em></p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 88 · Feature Flags: Simple Implementation to LaunchDarkly</h2>
+
+<p><strong>分类 / Category:</strong> Practical Patterns — Week 8</p>
+
+<hr/>
+
+<h2>什么是 Feature Flag / What Are Feature Flags</h2>
+
+<p>Feature flags (also called feature toggles) let you deploy code to production but control whether it&#x27;s enabled for users. This decouples <strong>deployment</strong> from <strong>release</strong>.</p>
+
+<p><strong>核心用途 / Core Uses:</strong></p>
+<p>- A/B testing</p>
+<p>- Canary releases (10% → 50% → 100%)</p>
+<p>- Kill switches for problematic features</p>
+<p>- Dark launches (collect data before enabling)</p>
+
+<hr/>
+
+<h2>Level 1: 最简实现 / Simplest Implementation</h2>
+
+<pre><code>
+# Simple dict-based feature flags
+FEATURE_FLAGS = {
+    &quot;new_checkout_flow&quot;: True,
+    &quot;ai_recommendations&quot;: False,
+    &quot;dark_mode&quot;: True,
+}
+
+def is_enabled(flag_name: str) -&gt; bool:
+    return FEATURE_FLAGS.get(flag_name, False)
+
+# Usage
+if is_enabled(&quot;new_checkout_flow&quot;):
+    return new_checkout()
+else:
+    return old_checkout()
+</code></pre>
+
+<p><strong>问题 / Problems:</strong> Can&#x27;t change at runtime without redeployment. No per-user targeting.</p>
+
+<hr/>
+
+<h2>Level 2: 带环境变量的配置 / Env-var Based</h2>
+
+<pre><code>
+import os
+
+def is_enabled(flag_name: str, default: bool = False) -&gt; bool:
+    # Check env var: FEATURE_AI_RECOMMENDATIONS=true
+    env_key = f&quot;FEATURE_{flag_name.upper()}&quot;
+    value = os.environ.get(env_key, &quot;&quot;).lower()
+    if value in (&quot;1&quot;, &quot;true&quot;, &quot;yes&quot;):
+        return True
+    if value in (&quot;0&quot;, &quot;false&quot;, &quot;no&quot;):
+        return False
+    return default
+</code></pre>
+
+<p><strong>改进：</strong> Can change per-environment without code changes.</p>
+
+<hr/>
+
+<h2>Level 3: 基于百分比的 Rollout / Percentage Rollout</h2>
+
+<pre><code>
+import hashlib
+
+def is_enabled_for_user(flag_name: str, user_id: str, rollout_pct: float) -&gt; bool:
+    &quot;&quot;&quot;Deterministic: same user always gets same result.&quot;&quot;&quot;
+    # Hash user_id + flag_name for consistent assignment
+    hash_input = f&quot;{flag_name}:{user_id}&quot;.encode()
+    hash_value = int(hashlib.md5(hash_input).hexdigest(), 16)
+    user_bucket = (hash_value % 100) / 100.0  # 0.0 to 0.99...
+    return user_bucket &lt; rollout_pct
+
+# 10% rollout
+if is_enabled_for_user(&quot;new_search&quot;, user.id, 0.10):
+    return new_search(query)
+</code></pre>
+
+<p><strong>关键：</strong> Hash-based bucketing ensures the same user always lands in the same bucket (no flickering).</p>
+
+<hr/>
+
+<h2>Level 4: LaunchDarkly / Production SDK Pattern</h2>
+
+<pre><code>
+import ldclient
+from ldclient.config import Config
+
+ldclient.set_config(Config(&quot;sdk-key-here&quot;))
+client = ldclient.get()
+
+def is_enabled(flag_key: str, user_context: dict, default: bool = False) -&gt; bool:
+    &quot;&quot;&quot;
+    user_context = {
+        &quot;kind&quot;: &quot;user&quot;,
+        &quot;key&quot;: &quot;user-123&quot;,           # required
+        &quot;email&quot;: &quot;user@example.com&quot;,
+        &quot;plan&quot;: &quot;enterprise&quot;,
+        &quot;country&quot;: &quot;US&quot;
+    }
+    &quot;&quot;&quot;
+    return client.variation(flag_key, user_context, default)
+
+# Target by attribute: enterprise users get new feature
+# No code change needed — configure in LaunchDarkly UI
+</code></pre>
+
+<p><strong>LaunchDarkly 的优势 / LaunchDarkly Advantages:</strong></p>
+<p>- Streaming updates (flag changes apply in &lt;100ms without restart)</p>
+<p>- Targeting rules (by email, plan, country, custom attributes)</p>
+<p>- Percentage rollouts with consistent bucketing</p>
+<p>- Audit log of every flag change</p>
+<p>- Scheduled rollouts</p>
+
+<hr/>
+
+<h2>实际设计考虑 / Production Considerations</h2>
+
+<pre><code>
+# 1. Cache flags locally to avoid latency
+# LaunchDarkly SDK does this automatically
+
+# 2. Default to OFF for new features
+# If the flag system is down, features should fail closed
+
+# 3. Clean up old flags (flag debt is real!)
+# A flag that&#x27;s been at 100% for 3 months should become default behavior
+
+# 4. Use structured logging to track flag evaluations
+import structlog
+log = structlog.get_logger()
+
+def is_enabled(flag: str, user_id: str) -&gt; bool:
+    result = _evaluate_flag(flag, user_id)
+    log.info(&quot;feature_flag_evaluated&quot;, flag=flag, user_id=user_id, result=result)
+    return result
+</code></pre>
+
+<hr/>
+
+<h2>面试要点 / Interview Points</h2>
+
+<p><strong>Q: How do you avoid &quot;flag debt&quot;?</strong></p>
+<p>&gt; Set a TTL when creating flags. When a rollout hits 100% and stays there for a sprint, the flag goes on the cleanup backlog. Old flags = dead code that still runs.</p>
+
+<p><strong>Q: How do you test code with feature flags?</strong></p>
+<p>&gt; Three approaches: (1) inject flag evaluator as dependency, mock in tests; (2) use test environments with flags always ON/OFF; (3) use LaunchDarkly&#x27;s test data source.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI 概念 / AI Concept — Day 88 · Expert Synthesis</h2>
+
+<p><strong>主题 / Topic:</strong> Saturday Deep Dive Week — Synthesis: Backtracking in AI/LLM Systems</p>
+
+<hr/>
+
+<h2>AI 系统中的&quot;回溯&quot; / &quot;Backtracking&quot; in AI Systems</h2>
+
+<p>回溯算法的思想在现代 AI 系统中有深刻的对应，值得深入思考。</p>
+
+<hr/>
+
+<h2>1. Beam Search — LLM 的结构化回溯</h2>
+
+<p>当 LLM 生成文本时，贪心解码（每步选最高概率 token）往往不是全局最优。<strong>Beam Search</strong> 维护 k 个候选序列（beams），类似回溯中同时探索多条路径：</p>
+
+<pre><code>
+贪心: &quot;The cat sat&quot; → 下一步选最高概率 → 可能进入死胡同
+Beam Search (k=3):
+  Beam 1: &quot;The cat sat on the mat&quot;     (score: 0.82)
+  Beam 2: &quot;The cat sat quietly&quot;         (score: 0.79)  
+  Beam 3: &quot;The cat sat and purred&quot;      (score: 0.71)
+</code></pre>
+
+<p>这就是回溯的变体：不是深度优先，而是宽度优先地维护多条路径。</p>
+
+<hr/>
+
+<h2>2. Tree of Thoughts — 显式回溯推理</h2>
+
+<p><strong>Tree of Thoughts (ToT)</strong> 让 LLM 显式地探索推理树，并使用启发式函数来剪枝：</p>
+
+<pre><code>
+问题: &quot;24 点游戏: 用 4, 8, 8, 8 得到 24&quot;
+
+ToT 路径:
+  → 4 + 8 = 12  →  12 + 8 = 20  →  20 + 8 = 28 ✗ (剪枝)
+  → 8 - 4 = 4   →  4 × 8 = 32  →  32 - 8 = 24 ✓
+  → 8 / 8 = 1   →  1 + 4 = 5   →  5 × 8 = 40 ✗ (剪枝)
+</code></pre>
+
+<p>LLM 既是求解器（生成下一步），也是评估器（判断是否值得继续）。</p>
+
+<hr/>
+
+<h2>3. AlphaCode / AI 代码生成 — Sample and Filter</h2>
+
+<p>AI 代码生成系统大量使用回溯式策略：</p>
+<p>1. 生成 N 个候选解（探索）</p>
+<p>2. 运行测试用例（评估 / 剪枝）</p>
+<p>3. 选择通过率最高的（收集答案）</p>
+
+<p>这比单次生成准确率高出数倍。AlphaCode 生成数千个候选，过滤到最佳。</p>
+
+<hr/>
+
+<h2>4. MCTS in Game AI — 蒙特卡洛树搜索</h2>
+
+<p>AlphaGo/AlphaZero 使用 MCTS，这是回溯的随机化版本：</p>
+<p>- <strong>Selection</strong>: 沿最有希望的路径向下</p>
+<p>- <strong>Expansion</strong>: 添加新节点</p>
+<p>- <strong>Simulation</strong>: 随机 rollout 到游戏结束</p>
+<p>- <strong>Backpropagation</strong>: 把结果向上传播更新权重</p>
+
+<p>神经网络提供先验概率（剪枝启发式），MCTS 提供搜索结构。</p>
+
+<hr/>
+
+<h2>核心洞察 / Core Insight</h2>
+
+<p><strong>回溯 = 探索 × 剪枝。</strong> AI 系统在各个层面都在做这件事：</p>
+<p>- Token 层：Beam Search</p>
+<p>- 推理层：Tree of Thoughts, Chain of Thought with verification</p>
+<p>- 代码层：Sample → Test → Filter</p>
+<p>- 游戏层：MCTS</p>
+
+<p>理解了回溯，你就理解了很多 AI 推理系统的底层逻辑。</p>
+
+<p><em>Today&#x27;s Saturday deep dive covers backtracking in detail: Subsets, Combination Sum, Permutations, Subsets II, and N-Queens.</em></p>
+
+<hr/>
+<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Backtracking — 回溯算法完全指南 (15 min read)</strong></p>
+<p>📊 NeetCode: 70/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 Day 88 — Expert Phase</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>回溯算法是面试中最常考的算法之一，也是最容易搞混的。它的本质是<strong>受控穷举</strong>——在搜索树上做深度优先遍历，遇到不满足条件的节点就&quot;剪枝&quot;，回退到上一状态再尝试其他选项。</p>
+
+<p>掌握回溯 = 掌握一个模板 + 一套思维方式。NeetCode 150 中有 9 道回溯题（全在今天开始的这个 block），从今天的 Subsets 到最终的 N-Queens。这篇 deep dive 会让你把模板内化，用一套心智模型解决所有变体。</p>
+
+<p><strong>English:</strong></p>
+<p>Backtracking is &quot;controlled brute-force.&quot; You explore a decision tree depth-first, undo choices when they lead to dead ends, and continue. The key insight: <strong>you&#x27;re building a result incrementally, and the &quot;undo&quot; step is what makes it backtracking (not just DFS).</strong></p>
+
+<p>This deep dive covers the universal template, 5 core problem types, and the mental model that lets you derive solutions from scratch in interviews.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>核心思维模型 / The Mental Model</h3>
+
+<p><strong>中文：</strong></p>
+<p>把回溯想象成一棵<strong>决策树</strong>：</p>
+<p>- 每个<strong>节点</strong>代表当前选择路径（<code>path</code>）</p>
+<p>- 每条<strong>边</strong>代表你做的一个选择（&quot;选 or 不选 X&quot;）</p>
+<p>- <strong>叶节点</strong>是最终答案（完整路径）</p>
+<p>- <strong>剪枝</strong>：某个分支注定不可能产生有效答案，直接跳过</p>
+
+<p>三步走：<strong>选择 → 递归 → 撤销</strong></p>
+
+<pre><code>
+选择 (Choose)   → path.append(item)
+递归 (Recurse)  → backtrack(next_state)
+撤销 (Undo)     → path.pop()
+</code></pre>
+
+<p><strong>English:</strong></p>
+<p>Think of it as a <strong>decision tree</strong>:</p>
+<p>- Root = empty state</p>
+<p>- Each level = one decision</p>
+<p>- Leaf = complete valid solution</p>
+
+<p>The &quot;undo&quot; step is critical — it <strong>restores state</strong> before trying the next branch. Without undo, you&#x27;d need to copy state on every call (expensive). With undo, you reuse a single mutable path.</p>
+
+<h3>通用模板 / Universal Template</h3>
+
+<pre><code>
+def solve(problem_input):
+    result = []
+    
+    def backtrack(path, start_or_remaining):
+        # BASE CASE: path is complete
+        if is_complete(path):
+            result.append(path[:])  # ← shallow copy! path will mutate
+            return
+        
+        # EXPLORE choices
+        for choice in get_choices(start_or_remaining):
+            # PRUNE: skip invalid choices early
+            if not is_valid(choice, path):
+                continue
+            
+            # CHOOSE
+            path.append(choice)
+            
+            # RECURSE
+            backtrack(path, next_state(start_or_remaining, choice))
+            
+            # UNDO (backtrack)
+            path.pop()
+    
+    backtrack([], initial_state)
+    return result
+</code></pre>
+
+<h3>五种变体的关键差异 / 5 Problem Types</h3>
+
+<p>| 问题类型 | 是否排列敏感 | 是否可重用元素 | 关键参数变化 |</p>
+<p>|---------|------------|-------------|------------|</p>
+<p>| 子集 Subsets | 否 | 否 | <code>start</code> 递增 |</p>
+<p>| 组合 Combination Sum | 否 | 是 | <code>start</code> 不变 |</p>
+<p>| 排列 Permutations | 是 | 否 | <code>used[]</code> 标记 |</p>
+<p>| 子集II (有重复) | 否 | 否 | 排序 + 去重 |</p>
+<p>| N-Queens | 是 | 否 | <code>cols/diags</code> 标记 |</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Problem 1: Subsets (#78) — 基础模板</h3>
+
+<p><strong>中文：</strong> 给定不含重复元素的整数数组 <code>nums</code>，返回所有可能的子集（幂集）。</p>
+
+<p><strong>English:</strong> Return all possible subsets (power set) of a list with no duplicates.</p>
+
+<p>🔗 [LeetCode #78](https://leetcode.com/problems/subsets/) | 📹 [NeetCode](https://www.youtube.com/watch?v=REOH22Xwdkk)</p>
+
+<pre><code>
+def subsets(nums: list[int]) -&gt; list[list[int]]:
+    result = []
+    
+    def backtrack(start: int, path: list[int]):
+        # Every node in the tree IS a valid subset (including empty)
+        # So we collect at EVERY call, not just leaf nodes
+        result.append(path[:])  # copy current path
+        
+        for i in range(start, len(nums)):
+            # CHOOSE: add nums[i] to path
+            path.append(nums[i])
+            
+            # RECURSE: only consider elements after i (no duplicates, no reuse)
+            backtrack(i + 1, path)
+            
+            # UNDO: remove nums[i] from path
+            path.pop()
+    
+    backtrack(0, [])
+    return result
+
+# Example: nums = [1, 2, 3]
+# Decision tree:
+#              []
+#          /   |   \
+#        [1]  [2]  [3]
+#       /   \    \
+#    [1,2] [1,3] [2,3]
+#     /
+# [1,2,3]
+# Result: [[], [1], [1,2], [1,2,3], [1,3], [2], [2,3], [3]]
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong> Time O(n · 2ⁿ), Space O(n) recursion stack + O(n · 2ⁿ) output</p>
+
+<hr/>
+
+<h3>Problem 2: Combination Sum (#39) — 元素可重复使用</h3>
+
+<p><strong>中文：</strong> 从 <code>candidates</code> 中选数，允许重复使用，找出所有和为 <code>target</code> 的组合。</p>
+
+<p><strong>English:</strong> Find all unique combinations that sum to target; each number may be used unlimited times.</p>
+
+<p>🔗 [LeetCode #39](https://leetcode.com/problems/combination-sum/)</p>
+
+<pre><code>
+def combinationSum(candidates: list[int], target: int) -&gt; list[list[int]]:
+    result = []
+    
+    def backtrack(start: int, path: list[int], remaining: int):
+        if remaining == 0:
+            # COMPLETE: path sums to target
+            result.append(path[:])
+            return
+        if remaining &lt; 0:
+            # PRUNE: overshot, no point continuing
+            return
+        
+        for i in range(start, len(candidates)):
+            path.append(candidates[i])
+            # KEY: pass i (not i+1) → same element can be reused
+            backtrack(i, path, remaining - candidates[i])
+            path.pop()
+    
+    backtrack(0, [], target)
+    return result
+
+# vs Subsets: start=i (not i+1) allows reuse
+</code></pre>
+
+<hr/>
+
+<h3>Problem 3: Permutations (#46) — 顺序敏感</h3>
+
+<p><strong>中文：</strong> 返回数组的所有全排列。[1,2] 和 [2,1] 是不同结果。</p>
+
+<p><strong>English:</strong> Return all permutations. Order matters: [1,2] ≠ [2,1].</p>
+
+<p>🔗 [LeetCode #46](https://leetcode.com/problems/permutations/)</p>
+
+<pre><code>
+def permute(nums: list[int]) -&gt; list[list[int]]:
+    result = []
+    used = [False] * len(nums)  # track which elements are in current path
+    
+    def backtrack(path: list[int]):
+        if len(path) == len(nums):
+            # COMPLETE: used all elements exactly once
+            result.append(path[:])
+            return
+        
+        for i in range(len(nums)):
+            if used[i]:
+                continue  # PRUNE: already in path
+            
+            # CHOOSE
+            used[i] = True
+            path.append(nums[i])
+            
+            # RECURSE: no start param — we consider ALL unused elements
+            backtrack(path)
+            
+            # UNDO
+            path.pop()
+            used[i] = False
+    
+    backtrack([])
+    return result
+
+# KEY DIFFERENCE from subsets/combinations:
+# - No `start` parameter (order matters, can pick from anywhere)
+# - Uses `used[]` array instead to avoid duplicates within a path
+</code></pre>
+
+<hr/>
+
+<h3>Problem 4: Subsets II (#90) — 处理重复元素</h3>
+
+<p><strong>中文：</strong> 数组中有重复元素，要求输出不重复的子集。</p>
+
+<p><strong>English:</strong> Array has duplicates; return unique subsets (no duplicate subsets).</p>
+
+<p>🔗 [LeetCode #90](https://leetcode.com/problems/subsets-ii/)</p>
+
+<pre><code>
+def subsetsWithDup(nums: list[int]) -&gt; list[list[int]]:
+    nums.sort()  # STEP 1: sort so duplicates are adjacent
+    result = []
+    
+    def backtrack(start: int, path: list[int]):
+        result.append(path[:])
+        
+        for i in range(start, len(nums)):
+            # STEP 2: skip duplicate at same tree level
+            # i &gt; start means we&#x27;ve already explored nums[i-1] at this level
+            if i &gt; start and nums[i] == nums[i - 1]:
+                continue  # ← the dedup trick
+            
+            path.append(nums[i])
+            backtrack(i + 1, path)
+            path.pop()
+    
+    backtrack(0, [])
+    return result
+
+# nums = [1, 2, 2]
+# After sort: [1, 2, 2]
+# At level 1:
+#   i=0: pick 1 ✓
+#   i=1: pick 2 ✓
+#   i=2: nums[2]==nums[1] AND i&gt;start → SKIP (would duplicate [2])
+</code></pre>
+
+<p><strong>去重规则 / Dedup Rule:</strong> <code>if i &gt; start and nums[i] == nums[i-1]: continue</code></p>
+<p>- <code>i &gt; start</code> means &quot;we&#x27;re at the same recursion level&quot; (not going deeper)</p>
+<p>- Skip if same value as previous element at this level</p>
+
+<hr/>
+
+<h3>Problem 5: N-Queens (#51) — 约束传播</h3>
+
+<p><strong>中文：</strong> 最经典的回溯题。在 n×n 棋盘上放 n 个皇后，使其互不攻击。</p>
+
+<p><strong>English:</strong> Place n queens on n×n board such that no two queens attack each other.</p>
+
+<p>🔗 [LeetCode #51](https://leetcode.com/problems/n-queens/)</p>
+
+<pre><code>
+def solveNQueens(n: int) -&gt; list[list[str]]:
+    result = []
+    # Track which columns and diagonals are occupied
+    cols = set()
+    pos_diag = set()  # row + col is constant along \ diagonals
+    neg_diag = set()  # row - col is constant along / diagonals
+    board = [[&#x27;.&#x27; for _ in range(n)] for _ in range(n)]
+    
+    def backtrack(row: int):
+        if row == n:
+            # COMPLETE: placed queen in every row
+            result.append([&#x27;&#x27;.join(r) for r in board])
+            return
+        
+        for col in range(n):
+            # PRUNE: this position is under attack
+            if col in cols or (row + col) in pos_diag or (row - col) in neg_diag:
+                continue
+            
+            # CHOOSE: place queen
+            cols.add(col)
+            pos_diag.add(row + col)
+            neg_diag.add(row - col)
+            board[row][col] = &#x27;Q&#x27;
+            
+            # RECURSE: move to next row
+            backtrack(row + 1)
+            
+            # UNDO: remove queen
+            cols.remove(col)
+            pos_diag.remove(row + col)
+            neg_diag.remove(row - col)
+            board[row][col] = &#x27;.&#x27;
+    
+    backtrack(0)
+    return result
+
+# Key insight: one queen per row (we recurse row by row)
+# Diagonal detection:
+#   pos_diag (↘): cells on same diagonal have equal row+col
+#   neg_diag (↗): cells on same anti-diagonal have equal row-col
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong> Time O(n!), Space O(n²)</p>
+
+<hr/>
+
+<h3>Cross-Check: Verify Diagram vs Code</h3>
+
+<p>Let&#x27;s trace N-Queens with n=4, verifying the constraint sets work correctly:</p>
+
+<pre><code>
+Board state when placing queen at row=0, col=1:
+  cols = {1}
+  pos_diag = {0+1=1}
+  neg_diag = {0-1=-1}
+
+  board:
+  . Q . .
+  . . . .
+  . . . .
+  . . . .
+
+Next call: row=1, try col=0:
+  col=0 not in cols={1} ✓
+  row+col=1+0=1 IN pos_diag={1} ✗ → PRUNE (correct! col0 row1 is on same ↘ diagonal)
+
+Try col=2:
+  col=2 not in cols ✓
+  1+2=3 not in pos_diag={1} ✓
+  1-2=-1 IN neg_diag={-1} ✗ → PRUNE (correct! col2 row1 is on same ↗ diagonal)
+
+Try col=3:
+  col=3 not in cols ✓
+  1+3=4 not in pos_diag ✓
+  1-3=-2 not in neg_diag ✓ → PLACE ✓
+</code></pre>
+
+<p>Diagram and code are consistent — the set-based constraint propagation correctly prunes all attacked positions.</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>1. 忘记复制路径 (Forgetting to copy path)</strong></p>
+<pre><code>
+# WRONG — appends reference to same list
+result.append(path)  # ← all entries will be empty [] at the end!
+
+# CORRECT
+result.append(path[:])  # shallow copy is fine for flat lists
+result.append(list(path))  # equivalent
+</code></pre>
+
+<p><strong>2. 重复问题不排序 (Skipping sort for duplicates)</strong></p>
+<p>- <code>Subsets II</code>, <code>Combination Sum II</code>, <code>Permutations II</code> all require sorting first</p>
+<p>- Without sort, duplicates aren&#x27;t adjacent → dedup logic breaks</p>
+
+<p><strong>3. 收集时机错误 (Wrong collection point)</strong></p>
+<p>- Subsets: collect at EVERY call (every node is a result)</p>
+<p>- Combination Sum: collect only when <code>remaining == 0</code></p>
+<p>- Permutations: collect only when <code>len(path) == n</code></p>
+
+<p><strong>4. 组合 vs 排列的 start 参数</strong></p>
+<pre><code>
+# Combination: pass i+1 to avoid reuse, i to allow reuse
+backtrack(i + 1, ...)  # no reuse
+backtrack(i, ...)      # allow reuse (Combination Sum)
+
+# Permutation: NO start param, use `used[]` instead
+</code></pre>
+
+<p><strong>5. 提前终止 (Early termination)</strong></p>
+<pre><code>
+# For sorted arrays, if current is already too large, prune the rest
+for i in range(start, len(candidates)):
+    if candidates[i] &gt; remaining:
+        break  # all remaining are larger (since sorted)
+</code></pre>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+<p>回溯在实际工程中比你想象的更常见：</p>
+
+<p>1. <strong>正则表达式引擎</strong> — <code>.*</code> 匹配时需要回溯尝试不同的匹配长度</p>
+<p>2. <strong>编译器解析</strong> — 语法树解析中的回溯文法</p>
+<p>3. <strong>约束求解</strong> — Sudoku solvers, scheduling systems, SAT solvers</p>
+<p>4. <strong>游戏 AI</strong> — Chess, Go 的 minimax 树（带剪枝）</p>
+<p>5. <strong>包依赖解析</strong> — pip/npm 解析依赖版本组合</p>
+
+<p><strong>English:</strong></p>
+<p>Backtracking powers systems you use daily:</p>
+
+<p>- <strong>Regex engines</strong>: <code>.*</code> tries all possible lengths, backtracks on mismatch</p>
+<p>- <strong>SQL query planners</strong>: try different join orders, backtrack when cost estimate is poor</p>
+<p>- <strong>IDE autocomplete</strong>: generate candidate completions, prune invalid ones</p>
+<p>- <strong>Package managers</strong>: resolve dependency version combinations (a real combinatorial problem!)</p>
+<p>- <strong>Constraint solvers</strong>: workforce scheduling, exam timetabling</p>
+
+<p>The pattern: <strong>explore → validate → backtrack</strong> maps directly to any search-over-state-space problem.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>面试官：</strong> Given Subsets, can you walk me through the decision tree?</p>
+
+<p>&gt; <strong>你：</strong> Sure. We start with an empty path. For <code>[1,2,3]</code>, at level 0 we choose whether to include 1: if we do, go left; if not, go right. Then same decision for 2, then 3. Every node (not just leaves) is a valid subset. That&#x27;s why we collect at every recursive call, not just the base case.</p>
+
+<hr/>
+
+<p><strong>面试官：</strong> How would you modify Subsets to handle duplicates like <code>[1,2,2]</code>?</p>
+
+<p>&gt; <strong>你：</strong> Sort the array first, so duplicates are adjacent. Then during the for loop, if <code>i &gt; start</code> and <code>nums[i] == nums[i-1]</code>, we skip — this prevents generating duplicate subsets at the same tree level. The <code>i &gt; start</code> condition is crucial: it only skips at the same level, not across levels (which would incorrectly prune <code>[1,2]</code> and <code>[1,2]</code> from different branches).</p>
+
+<hr/>
+
+<p><strong>面试官：</strong> What&#x27;s the time complexity of Permutations?</p>
+
+<p>&gt; <strong>你：</strong> O(n · n!). There are n! permutations; for each, we spend O(n) copying the path into results. The recursion tree has at most n levels, each branching up to n times, but the <code>used[]</code> check ensures we don&#x27;t revisit — so total nodes = n! (leaf) + n!/1 + n!/2 + ... ≈ O(n · n!).</p>
+
+<hr/>
+
+<p><strong>面试官：</strong> When would you use backtracking vs dynamic programming?</p>
+
+<p>&gt; <strong>你：</strong> DP when you need the optimal value of overlapping subproblems. Backtracking when you need to enumerate all valid solutions (or just one). If the problem says &quot;find ALL combinations/permutations/subsets&quot;, that&#x27;s backtracking. If it says &quot;find the MINIMUM cost / MAXIMUM value&quot;, lean toward DP first.</p>
+
+<hr/>
+
+<p><strong>面试官：</strong> Can you solve Combination Sum without backtracking? (follow-up)</p>
+
+<p>&gt; <strong>你：</strong> You could use iterative BFS with a queue of (current_path, remaining), but it&#x27;s much less clean and has the same complexity. Backtracking&#x27;s elegance is in the natural undo via the call stack — the recursive structure mirrors the problem structure. I&#x27;d keep it as backtracking.</p>
+
+<hr/>
+
+<h2>Summary: The Backtracking Cheat Sheet</h2>
+
+<pre><code>
+CHOOSE what to add to path (loop over choices)
+  ↓ PRUNE if invalid (i &gt; start + duplicate, used[], constraint violated)
+    ↓ RECURSE (pass new start OR same start for reuse)
+      ↓ at base case: result.append(path[:])
+    ↑ UNDO: pop from path, unmark used[]
+</code></pre>
+
+<p><strong>Nine problems this block:</strong></p>
+<p>1. #78 Subsets ← today</p>
+<p>2. #39 Combination Sum</p>
+<p>3. #46 Permutations</p>
+<p>4. #90 Subsets II</p>
+<p>5. #40 Combination Sum II</p>
+<p>6. #79 Word Search</p>
+<p>7. #131 Palindrome Partitioning</p>
+<p>8. #17 Letter Combinations of Phone Number</p>
+<p>9. #51 N-Queens</p>
+
+<p>Internalize the template once. The rest is parameter tuning.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-10</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
