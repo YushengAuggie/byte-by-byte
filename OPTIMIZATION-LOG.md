@@ -647,3 +647,20 @@
 - Cron errors: none
 - Current day: 87 | lastSentDate: 2026-07-10
 - Indices: SD=60, LC=70, behavioral=60, frontend=37, AI=30, pythonCraft=31
+
+## 2026-07-13 Optimization Run
+
+### Issues Found
+- **P0:** None. Delivery 7/7 for the window (07-07 → 07-13); every day has an email-send-log entry.
+- **P1 (today, 07-13 Monday):** Weekday send is degraded — only **4/5 sections** and went out **late at 09:27** (scheduled ~08:00). Recurrence of the "weekday email drops a section" bug seen earlier (Apr 9/17/21) plus a late/backup send. Worth confirming which cron actually delivered today and why one section was missing.
+- **P1 (persistent):** Recipient count stuck at **1/2**. Every day 07-06 → 07-13 delivered only to `Auggie1024.d@gmail.com` (recipients: 1). Pre-07-06 was consistently recipients: 2. The 2nd subscriber has been persistently dropped for 8 straight days — either intentionally removed or a silent send failure for recipient #2. This is the top manual item.
+- **P1 (optimizer self):** This optimizer cron **timed out again** this cycle ("model-call-started", ~16 min) before recovering on the retry. Recurring latent risk — the optimizer has `timeoutSeconds` but the model call still hangs; other content crons still lack explicit `timeoutSeconds` (unfixed since 06-28).
+- **P2:** Step 0 `openclaw cron list --json` parse still crashes (poe deprecation warning + `openclaw` not on cron-shell PATH). Fell back to the `cron` tool. Day-number drift continues (Day 88 committed on both 07-11 Sat and 07-12 Sun).
+
+### Metrics
+- Delivery rate (7d): **7/7** ✅ (but 07-13 only 4/5 sections + late)
+- Recipients: **1/2** every day (2nd subscriber dropped since 07-06) ⚠️
+- Cron errors: optimizer self-timeout (recovered on retry); no content-cron errors captured
+- State: currentDay=88, lastSentDate=2026-07-12, indices SD=60, LC=71, behavioral=60, frontend=37, AI=30, pythonCraft=32; next review Day 90
+
+_Report-only run — no code changes made._
