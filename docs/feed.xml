@@ -5,8 +5,604 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 12 Jul 2026 17:10:09 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 14 Jul 2026 06:08:30 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-13</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-13</guid>
+      <pubDate>Mon, 13 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>System Design Synthesis — Day 89: Read Path vs. Write Path Optimization</h2>
+
+<h2>🏗️ 系统设计综合 / System Design Synthesis</h2>
+<p><strong>专题: 读路径 vs 写路径优化 — 如何为不同访问模式设计不同的架构</strong></p>
+<p><strong>Topic: Read Path vs. Write Path Optimization — Designing Different Architectures for Different Access Patterns</strong></p>
+
+<hr/>
+
+<h3>想象你在 Meta 担任系统设计面试官 / Imagine You&#x27;re a System Design Interviewer at Meta</h3>
+
+<p>被面试者给出一个看似合理的设计：一个数据库，所有读写都走同一路径。你会问什么？</p>
+
+<p><em>A candidate gives you a seemingly reasonable design: one database, all reads and writes go through the same path. What do you ask?</em></p>
+
+<p><strong>&quot;你的读写比是多少？为什么读和写要用同一个代码路径？&quot;</strong></p>
+
+<p><em>&quot;What&#x27;s your read-to-write ratio? Why do reads and writes share the same code path?&quot;</em></p>
+
+<hr/>
+
+<h3>核心洞察：读写路径天生就不同 / Core Insight: Read &amp; Write Paths Are Fundamentally Different</h3>
+
+<p>| 维度 / Dimension | 读路径 Read Path | 写路径 Write Path |</p>
+<p>|---|---|---|</p>
+<p>| 一致性要求 | 可以稍微过时 (stale OK) | 必须持久化、原子性 |</p>
+<p>| 延迟要求 | 极低 P99 | 可接受稍高延迟 |</p>
+<p>| 扩展方式 | 水平扩展 Read Replicas | 分片 / WAL / Append-only |</p>
+<p>| 失败影响 | 降级展示旧数据 | 数据丢失，不可接受 |</p>
+<p>| 缓存友好性 | 极高 | 低（需要失效） |</p>
+
+<hr/>
+
+<h3>真实架构对比 / Real Architecture Comparison</h3>
+
+<p><strong>案例 1: Twitter/X 的 Fanout 演化</strong></p>
+<p>- 早期: 写入时 fanout (写路径重)，每条 tweet 写入所有 follower 的 timeline</p>
+<p>- 问题: 名人用户 (Lady Gaga) 写一条推文 → 1亿次写入</p>
+<p>- 解法: 混合模式 — 普通用户写入 fanout，名人用户读取时 merge</p>
+<p>- <strong>教训</strong>: 写路径优化 ≠ 读路径简单，需要针对访问模式拆分</p>
+
+<p><strong>案例 2: Facebook TAO (The Associations and Objects)</strong></p>
+<p>- 读路径: 多层缓存 (L1 local + L2 regional) → 99%+ hit rate</p>
+<p>- 写路径: 单 leader 写入 MySQL → 异步复制到 cache</p>
+<p>- 关键: 读写完全解耦，读路径不感知底层存储</p>
+
+<p><strong>案例 3: Kafka 作为写路径的 Buffer</strong></p>
+<p>- 写路径: Producer → Kafka → Consumer (异步，append-only)</p>
+<p>- 读路径: 预计算结果存入 Redis/Elasticsearch 供查询</p>
+<p>- <strong>CQRS (Command Query Responsibility Segregation)</strong> 的极致体现</p>
+
+<hr/>
+
+<h3>架构图 / Architecture</h3>
+
+<pre><code>
+Write Path (写路径):
+Client → API Gateway → Write Service
+           ↓
+        Kafka (Buffer)
+           ↓
+   [Consumer Workers] → Primary DB (MySQL/Postgres)
+           ↓
+   Async Replication → Read Replicas
+           ↓
+   Cache Invalidation → Redis
+
+Read Path (读路径):
+Client → API Gateway → Read Service
+           ↓
+        Redis Cache (L1) ←─── 99% hits
+           ↓ (miss)
+     Read Replicas (L2)
+           ↓ (miss)
+     Primary DB (L3, rare)
+</code></pre>
+
+<hr/>
+
+<h3>什么时候分离读写路径？/ When to Separate Read/Write Paths?</h3>
+
+<p>✅ <strong>必须分离 / Must separate:</strong></p>
+<p>- 读写比 &gt; 10:1 (大多数 CRUD 应用)</p>
+<p>- 读延迟 SLA &lt; 10ms 但写可以接受 100ms</p>
+<p>- 需要不同的一致性保证 (最终一致 vs 强一致)</p>
+
+<p>⚠️ <strong>可以不分离 / Can skip:</strong></p>
+<p>- 小型服务 (&lt;1K QPS)</p>
+<p>- 强一致性是硬需求 (金融交易)</p>
+<p>- 团队规模小，复杂度成本高过收益</p>
+
+<hr/>
+
+<h3>常见的坑 / Common Mistakes</h3>
+
+<p>❌ <strong>对所有查询都用主库</strong> → 浪费 read replica 资源，主库成瓶颈</p>
+<p>❌ <strong>缓存失效逻辑在写路径</strong> → 难以维护，容易造成不一致</p>
+<p>❌ <strong>忽略复制延迟</strong> → 读到过时数据导致用户困惑 (刚刚发的帖子看不到)</p>
+<p>✅ <strong>最佳实践</strong>: 写后读 (read-after-write consistency) 用 session token 或 version 号</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Facebook TAO: The Power of the Graph](https://www.usenix.org/conference/atc13/technical-sessions/presentation/bronson) — USENIX ATC 2013</p>
+<p>- [Twitter&#x27;s Fanout Service Evolution](https://blog.twitter.com/engineering/en_us/topics/infrastructure/2021/processing-billions-of-events-in-real-time-at-twitter) — Twitter Engineering Blog</p>
+<p>- [CQRS Pattern — Martin Fowler](https://martinfowler.com/bliki/CQRS.html)</p>
+<p>- [Designing Data-Intensive Applications, Chapter 5](https://dataintensive.net/) — Martin Kleppmann</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象餐厅里有两条通道：一条是厨房的&quot;出菜口&quot;（读），另一条是&quot;点餐台&quot;（写）。如果每次有人点单，厨师都要停下来处理，出菜就慢了。把两条通道分开，厨师专心做菜，收银员专心收单，效率翻倍。</p>
+
+<p><em>Imagine a restaurant with two lanes: one for food pickup (read), one for order taking (write). If the chef had to stop cooking every time someone placed an order, meals would be slow. Separate the lanes — chef cooks, cashier takes orders — double the throughput.</em></p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>Algorithms — Day 89: #39 Combination Sum (Medium) — Backtracking</h2>
+
+<h2>💻 算法 / Algorithms</h2>
+<p><strong>#39 Combination Sum — Medium 🟡</strong></p>
+<p>🧩 <strong>回溯模式 (2/9)</strong> — building on the template from Day 88 (Subsets)</p>
+
+<p>[🔗 LeetCode #39](https://leetcode.com/problems/combination-sum/) | [📹 NeetCode Solution](https://neetcode.io/problems/combination-target-sum)</p>
+
+<hr/>
+
+<h3>这道题是模板的哪种变体？/ How Does This Vary from the Subsets Template?</h3>
+
+<p>上次 Subsets (#78) 是枚举<strong>所有可能的选择子集</strong>，没有约束。</p>
+<p>这次 Combination Sum 加了一个约束：<strong>子集元素之和 = target</strong>，而且<strong>元素可以重复使用</strong>。</p>
+
+<p><em>Last time (Subsets #78), we enumerated all possible subsets with no constraint. This time, there&#x27;s a constraint: <strong>subset must sum to target</strong>, and <strong>elements can be reused</strong> (unlimited times).</em></p>
+
+<p><strong>两个关键变化 / Two Key Differences:</strong></p>
+<p>1. <strong>停止条件变了</strong>: <code>sum == target</code> (不再是遍历到末尾)</p>
+<p>2. <strong>剪枝新增</strong>: <code>sum &gt; target</code> 时直接 return</p>
+<p>3. <strong>重复使用</strong>: 递归时起点不后移 (<code>start</code> 而非 <code>start + 1</code>)</p>
+
+<hr/>
+
+<h3>真实场景 / Real-World Analogy</h3>
+
+<p>想象你在收银台，手里有 <code>[2, 3, 6, 7]</code> 面值的硬币（可以重复用），需要凑出恰好 7 元。</p>
+<p>回溯法就是把所有&quot;试着凑&quot;的过程系统化：选一枚，继续凑，凑不上去就退回来换一枚。</p>
+
+<p><em>Imagine you have coins of denominations <code>[2, 3, 6, 7]</code> (unlimited supply) and need to make exactly $7. Backtracking systematically tries every combination: pick one, keep going, backtrack when over.</em></p>
+
+<hr/>
+
+<h3>模板对比 / Mapping to Template</h3>
+
+<pre><code>
+# 通用模版回顾 / General Template Recap
+def backtrack(path, choices):
+    if IS_COMPLETE(path):       # ← 这里变了: sum(path) == target
+        result.append(path[:])
+        return
+    for choice in choices:
+        if IS_VALID(choice):    # ← 这里加了: sum(path) + choice &lt;= target
+            path.append(choice)
+            backtrack(path, NEXT_CHOICES)  # ← 这里变了: 起点不后移
+            path.pop()
+</code></pre>
+
+<hr/>
+
+<h3>Python Solution (with trace)</h3>
+
+<pre><code>
+def combinationSum(candidates: list[int], target: int) -&gt; list[list[int]]:
+    result = []
+    candidates.sort()  # sort for early termination (pruning)
+
+    def backtrack(start: int, path: list[int], remaining: int):
+        # Base case: found valid combination
+        if remaining == 0:
+            result.append(path[:])  # shallow copy of current path
+            return
+
+        for i in range(start, len(candidates)):
+            num = candidates[i]
+
+            # Pruning: since sorted, if this candidate exceeds remaining,
+            # all subsequent ones will too — stop early
+            if num &gt; remaining:
+                break
+
+            path.append(num)
+            backtrack(i, path, remaining - num)  # i not i+1: allow reuse!
+            path.pop()  # undo choice
+
+    backtrack(0, [], target)
+    return result
+
+# Trace: candidates=[2,3,6,7], target=7
+# backtrack(0, [], 7)
+#   pick 2 → backtrack(0, [2], 5)
+#     pick 2 → backtrack(0, [2,2], 3)
+#       pick 2 → backtrack(0, [2,2,2], 1)
+#         pick 2 → remaining -1 &lt; 0, break
+#         pick 3 → remaining -2 &lt; 0, break
+#       pop 2 → [2,2]
+#       pick 3 → backtrack(1, [2,2,3], 0) → ✅ append [2,2,3]
+#       pop 3 → [2,2]
+#     pop 2 → [2]
+#     pick 3 → backtrack(1, [2,3], 2)
+#       pick 3 → remaining -1 &lt; 0, break
+#     ...
+#   pick 7 → backtrack(3, [7], 0) → ✅ append [7]
+</code></pre>
+
+<hr/>
+
+<h3>Complexity</h3>
+<p>- <strong>Time: O(n^(T/M))</strong> where T = target, M = min candidate value — branching factor</p>
+<p>- <strong>Space: O(T/M)</strong> — max recursion depth is target/minimum (for deepest combination)</p>
+<p>- Pruning via <code>sort + break</code> drastically reduces actual nodes visited</p>
+
+<hr/>
+
+<h3>举一反三 / Connect to Pattern Block</h3>
+
+<p>| 题目 | 变化点 | 关键差异 |</p>
+<p>|---|---|---|</p>
+<p>| #78 Subsets | 无约束，所有子集 | 每步都加入结果 |</p>
+<p>| <strong>#39 Combination Sum</strong> | 目标和，可重复 | <code>remaining==0</code> 才加；<code>i</code> 不后移 |</p>
+<p>| #46 Permutations (下一题) | 全排列，顺序重要 | 用 <code>visited</code> 数组，每次从头遍历 |</p>
+<p>| #40 Combination Sum II | 有重复元素，每个只用一次 | 跳过重复：<code>if i &gt; start and nums[i] == nums[i-1]: continue</code> |</p>
+<p>| #90 Subsets II | Subsets + 重复元素 | 同样跳过重复逻辑 |</p>
+
+<p><strong>关键规律 / Key Rule:</strong></p>
+<p>- 不需要排列顺序 (combination) → <code>for i in range(start, n)</code> 保证不重复</p>
+<p>- 需要排列顺序 (permutation) → <code>for i in range(0, n)</code> + visited array</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [LeetCode #39 Combination Sum](https://leetcode.com/problems/combination-sum/)</p>
+<p>- [NeetCode Video — Combination Sum](https://neetcode.io/problems/combination-target-sum)</p>
+<p>- [Backtracking Explained — Back To Back SWE](https://www.youtube.com/watch?v=nMnEkBgJbHw)</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象你在玩拼图，每块拼图可以反复用。你的目标是拼出&quot;高度为7&quot;的塔。你一块一块地叠，叠过头了就退一步换一块。这就是回溯——系统地试，不对就退，直到找到所有答案。</p>
+
+<p><em>Imagine building a tower of height 7 using blocks of various sizes (reusable). You stack blocks one by one; if too tall, remove the last block and try a different one. That&#x27;s backtracking — systematic trial and undo.</em></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>Soft Skills Synthesis — Day 89: The Staff Engineer&#x27;s Dilemma</h2>
+
+<h2>🗣️ 软技能综合 / Soft Skills Synthesis</h2>
+<p><strong>专题: Staff 工程师的两难困境 — 技术深度 vs. 广度影响力</strong></p>
+<p><strong>Topic: The Staff Engineer&#x27;s Dilemma — Technical Depth vs. Broad Influence</strong></p>
+
+<hr/>
+
+<h3>面试题 / Interview Prompt</h3>
+
+<p>&gt; <em>&quot;You&#x27;re a Staff Engineer. You could spend the next quarter either: (A) diving deep on a critical performance problem that only you can solve, or (B) helping 5 other teams unblock architectural decisions. Both are valuable. How do you decide? What have you done in practice?&quot;</em></p>
+
+<p>&gt; 你是一名 Staff 工程师。你可以选择：(A) 深入解决一个只有你能解决的关键性能问题，或 (B) 帮助5个团队解决架构障碍。两者都有价值。你如何决策？实际中你是怎么做的？</p>
+
+<hr/>
+
+<h3>为什么这道题很重要 / Why This Question Matters</h3>
+
+<p>Staff+ 角色的核心张力：<strong>个人贡献者 (IC) vs. 乘数效应 (Multiplier)</strong>。</p>
+<p>大多数候选人有很好的深度故事，但面试官想看的是：你是否理解自己在组织中的<strong>杠杆点</strong>。</p>
+
+<p><em>The core tension of Staff+ roles: individual contributor vs. force multiplier. Most candidates have great depth stories, but interviewers want to see if you understand your <strong>leverage point</strong> in the org.</em></p>
+
+<hr/>
+
+<h3>STAR 框架 / STAR Breakdown</h3>
+
+<p><strong>情境 / Situation:</strong></p>
+<p>&quot;我在一家增长期公司担任 Staff 工程师，负责基础架构平台团队。Q2 末，我们有一个关键的数据库连接池问题（只有我对这套遗留系统足够熟悉），同时5个产品团队正等待我评审他们的服务拆分方案。&quot;</p>
+
+<p><strong>任务 / Task:</strong></p>
+<p>&quot;我需要决定如何分配接下来6周的时间，同时不让任何一边严重受阻。&quot;</p>
+
+<p><strong>行动 / Action:</strong></p>
+<p>&quot;我做了三件事：</p>
+<p>1. <strong>评估不对称性</strong>：性能问题的 P95 延迟是 800ms，但不影响核心转化路径。我估算5个团队被阻塞的总工程师·周 ≈ 40人周。数字说话。</p>
+<p>2. <strong>降低深度工作的机会成本</strong>：我花了1天写了一份诊断文档，把我对遗留系统的知识外化，让另一名高级工程师可以接手70%的工作。</p>
+<p>3. <strong>批量解决架构评审</strong>：我把5个团队的评审合并成2次跨团队工作坊，同步输出设计原则文档，而不是5次单独评审。&quot;</p>
+
+<p><strong>结果 / Result:</strong></p>
+<p>&quot;架构评审在3周内完成，解放了约38人周的工程产能。性能问题由高级工程师主导，我 review 关键节点，4周后解决。我在两件事上都没有成为瓶颈。&quot;</p>
+
+<hr/>
+
+<h3>❌ 常见错误回答 / Common Bad Answers</h3>
+
+<p>❌ &quot;我会两件都做&quot; — 没有展示优先级判断力</p>
+<p>❌ &quot;个人深度贡献更重要，影响力是管理者的事&quot; — 误解 Staff 级别的期望</p>
+<p>❌ &quot;我会让团队等我&quot; — 不具备乘数思维</p>
+
+<hr/>
+
+<h3>✅ 优秀回答的信号 / Signals of a Strong Answer</h3>
+
+<p>✅ <strong>量化杠杆</strong>: 能计算出哪条路径的总影响更大</p>
+<p>✅ <strong>知识转移</strong>: 主动减少&quot;只有你能做&quot;的工作（避免成为单点故障）</p>
+<p>✅ <strong>批量效率</strong>: 找到能同时服务多个受众的工作方式（文档、工作坊、ADR）</p>
+<p>✅ <strong>时间感</strong>: 区分&quot;紧急&quot;和&quot;重要&quot;，理解延迟成本</p>
+
+<hr/>
+
+<h3>Senior vs. Staff 的边界 / Senior vs. Staff Boundary</h3>
+
+<p>| | Senior | Staff |</p>
+<p>|---|---|---|</p>
+<p>| 主要产出 | 我写的代码/系统 | 我影响的团队/决策 |</p>
+<p>| 成功衡量 | 完成了什么 | 解放了多少产能 |</p>
+<p>| 知识共享 | &quot;我来解决&quot; | &quot;我来教，让你们能解决&quot; |</p>
+<p>| 风险观 | 技术风险 | 组织风险 + 技术风险 |</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Staff Engineer: Leadership Beyond the Management Track — Will Larson](https://staffeng.com/book)</p>
+<p>- [The Engineering Executive&#x27;s Primer — Will Larson](https://lethain.com/elegant-puzzle/)</p>
+<p>- [Brag Documents: Get Credit for Your Work — Julia Evans](https://jvns.ca/blog/brag-documents/)</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象你是学校里最会数学的人。你可以自己解100道题，也可以花时间教10个同学，让他们每人解10道题——结果一样，但你的时间更有价值了。Staff 工程师选的往往是&quot;教&quot;，而不是&quot;自己全解&quot;。</p>
+
+<p><em>Imagine you&#x27;re the best math student. You could solve 100 problems yourself, or spend time teaching 10 classmates — each then solves 10. Same output, but your time is more leveraged. Staff engineers often choose &quot;teach&quot; over &quot;do it all myself.&quot;</em></p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Python Craft — Day 89: Mocking — unittest.mock, When to Mock vs Not</h2>
+
+<h2>🐍 Python Craft — Week 9: Testing</h2>
+<p><strong>Mocking — unittest.mock, When to Mock vs Not</strong></p>
+
+<hr/>
+
+<h3>真实场景 / Real Scenario</h3>
+
+<p>你在写一个服务，它调用外部 Stripe API 来处理支付。你怎么测试？真的发起请求太慢、有副作用、还要钱。这就是 Mock 的用武之地。</p>
+
+<p><em>You&#x27;re writing a service that calls the Stripe API for payments. How do you test it? Real requests are slow, have side effects, and cost money. That&#x27;s where mocking comes in.</em></p>
+
+<hr/>
+
+<h3>核心概念 / Core Concepts</h3>
+
+<pre><code>
+from unittest.mock import Mock, MagicMock, patch, call
+</code></pre>
+
+<p><strong>Mock vs MagicMock:</strong></p>
+<p>- <code>Mock</code>: 普通 mock，不支持魔术方法 (<code>__len__</code>, <code>__iter__</code> 等)</p>
+<p>- <code>MagicMock</code>: 支持所有魔术方法，是更安全的默认选择</p>
+
+<hr/>
+
+<h3>三种使用方式 / Three Usage Patterns</h3>
+
+<p>#### 1. <code>patch</code> as decorator — 最常用 / Most Common</p>
+
+<pre><code>
+import stripe
+from unittest.mock import patch
+
+class PaymentService:
+    def charge(self, amount: int, token: str) -&gt; dict:
+        charge = stripe.Charge.create(amount=amount, currency=&quot;usd&quot;, source=token)
+        return {&quot;id&quot;: charge.id, &quot;status&quot;: charge.status}
+
+# Test: patch replaces stripe.Charge.create for the duration of the test
+@patch(&quot;stripe.Charge.create&quot;)
+def test_charge_success(mock_create):
+    # Arrange: configure what the fake returns
+    mock_create.return_value = Mock(id=&quot;ch_123&quot;, status=&quot;succeeded&quot;)
+
+    # Act
+    service = PaymentService()
+    result = service.charge(1000, &quot;tok_visa&quot;)
+
+    # Assert behavior
+    assert result == {&quot;id&quot;: &quot;ch_123&quot;, &quot;status&quot;: &quot;succeeded&quot;}
+
+    # Assert the mock was called correctly
+    mock_create.assert_called_once_with(amount=1000, currency=&quot;usd&quot;, source=&quot;tok_visa&quot;)
+</code></pre>
+
+<p>#### 2. <code>patch</code> as context manager — 精确控制范围</p>
+
+<pre><code>
+def test_charge_api_error():
+    with patch(&quot;stripe.Charge.create&quot;) as mock_create:
+        mock_create.side_effect = stripe.error.CardError(&quot;Declined&quot;, &quot;card_declined&quot;, 402)
+
+        service = PaymentService()
+        with pytest.raises(stripe.error.CardError):
+            service.charge(1000, &quot;tok_declined&quot;)
+</code></pre>
+
+<p>#### 3. 直接创建 Mock — 用于依赖注入</p>
+
+<pre><code>
+def test_charge_with_injected_client():
+    mock_stripe = MagicMock()
+    mock_stripe.Charge.create.return_value = Mock(id=&quot;ch_456&quot;, status=&quot;succeeded&quot;)
+
+    service = PaymentService(stripe_client=mock_stripe)  # DI-friendly design
+    result = service.charge(500, &quot;tok_visa&quot;)
+    assert result[&quot;status&quot;] == &quot;succeeded&quot;
+</code></pre>
+
+<hr/>
+
+<h3>常用 Mock 配置 / Common Mock Configurations</h3>
+
+<pre><code>
+m = MagicMock()
+
+# Return values
+m.method.return_value = &quot;hello&quot;
+m.method.side_effect = [1, 2, 3]        # returns 1, then 2, then 3
+m.method.side_effect = ValueError(&quot;!&quot;)  # raises on call
+
+# Verify calls
+m.method.assert_called_once()
+m.method.assert_called_with(42, key=&quot;val&quot;)
+m.method.call_count  # how many times called
+m.method.call_args_list  # all calls: [call(1), call(2), ...]
+
+# Reset
+m.reset_mock()
+</code></pre>
+
+<hr/>
+
+<h3>❌ 什么时候不该 Mock / When NOT to Mock</h3>
+
+<p>这是最重要的判断力 / This is the most important judgment call:</p>
+
+<pre><code>
+# ❌ 别 Mock 你自己的代码逻辑
+# Don&#x27;t mock your own business logic — that defeats the purpose
+@patch(&quot;myapp.services.calculate_total&quot;)  # DON&#x27;T mock this
+def test_order():
+    ...  # You&#x27;re now testing nothing real
+
+# ✅ Mock 外部边界
+# DO mock external boundaries:
+# - HTTP calls (requests, httpx, aiohttp)
+# - Database (when doing unit tests, not integration tests)
+# - Time: datetime.now(), time.time()
+# - File system (for unit tests; use tmp_path for integration)
+# - External services (Stripe, SendGrid, AWS S3)
+# - Random/UUID generation
+</code></pre>
+
+<p><strong>规则 / Rule of Thumb:</strong></p>
+
+<p>| Mock ✅ | 不要 Mock ❌ |</p>
+<p>|---|---|</p>
+<p>| 外部 HTTP 调用 | 你自己写的纯函数 |</p>
+<p>| 数据库（单元测试）| 框架内部逻辑 |</p>
+<p>| <code>datetime.now()</code> | 简单的数据转换 |</p>
+<p>| 第三方 SDK | 你想测的核心算法 |</p>
+<p>| 文件/网络 IO | ORM 查询（用 integration test）|</p>
+
+<hr/>
+
+<h3>高级技巧 / Advanced: Spy with `wraps`</h3>
+
+<pre><code>
+import json
+
+# wraps: call the real function but also track calls
+with patch(&quot;json.dumps&quot;, wraps=json.dumps) as mock_dumps:
+    result = json.dumps({&quot;key&quot;: &quot;value&quot;})
+    assert result == &#x27;{&quot;key&quot;: &quot;value&quot;}&#x27;  # real behavior preserved
+    mock_dumps.assert_called_once()       # but we can inspect calls
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [unittest.mock Official Docs](https://docs.python.org/3/library/unittest.mock.html)</p>
+<p>- [Python Testing with pytest — Brian Okken](https://pythontest.com/pytest-book/)</p>
+<p>- [Stop Over-Mocking — Harry Percival](https://www.obeythetestinggoat.com/)</p>
+<p>- [pytest-mock plugin](https://pytest-mock.readthedocs.io/)</p>
+
+<h3>🧒 ELI5</h3>
+<p>Mock 就像是拍电影时用的道具。真正的飞机太贵，所以他们用模型飞机。测试时真正的数据库太慢，所以我们用&quot;假数据库&quot;——它长得像数据库，但只是个演员。</p>
+
+<p><em>Mocking is like movie props. A real airplane is expensive, so they use a model. In tests, a real database is slow, so we use a &quot;fake database&quot; — it looks like a database but it&#x27;s just an actor.</em></p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>AI News Roundup</h2>
+<p><em>Day 89 — AI News | 2026-07-13</em></p>
+
+<hr/>
+
+<h2>🤖 AI 新闻速递 / AI News Roundup</h2>
+
+<p><em>本期新闻来源于本周网络搜索结果，所有具体数据均来自已验证来源。</em></p>
+<p><em>All stories sourced from web searches conducted this week. Figures only from verified sources.</em></p>
+
+<hr/>
+
+<h3>📰 Story 1: OpenAI 发布 GPT-5.6 — Sol / Terra / Luna 三档模型</h3>
+<h3>OpenAI Releases GPT-5.6 in Three Tiers: Sol, Terra, Luna</h3>
+
+<p><strong>来源 / Source:</strong> [SpaceDaily](https://spacedaily.com/m-on-july-9-2026-openai-opened-its-most-powerful-system-yet-to-the-public-gpt-5-6-in-three-tiers-named-sol-terra-and-luna-alongside-an-agent-it-calls-chatgpt-work-built-to-carry/) | [AI Intelligence Briefing](https://medium.com/@diwakar-dayalan/ai-intelligence-briefing-week-of-july-6-2026-5896a1416a2c)</p>
+
+<p>OpenAI 于 <strong>7 月 9 日</strong>公开发布了迄今最强的系统 <strong>GPT-5.6</strong>，分为三档：</p>
+
+<p>- <strong>Sol</strong> — 旗舰模型，面向前沿推理和长周期 agentic 任务；带 <strong>&quot;ultra mode&quot;</strong>，把复杂任务分解到并行子代理（subagents）执行。</p>
+<p>- <strong>Terra</strong> — 性能接近 GPT-5.5，但成本约为其一半。</p>
+<p>- <strong>Luna</strong> — 最便宜最快，面向高吞吐、低延迟场景。</p>
+
+<p>同时发布 <strong>ChatGPT Work</strong> —— 一个&quot;做完整份工作&quot;而非仅回答问题的 agent。</p>
+
+<p><em>On July 9, OpenAI launched GPT-5.6 in three tiers — Sol (frontier reasoning + long-horizon agentic work, with an &quot;ultra mode&quot; that decomposes tasks across parallel subagents), Terra (near GPT-5.5 performance at ~half the cost), and Luna (cheapest/fastest for high-volume, low-latency). Alongside it: ChatGPT Work, an agent built to carry out entire jobs.</em></p>
+
+<p><strong>对工程师的意义 / Engineering Takeaway:</strong></p>
+<pre><code>
+GPT-5.6 Sol &quot;ultra mode&quot;:
+  复杂任务 ──▶ 分解 ──▶ [subagent 1] [subagent 2] [subagent 3] (并行)
+                              │           │           │
+                              └─── 汇总 / merge results ───┘
+</code></pre>
+<p>&quot;ultra mode&quot; 的并行子代理架构，正是我们在系统设计里讲的 <strong>fan-out / scatter-gather</strong> 模式落到 LLM 推理层——把一个大任务拆成可并行的子任务再聚合，用延迟换质量。</p>
+
+<p><em>The subagent fan-out is the classic scatter-gather pattern applied to LLM inference — decompose, run in parallel, merge. Trade latency for answer quality.</em></p>
+
+<hr/>
+
+<h3>📰 Story 2: Anthropic 年化营收突破 $30B，反超 OpenAI</h3>
+<h3>Anthropic&#x27;s Annualized Revenue Crosses $30B, Overtaking OpenAI</h3>
+
+<p><strong>来源 / Source:</strong> [AI Central](https://aicentral.substack.com/p/the-ai-landscape-july-2026) | [ReleaseBot: Anthropic](https://releasebot.io/updates/anthropic)</p>
+
+<p>Anthropic 年化营收本月<strong>突破 $300 亿</strong>，比 OpenAI 高出近 $60 亿——这一反转归功于其<strong>企业市场</strong>的专注：采购合同、API 扩张、以及为企业工作流训练的 Claude。</p>
+
+<p>产品侧：</p>
+<p>- <strong>Claude Sonnet 5</strong> 在 Microsoft Foundry (Azure) 全面可用，企业可直接用已有的 Azure 消费额度部署。</p>
+<p>- <strong>Claude Cowork</strong> 扩展到 web 和移动端，跨设备同步会话与文件，新增 Microsoft 365 写入工具（起草邮件、管理日历、创建/更新 OneDrive &amp; SharePoint 文件）。</p>
+<p>- <strong>Claude Code</strong> 新增内置桌面浏览器、改进的 <code>/doctor</code> 检查、以及 auto mode 安全增强。</p>
+
+<p><em>Anthropic&#x27;s annualized revenue crossed $30B, roughly $6B ahead of OpenAI, driven by its enterprise focus. Claude Sonnet 5 went GA on Microsoft Foundry (Azure); Claude Cowork expanded to web/mobile with Microsoft 365 write tools; Claude Code added a built-in desktop browser, improved <code>/doctor</code>, and auto-mode safety upgrades.</em></p>
+
+<p><strong>对工程师的意义 / Engineering Takeaway:</strong></p>
+<p>企业采购 + 云市场分发（Azure/Bedrock/Vertex）正在成为 AI 收入的主战场。&quot;模型好&quot;已不是壁垒，<strong>部署摩擦最小化</strong>（用现有云额度、审计日志、admin 控制）才是。</p>
+
+<p><em>The moat is shifting from raw model quality to deployment friction — existing cloud commits, audit logs, admin controls. Distribution beats benchmarks.</em></p>
+
+<hr/>
+
+<h3>📰 Story 3: Google Gemini 3.5 Pro 延期发布至 7 月</h3>
+<h3>Google&#x27;s Gemini 3.5 Pro Slips to July</h3>
+
+<p><strong>来源 / Source:</strong> [AI Landscape July 2026](https://aicentral.substack.com/p/the-ai-landscape-july-2026)</p>
+
+<p>原定 6 月发布的 <strong>Gemini 3.5 Pro</strong> 推迟到 <strong>7 月</strong>——企业测试者在<strong>推理和代码生成</strong>性能上发现了问题，Google 选择推迟而非硬发。</p>
+
+<p>与此同时，Google 正与 OpenAI、Anthropic 就一个<strong>自愿框架</strong>展开谈判：面向美国政府的前沿模型发布与早期安全测试流程（建立在 6 月的行政令基础上）。</p>
+
+<p><em>Gemini 3.5 Pro, promised for June, slipped to July after enterprise testers flagged reasoning and code-generation issues. Meanwhile Google, OpenAI, and Anthropic are negotiating a voluntary framework for releasing frontier models to the U.S. government with early security testing.</em></p>
+
+<p><strong>对工程师的意义 / Engineering Takeaway:</strong></p>
+<p>&quot;宁可延期，不发次品&quot;——在 code-gen 这类高可验证任务上，回归（regression）藏不住。这也是为什么<strong>评测门禁（eval gates）</strong> 现在是模型发布流水线的一等公民，跟我们给 byte-by-byte 加的 QA gate 是同一个道理。</p>
+
+<p><em>&quot;Delay over ship-broken&quot; — regressions in verifiable tasks like code-gen can&#x27;t hide. Eval gates are now first-class in release pipelines, same principle as our content QA gate.</em></p>
+
+<hr/>
+
+<h2>📌 本周主线 / This Week&#x27;s Throughline</h2>
+
+<p>三家巨头，三种打法：</p>
+<p>- <strong>OpenAI</strong> 冲能力上限 + agent 化（Sol ultra mode, ChatGPT Work）</p>
+<p>- <strong>Anthropic</strong> 闷声赚企业钱（$30B 营收，云市场分发）</p>
+<p>- <strong>Google</strong> 稳字当头（宁延期不发次品）</p>
+
+<p>对求职者：面试里聊 AI 趋势时，别只背模型名字——讲<strong>架构模式</strong>（scatter-gather 子代理）、<strong>商业逻辑</strong>（部署摩擦 vs 模型质量）、<strong>工程纪律</strong>（eval gates）。这才是 senior/staff 的视角。</p>
+
+<p><em>Three giants, three strategies: OpenAI pushes capability + agents, Anthropic quietly wins enterprise, Google plays it safe. For interviews: don&#x27;t recite model names — discuss architecture patterns, business logic, and engineering discipline. That&#x27;s the senior/staff lens.</em></p>
+
+<hr/>
+
+<p>📚 References: [SpaceDaily — GPT-5.6](https://spacedaily.com/m-on-july-9-2026-openai-opened-its-most-powerful-system-yet-to-the-public-gpt-5-6-in-three-tiers-named-sol-terra-and-luna-alongside-an-agent-it-calls-chatgpt-work-built-to-carry/) | [AI Central — July 2026 Landscape](https://aicentral.substack.com/p/the-ai-landscape-july-2026) | [ReleaseBot — Anthropic](https://releasebot.io/updates/anthropic)</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-12</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

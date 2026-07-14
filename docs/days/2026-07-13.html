@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-07-13</title>
+  <meta name="description" content="byte-by-byte daily lessons for Monday, July 13, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Monday, July 13, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-07-13.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-07-12.html" style="color:var(--text2)">← 2026-07-12</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-07-13</span>
+    <h1>Monday, July 13, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-07-12.html" class="day-nav-btn">← 2026-07-12</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">System Design Synthesis — Day 89: Read Path vs. Write Path Optimiza...</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>System Design Synthesis — Day 89: Read Path vs. Write Path Optimization</h1>
+
+<h2>🏗️ 系统设计综合 / System Design Synthesis</h2>
+<p><strong>专题: 读路径 vs 写路径优化 — 如何为不同访问模式设计不同的架构</strong></p>
+<p><strong>Topic: Read Path vs. Write Path Optimization — Designing Different Architectures for Different Access Patterns</strong></p>
+
+<hr/>
+
+<h3>想象你在 Meta 担任系统设计面试官 / Imagine You're a System Design Interviewer at Meta</h3>
+
+<p>被面试者给出一个看似合理的设计：一个数据库，所有读写都走同一路径。你会问什么？</p>
+
+<p><em>A candidate gives you a seemingly reasonable design: one database, all reads and writes go through the same path. What do you ask?</em></p>
+
+<p><strong>"你的读写比是多少？为什么读和写要用同一个代码路径？"</strong></p>
+
+<p><em>"What's your read-to-write ratio? Why do reads and writes share the same code path?"</em></p>
+
+<hr/>
+
+<h3>核心洞察：读写路径天生就不同 / Core Insight: Read &amp; Write Paths Are Fundamentally Different</h3>
+
+<table><thead><tr><th>维度 / Dimension</th><th>读路径 Read Path</th><th>写路径 Write Path</th></tr></thead><tbody><tr><td>一致性要求</td><td>可以稍微过时 (stale OK)</td><td>必须持久化、原子性</td></tr><tr><td>延迟要求</td><td>极低 P99</td><td>可接受稍高延迟</td></tr><tr><td>扩展方式</td><td>水平扩展 Read Replicas</td><td>分片 / WAL / Append-only</td></tr><tr><td>失败影响</td><td>降级展示旧数据</td><td>数据丢失，不可接受</td></tr><tr><td>缓存友好性</td><td>极高</td><td>低（需要失效）</td></tr></tbody></table>
+
+<hr/>
+
+<h3>真实架构对比 / Real Architecture Comparison</h3>
+
+<p><strong>案例 1: Twitter/X 的 Fanout 演化</strong></p>
+<ul><li>早期: 写入时 fanout (写路径重)，每条 tweet 写入所有 follower 的 timeline</li><li>问题: 名人用户 (Lady Gaga) 写一条推文 → 1亿次写入</li><li>解法: 混合模式 — 普通用户写入 fanout，名人用户读取时 merge</li><li><strong>教训</strong>: 写路径优化 ≠ 读路径简单，需要针对访问模式拆分</li></ul>
+
+<p><strong>案例 2: Facebook TAO (The Associations and Objects)</strong></p>
+<ul><li>读路径: 多层缓存 (L1 local + L2 regional) → 99%+ hit rate</li><li>写路径: 单 leader 写入 MySQL → 异步复制到 cache</li><li>关键: 读写完全解耦，读路径不感知底层存储</li></ul>
+
+<p><strong>案例 3: Kafka 作为写路径的 Buffer</strong></p>
+<ul><li>写路径: Producer → Kafka → Consumer (异步，append-only)</li><li>读路径: 预计算结果存入 Redis/Elasticsearch 供查询</li><li><strong>CQRS (Command Query Responsibility Segregation)</strong> 的极致体现</li></ul>
+
+<hr/>
+
+<h3>架构图 / Architecture</h3>
+
+<div class="diagram-block">Write Path (写路径):
+Client → API Gateway → Write Service
+           ↓
+        Kafka (Buffer)
+           ↓
+   [Consumer Workers] → Primary DB (MySQL/Postgres)
+           ↓
+   Async Replication → Read Replicas
+           ↓
+   Cache Invalidation → Redis
+
+Read Path (读路径):
+Client → API Gateway → Read Service
+           ↓
+        Redis Cache (L1) ←─── 99% hits
+           ↓ (miss)
+     Read Replicas (L2)
+           ↓ (miss)
+     Primary DB (L3, rare)</div>
+
+<hr/>
+
+<h3>什么时候分离读写路径？/ When to Separate Read/Write Paths?</h3>
+
+<p>✅ <strong>必须分离 / Must separate:</strong></p>
+<ul><li>读写比 &gt; 10:1 (大多数 CRUD 应用)</li><li>读延迟 SLA &lt; 10ms 但写可以接受 100ms</li><li>需要不同的一致性保证 (最终一致 vs 强一致)</li></ul>
+
+<p>⚠️ <strong>可以不分离 / Can skip:</strong></p>
+<ul><li>小型服务 (&lt;1K QPS)</li><li>强一致性是硬需求 (金融交易)</li><li>团队规模小，复杂度成本高过收益</li></ul>
+
+<hr/>
+
+<h3>常见的坑 / Common Mistakes</h3>
+
+<p>❌ <strong>对所有查询都用主库</strong> → 浪费 read replica 资源，主库成瓶颈</p>
+<p>❌ <strong>缓存失效逻辑在写路径</strong> → 难以维护，容易造成不一致</p>
+<p>❌ <strong>忽略复制延迟</strong> → 读到过时数据导致用户困惑 (刚刚发的帖子看不到)</p>
+<p>✅ <strong>最佳实践</strong>: 写后读 (read-after-write consistency) 用 session token 或 version 号</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<ul><li><a href="https://www.usenix.org/conference/atc13/technical-sessions/presentation/bronson">Facebook TAO: The Power of the Graph</a> — USENIX ATC 2013</li><li><a href="https://blog.twitter.com/engineering/en_us/topics/infrastructure/2021/processing-billions-of-events-in-real-time-at-twitter">Twitter's Fanout Service Evolution</a> — Twitter Engineering Blog</li><li><a href="https://martinfowler.com/bliki/CQRS.html">CQRS Pattern — Martin Fowler</a></li><li><a href="https://dataintensive.net/">Designing Data-Intensive Applications, Chapter 5</a> — Martin Kleppmann</li></ul>
+
+<h3>🧒 ELI5</h3>
+<p>想象餐厅里有两条通道：一条是厨房的"出菜口"（读），另一条是"点餐台"（写）。如果每次有人点单，厨师都要停下来处理，出菜就慢了。把两条通道分开，厨师专心做菜，收银员专心收单，效率翻倍。</p>
+
+<p><em>Imagine a restaurant with two lanes: one for food pickup (read), one for order taking (write). If the chef had to stop cooking every time someone placed an order, meals would be slow. Separate the lanes — chef cooks, cashier takes orders — double the throughput.</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">Algorithms — Day 89: #39 Combination Sum (Medium) — Backtracking</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>Algorithms — Day 89: #39 Combination Sum (Medium) — Backtracking</h1>
+
+<h2>💻 算法 / Algorithms</h2>
+<p><strong>#39 Combination Sum — Medium 🟡</strong></p>
+<p>🧩 <strong>回溯模式 (2/9)</strong> — building on the template from Day 88 (Subsets)</p>
+
+<p><a href="https://leetcode.com/problems/combination-sum/">🔗 LeetCode #39</a> | <a href="https://neetcode.io/problems/combination-target-sum">📹 NeetCode Solution</a></p>
+
+<hr/>
+
+<h3>这道题是模板的哪种变体？/ How Does This Vary from the Subsets Template?</h3>
+
+<p>上次 Subsets (#78) 是枚举<strong>所有可能的选择子集</strong>，没有约束。</p>
+<p>这次 Combination Sum 加了一个约束：<strong>子集元素之和 = target</strong>，而且<strong>元素可以重复使用</strong>。</p>
+
+<p><em>Last time (Subsets #78), we enumerated all possible subsets with no constraint. This time, there's a constraint: <strong>subset must sum to target</strong>, and <strong>elements can be reused</strong> (unlimited times).</em></p>
+
+<p><strong>两个关键变化 / Two Key Differences:</strong></p>
+<ol><li><strong>停止条件变了</strong>: <code>sum == target</code> (不再是遍历到末尾)</li><li><strong>剪枝新增</strong>: <code>sum &gt; target</code> 时直接 return</li><li><strong>重复使用</strong>: 递归时起点不后移 (<code>start</code> 而非 <code>start + 1</code>)</li></ol>
+
+<hr/>
+
+<h3>真实场景 / Real-World Analogy</h3>
+
+<p>想象你在收银台，手里有 <code>[2, 3, 6, 7]</code> 面值的硬币（可以重复用），需要凑出恰好 7 元。</p>
+<p>回溯法就是把所有"试着凑"的过程系统化：选一枚，继续凑，凑不上去就退回来换一枚。</p>
+
+<p><em>Imagine you have coins of denominations <code>[2, 3, 6, 7]</code> (unlimited supply) and need to make exactly $7. Backtracking systematically tries every combination: pick one, keep going, backtrack when over.</em></p>
+
+<hr/>
+
+<h3>模板对比 / Mapping to Template</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# 通用模版回顾 / General Template Recap&#10;def backtrack(path, choices):&#10;    if IS_COMPLETE(path):       # ← 这里变了: sum(path) == target&#10;        result.append(path[:])&#10;        return&#10;    for choice in choices:&#10;        if IS_VALID(choice):    # ← 这里加了: sum(path) + choice &lt;= target&#10;            path.append(choice)&#10;            backtrack(path, NEXT_CHOICES)  # ← 这里变了: 起点不后移&#10;            path.pop()">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># 通用模版回顾 / General Template Recap</span>
+<span style="color:#c678dd;">def</span> backtrack(path, choices):
+    <span style="color:#c678dd;">if</span> IS_COMPLETE(path):       <span style="color:#5c6370;"># ← 这里变了: sum(path) == target</span>
+        result.append(path[:])
+        <span style="color:#c678dd;">return</span>
+    <span style="color:#c678dd;">for</span> choice <span style="color:#c678dd;">in</span> choices:
+        <span style="color:#c678dd;">if</span> IS_VALID(choice):    <span style="color:#5c6370;"># ← 这里加了: sum(path) + choice &lt;= target</span>
+            path.append(choice)
+            backtrack(path, NEXT_CHOICES)  <span style="color:#5c6370;"># ← 这里变了: 起点不后移</span>
+            path.pop()</code></pre>
+</div>
+
+<hr/>
+
+<h3>Python Solution (with trace)</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def combinationSum(candidates: list[int], target: int) -&gt; list[list[int]]:&#10;    result = []&#10;    candidates.sort()  # sort for early termination (pruning)&#10;&#10;    def backtrack(start: int, path: list[int], remaining: int):&#10;        # Base case: found valid combination&#10;        if remaining == 0:&#10;            result.append(path[:])  # shallow copy of current path&#10;            return&#10;&#10;        for i in range(start, len(candidates)):&#10;            num = candidates[i]&#10;&#10;            # Pruning: since sorted, if this candidate exceeds remaining,&#10;            # all subsequent ones will too — stop early&#10;            if num &gt; remaining:&#10;                break&#10;&#10;            path.append(num)&#10;            backtrack(i, path, remaining - num)  # i not i+1: allow reuse!&#10;            path.pop()  # undo choice&#10;&#10;    backtrack(0, [], target)&#10;    return result&#10;&#10;# Trace: candidates=[2,3,6,7], target=7&#10;# backtrack(0, [], 7)&#10;#   pick 2 → backtrack(0, [2], 5)&#10;#     pick 2 → backtrack(0, [2,2], 3)&#10;#       pick 2 → backtrack(0, [2,2,2], 1)&#10;#         pick 2 → remaining -1 &lt; 0, break&#10;#         pick 3 → remaining -2 &lt; 0, break&#10;#       pop 2 → [2,2]&#10;#       pick 3 → backtrack(1, [2,2,3], 0) → ✅ append [2,2,3]&#10;#       pop 3 → [2,2]&#10;#     pop 2 → [2]&#10;#     pick 3 → backtrack(1, [2,3], 2)&#10;#       pick 3 → remaining -1 &lt; 0, break&#10;#     ...&#10;#   pick 7 → backtrack(3, [7], 0) → ✅ append [7]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> combinationSum(candidates: list[int], target: int) -&gt; list[list[int]]:
+    result = []
+    candidates.sort()  <span style="color:#5c6370;"># sort for early termination (pruning)</span>
+
+    <span style="color:#c678dd;">def</span> backtrack(start: int, path: list[int], remaining: int):
+        <span style="color:#5c6370;"># Base case: found valid combination</span>
+        <span style="color:#c678dd;">if</span> remaining == <span style="color:#56b6c2;">0</span>:
+            result.append(path[:])  <span style="color:#5c6370;"># shallow copy of current path</span>
+            <span style="color:#c678dd;">return</span>
+
+        <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(start, len(candidates)):
+            num = candidates[i]
+
+            <span style="color:#5c6370;"># Pruning: since sorted, if this candidate exceeds remaining,</span>
+            <span style="color:#5c6370;"># all subsequent ones will too — stop early</span>
+            <span style="color:#c678dd;">if</span> num &gt; remaining:
+                <span style="color:#c678dd;">break</span>
+
+            path.append(num)
+            backtrack(i, path, remaining - num)  <span style="color:#5c6370;"># i not i+1: allow reuse!</span>
+            path.pop()  <span style="color:#5c6370;"># undo choice</span>
+
+    backtrack(<span style="color:#56b6c2;">0</span>, [], target)
+    <span style="color:#c678dd;">return</span> result
+
+<span style="color:#5c6370;"># Trace: candidates=[2,3,6,7], target=7</span>
+<span style="color:#5c6370;"># backtrack(0, [], 7)</span>
+<span style="color:#5c6370;">#   pick 2 → backtrack(0, [2], 5)</span>
+<span style="color:#5c6370;">#     pick 2 → backtrack(0, [2,2], 3)</span>
+<span style="color:#5c6370;">#       pick 2 → backtrack(0, [2,2,2], 1)</span>
+<span style="color:#5c6370;">#         pick 2 → remaining -1 &lt; 0, break</span>
+<span style="color:#5c6370;">#         pick 3 → remaining -2 &lt; 0, break</span>
+<span style="color:#5c6370;">#       pop 2 → [2,2]</span>
+<span style="color:#5c6370;">#       pick 3 → backtrack(1, [2,2,3], 0) → ✅ append [2,2,3]</span>
+<span style="color:#5c6370;">#       pop 3 → [2,2]</span>
+<span style="color:#5c6370;">#     pop 2 → [2]</span>
+<span style="color:#5c6370;">#     pick 3 → backtrack(1, [2,3], 2)</span>
+<span style="color:#5c6370;">#       pick 3 → remaining -1 &lt; 0, break</span>
+<span style="color:#5c6370;">#     ...</span>
+<span style="color:#5c6370;">#   pick 7 → backtrack(3, [7], 0) → ✅ append [7]</span></code></pre>
+</div>
+
+<hr/>
+
+<h3>Complexity</h3>
+<ul><li><strong>Time: O(n^(T/M))</strong> where T = target, M = min candidate value — branching factor</li><li><strong>Space: O(T/M)</strong> — max recursion depth is target/minimum (for deepest combination)</li><li>Pruning via <code>sort + break</code> drastically reduces actual nodes visited</li></ul>
+
+<hr/>
+
+<h3>举一反三 / Connect to Pattern Block</h3>
+
+<table><thead><tr><th>题目</th><th>变化点</th><th>关键差异</th></tr></thead><tbody><tr><td>#78 Subsets</td><td>无约束，所有子集</td><td>每步都加入结果</td></tr><tr><td><strong>#39 Combination Sum</strong></td><td>目标和，可重复</td><td><code>remaining==0</code> 才加；<code>i</code> 不后移</td></tr><tr><td>#46 Permutations (下一题)</td><td>全排列，顺序重要</td><td>用 <code>visited</code> 数组，每次从头遍历</td></tr><tr><td>#40 Combination Sum II</td><td>有重复元素，每个只用一次</td><td>跳过重复：<code>if i &gt; start and nums[i] == nums[i-1]: continue</code></td></tr><tr><td>#90 Subsets II</td><td>Subsets + 重复元素</td><td>同样跳过重复逻辑</td></tr></tbody></table>
+
+<p><strong>关键规律 / Key Rule:</strong></p>
+<ul><li>不需要排列顺序 (combination) → <code>for i in range(start, n)</code> 保证不重复</li><li>需要排列顺序 (permutation) → <code>for i in range(0, n)</code> + visited array</li></ul>
+
+<hr/>
+
+<h3>📚 References</h3>
+<ul><li><a href="https://leetcode.com/problems/combination-sum/">LeetCode #39 Combination Sum</a></li><li><a href="https://neetcode.io/problems/combination-target-sum">NeetCode Video — Combination Sum</a></li><li><a href="https://www.youtube.com/watch?v=nMnEkBgJbHw">Backtracking Explained — Back To Back SWE</a></li></ul>
+
+<h3>🧒 ELI5</h3>
+<p>想象你在玩拼图，每块拼图可以反复用。你的目标是拼出"高度为7"的塔。你一块一块地叠，叠过头了就退一步换一块。这就是回溯——系统地试，不对就退，直到找到所有答案。</p>
+
+<p><em>Imagine building a tower of height 7 using blocks of various sizes (reusable). You stack blocks one by one; if too tall, remove the last block and try a different one. That's backtracking — systematic trial and undo.</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">Soft Skills Synthesis — Day 89: The Staff Engineer's Dilemma</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>Soft Skills Synthesis — Day 89: The Staff Engineer's Dilemma</h1>
+
+<h2>🗣️ 软技能综合 / Soft Skills Synthesis</h2>
+<p><strong>专题: Staff 工程师的两难困境 — 技术深度 vs. 广度影响力</strong></p>
+<p><strong>Topic: The Staff Engineer's Dilemma — Technical Depth vs. Broad Influence</strong></p>
+
+<hr/>
+
+<h3>面试题 / Interview Prompt</h3>
+
+<blockquote><em>"You're a Staff Engineer. You could spend the next quarter either: (A) diving deep on a critical performance problem that only you can solve, or (B) helping 5 other teams unblock architectural decisions. Both are valuable. How do you decide? What have you done in practice?"</em></blockquote>
+
+<blockquote>你是一名 Staff 工程师。你可以选择：(A) 深入解决一个只有你能解决的关键性能问题，或 (B) 帮助5个团队解决架构障碍。两者都有价值。你如何决策？实际中你是怎么做的？</blockquote>
+
+<hr/>
+
+<h3>为什么这道题很重要 / Why This Question Matters</h3>
+
+<p>Staff+ 角色的核心张力：<strong>个人贡献者 (IC) vs. 乘数效应 (Multiplier)</strong>。</p>
+<p>大多数候选人有很好的深度故事，但面试官想看的是：你是否理解自己在组织中的<strong>杠杆点</strong>。</p>
+
+<p><em>The core tension of Staff+ roles: individual contributor vs. force multiplier. Most candidates have great depth stories, but interviewers want to see if you understand your <strong>leverage point</strong> in the org.</em></p>
+
+<hr/>
+
+<h3>STAR 框架 / STAR Breakdown</h3>
+
+<p><strong>情境 / Situation:</strong></p>
+<p>"我在一家增长期公司担任 Staff 工程师，负责基础架构平台团队。Q2 末，我们有一个关键的数据库连接池问题（只有我对这套遗留系统足够熟悉），同时5个产品团队正等待我评审他们的服务拆分方案。"</p>
+
+<p><strong>任务 / Task:</strong></p>
+<p>"我需要决定如何分配接下来6周的时间，同时不让任何一边严重受阻。"</p>
+
+<p><strong>行动 / Action:</strong></p>
+<p>"我做了三件事：</p>
+<ol><li><strong>评估不对称性</strong>：性能问题的 P95 延迟是 800ms，但不影响核心转化路径。我估算5个团队被阻塞的总工程师·周 ≈ 40人周。数字说话。</li><li><strong>降低深度工作的机会成本</strong>：我花了1天写了一份诊断文档，把我对遗留系统的知识外化，让另一名高级工程师可以接手70%的工作。</li><li><strong>批量解决架构评审</strong>：我把5个团队的评审合并成2次跨团队工作坊，同步输出设计原则文档，而不是5次单独评审。"</li></ol>
+
+<p><strong>结果 / Result:</strong></p>
+<p>"架构评审在3周内完成，解放了约38人周的工程产能。性能问题由高级工程师主导，我 review 关键节点，4周后解决。我在两件事上都没有成为瓶颈。"</p>
+
+<hr/>
+
+<h3>❌ 常见错误回答 / Common Bad Answers</h3>
+
+<p>❌ "我会两件都做" — 没有展示优先级判断力</p>
+<p>❌ "个人深度贡献更重要，影响力是管理者的事" — 误解 Staff 级别的期望</p>
+<p>❌ "我会让团队等我" — 不具备乘数思维</p>
+
+<hr/>
+
+<h3>✅ 优秀回答的信号 / Signals of a Strong Answer</h3>
+
+<p>✅ <strong>量化杠杆</strong>: 能计算出哪条路径的总影响更大</p>
+<p>✅ <strong>知识转移</strong>: 主动减少"只有你能做"的工作（避免成为单点故障）</p>
+<p>✅ <strong>批量效率</strong>: 找到能同时服务多个受众的工作方式（文档、工作坊、ADR）</p>
+<p>✅ <strong>时间感</strong>: 区分"紧急"和"重要"，理解延迟成本</p>
+
+<hr/>
+
+<h3>Senior vs. Staff 的边界 / Senior vs. Staff Boundary</h3>
+
+<table><thead><tr><th></th><th>Senior</th><th>Staff</th></tr></thead><tbody><tr><td>主要产出</td><td>我写的代码/系统</td><td>我影响的团队/决策</td></tr><tr><td>成功衡量</td><td>完成了什么</td><td>解放了多少产能</td></tr><tr><td>知识共享</td><td>"我来解决"</td><td>"我来教，让你们能解决"</td></tr><tr><td>风险观</td><td>技术风险</td><td>组织风险 + 技术风险</td></tr></tbody></table>
+
+<hr/>
+
+<h3>📚 References</h3>
+<ul><li><a href="https://staffeng.com/book">Staff Engineer: Leadership Beyond the Management Track — Will Larson</a></li><li><a href="https://lethain.com/elegant-puzzle/">The Engineering Executive's Primer — Will Larson</a></li><li><a href="https://jvns.ca/blog/brag-documents/">Brag Documents: Get Credit for Your Work — Julia Evans</a></li></ul>
+
+<h3>🧒 ELI5</h3>
+<p>想象你是学校里最会数学的人。你可以自己解100道题，也可以花时间教10个同学，让他们每人解10道题——结果一样，但你的时间更有价值了。Staff 工程师选的往往是"教"，而不是"自己全解"。</p>
+
+<p><em>Imagine you're the best math student. You could solve 100 problems yourself, or spend time teaching 10 classmates — each then solves 10. Same output, but your time is more leveraged. Staff engineers often choose "teach" over "do it all myself."</em></p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">AI News Roundup</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>AI News Roundup</h1>
+<p><em>Day 89 — AI News | 2026-07-13</em></p>
+
+<hr/>
+
+<h2>🤖 AI 新闻速递 / AI News Roundup</h2>
+
+<p><em>本期新闻来源于本周网络搜索结果，所有具体数据均来自已验证来源。</em></p>
+<p><em>All stories sourced from web searches conducted this week. Figures only from verified sources.</em></p>
+
+<hr/>
+
+<h3>📰 Story 1: OpenAI 发布 GPT-5.6 — Sol / Terra / Luna 三档模型</h3>
+<h3>OpenAI Releases GPT-5.6 in Three Tiers: Sol, Terra, Luna</h3>
+
+<p><strong>来源 / Source:</strong> <a href="https://spacedaily.com/m-on-july-9-2026-openai-opened-its-most-powerful-system-yet-to-the-public-gpt-5-6-in-three-tiers-named-sol-terra-and-luna-alongside-an-agent-it-calls-chatgpt-work-built-to-carry/">SpaceDaily</a> | <a href="https://medium.com/@diwakar-dayalan/ai-intelligence-briefing-week-of-july-6-2026-5896a1416a2c">AI Intelligence Briefing</a></p>
+
+<p>OpenAI 于 <strong>7 月 9 日</strong>公开发布了迄今最强的系统 <strong>GPT-5.6</strong>，分为三档：</p>
+
+<ul><li><strong>Sol</strong> — 旗舰模型，面向前沿推理和长周期 agentic 任务；带 <strong>"ultra mode"</strong>，把复杂任务分解到并行子代理（subagents）执行。</li><li><strong>Terra</strong> — 性能接近 GPT-5.5，但成本约为其一半。</li><li><strong>Luna</strong> — 最便宜最快，面向高吞吐、低延迟场景。</li></ul>
+
+<p>同时发布 <strong>ChatGPT Work</strong> —— 一个"做完整份工作"而非仅回答问题的 agent。</p>
+
+<p><em>On July 9, OpenAI launched GPT-5.6 in three tiers — Sol (frontier reasoning + long-horizon agentic work, with an "ultra mode" that decomposes tasks across parallel subagents), Terra (near GPT-5.5 performance at ~half the cost), and Luna (cheapest/fastest for high-volume, low-latency). Alongside it: ChatGPT Work, an agent built to carry out entire jobs.</em></p>
+
+<p><strong>对工程师的意义 / Engineering Takeaway:</strong></p>
+<div class="diagram-block">GPT-5.6 Sol "ultra mode":
+  复杂任务 ──▶ 分解 ──▶ [subagent 1] [subagent 2] [subagent 3] (并行)
+                              │           │           │
+                              └─── 汇总 / merge results ───┘</div>
+<p>"ultra mode" 的并行子代理架构，正是我们在系统设计里讲的 <strong>fan-out / scatter-gather</strong> 模式落到 LLM 推理层——把一个大任务拆成可并行的子任务再聚合，用延迟换质量。</p>
+
+<p><em>The subagent fan-out is the classic scatter-gather pattern applied to LLM inference — decompose, run in parallel, merge. Trade latency for answer quality.</em></p>
+
+<hr/>
+
+<h3>📰 Story 2: Anthropic 年化营收突破 $30B，反超 OpenAI</h3>
+<h3>Anthropic's Annualized Revenue Crosses $30B, Overtaking OpenAI</h3>
+
+<p><strong>来源 / Source:</strong> <a href="https://aicentral.substack.com/p/the-ai-landscape-july-2026">AI Central</a> | <a href="https://releasebot.io/updates/anthropic">ReleaseBot: Anthropic</a></p>
+
+<p>Anthropic 年化营收本月<strong>突破 $300 亿</strong>，比 OpenAI 高出近 $60 亿——这一反转归功于其<strong>企业市场</strong>的专注：采购合同、API 扩张、以及为企业工作流训练的 Claude。</p>
+
+<p>产品侧：</p>
+<ul><li><strong>Claude Sonnet 5</strong> 在 Microsoft Foundry (Azure) 全面可用，企业可直接用已有的 Azure 消费额度部署。</li><li><strong>Claude Cowork</strong> 扩展到 web 和移动端，跨设备同步会话与文件，新增 Microsoft 365 写入工具（起草邮件、管理日历、创建/更新 OneDrive &amp; SharePoint 文件）。</li><li><strong>Claude Code</strong> 新增内置桌面浏览器、改进的 <code>/doctor</code> 检查、以及 auto mode 安全增强。</li></ul>
+
+<p><em>Anthropic's annualized revenue crossed $30B, roughly $6B ahead of OpenAI, driven by its enterprise focus. Claude Sonnet 5 went GA on Microsoft Foundry (Azure); Claude Cowork expanded to web/mobile with Microsoft 365 write tools; Claude Code added a built-in desktop browser, improved <code>/doctor</code>, and auto-mode safety upgrades.</em></p>
+
+<p><strong>对工程师的意义 / Engineering Takeaway:</strong></p>
+<p>企业采购 + 云市场分发（Azure/Bedrock/Vertex）正在成为 AI 收入的主战场。"模型好"已不是壁垒，<strong>部署摩擦最小化</strong>（用现有云额度、审计日志、admin 控制）才是。</p>
+
+<p><em>The moat is shifting from raw model quality to deployment friction — existing cloud commits, audit logs, admin controls. Distribution beats benchmarks.</em></p>
+
+<hr/>
+
+<h3>📰 Story 3: Google Gemini 3.5 Pro 延期发布至 7 月</h3>
+<h3>Google's Gemini 3.5 Pro Slips to July</h3>
+
+<p><strong>来源 / Source:</strong> <a href="https://aicentral.substack.com/p/the-ai-landscape-july-2026">AI Landscape July 2026</a></p>
+
+<p>原定 6 月发布的 <strong>Gemini 3.5 Pro</strong> 推迟到 <strong>7 月</strong>——企业测试者在<strong>推理和代码生成</strong>性能上发现了问题，Google 选择推迟而非硬发。</p>
+
+<p>与此同时，Google 正与 OpenAI、Anthropic 就一个<strong>自愿框架</strong>展开谈判：面向美国政府的前沿模型发布与早期安全测试流程（建立在 6 月的行政令基础上）。</p>
+
+<p><em>Gemini 3.5 Pro, promised for June, slipped to July after enterprise testers flagged reasoning and code-generation issues. Meanwhile Google, OpenAI, and Anthropic are negotiating a voluntary framework for releasing frontier models to the U.S. government with early security testing.</em></p>
+
+<p><strong>对工程师的意义 / Engineering Takeaway:</strong></p>
+<p>"宁可延期，不发次品"——在 code-gen 这类高可验证任务上，回归（regression）藏不住。这也是为什么<strong>评测门禁（eval gates）</strong> 现在是模型发布流水线的一等公民，跟我们给 byte-by-byte 加的 QA gate 是同一个道理。</p>
+
+<p><em>"Delay over ship-broken" — regressions in verifiable tasks like code-gen can't hide. Eval gates are now first-class in release pipelines, same principle as our content QA gate.</em></p>
+
+<hr/>
+
+<h2>📌 本周主线 / This Week's Throughline</h2>
+
+<p>三家巨头，三种打法：</p>
+<ul><li><strong>OpenAI</strong> 冲能力上限 + agent 化（Sol ultra mode, ChatGPT Work）</li><li><strong>Anthropic</strong> 闷声赚企业钱（$30B 营收，云市场分发）</li><li><strong>Google</strong> 稳字当头（宁延期不发次品）</li></ul>
+
+<p>对求职者：面试里聊 AI 趋势时，别只背模型名字——讲<strong>架构模式</strong>（scatter-gather 子代理）、<strong>商业逻辑</strong>（部署摩擦 vs 模型质量）、<strong>工程纪律</strong>（eval gates）。这才是 senior/staff 的视角。</p>
+
+<p><em>Three giants, three strategies: OpenAI pushes capability + agents, Anthropic quietly wins enterprise, Google plays it safe. For interviews: don't recite model names — discuss architecture patterns, business logic, and engineering discipline. That's the senior/staff lens.</em></p>
+
+<hr/>
+
+<div class="diagram-block">📚 References: [SpaceDaily — GPT-5.6](https://spacedaily.com/m-on-july-9-2026-openai-opened-its-most-powerful-system-yet-to-the-public-gpt-5-6-in-three-tiers-named-sol-terra-and-luna-alongside-an-agent-it-calls-chatgpt-work-built-to-carry/) | [AI Central — July 2026 Landscape](https://aicentral.substack.com/p/the-ai-landscape-july-2026) | [ReleaseBot — Anthropic](https://releasebot.io/updates/anthropic)</div>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
