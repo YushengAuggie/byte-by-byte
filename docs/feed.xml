@@ -5,8 +5,190 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 14 Jul 2026 06:08:30 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 14 Jul 2026 15:13:53 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-14</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-14</guid>
+      <pubDate>Tue, 14 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>复习日 / Review Day — Day 90</h2>
+
+<p>🔄 <strong>复习日 / Review Day</strong></p>
+<p>今天是第 90 天，也是第 18 个复习日！回顾过去4天的内容 (Day 86-89)。</p>
+
+<p><strong>回顾主题 / Topics Covered:</strong></p>
+<p>- Day 86: Design Twitter (Heap) · Configuration Management (pydantic-settings, 12-Factor)</p>
+<p>- Day 87: Find Median from Data Stream (Two Heaps) · Logging Best Practices (structlog, Correlation IDs)</p>
+<p>- Day 88: Subsets (Backtracking #1/9) · Feature Flags (Simple → LaunchDarkly)</p>
+<p>- Day 89: Combination Sum (Backtracking #2/9) · Mocking (unittest.mock)</p>
+
+<hr/>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+
+<p><strong>Q1: [💻 Algorithms — 回溯模式 Backtracking]</strong></p>
+
+<p><code>Combination Sum</code> 和 <code>Subsets</code> 都用回溯模板，但有两个关键区别。说出这两个区别，并解释为什么 Combination Sum 递归时用 <code>backtrack(i, ...)</code> 而不是 <code>backtrack(i+1, ...)</code>。</p>
+
+<p><em>Both Combination Sum and Subsets use the backtracking template, but they differ in two key ways. Name them, and explain why Combination Sum uses <code>backtrack(i, ...)</code> instead of <code>backtrack(i+1, ...)</code>.</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>两个关键区别 / Two Key Differences:</strong></p>
+
+<p>1. <strong>终止条件不同 / Different base cases:</strong></p>
+<p>- <code>Subsets</code>: 每个节点都加入结果（遍历完所有选项）</p>
+<p>- <code>Combination Sum</code>: 只有 <code>remaining == 0</code> 时才加入结果；<code>remaining &lt; 0</code> 时剪枝</p>
+
+<p>2. <strong>是否允许重复 / Element reuse:</strong></p>
+<p>- <code>Subsets</code>: <code>backtrack(i+1, ...)</code> — 每个元素只用一次，不回头</p>
+<p>- <code>Combination Sum</code>: <code>backtrack(i, ...)</code> — 同一个元素可以重复选，<code>i</code> 不往后移</p>
+
+<p><strong>为什么 <code>i</code> 不后移？/ Why not advance <code>i</code>?</strong></p>
+<p>因为题目允许同一个数字无限次使用（candidates 可重复选）。用 <code>i</code> 而非 <code>i+1</code> 表示：下次递归时我还可以再选这个数字。</p>
+
+<p>核心洞察：<code>start</code> 的移动方向控制了&quot;去重&quot;的方式：</p>
+<p>- <code>i+1</code> → 不重用（Subsets, Permutations with dedup）</p>
+<p>- <code>i</code> → 允许重用（Combination Sum）</p>
+<p>- <code>0</code> + visited → 全排列（Permutations）</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [🐍 Python Craft — Mocking]</strong></p>
+
+<p>以下代码有一个常见的 mocking 错误。指出问题并给出修复方案。</p>
+
+<p><em>The following code has a common mocking mistake. Identify the issue and fix it.</em></p>
+
+<pre><code>
+# myapp/payment.py
+import stripe
+
+class PaymentService:
+    def charge(self, amount):
+        return stripe.Charge.create(amount=amount)
+
+# test_payment.py
+from unittest.mock import patch
+from myapp.payment import PaymentService
+
+@patch(&quot;stripe.Charge.create&quot;)  # ← Is this correct?
+def test_charge(mock_create):
+    mock_create.return_value = {&quot;id&quot;: &quot;ch_123&quot;}
+    svc = PaymentService()
+    result = svc.charge(1000)
+    assert result == {&quot;id&quot;: &quot;ch_123&quot;}
+</code></pre>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>问题 / The Bug:</strong></p>
+<p><code>@patch(&quot;stripe.Charge.create&quot;)</code> patches the object in the <code>stripe</code> module, but <code>myapp/payment.py</code> has already imported <code>stripe</code> and holds a reference to it. For this specific case it <em>happens to work</em> because <code>stripe.Charge.create</code> is accessed via attribute lookup at call time — but the <strong>best practice</strong> is to always patch where the name is <strong>used</strong>, not where it&#x27;s <strong>defined</strong>.</p>
+
+<p><strong>修复 / Fix:</strong></p>
+<pre><code>
+# Patch in the module under test
+@patch(&quot;myapp.payment.stripe.Charge.create&quot;)
+def test_charge(mock_create):
+    mock_create.return_value = {&quot;id&quot;: &quot;ch_123&quot;}
+    svc = PaymentService()
+    result = svc.charge(1000)
+    assert result == {&quot;id&quot;: &quot;ch_123&quot;}
+    mock_create.assert_called_once_with(amount=1000)
+</code></pre>
+
+<p><strong>黄金规则 / Golden Rule:</strong></p>
+<p>&gt; Patch where the name is <strong>looked up</strong>, not where it&#x27;s <strong>defined</strong>.</p>
+
+<p>如果代码用 <code>from stripe import Charge</code>，那 patch 路径就是 <code>myapp.payment.Charge.create</code>，不是 <code>stripe.Charge.create</code>。</p>
+
+<p><strong>附加测试 / Bonus — side_effect for error testing:</strong></p>
+<pre><code>
+@patch(&quot;myapp.payment.stripe.Charge.create&quot;)
+def test_charge_declined(mock_create):
+    mock_create.side_effect = stripe.error.CardError(&quot;Declined&quot;, &quot;card_declined&quot;, 402)
+    with pytest.raises(stripe.error.CardError):
+        PaymentService().charge(1000)
+</code></pre>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [🏗️ System Design — Design Twitter / Heap]</strong></p>
+
+<p>在 Design Twitter 题目（LeetCode #355）中，<code>getNewsFeed()</code> 需要从每个关注对象中获取最近的推文并合并为全局 Top 10。用什么数据结构最高效？时间复杂度是多少？</p>
+
+<p><em>In Design Twitter (LeetCode #355), <code>getNewsFeed()</code> must merge recent tweets from all followed users into a global Top 10. Which data structure is most efficient, and what&#x27;s the time complexity?</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>最优解：最小堆 (Min-Heap) / Optimal: Min-Heap</strong></p>
+
+<p><strong>思路 / Approach:</strong></p>
+<p>- 每个用户维护一个推文列表（按时间戳倒序）</p>
+<p>- <code>getNewsFeed</code> 时：把所有关注者（含自己）的最新推文放入最小堆</p>
+<p>- 堆按时间戳维护，堆顶是&quot;最小（最旧）&quot;的候选推文</p>
+<p>- Pop 10 次 = 全局最近 10 条</p>
+
+<pre><code>
+import heapq
+from collections import defaultdict
+
+class Twitter:
+    def __init__(self):
+        self.timestamp = 0
+        self.tweets = defaultdict(list)   # userId → [(ts, tweetId), ...]
+        self.following = defaultdict(set)
+
+    def postTweet(self, userId, tweetId):
+        self.tweets[userId].append((self.timestamp, tweetId))
+        self.timestamp += 1
+
+    def getNewsFeed(self, userId):
+        heap = []  # min-heap: (-timestamp, tweetId, userId, index)
+        candidates = self.following[userId] | {userId}
+
+        for uid in candidates:
+            tweets = self.tweets[uid]
+            if tweets:
+                idx = len(tweets) - 1
+                ts, tid = tweets[idx]
+                heapq.heappush(heap, (-ts, tid, uid, idx))
+
+        result = []
+        while heap and len(result) &lt; 10:
+            neg_ts, tid, uid, idx = heapq.heappop(heap)
+            result.append(tid)
+            if idx &gt; 0:  # more tweets from this user
+                ts, ntid = self.tweets[uid][idx - 1]
+                heapq.heappush(heap, (-ts, ntid, uid, idx - 1))
+        return result
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- <code>postTweet</code>: O(1)</p>
+<p>- <code>getNewsFeed</code>: O(F·log F) where F = # followed users (heap ops)</p>
+<p>- Space: O(F) for the heap at any time</p>
+
+<p><strong>为什么用最小堆而非最大堆？/ Why min-heap with negated timestamp?</strong></p>
+<p>Python&#x27;s <code>heapq</code> is a min-heap. We negate timestamps so the &quot;largest&quot; (most recent) timestamp is treated as the smallest value in the heap.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。回溯模板 + Mocking 黄金规则 + 堆的多路合并 — 三个高频考点，掌握了面试无敌！</em></p>
+
+<p><em>Spaced repetition builds mastery. Backtracking templates + mocking rules + heap-based merge — three high-frequency interview patterns, nail these and you&#x27;re unstoppable!</em></p>
+
+<p>📅 明天继续新内容！Day 91 starts tomorrow!</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-13</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
