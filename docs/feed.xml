@@ -5,8 +5,768 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 14 Jul 2026 15:13:53 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 15 Jul 2026 17:05:15 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-15</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-15</guid>
+      <pubDate>Wed, 15 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>系统设计 / System Design — Day 91 (Synthesis)</h2>
+<p><strong>Date:</strong> 2026-07-15 | <strong>Phase:</strong> Expert | <strong>Mode:</strong> Synthesis</p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design</h2>
+<p><strong>综合对比: 分布式系统一致性模型全景 / Consistency Models Landscape</strong></p>
+
+<hr/>
+
+<h3>想象这个场景 / Imagine This</h3>
+
+<p>你已经覆盖了 60 个系统设计主题。现在面试官问：&quot;给我讲讲各种一致性模型，以及在真实系统中如何选择。&quot;</p>
+
+<p>You&#x27;ve covered 60 system design topics. Now the interviewer asks: &quot;Walk me through consistency models and how you choose between them in real systems.&quot;</p>
+
+<hr/>
+
+<h3>一致性模型谱 / The Consistency Spectrum</h3>
+
+<pre><code>
+强一致性                                          最终一致性
+Strong ◄────────────────────────────────────► Eventual
+
+Linearizability  Sequential  Causal  Read-Your-  Eventual
+(线性化)          (顺序化)    (因果)  Writes      (最终)
+     │               │          │        │          │
+  最慢/最贵        较慢       适中    较快/廉价    最快
+  Slowest          Slower   Moderate  Faster     Fastest
+     │               │          │        │          │
+  ZooKeeper       RDBMS     DynamoDB  DynamoDB   Cassandra
+  etcd            Spanner   (option)  (eventual) (W+R&lt;N)
+  Redis w/AOF     CockroachDB         Cosmos DB
+</code></pre>
+
+<hr/>
+
+<h3>你学过的系统 → 一致性选择 / Systems You&#x27;ve Covered → Choices</h3>
+
+<p>| 系统 | 一致性级别 | 为什么？|</p>
+<p>|------|-----------|---------|</p>
+<p>| Redis (Caching) | Eventual (replica lag) | 性能 &gt; 一致性，cache miss 可重建 |</p>
+<p>| Distributed Cache | Strong (via locking) | 防止 thundering herd |</p>
+<p>| URL Shortener | Eventual is OK | 短链&quot;刚创建后读不到&quot;可接受 |</p>
+<p>| Payment System | Linearizable | 钱不能双花，必须强一致 |</p>
+<p>| Chat (WhatsApp) | Causal | 消息顺序必须因果一致（A→B→C） |</p>
+<p>| Rate Limiter | Approximate OK | 偶尔多放一个请求没关系 |</p>
+<p>| Stock Exchange | Linearizable | 撮合引擎必须全局有序 |</p>
+<p>| Distributed Lock | Linearizable | 锁语义要求线性化 |</p>
+<p>| Search Autocomplete | Eventual | 稍旧的索引完全可接受 |</p>
+<p>| Recommendation | Eventual | 推荐延迟更新无所谓 |</p>
+
+<hr/>
+
+<h3>CAP 回顾 + PACELC 升级 / CAP Revisited + PACELC Upgrade</h3>
+
+<p>你在 Day 12 学了 CAP。真实工程师用 <strong>PACELC</strong>：</p>
+
+<p>You covered CAP on Day 12. Real engineers use <strong>PACELC</strong>:</p>
+
+<pre><code>
+CAP:    分区时选 C 或 A
+PACELC: 分区时选 C 或 A，无分区时选 Latency 或 Consistency
+
+CAP:    During partition, choose C or A
+PACELC: During Partition → C or A; Else → Latency or Consistency
+</code></pre>
+
+<p>例子：DynamoDB = PA/EL（分区时选可用，正常时选低延迟）</p>
+<p>Spanner = PC/EC（两者都选一致性，靠原子钟）</p>
+
+<hr/>
+
+<h3>关键设计选择 / Key Design Choices</h3>
+
+<p><strong>Write path 决定一致性：</strong></p>
+<pre><code>
+# Strong consistency: sync replication
+def write(data):
+    primary.write(data)
+    for replica in replicas:
+        replica.write(data)  # 同步等待
+    return &quot;ok&quot;  # 所有副本确认后返回
+
+# Eventual consistency: async replication  
+def write(data):
+    primary.write(data)
+    async_replicate_to(replicas, data)  # 异步，不等待
+    return &quot;ok&quot;  # 立即返回
+</code></pre>
+
+<p><strong>Quorum 中间路线：</strong></p>
+<p>- N=3 副本，W=2 写，R=2 读 → W+R &gt; N → 强一致</p>
+<p>- W=1，R=1 → 最终一致</p>
+<p>- DynamoDB 让你<strong>在请求级别</strong>选择！</p>
+
+<hr/>
+
+<h3>常见陷阱 / Common Mistakes</h3>
+
+<p><strong>别踩这个坑 — 一致性误区：</strong></p>
+
+<p>1. ❌ &quot;加了缓存，数据库和缓存怎么保持一致？&quot; → 答案：<strong>不能完全保持</strong>，只能减少窗口</p>
+<p>2. ❌ 为所有系统选强一致性 → 支付 OK，推荐系统杀鸡用牛刀</p>
+<p>3. ❌ 混淆&quot;一致性&quot;（CAP）和&quot;持久性&quot;（ACID D）→ 两个不同维度</p>
+<p>4. ✅ 告诉面试官：<strong>&quot;我选最终一致性，因为 X；用 [技术] 来缓解 Y 风险&quot;</strong></p>
+
+<hr/>
+
+<h3>面试答题框架 / Interview Framework</h3>
+
+<pre><code>
+问自己 3 个问题 / Ask yourself 3 questions:
+
+1. 数据错误的代价是什么？
+   Cost of incorrect data?
+   高（支付/锁）→ 强一致  低（推荐/feed）→ 最终
+
+2. 读写比例是多少？
+   Read/write ratio?
+   读多 → 异步复制副本  写多 → 考虑分片
+
+3. 用户能接受多少延迟？
+   User latency tolerance?
+   低延迟需求 → 最终一致 + 补偿机制
+</code></pre>
+
+<hr/>
+
+<h3>综合回顾图 / Big Picture</h3>
+
+<pre><code>
+             你设计的系统分布:
+                You&#x27;ve designed:
+
+Financial Layer    ████████  Linearizable
+(Payment, Exchange)          (ZooKeeper, Spanner)
+
+Infrastructure     ██████    Strong-to-Causal
+(Cache, Lock, ID gen)        (Redis, etcd, Snowflake)
+
+Communication      █████     Causal
+(Chat, Collab Docs)          (vector clocks, CRDTs)
+
+Content/Discovery  ████████  Eventual
+(Search, CDN, Rec)           (Cassandra, DynamoDB)
+</code></pre>
+
+<hr/>
+
+<h3>📚 深度参考 / References</h3>
+
+<p>- [Consistency Models — Jepsen.io](https://jepsen.io/consistency)</p>
+<p>- [PACELC: Beyond CAP — Daniel Abadi](https://dbmsmusings.blogspot.com/2010/04/problems-with-cap-and-yahoos-little.html)</p>
+<p>- [Designing Data-Intensive Applications — Ch.9](https://dataintensive.net/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>一致性就像多个账本记同一笔钱：</p>
+<p><strong>强一致</strong> = 每个账本同时更新，写完才能读</p>
+<p><strong>最终一致</strong> = 先更新主账本，其他账本&quot;最终&quot;会跟上</p>
+<p><strong>选哪个</strong> = 取决于&quot;读到旧数据有多糟糕&quot;</p>
+
+<p>Consistency is like multiple ledgers tracking the same money:</p>
+<p><strong>Strong</strong> = all ledgers update simultaneously before anyone can read</p>
+<p><strong>Eventual</strong> = update the main ledger, others catch up &quot;eventually&quot;</p>
+<p><strong>Which to choose</strong> = depends on &quot;how bad is it to read stale data&quot;</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>算法 / Algorithms — Day 91</h2>
+<p><strong>Date:</strong> 2026-07-15 | <strong>Phase:</strong> Expert | <strong>Pattern:</strong> Backtracking (3/9)</p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms</h2>
+<p><strong>#46 Permutations (Medium) 🟡</strong></p>
+
+<p>🧩 <strong>回溯模式 (3/9)</strong> — building on the template from earlier in this block</p>
+
+<p>上次：#78 Subsets（选不选）、#39 Combination Sum（可重复选）</p>
+<p>今天：#46 Permutations — <strong>有序，每个元素只用一次，顺序不同算不同结果</strong></p>
+
+<p>Previous: #78 Subsets (include/exclude), #39 Combination Sum (can reuse)</p>
+<p>Today: #46 Permutations — <strong>ordered, each element used exactly once, order matters</strong></p>
+
+<hr/>
+
+<h3>🔗 链接 / Links</h3>
+
+<p>- 🔗 [LeetCode #46](https://leetcode.com/problems/permutations/) 🟡 Medium</p>
+<p>- 📹 [NeetCode 视频](https://neetcode.io/problems/permutations)</p>
+
+<hr/>
+
+<h3>真实类比 / Real-World Analogy</h3>
+
+<p>想象 3 个人（A, B, C）坐一排座位。有多少种排法？</p>
+<p>3! = 6 种：ABC, ACB, BAC, BCA, CAB, CBA</p>
+<p><strong>Permutations = 全排列</strong>，每次选一个新人坐下，再从剩余的里选。</p>
+
+<p>Imagine 3 people (A, B, C) sitting in a row. How many arrangements?</p>
+<p>3! = 6: ABC, ACB, BAC, BCA, CAB, CBA</p>
+<p><strong>Permutations = all orderings</strong>, pick one at a time from the remaining.</p>
+
+<hr/>
+
+<h3>问题 / Problem</h3>
+
+<pre><code>
+Input:  nums = [1, 2, 3]
+Output: [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
+</code></pre>
+
+<hr/>
+
+<h3>模版对比：Permutations vs Subsets / Template Comparison</h3>
+
+<pre><code>
+# Subsets (Day 88): choices = remaining elements after index
+# 顺序不重要，[1,2] == [2,1]，用 start index 避免重复
+
+def subsets(nums):
+    result, path = [], []
+    def bt(start):
+        result.append(path[:])
+        for i in range(start, len(nums)):
+            path.append(nums[i])
+            bt(i + 1)  # start from NEXT index
+            path.pop()
+    bt(0)
+    return result
+
+# Permutations: choices = ALL unused elements
+# 顺序重要，[1,2] != [2,1]，用 visited set 追踪用过的
+
+def permutations(nums):
+    result, path = [], []
+    used = set()
+    
+    def bt():
+        if len(path) == len(nums):  # 用完所有元素 = 一个完整排列
+            result.append(path[:])
+            return
+        for num in nums:            # 从所有 nums 里选
+            if num in used:
+                continue            # 跳过已用的
+            used.add(num)
+            path.append(num)
+            bt()                    # 递归，不传 start（顺序重要！）
+            path.pop()
+            used.remove(num)        # 撤销
+    
+    bt()
+    return result
+
+# 测试 / Test
+print(permutations([1, 2, 3]))
+# [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
+</code></pre>
+
+<hr/>
+
+<h3>执行追踪 / Execution Trace</h3>
+
+<pre><code>
+nums = [1, 2, 3]
+
+bt(), path=[], used={}
+├─ choose 1: path=[1], used={1}
+│  ├─ choose 2: path=[1,2], used={1,2}
+│  │  └─ choose 3: path=[1,2,3] ✅ append → pop 3
+│  ├─ choose 3: path=[1,3], used={1,3}
+│  │  └─ choose 2: path=[1,3,2] ✅ append → pop 2
+│  └─ pop 1
+├─ choose 2: path=[2], used={2}
+│  ├─ choose 1: path=[2,1] → choose 3 → [2,1,3] ✅
+│  └─ choose 3: path=[2,3] → choose 1 → [2,3,1] ✅
+└─ choose 3: ... → [3,1,2] ✅, [3,2,1] ✅
+</code></pre>
+
+<hr/>
+
+<h3>关键洞察：Subsets vs Permutations 核心区别</h3>
+
+<p>| | Subsets | Permutations |</p>
+<p>|--|---------|-------------|</p>
+<p>| 顺序重要？ | ❌ [1,2]==[2,1] | ✅ [1,2]!=[2,1] |</p>
+<p>| 避免重复方式 | <code>start</code> index | <code>used</code> set |</p>
+<p>| 递归参数 | <code>bt(start+1)</code> | <code>bt()</code> (无参数) |</p>
+<p>| 结果数量 | 2^n | n! |</p>
+<p>| 终止条件 | 每层都收集 | <code>len(path)==len(nums)</code> |</p>
+
+<hr/>
+
+<h3>复杂度 / Complexity</h3>
+
+<p>- <strong>Time:</strong> O(n × n!) — n! 个排列，每个花 O(n) 复制</p>
+<p>- <strong>Space:</strong> O(n) 递归栈深度 + O(n × n!) 输出</p>
+
+<hr/>
+
+<h3>举一反三 / Pattern Variations in This Block</h3>
+
+<pre><code>
+本 block 的回溯变体 / Variations in this Backtracking block:
+
+#78  Subsets        → 选/不选，bt(start+1)
+#39  Combination Sum → 可重复，bt(start)（不后移）
+#46  Permutations   → 全排列，used set，bt() 无参
+#90  Subsets II     → 有重复，排序+跳过同层重复 (coming soon)
+#40  Combo Sum II   → 同上，但不重复使用 (coming soon)
+#79  Word Search    → 2D backtrack (coming soon)
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [LeetCode #46 Official Solution](https://leetcode.com/problems/permutations/editorial/)</p>
+<p>- [NeetCode Backtracking Playlist](https://neetcode.io/roadmap)</p>
+<p>- [Backtracking Template — Labuladong](https://labuladong.online/algo/essential-technique/backtrack-framework/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>全排列就像给 3 朋友拍合照：第一个位置有 3 人选，第二个位置剩 2 人，第三个位置剩 1 人。</p>
+<p>3×2×1 = 6 张不同的照片。回溯就是：试一个人站第一位，拍完所有后续组合，再换下一个人试。</p>
+
+<p>Permutations are like taking photos with 3 friends in a row: 3 choices for spot 1, 2 for spot 2, 1 for spot 3.</p>
+<p>3×2×1 = 6 different photos. Backtracking: try each person in spot 1, exhaust all combos, then swap and try again.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>软技能 / Soft Skills — Day 91 (Synthesis)</h2>
+<p><strong>Date:</strong> 2026-07-15 | <strong>Phase:</strong> Expert | <strong>Mode:</strong> Synthesis</p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills</h2>
+<p><strong>综合场景：当技术债和新项目同时紧急 / When Tech Debt and New Features Collide</strong></p>
+
+<hr/>
+
+<h3>场景 / Scenario</h3>
+
+<p>面试官问：</p>
+<p><em>&quot;你的团队有大量技术债，但产品团队刚提了一个高优先级的新功能。你作为 Staff Engineer，如何决策？&quot;</em></p>
+
+<p>Interviewer asks:</p>
+<p><em>&quot;Your team has significant tech debt, but product just landed a high-priority feature. As Staff Engineer, how do you navigate this?&quot;</em></p>
+
+<hr/>
+
+<h3>为什么难 / Why It&#x27;s Hard</h3>
+
+<p>这不是技术问题——是<strong>优先级冲突 + 利益相关方管理 + 长期 vs 短期</strong>的三角难题。</p>
+<p>错误选择：</p>
+<p>- 🚫 全做新功能 → 债越堆越高，最终系统崩塌</p>
+<p>- 🚫 全还技术债 → 产品不买账，业务受损，团队被质疑</p>
+<p>- ✅ <strong>框架：量化、谈判、分摊</strong></p>
+
+<p>This isn&#x27;t a technical problem—it&#x27;s a <strong>priority conflict + stakeholder alignment + long vs short-term</strong> triangle.</p>
+
+<hr/>
+
+<h3>STAR 拆解 / STAR Breakdown</h3>
+
+<p><strong>Situation:</strong></p>
+<p>我们的支付服务有 3 年历史，每个 sprint 有 20% 时间处理 incident。产品希望我们 6 周内交付实时结算功能。</p>
+
+<p>Our payment service had 3 years of tech debt; 20% of sprint capacity was incident triage. Product wanted real-time settlements in 6 weeks.</p>
+
+<p><strong>Task:</strong></p>
+<p>作为 Staff，平衡团队可持续性和产品交付节奏。</p>
+
+<p>Balance team sustainability with product delivery cadence.</p>
+
+<p><strong>Action:</strong></p>
+
+<pre><code>
+步骤 1: 量化技术债的成本
+Step 1: Quantify tech debt cost
+→ &quot;20% sprint capacity = 每月 X 工程师周，折合 $Y 运营成本&quot;
+→ 把&quot;感觉&quot;变成数字。数字说服产品。
+
+步骤 2: 提方案而非问题
+Step 2: Bring proposals, not complaints
+→ Option A: 6周纯功能，后续2 sprint 专门还债
+→ Option B: 8周，每周30%还债，70%新功能
+→ 让产品选，而不是你单独决定
+
+步骤 3: 谈判&quot;债务预算&quot;
+Step 3: Negotiate a &quot;debt budget&quot;
+→ 争取每季度 1 sprint 专门技术投资
+→ 写进团队协议，而非每次都重新谈判
+
+步骤 4: 可视化技术债
+Step 4: Make debt visible
+→ Dashboard 显示：代码覆盖率、平均 MTTR、incident 频率
+→ 高层看到数据，而不只是&quot;工程师抱怨&quot;
+</code></pre>
+
+<p><strong>Result:</strong></p>
+<p>选了 Option B，8周交付。债务率从 20% 降到 8%，下一季度新功能速度反而提升了 30%（因为 incident 少了）。</p>
+
+<hr/>
+
+<h3>❌ 差回答 vs ✅ 好回答</h3>
+
+<p><strong>❌ 差：</strong></p>
+<p>&quot;我跟产品说技术债很重要，我们需要时间处理。&quot;</p>
+<p><em>→ 没有数字，没有方案，听起来是借口</em></p>
+
+<p><strong>✅ 好：</strong></p>
+<p>&quot;我量化了技术债的成本：每月 40 小时 incident 响应 = 相当于 1 个工程师的产出。我带着两个方案找产品团队，数据摆在桌上，让他们参与决策——而不是强迫接受。&quot;</p>
+
+<hr/>
+
+<h3>Staff/Principal 级别要点 / Staff+ Insights</h3>
+
+<p>1. <strong>量化一切</strong> — &quot;感觉慢&quot;不如&quot;P50 latency 从 80ms 升到 450ms&quot;</p>
+<p>2. <strong>造选择，而非提要求</strong> — 给 2-3 个方案，各自量化 tradeoff</p>
+<p>3. <strong>让技术债可见</strong> — 工程指标进入产品/管理层的 review cycle</p>
+<p>4. <strong>建立系统，而非每次谈判</strong> — 季度&quot;innovation sprint&quot;写进 charter</p>
+
+<hr/>
+
+<h3>综合：你已学过的相关主题 / Synthesis: Related Topics You&#x27;ve Covered</h3>
+
+<p>| Day | 主题 | 连接 |</p>
+<p>|-----|------|------|</p>
+<p>| 16 | 如何处理技术债 | 直接相关 |</p>
+<p>| 8  | 模糊需求 | 需求不清时的框架 |</p>
+<p>| 38 | 系统设计 tradeoff | 同样的决策框架 |</p>
+<p>| 21 | 如何说 No | 拒绝的艺术 |</p>
+<p>| 13 | 传达坏消息 | 给利益相关方呈现不好的数字 |</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [StaffEng.com — Staff stories on tech debt](https://staffeng.com/guides/managing-technical-quality)</p>
+<p>- [Will Larson — An Elegant Puzzle (tech debt framing)](https://lethain.com/elegant-puzzle/)</p>
+<p>- [Increment Magazine — Engineering prioritization](https://increment.com/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>技术债就像家里乱掉的玩具。你可以继续玩新游戏（新功能），但总有一天找不到东西了（系统崩掉）。</p>
+<p>聪明的做法：<strong>边玩新游戏，边每天收拾一点</strong>——而不是等到全乱了再大扫除。</p>
+
+<p>Tech debt is like a messy room. You can keep playing new games (new features), but eventually you can&#x27;t find anything (system fails).</p>
+<p>The smart move: <strong>play new games AND tidy a little each day</strong> — don&#x27;t wait for a big cleanup.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Python Craft — Day 91</h2>
+<p><strong>Date:</strong> 2026-07-15 | <strong>Category:</strong> Testing | <strong>Topic:</strong> Fixtures &amp; Factories — pytest, factory_boy</p>
+
+<hr/>
+
+<h2>🎨 前端 / Python Craft</h2>
+<p><strong>Fixtures &amp; Factories — pytest, factory_boy</strong></p>
+
+<hr/>
+
+<h3>真实场景 / Real Scenario</h3>
+
+<p>你在测试一个 UserService，每个测试需要不同状态的用户（新用户/老用户/管理员/封禁用户）。</p>
+<p><strong>你在做什么？</strong>重复写 <code>User(name=&quot;test&quot;, email=&quot;...&quot;, role=&quot;admin&quot;, ...)</code> 20 遍？</p>
+
+<p>You&#x27;re testing a UserService; each test needs users in different states.</p>
+<p><strong>What are you doing?</strong> Writing <code>User(name=&quot;test&quot;, email=&quot;...&quot;, role=&quot;admin&quot;, ...)</code> 20 times?</p>
+
+<hr/>
+
+<h3>pytest Fixtures — 依赖注入的测试工具 / DI for Tests</h3>
+
+<pre><code>
+# conftest.py — shared fixtures live here
+import pytest
+from myapp.models import User, db
+
+@pytest.fixture
+def db_session():
+    &quot;&quot;&quot;每个测试得到干净的 DB / Clean DB per test&quot;&quot;&quot;
+    db.create_all()
+    yield db.session
+    db.session.rollback()
+    db.drop_all()
+
+@pytest.fixture  
+def basic_user(db_session):
+    &quot;&quot;&quot;普通用户 fixture / Basic user fixture&quot;&quot;&quot;
+    user = User(name=&quot;Alice&quot;, email=&quot;alice@example.com&quot;, role=&quot;user&quot;)
+    db_session.add(user)
+    db_session.commit()
+    return user
+
+@pytest.fixture
+def admin_user(db_session):
+    &quot;&quot;&quot;管理员 fixture / Admin user fixture&quot;&quot;&quot;
+    user = User(name=&quot;Bob&quot;, email=&quot;bob@example.com&quot;, role=&quot;admin&quot;)
+    db_session.add(user)
+    db_session.commit()
+    return user
+
+# test_user_service.py
+def test_regular_user_cannot_delete(basic_user, user_service):
+    with pytest.raises(PermissionError):
+        user_service.delete_user(basic_user.id, actor=basic_user)
+
+def test_admin_can_delete(admin_user, basic_user, user_service):
+    user_service.delete_user(basic_user.id, actor=admin_user)
+    assert User.query.get(basic_user.id) is None
+</code></pre>
+
+<p><strong>Fixture 作用域 / Scope:</strong></p>
+<pre><code>
+@pytest.fixture(scope=&quot;session&quot;)   # 整个测试会话共享 / shared across session
+@pytest.fixture(scope=&quot;module&quot;)    # 模块内共享 / shared per module
+@pytest.fixture(scope=&quot;function&quot;)  # 默认：每个测试独立 / default: per test
+</code></pre>
+
+<hr/>
+
+<h3>factory_boy — 工厂模式生成测试数据</h3>
+
+<pre><code>
+# pip install factory-boy
+import factory
+from factory.faker import Faker
+from myapp.models import User, Post
+
+class UserFactory(factory.Factory):
+    class Meta:
+        model = User
+    
+    # 默认值 — 每次调用自动生成不重复的数据
+    name = Faker(&quot;name&quot;)              # &quot;John Smith&quot;, &quot;Maria Garcia&quot;...
+    email = factory.LazyAttribute(
+        lambda o: f&quot;{o.name.lower().replace(&#x27; &#x27;, &#x27;.&#x27;)}@example.com&quot;
+    )
+    role = &quot;user&quot;
+    is_active = True
+    created_at = factory.Faker(&quot;date_time_this_year&quot;)
+
+class AdminUserFactory(UserFactory):
+    &quot;&quot;&quot;继承 UserFactory，只覆盖 role / Inherit, override role&quot;&quot;&quot;
+    role = &quot;admin&quot;
+
+class PostFactory(factory.Factory):
+    class Meta:
+        model = Post
+    
+    title = Faker(&quot;sentence&quot;, nb_words=6)
+    author = factory.SubFactory(UserFactory)  # 自动创建关联对象!
+    published = True
+
+# 使用 / Usage
+user = UserFactory()                  # 一个随机用户
+admin = AdminUserFactory()            # 一个随机管理员
+banned = UserFactory(is_active=False) # 覆盖某字段
+users = UserFactory.create_batch(10)  # 批量创建 10 个
+
+# pytest 里结合使用 / Combine with pytest
+@pytest.fixture
+def user():
+    return UserFactory()
+
+def test_post_by_user(user):
+    post = PostFactory(author=user)
+    assert post.author.role == &quot;user&quot;
+</code></pre>
+
+<hr/>
+
+<h3>❌ 常见错误 vs ✅ 正确做法</h3>
+
+<pre><code>
+# ❌ 硬编码测试数据 — 脆弱，维护噩梦
+def test_something():
+    user = User(
+        id=1, name=&quot;Test User&quot;, email=&quot;test@test.com&quot;,
+        role=&quot;admin&quot;, created_at=datetime(2024, 1, 1)
+    )
+    # ... 20 个测试，每个都这样写
+
+# ✅ 工厂 + 只指定测试关心的字段
+def test_admin_action():
+    admin = AdminUserFactory()        # 其他字段自动填充
+    assert admin.role == &quot;admin&quot;      # 只测你关心的
+
+# ❌ 测试间共享可变 fixture 状态
+@pytest.fixture(scope=&quot;session&quot;)
+def user():
+    return User(name=&quot;Shared&quot;)  # 危险！测试互相影响
+
+# ✅ 默认 function scope，每测试新实例
+@pytest.fixture  # scope=&quot;function&quot; 默认
+def user():
+    return UserFactory()
+</code></pre>
+
+<hr/>
+
+<h3>猜输出 / Guess the Output</h3>
+
+<pre><code>
+class SequenceUserFactory(factory.Factory):
+    class Meta:
+        model = User
+    name = factory.Sequence(lambda n: f&quot;User {n}&quot;)
+
+u1 = SequenceUserFactory()
+u2 = SequenceUserFactory()
+print(u1.name, u2.name)
+</code></pre>
+
+<p><strong>A)</strong> <code>User 0</code>, <code>User 0</code></p>
+<p><strong>B)</strong> <code>User 0</code>, <code>User 1</code></p>
+<p><strong>C)</strong> <code>User 1</code>, <code>User 2</code></p>
+<p><strong>D)</strong> Error</p>
+
+<p>&lt;details&gt;&lt;summary&gt;答案 / Answer&lt;/summary&gt;</p>
+
+<p><strong>B) <code>User 0</code>, <code>User 1</code></strong></p>
+<p><code>factory.Sequence</code> 维护全局计数器，每次调用递增。适合需要唯一值的字段（如 email、username）。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>何时用 / When to Use</h3>
+
+<p>| 场景 | 工具 |</p>
+<p>|------|------|</p>
+<p>| 简单 unit test，不需要 DB | <code>factory.Factory</code> (non-Django/SQLAlchemy) |</p>
+<p>| 需要 DB 写入 | <code>factory.DjangoModelFactory</code> 或 SQLAlchemy 版 |</p>
+<p>| 共享 setup/teardown | pytest fixture |</p>
+<p>| 需要唯一字段 | <code>factory.Sequence</code> 或 <code>factory.Faker</code> |</p>
+<p>| 关联对象 | <code>factory.SubFactory</code> |</p>
+
+<p><strong>何时 NOT 用 factory_boy:</strong></p>
+<p>- 测试只需要简单 dict/对象，直接构造即可</p>
+<p>- 数据结构非常简单（用 dataclass 或 namedtuple）</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [pytest fixtures docs](https://docs.pytest.org/en/stable/reference/fixtures.html)</p>
+<p>- [factory_boy docs](https://factoryboy.readthedocs.io/)</p>
+<p>- [Testing with factory_boy — Real Python](https://realpython.com/testing-third-party-apis-with-mock-servers/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>Fixture = 每次测试前自动摆好桌子、测试后收拾干净</p>
+<p>Factory = 一个&quot;生成器&quot;，帮你造测试需要的假数据，想要几个就造几个，每个都不重样</p>
+
+<p>Fixture = automatically set up the table before each test, clean up after</p>
+<p>Factory = a &quot;generator&quot; that creates fake test data on demand, each one unique</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>AI — Day 91</h2>
+<p><strong>Date:</strong> 2026-07-15 | <strong>Mode:</strong> NEWS</p>
+
+<hr/>
+
+<h2>🤖 AI 新闻 / AI News Roundup</h2>
+
+<p><em>Sources retrieved via web search, July 15, 2026</em></p>
+
+<hr/>
+
+<h3>📰 本周 AI 三件大事 / Top 3 AI Stories This Week</h3>
+
+<hr/>
+
+<p>#### 1. 大模型价格战激烈 / Fierce LLM Price War</p>
+
+<p>多家大厂在七月相继发布新模型，推动价格大幅下降。据报道，OpenAI 推出了 GPT-5.6 系列（含 Sol、Terra、Luna），xAI 推出了 Grok 4.5，竞相降低每 token 成本。Meta 据报道推出了面向 agentic 工作流的 Muse Spark 1.1 闭源付费模型。</p>
+
+<p>Multiple major vendors released new models in July, reportedly driving down per-token costs significantly. OpenAI reportedly launched the GPT-5.6 family (Sol, Terra, Luna), xAI released Grok 4.5, and Meta reportedly introduced Muse Spark 1.1, a closed paid model targeting autonomous agent workflows.</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>Frontier 模型推理成本降低意味着 enterprise AI 工作流的经济账开始跑通——之前按量计费太贵，现在 ROI 逐渐合理。</p>
+
+<p>Falling inference costs mean enterprise AI workflows that were cost-prohibitive are now becoming economically viable.</p>
+
+<p>🔗 来源: [Medium — AI News Week of July 6-12, 2026](https://medium.com/@davidakpovi/ai-news-week-of-july-6-to-july-12-2026-f81a26c49c55) | [kersai.com](https://kersai.com/ai-breakthroughs-july-2026/)</p>
+
+<hr/>
+
+<p>#### 2. OpenAI × Broadcom 推出专用 AI 推理芯片 / Custom AI Inference Chip</p>
+
+<p>据报道，OpenAI 与 Broadcom 于 6 月底联合推出代号 &quot;Jalapeño&quot; 的 LLM 专用推理加速器，目标是相比现有方案显著提升每瓦性能。DeepSeek 也据报道宣布自研推理芯片计划，降低对现有芯片商的依赖。</p>
+
+<p>OpenAI and Broadcom reportedly unveiled the &quot;Jalapeño&quot; inference accelerator in late June, targeting substantially better performance-per-watt than existing solutions. DeepSeek reportedly announced plans to design custom inference silicon to reduce reliance on current chip suppliers.</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>垂直整合硬件 + 软件正成为大模型公司控制成本和供应链的核心策略。</p>
+
+<p>Vertical integration of hardware + software is becoming the key strategy for frontier AI labs to control costs and supply chains.</p>
+
+<p>🔗 来源: [sesamedisk.com — LLMs 2026 Progress](https://sesamedisk.com/large-language-models-2026-progress/)</p>
+
+<hr/>
+
+<p>#### 3. 实时对话 AI + Agentic 能力跃升 / Real-Time Conversational AI + Agentic Leap</p>
+
+<p>OpenAI 据报道推出 GPT-Live，支持同时听、说、推理的实时语音 AI，具备现场翻译和任务委托功能。与此同时，agentic AI 能力持续提升——新模型据报道可以协调多个子 agent、操作计算机界面、处理长时间运行任务。</p>
+
+<p>OpenAI reportedly launched GPT-Live, a real-time voice AI capable of simultaneous listening, speaking, and reasoning, with live translation and task delegation. Agentic capabilities are reportedly advancing — new models can reportedly coordinate sub-agents, interact with computer interfaces, and handle long-running tasks.</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>AI 从&quot;问答工具&quot;进化成&quot;自主执行者&quot;。对后端工程师而言：会有越来越多的系统需要暴露 API 供 AI agent 调用——这是新的设计范式。</p>
+
+<p>AI is evolving from &quot;Q&amp;A tool&quot; to &quot;autonomous executor.&quot; For backend engineers: more systems will need to expose APIs for AI agents — a new design paradigm.</p>
+
+<p>🔗 来源: [llm-stats.com](https://llm-stats.com/llm-updates) | [kersai.com](https://kersai.com/ai-breakthroughs-july-2026/)</p>
+
+<hr/>
+
+<h3>💡 后端工程师视角 / Backend Engineer&#x27;s Take</h3>
+
+<pre><code>
+价格战 → 用量爆增 → 你的 API 会被 AI agent 调用
+                    → 需要考虑 rate limiting (Day 17)
+                    → 幂等性变得更重要 (Day 38 Payment)
+                    → 可观测性 / tracing 更复杂 (Day 68)
+
+专用芯片 → 推理延迟继续降低
+          → 实时 AI 嵌入产品成为标配
+          → 你的系统需要 streaming response 支持
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [Medium — AI News Week of July 6-12, 2026](https://medium.com/@davidakpovi/ai-news-week-of-july-6-to-july-12-2026-f81a26c49c55)</p>
+<p>- [kersai.com — AI Breakthroughs July 2026](https://kersai.com/ai-breakthroughs-july-2026/)</p>
+<p>- [sesamedisk.com — LLMs 2026 Progress](https://sesamedisk.com/large-language-models-2026-progress/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>这周 AI 行业像超市打折季：大家争着降价，推新产品，还开始自己造芯片。</p>
+<p>结果是：AI 变得更便宜、更快、能做更多事——而且 AI &quot;自己干活&quot;（agent）的趋势越来越明显。</p>
+
+<p>This week in AI is like a supermarket sale: everyone&#x27;s cutting prices, launching new products, and building their own chips.</p>
+<p>Result: AI is getting cheaper, faster, more capable — and the trend toward AI &quot;doing things on its own&quot; (agents) is accelerating.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-14</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
