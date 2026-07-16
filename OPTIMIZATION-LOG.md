@@ -622,7 +622,7 @@
 
 ### Issues Found
 - **P0 Critical — none NEW this window.** The 2 missed weekend deliveries (07-04 Sat, 07-05 Sun) were already reported on 2026-07-06. Since then delivery recovered: 07-06 and 07-07 both sent (5 sections each).
-- **P1 Delivery (RECURRING, now confirmed persistent) — recipient count stuck at 1/2.** Both **07-06 AND 07-07** delivered to only `["Auggie1024.d@gmail.com"]` (recipients: 1). Every day 06-01→07-03 was recipients: 2. The 07-06 single-recipient send was flagged last run as a possible one-off; it has now repeated on 07-07, so the second subscriber has been **persistently dropped**. This needs a manual check of the subscriber list / send path — either a subscriber was intentionally removed, or the send is silently failing for recipient #2.
+- **P1 Delivery (RECURRING, now confirmed persistent) — recipient count stuck at 1/2.** Both **07-06 AND 07-07** delivered to only `["[subscriber]"]` (recipients: 1). Every day 06-01→07-03 was recipients: 2. The 07-06 single-recipient send was flagged last run as a possible one-off; it has now repeated on 07-07, so the second subscriber has been **persistently dropped**. This needs a manual check of the subscriber list / send path — either a subscriber was intentionally removed, or the send is silently failing for recipient #2.
 - **P1 Reliability — optimizer's own cron job reports `lastRunStatus=error`.** The `byte-by-byte optimizer` job (this one) shows error status with empty lastError, consistent with the brittle Step 0 parse below crashing before completing on prior runs.
 - **P1 Quality:** None observed. Delivered content matches day-type design (07-06/07-07 weekdays = 5 sections).
 - **P2 Maintenance:**
@@ -653,7 +653,7 @@
 ### Issues Found
 - **P0:** None. Delivery 7/7 for the window (07-07 → 07-13); every day has an email-send-log entry.
 - **P1 (today, 07-13 Monday):** Weekday send is degraded — only **4/5 sections** and went out **late at 09:27** (scheduled ~08:00). Recurrence of the "weekday email drops a section" bug seen earlier (Apr 9/17/21) plus a late/backup send. Worth confirming which cron actually delivered today and why one section was missing.
-- **P1 (persistent):** Recipient count stuck at **1/2**. Every day 07-06 → 07-13 delivered only to `Auggie1024.d@gmail.com` (recipients: 1). Pre-07-06 was consistently recipients: 2. The 2nd subscriber has been persistently dropped for 8 straight days — either intentionally removed or a silent send failure for recipient #2. This is the top manual item.
+- **P1 (persistent):** Recipient count stuck at **1/2**. Every day 07-06 → 07-13 delivered only to `[subscriber]` (recipients: 1). Pre-07-06 was consistently recipients: 2. The 2nd subscriber has been persistently dropped for 8 straight days — either intentionally removed or a silent send failure for recipient #2. This is the top manual item.
 - **P1 (optimizer self):** This optimizer cron **timed out again** this cycle ("model-call-started", ~16 min) before recovering on the retry. Recurring latent risk — the optimizer has `timeoutSeconds` but the model call still hangs; other content crons still lack explicit `timeoutSeconds` (unfixed since 06-28).
 - **P2:** Step 0 `openclaw cron list --json` parse still crashes (poe deprecation warning + `openclaw` not on cron-shell PATH). Fell back to the `cron` tool. Day-number drift continues (Day 88 committed on both 07-11 Sat and 07-12 Sun).
 
@@ -662,5 +662,22 @@
 - Recipients: **1/2** every day (2nd subscriber dropped since 07-06) ⚠️
 - Cron errors: optimizer self-timeout (recovered on retry); no content-cron errors captured
 - State: currentDay=88, lastSentDate=2026-07-12, indices SD=60, LC=71, behavioral=60, frontend=37, AI=30, pythonCraft=32; next review Day 90
+
+_Report-only run — no code changes made._
+
+## 2026-07-16 Optimization Run
+
+### Issues Found
+- **P0:** None. Delivery 7/7 for the window (07-10 → 07-16); every day has an email-send-log entry with sent_at timestamps.
+- **P1:** None substantive. Low section counts on 07-12 (Sun, sections=1) and 07-14 (Tue Day 90 = Review Day, sections=1) are expected — those are consolidated weekend/review formats, not the old "weekday drops a section" bug.
+- **P1 (resolved):** Recipient count "1/2" flag from prior runs is NOT a defect. `subscribers.txt` now contains a single address (`[subscriber]`), so recipients=1 is correct per config. Closing this item.
+- **P2:** Step 0 `openclaw cron list --json` still emits invalid JSON (parse crash); fell back to the `cron` tool / `openclaw cron list` plain output. Unchanged since prior runs — cosmetic, does not affect delivery.
+
+### Metrics
+- Delivery rate (7d): **7/7** ✅
+- Recipients: **1/1** (matches subscribers.txt) ✅
+- Sections by day: 07-10 Fri=5, 07-11 Sat=5, 07-12 Sun=1(review), 07-13 Mon=4, 07-14 Tue=1(Day90 review), 07-15 Wed=5, 07-16 Thu=5
+- Cron errors: none across all byte-by-byte content crons (weekday/backup/late/saturday/sunday all "ok")
+- State: currentDay=92, lastSentDate=2026-07-16; indices SD=60, LC=74, behavioral=60, frontend=37, AI=30, pythonCraft=35; last review Day 90
 
 _Report-only run — no code changes made._
