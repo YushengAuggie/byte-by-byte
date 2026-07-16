@@ -5,8 +5,800 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 15 Jul 2026 17:05:15 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 16 Jul 2026 15:10:02 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-16</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-16</guid>
+      <pubDate>Thu, 16 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>系统设计综合 — 分布式系统权衡的终极对比 / System Design Synthesis — Ultimate Distributed Tradeoffs</h2>
+
+<p>&gt; Day 92 · Expert · Synthesis Mode</p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design — 综合深化：一致性 vs 可用性 vs 分区容错</h2>
+
+<h3>真实场景 / Real Scenario</h3>
+
+<p>想象你是一个大厂的 Principal Engineer，架构委员会问你：</p>
+<p>&quot;我们有 5 个核心系统——缓存、消息队列、数据库、分布式锁、推荐系统。每个在 CAP 上该怎么选？为什么？&quot;</p>
+
+<p>Imagine you&#x27;re a Principal Engineer at a big tech company. The architecture committee asks: &quot;We have 5 core systems — cache, message queue, database, distributed lock, recommendation system. How should each be positioned on the CAP theorem and why?&quot;</p>
+
+<hr/>
+
+<h3>综合架构图 / Synthesis Architecture</h3>
+
+<pre><code>
+                    CAP Triangle
+                    
+                    Consistency
+                        /\
+                       /  \
+                      /    \
+           Zookeeper /      \ HBase
+           (CP)      /        \ (CP)
+                    /          \
+                   /   NO CA    \
+                  /  in dist.   \
+    CA(local) ----               ---- CA(local)
+              \                    /
+   PostgreSQL  \  PARTITION       / DynamoDB
+   (CA local)   \  TOLERANCE     / (AP)
+                 \              /
+                  \            /
+          Cassandra \          / Redis
+             (AP)    \        / (AP/CP configurable)
+                      --------
+                   Availability
+
+System Choices:
+┌─────────────────┬─────┬─────────────────────────────────┐
+│ System          │ CAP │ Why                             │
+├─────────────────┼─────┼─────────────────────────────────┤
+│ Redis Cache     │ AP  │ Stale cache OK; availability &gt; │
+│                 │     │ consistency                     │
+├─────────────────┼─────┼─────────────────────────────────┤
+│ Kafka MQ        │ AP  │ Messages can be slightly stale  │
+│                 │     │ but queue must stay available   │
+├─────────────────┼─────┼─────────────────────────────────┤
+│ PostgreSQL      │ CP  │ Financial data: consistency non-│
+│                 │     │ negotiable, sacrifice avail.    │
+├─────────────────┼─────┼─────────────────────────────────┤
+│ Zookeeper/etcd  │ CP  │ Distributed locks MUST be       │
+│ (Dist. Lock)    │     │ consistent or you get 2 leaders │
+├─────────────────┼─────┼─────────────────────────────────┤
+│ Recommendation  │ AP  │ Slightly stale recs = fine;     │
+│ System          │     │ downtime = lost revenue         │
+└─────────────────┴─────┴─────────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>深层权衡 / Deep Tradeoffs</h3>
+
+<p>#### 1. 强一致性的代价 (CP systems)</p>
+<p>- <strong>2PC (Two-Phase Commit)</strong>: 协调者故障 → 系统卡住。适合金融事务，不适合高并发写。</p>
+<p>- <strong>Raft/Paxos</strong>: 需要多数派 (quorum)。5节点集群，2节点故障 → 仍可用。但延迟增加（需要 round-trip 到多数节点）。</p>
+<p>- <strong>实际代价</strong>: LinkedIn 研究显示，CP 系统在网络抖动时 P99 延迟高 3-5x。</p>
+
+<p>#### 2. 最终一致性的工程技巧 (AP systems)</p>
+<p>- <strong>版本向量 (Vector Clocks)</strong>: DynamoDB 用于冲突检测</p>
+<p>- <strong>CRDT</strong>: Conflict-free Replicated Data Types，用于协作编辑（如 Figma）</p>
+<p>- <strong>Read Repair</strong>: 读时修复过时副本（Cassandra）</p>
+<p>- <strong>Hinted Handoff</strong>: 临时节点代为存储，节点恢复后补发（Cassandra）</p>
+
+<p>#### 3. 真实面试陷阱 / Interview Traps</p>
+
+<pre><code>
+面试官: &quot;设计一个银行转账系统&quot;
+
+❌ 初级答案: &quot;用 Cassandra，AP，高可用！&quot;
+❌ 原因: 转账需要 ACID，Cassandra 不支持跨分区事务
+
+✅ 正确思路:
+1. PostgreSQL for accounts (CP, ACID transactions)
+2. Outbox pattern + Kafka for async events
+3. Idempotency keys for safe retries
+4. Saga pattern for distributed transactions
+   - Compensating transactions for rollback
+</code></pre>
+
+<hr/>
+
+<h3>六大系统综合选型框架 / 6-System Selection Framework</h3>
+
+<pre><code>
+问自己这 3 个问题:
+
+Q1: 数据过时 1 分钟，用户会受到什么影响？
+  - 没影响 → AP (cache, feed, recommendations)
+  - 钱少了/多了 → CP (payments, inventory)
+  - 两个节点同时成为 leader → CP (distributed lock)
+
+Q2: 宁可报错还是返回旧数据？
+  - 返回旧数据 (degraded mode) → AP
+  - 宁可报错也不给错数据 → CP
+
+Q3: 写冲突发生时谁来解决？
+  - 业务逻辑可以合并 (last-write-wins, CRDT) → AP
+  - 需要严格串行化 → CP
+</code></pre>
+
+<hr/>
+
+<h3>高频考点：PACELC 比 CAP 更准确</h3>
+
+<p>CAP 只讨论分区时的选择，但实际上<strong>无分区时的延迟(L)也是关键</strong>：</p>
+
+<pre><code>
+PACELC: 
+  If Partition: choose Availability or Consistency
+  Else: choose Latency or Consistency
+
+系统     | Partition | Else
+---------|-----------|----------
+DynamoDB | A         | L (eventual consistency)
+HBase    | C         | C (strong consistency)
+Cassandra| A         | L (tunable)
+MongoDB  | C (default)| C
+</code></pre>
+
+<hr/>
+
+<h3>别踩这个坑 / Common Mistakes</h3>
+
+<p>1. <strong>&quot;我用 Cassandra 做分布式锁&quot;</strong> → ❌ Cassandra 是 AP，锁要求 CP</p>
+<p>2. <strong>&quot;主从复制 = 强一致性&quot;</strong> → ❌ 默认异步复制有复制延迟，需要同步复制 (<code>synchronous_commit</code>)</p>
+<p>3. <strong>&quot;微服务 = 每个服务独立数据库 = 跨库事务用 2PC&quot;</strong> → ❌ 用 Saga 模式代替 2PC</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://www.allthingsdistributed.com/2008/12/eventually_consistent.html (Werner Vogels&#x27; seminal post)</p>
+<p>- https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html</p>
+<p>- https://www.cs.cornell.edu/projects/ladis2012/papers/li-ladis2012.pdf (PACELC paper)</p>
+<p>- https://www.infoq.com/articles/cap-twelve-years-later-how-the-rules-have-changed/</p>
+
+<h3>🧒 ELI5</h3>
+<p>CAP theorem is like choosing between 3 restaurant rules during a storm (network partition): Consistency = everyone gets the same menu. Availability = everyone gets SOME food. Partition Tolerance = restaurant stays open even if kitchen is cut off. You can only pick 2. Banks pick CP (same menu, might close). Netflix picks AP (maybe old content, but always open).</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>算法 — #90 Subsets II (Medium) — Backtracking</h2>
+
+<p>&gt; Day 92 · Expert · LeetCode #90</p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms — #90 Subsets II (Medium) — 回溯</h2>
+
+<p>🧩 <strong>回溯模式 (4/9)</strong> — building on the template from Day 88 (Subsets #78)</p>
+
+<p>今天的变化：数组有<strong>重复元素</strong>，子集不能重复。</p>
+<p>Key difference from #78: the input array has <strong>duplicates</strong> — we must avoid duplicate subsets.</p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+<p>- 📖 LeetCode: https://leetcode.com/problems/subsets-ii/ 🟡 Medium</p>
+<p>- 📹 NeetCode: https://neetcode.io/problems/subsets-ii</p>
+
+<hr/>
+
+<h3>类比 / Real-World Analogy</h3>
+
+<p>你从一堆水果中挑选礼品篮，篮子里有 2 个苹果、1 个梨。你不想列出两次&quot;苹果+梨&quot;（因为两个苹果是一样的）。</p>
+
+<p>You&#x27;re picking gift baskets from: [apple, apple, pear]. You don&#x27;t want to list &quot;apple+pear&quot; twice just because there are two identical apples.</p>
+
+<hr/>
+
+<h3>问题 / Problem</h3>
+
+<p>给定可能包含重复数字的整数数组 <code>nums</code>，返回所有可能的<strong>不重复子集</strong>。</p>
+
+<p>Given an integer array <code>nums</code> that may contain duplicates, return all possible subsets (the power set) with <strong>no duplicate subsets</strong>.</p>
+
+<pre><code>
+Input:  nums = [1, 2, 2]
+Output: [[], [1], [1,2], [1,2,2], [2], [2,2]]
+</code></pre>
+
+<hr/>
+
+<h3>映射到模版 / Map to Pattern Template</h3>
+
+<pre><code>
+def backtrack(path, choices):
+    if IS_COMPLETE(path):       # ← always add (subsets = all sizes)
+        result.append(path[:])
+        return
+    for choice in choices:
+        if IS_VALID(choice):    # ← SKIP if same value as previous sibling
+            path.append(choice)
+            backtrack(path, NEXT_CHOICES)
+            path.pop()          # undo
+</code></pre>
+
+<p><strong>关键修改 / Key Modification:</strong></p>
+<p>- Sort first → identical elements are adjacent</p>
+<p>- At each level, skip <code>nums[i] == nums[i-1]</code> (but only for siblings, not parent-child)</p>
+
+<hr/>
+
+<h3>Python Solution with Trace</h3>
+
+<pre><code>
+from typing import List
+
+def subsetsWithDup(nums: List[int]) -&gt; List[List[int]]:
+    nums.sort()  # Critical: sort so duplicates are adjacent
+    result = []
+    
+    def backtrack(start: int, path: List[int]):
+        result.append(path[:])  # Add current subset (all sizes valid)
+        
+        for i in range(start, len(nums)):
+            # Skip duplicate siblings at the same tree level
+            # nums[i] == nums[i-1] AND i &gt; start (not first at this level)
+            if i &gt; start and nums[i] == nums[i - 1]:
+                continue
+            
+            path.append(nums[i])
+            backtrack(i + 1, path)  # i+1: each element used at most once
+            path.pop()
+    
+    backtrack(0, [])
+    return result
+
+# Trace: nums = [1, 2, 2] (sorted)
+# backtrack(0, [])
+#   ├─ add []
+#   ├─ i=0, pick 1 → backtrack(1, [1])
+#   │     ├─ add [1]
+#   │     ├─ i=1, pick 2 → backtrack(2, [1,2])
+#   │     │     ├─ add [1,2]
+#   │     │     └─ i=2, pick 2 → backtrack(3, [1,2,2])
+#   │     │           └─ add [1,2,2]
+#   │     └─ i=2, SKIP (2==2 and i&gt;start=1) ✓ duplicate avoided!
+#   ├─ i=1, pick 2 → backtrack(2, [2])
+#   │     ├─ add [2]
+#   │     └─ i=2, pick 2 → backtrack(3, [2,2])
+#   │           └─ add [2,2]
+#   └─ i=2, SKIP (2==2 and i&gt;start=0) ✓
+#
+# Result: [[], [1], [1,2], [1,2,2], [2], [2,2]] ✓
+</code></pre>
+
+<p><strong>时间/空间复杂度:</strong></p>
+<p>- Time: O(n · 2^n) — up to 2^n subsets, each copied in O(n)</p>
+<p>- Space: O(n) recursion depth + O(n · 2^n) for output</p>
+
+<hr/>
+
+<h3>与同模式其他题的对比 / Pattern Variations</h3>
+
+<pre><code>
+题目              | 去重方式              | 每个元素能用多次?
+------------------|----------------------|------------------
+#78 Subsets       | 无重复输入, 不需要    | No (i+1)
+#90 Subsets II    | sort + skip siblings | No (i+1)  ← TODAY
+#39 Comb Sum      | 无重复输入            | Yes (i, not i+1)
+#40 Comb Sum II   | sort + skip siblings | No (i+1)
+#46 Permutations  | used[] boolean array  | No (全排列)
+
+核心规律:
+- 输入有重复 → sort + skip (if i &gt; start and nums[i] == nums[i-1])
+- 元素可重复使用 → backtrack(i, ...) not backtrack(i+1, ...)
+- 排列问题 → 用 used[] 数组，不用 start
+</code></pre>
+
+<hr/>
+
+<h3>举一反三 / Pattern Connections</h3>
+
+<p>- <strong>#40 Combination Sum II</strong>: 同样的去重技巧，但要求总和 = target（今天先掌握去重，明天加约束）</p>
+<p>- <strong>#79 Word Search</strong>: 同样是回溯，但在 2D grid 上，&quot;已访问&quot;替代 <code>start</code> 机制</p>
+<p>- <strong>#51 N-Queens</strong>: 最复杂的回溯，3 个约束同时检查（行、列、对角线）</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+<p>Imagine picking stickers from a pile, but some stickers look exactly the same. When you&#x27;re choosing the 2nd identical sticker in a row, you think: &quot;Wait, I already tried picking from this position with an identical sticker — I&#x27;d get the same result. Skip!&quot; That&#x27;s all the <code>if i &gt; start and nums[i] == nums[i-1]: continue</code> does.</p>
+
+<h3>📚 References</h3>
+<p>- https://leetcode.com/problems/subsets-ii/</p>
+<p>- https://neetcode.io/problems/subsets-ii</p>
+<p>- https://www.geeksforgeeks.org/subsets-with-no-two-adjacent-odd-numbers/</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>软技能综合 — 高阶领导力场景 / Soft Skills Synthesis — Senior Leadership Scenario</h2>
+
+<p>&gt; Day 92 · Expert · Synthesis Mode</p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills — 综合场景：Staff Engineer 的技术债 vs 速度困境</h2>
+
+<h3>场景 / Scenario</h3>
+
+<p>&gt; &quot;你刚加入一家公司担任 Staff Engineer。核心支付服务有严重技术债（10年老代码，无测试，每季度有3-4次 P0 故障），但 PM 希望你帮助团队在未来 6 个月内 2x 交付速度。你怎么做？&quot;</p>
+
+<p>&gt; &quot;You just joined as a Staff Engineer. The core payments service has severe technical debt (10-year-old code, no tests, 3-4 P0 incidents per quarter), but the PM wants you to help the team 2x delivery speed in the next 6 months. What do you do?&quot;</p>
+
+<hr/>
+
+<h3>为什么这个问题很难 / Why This Is Hard</h3>
+
+<p>这不是简单的技术问题，而是<strong>战略性权衡</strong>：</p>
+<p>- 短期: 继续叠 feature，技术债越来越重，最终崩溃</p>
+<p>- 中期: 重构但不交付，PM 和 C-suite 失去耐心</p>
+<p>- 长期: 技术债 = 速度的负债，不还早晚要还</p>
+
+<p>This isn&#x27;t just a tech problem — it&#x27;s a <strong>strategic negotiation</strong> between engineering health and business velocity.</p>
+
+<hr/>
+
+<h3>STAR 框架 / STAR Breakdown</h3>
+
+<p><strong>Situation:</strong> 新来的 Staff，支付服务技术债严重，PM 要 2x 速度</p>
+
+<p><strong>Task:</strong> 在不拖延 PM 的情况下，说服组织投资技术健康，同时实际提速</p>
+
+<p><strong>Action (关键步骤 / Key Steps):</strong></p>
+
+<pre><code>
+Week 1-2: 诊断，建立事实基础
+  → 量化技术债的成本: P0 故障 × MTTR × eng时间 = ¥X/季度
+  → 统计 cycle time (PR merge to deploy): 当前 vs 行业基准
+  → 找出 top 3 pain points (deploy 慢? 测试覆盖率 &lt;20%? 单点故障?)
+
+Week 3: 构建叙事 (narrative matters!)
+  → &quot;当前速度 = 30%时间在修 bug，70%才在建功能&quot;
+  → &quot;投资 3 个月技术基础设施 → 未来 9 个月 2x 速度&quot;
+  → 用数据说话，而不是工程师的直觉
+
+Week 4: 提议&quot;嵌入式重构&quot; (不是大重写)
+  → Boy Scout Rule: 每个 PR 顺手改一块坏代码
+  → 新功能用新架构写，老代码逐步迁移
+  → 先加测试，再重构 (make it testable first)
+
+Month 2-3: 执行 + 可见进展
+  → 每两周给 PM 展示: 部署频率 ↑, incident 数 ↓
+  → 把技术工作翻译成业务影响
+</code></pre>
+
+<p><strong>Result:</strong></p>
+<p>- 不强求&quot;先重构再交付&quot;的二元对立</p>
+<p>- 用数据赢得信任，再用信任换来空间</p>
+
+<hr/>
+
+<h3>❌ Bad vs ✅ Good 回答对比</h3>
+
+<pre><code>
+❌ 初级/中级答案:
+&quot;我会告诉 PM 我们必须先清理技术债，功能开发需要等3个月。&quot;
+问题: 没有业务意识，没有数据，没有协商
+
+❌ 中级陷阱:
+&quot;我会把重构放进 sprint，每次 20% 时间用于技术债&quot;
+问题: 太模糊，无法追踪，PM 会渐渐侵蚀这 20%
+
+✅ Staff级答案:
+1. 先量化：把技术债翻译成业务成本 ($, 时间, P0频率)
+2. 再提案：不是&quot;重构 vs 功能&quot;，而是&quot;如何用技术投资提速&quot;
+3. 渐进式：Boy Scout Rule + Strangler Fig Pattern (vs Big Rewrite)
+4. 透明化：双周展示进展，让 PM 和 EM 成为盟友，而不是障碍
+</code></pre>
+
+<hr/>
+
+<h3>Senior/Staff 核心能力体现 / Senior/Staff Level Signals</h3>
+
+<p>1. <strong>技术债量化能力</strong>: 能把工程问题翻译成 CFO 听得懂的语言</p>
+<p>2. <strong>渐进式架构改造</strong>: Strangler Fig &gt; Big Bang Rewrite</p>
+<p>3. <strong>影响力而非权力</strong>: 说服 PM，不是对抗 PM</p>
+<p>4. <strong>系统性思维</strong>: 不只看眼前的 ticket，看整个系统的健康</p>
+
+<hr/>
+
+<h3>Key Takeaways</h3>
+
+<p>- 技术债的正确处理不是&quot;停下来重构&quot;，而是&quot;让重构成为日常工作的一部分&quot;</p>
+<p>- 用数据建立公信力，再用公信力换来工程自主权</p>
+<p>- Staff Engineer = 技术 × 业务 × 影响力的交叉点</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://martinfowler.com/bliki/StranglerFigApplication.html</p>
+<p>- https://www.amazon.com/Working-Effectively-Legacy-Michael-Feathers/dp/0131177052 (Working Effectively with Legacy Code)</p>
+<p>- https://charity.wtf/2023/01/06/engineers-should-own-the-results-of-their-code/</p>
+
+<h3>🧒 ELI5</h3>
+<p>Imagine your bedroom is super messy. You can either: (A) stop everything and clean for a week, (B) clean a little every time you&#x27;re in your room. Option B is &quot;technical debt management.&quot; The trick is convincing your parents (PM) that cleaning while you go actually means you can find your toys faster — which is like 2x speed!</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Python Craft — Property-Based Testing with hypothesis</h2>
+
+<p>&gt; Day 92 · Expert · Testing · Week 9</p>
+
+<hr/>
+
+<h2>🎨 前端 → Python Craft — 属性基础测试 / Property-Based Testing with `hypothesis`</h2>
+
+<h3>真实场景 / Real Scenario</h3>
+
+<p>你在做一个 JSON 序列化库，unit tests 只测了 3 个 case。用户发现：当 key 包含 Unicode 字符（比如 emoji 🎉）时，序列化后反序列化得到的不是原始数据。<strong>普通测试覆盖不到这种 edge case，但 hypothesis 会自动找到它。</strong></p>
+
+<p>You&#x27;re building a JSON serialization library. Unit tests cover 3 cases. A user discovers: when a key contains Unicode (like emoji 🎉), serialize → deserialize doesn&#x27;t round-trip. Regular tests miss this; <strong>hypothesis finds it automatically.</strong></p>
+
+<hr/>
+
+<h3>什么是属性基础测试 / What Is Property-Based Testing</h3>
+
+<p>不是写&quot;给定这个输入，期望这个输出&quot;，而是写<strong>属性</strong>：</p>
+<p>&quot;对于<strong>任意</strong>有效输入，这个性质都应该成立。&quot;</p>
+
+<p>Instead of &quot;given THIS input, expect THIS output&quot; — you write <strong>properties</strong>:</p>
+<p>&quot;For ANY valid input, this invariant must hold.&quot;</p>
+
+<pre><code>
+传统测试 (Example-based):         属性测试 (Property-based):
+assert add(2, 3) == 5             For all x, y: add(x, y) == add(y, x)
+assert add(0, 0) == 0             For all x: add(x, 0) == x
+assert add(-1, 1) == 0            For all x, y, z: add(add(x,y),z) == add(x,add(y,z))
+</code></pre>
+
+<p><code>hypothesis</code> 会自动生成数百个测试用例，并在失败时<strong>缩小到最小复现用例（shrinking）</strong>。</p>
+
+<hr/>
+
+<h3>代码示例 / Code Example</h3>
+
+<pre><code>
+# pip install hypothesis
+from hypothesis import given, settings, assume
+from hypothesis import strategies as st
+from typing import List
+import json
+
+# === Example 1: Round-trip property ===
+# Property: serialize then deserialize == original
+@given(st.dictionaries(
+    keys=st.text(min_size=1),    # any non-empty string key
+    values=st.one_of(
+        st.integers(),
+        st.floats(allow_nan=False, allow_infinity=False),
+        st.text(),
+        st.booleans(),
+        st.none()
+    )
+))
+def test_json_roundtrip(data: dict):
+    &quot;&quot;&quot;Property: JSON roundtrip preserves data&quot;&quot;&quot;
+    serialized = json.dumps(data)
+    deserialized = json.loads(serialized)
+    assert deserialized == data  # hypothesis will find any dict that breaks this!
+
+# === Example 2: Sorting properties ===
+@given(st.lists(st.integers()))
+def test_sort_properties(lst: List[int]):
+    &quot;&quot;&quot;Multiple invariants about sorted output&quot;&quot;&quot;
+    result = sorted(lst)
+    
+    # Property 1: same length
+    assert len(result) == len(lst)
+    
+    # Property 2: same elements (just reordered)
+    assert sorted(result) == result  # idempotent
+    assert set(result) == set(lst)
+    
+    # Property 3: actually sorted
+    for i in range(len(result) - 1):
+        assert result[i] &lt;= result[i + 1]
+
+# === Example 3: Stateful testing — finding race conditions ===
+from hypothesis.stateful import RuleBasedStateMachine, rule, initialize
+
+class BankAccountMachine(RuleBasedStateMachine):
+    &quot;&quot;&quot;hypothesis generates random sequences of deposits/withdrawals&quot;&quot;&quot;
+    
+    @initialize()
+    def create_account(self):
+        self.balance = 0
+    
+    @rule(amount=st.integers(min_value=1, max_value=1000))
+    def deposit(self, amount):
+        self.balance += amount
+        assert self.balance &gt;= 0  # invariant: never negative
+    
+    @rule(amount=st.integers(min_value=1, max_value=1000))
+    def withdraw(self, amount):
+        assume(self.balance &gt;= amount)  # precondition
+        self.balance -= amount
+        assert self.balance &gt;= 0  # invariant: never negative
+
+BankAccountTest = BankAccountMachine.TestCase
+
+# === Example 4: Find the bug hypothesis discovers ===
+def buggy_median(lst: List[float]) -&gt; float:
+    &quot;&quot;&quot;Buggy: fails when list has even length and mixed signs&quot;&quot;&quot;
+    lst = sorted(lst)
+    n = len(lst)
+    if n % 2 == 0:
+        return (lst[n//2] + lst[n//2 - 1]) / 2  # actually correct!
+    return lst[n // 2]
+
+@given(st.lists(st.floats(allow_nan=False, allow_infinity=False), min_size=1))
+def test_median_properties(lst):
+    median = buggy_median(lst)
+    # Property: median must be between min and max
+    assert min(lst) &lt;= median &lt;= max(lst)
+</code></pre>
+
+<hr/>
+
+<h3>Hypothesis 核心概念 / Core Concepts</h3>
+
+<pre><code>
+策略 (Strategies) — 描述怎么生成测试数据:
+  st.integers()           # 整数 (含负数、极值、0)
+  st.text()               # Unicode 字符串 (含 emoji, 控制字符!)
+  st.lists(st.integers()) # 整数列表 (含空列表, 单元素, 大列表)
+  st.floats()             # 浮点数 (含 NaN, inf, -0.0!)
+  st.builds(MyClass, ...) # 构造自定义对象
+
+收缩 (Shrinking) — 找到最小失败用例:
+  hypothesis 发现 [1,2,3,4,5,6,7,8] 失败
+  → 自动尝试 [1,2,3,4], [1,2], [1], ...
+  → 最终报告: 最小失败用例是 [5, -1]
+  这让调试变得极其容易!
+
+数据库 (Database) — 记住曾经失败的用例:
+  默认保存到 .hypothesis/
+  下次运行时优先测试这些用例 (regression prevention)
+</code></pre>
+
+<hr/>
+
+<h3>何时用 / When to Use</h3>
+
+<pre><code>
+✅ 适合属性测试:
+  - 数据转换 (序列化/反序列化、编解码)
+  - 算法 (排序、搜索、数据结构)
+  - 数学运算 (加法交换律、逆运算)
+  - 状态机 / 协议
+
+❌ 不太适合:
+  - 有外部副作用 (API calls, DB writes) — 用 mock 隔离
+  - 业务规则测试 (&quot;用户 ID=5 时返回 Premium&quot;) — 用 example-based
+  - 性能测试 — hypothesis 不关心速度
+</code></pre>
+
+<hr/>
+
+<h3>生产最佳实践 / Production Tips</h3>
+
+<pre><code>
+# 1. 设置 max_examples 避免 CI 太慢
+@settings(max_examples=200)  # default=100
+@given(st.text())
+def test_something(s): ...
+
+# 2. 固定数据库路径 (reproduce in CI)
+# pytest.ini:
+# [pytest]
+# hypothesis_database = .hypothesis
+
+# 3. 标记已知 bug，先跳过
+from hypothesis import HealthCheck
+@settings(suppress_health_check=[HealthCheck.too_slow])
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://hypothesis.readthedocs.io/en/latest/</p>
+<p>- https://hypothesis.works/articles/</p>
+<p>- https://fsharpforfunandprofit.com/posts/property-based-testing/ (concepts, language-agnostic)</p>
+
+<h3>🧒 ELI5</h3>
+<p>Normal tests are like asking &quot;does this recipe work with chocolate?&quot; Property-based tests are like: &quot;For ANY flavor, cake must be taller than 2cm and have the same ingredients going in as coming out.&quot; hypothesis is a robot that tries 1000 random flavors to break your recipe — and when it finds one that fails, it tells you the simplest failing flavor.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>AI 综合深化 — LLM 对齐技术全景 / AI Synthesis — LLM Alignment Deep Dive</h2>
+
+<p>&gt; Day 92 · Expert · Synthesis Mode (AI topics exhausted — going deeper)</p>
+
+<hr/>
+
+<h2>🤖 AI — AI 新闻 + 综合深化：LLM 安全与对齐的最新进展</h2>
+
+<h3>📰 本周 AI 新闻 / This Week in AI</h3>
+
+<p><em>(来源: The Verge, 2026-07-15/16)</em></p>
+
+<p><strong>1. OpenAI 据报道发布专用红队模型</strong></p>
+<p>据报道（reportedly），OpenAI 训练了一个专门用于破解其他 AI 模型的专用红队模型，该模型据称&quot;几乎能破解所有与之对抗的模型&quot;。该模型据报道被用于发现其最新模型的漏洞，使其成为&quot;对提示注入攻击更鲁棒的模型&quot;。</p>
+<p>来源: https://www.theverge.com/ai-artificial-intelligence (2026-07-15)</p>
+
+<p><strong>2. Meta AI 将在青少年讨论自杀话题时通知家长</strong></p>
+<p>当启用家长控制的青少年 Instagram 用户与 Meta AI 就自伤或自杀话题交谈时，平台将主动提醒监护家长。</p>
+<p>来源: https://www.theverge.com/ai-artificial-intelligence (2026-07-15)</p>
+
+<p><strong>3. Common Sense Media：Google AI 搜索对儿童存在&quot;不可接受的风险&quot;</strong></p>
+<p>报告发现 Google AI Overviews 和 AI Mode 在儿童危机信号的处理上存在问题，并且 AI Mode 完成了研究人员提交的 100% 作业内容。</p>
+<p>来源: https://institute.commonsensemedia.org/risk-assessments/google-search (2026-07-14)</p>
+
+<hr/>
+
+<h3>🔬 综合深化：AI 对齐技术全景 / Alignment Techniques Landscape</h3>
+
+<p>AI 对齐问题的核心：如何让 AI 做&quot;我们真正想要的事&quot;，而不只是&quot;我们说的事&quot;？</p>
+
+<p>The core alignment problem: how do we make AI do what we <em>actually</em> want, not just what we <em>say</em>?</p>
+
+<hr/>
+
+<p>#### 技术演进时间线 / Technical Evolution</p>
+
+<pre><code>
+2017-2020: RLHF 时代
+  ├─ 人类标注员对输出排名
+  ├─ 训练 Reward Model (RM)
+  └─ PPO 优化 LLM → 最大化 RM 分数
+  问题: RM hacking (模型找到刷分捷径)
+
+2021-2023: DPO &amp; RLAIF 时代  
+  ├─ DPO (Direct Preference Optimization): 去掉独立 RM，直接优化偏好
+  ├─ RLAIF: 用 AI 替代人类标注 (更便宜，更快)
+  └─ Constitutional AI (Anthropic): 给模型一套&quot;宪法&quot;原则
+  
+2024-2026: 自动化红队 + 可解释性时代
+  ├─ 自动红队模型（如 OpenAI 据报道训练的专用破解模型）：找越狱漏洞
+  ├─ Mechanistic Interpretability: 理解 transformer 内部电路
+  └─ Scalable Oversight: 用 AI 监督 AI (因为人类跟不上)
+</code></pre>
+
+<hr/>
+
+<p>#### 自动红队背后的技术 / What Automated Red-Teaming Represents</p>
+
+<pre><code>
+# Simplified red-teaming pipeline concept
+class RedTeamLoop:
+    &quot;&quot;&quot;
+    Adversarial self-improvement:
+    1. Red model generates attack prompts
+    2. Target model responds
+    3. Judge model scores if attack succeeded
+    4. Red model learns from successful attacks
+    &quot;&quot;&quot;
+    
+    def __init__(self, red_model, target_model, judge_model):
+        self.red = red_model
+        self.target = target_model
+        self.judge = judge_model
+    
+    def run_episode(self, category: str) -&gt; dict:
+        # Red model generates attack
+        attack = self.red.generate(
+            f&quot;Generate a prompt that will cause the target to violate policy in category: {category}&quot;
+        )
+        
+        # Target responds
+        response = self.target.generate(attack)
+        
+        # Judge scores (1=attack succeeded, 0=target held)
+        success = self.judge.score(attack, response, category)
+        
+        # Red model gets reward signal
+        self.red.update(reward=success)
+        
+        return {&quot;attack&quot;: attack, &quot;response&quot;: response, &quot;success&quot;: success}
+
+# Key insight: this is essentially adversarial training
+# The target model gets harder to break as it&#x27;s trained
+# against successful attacks → &quot;most robust to prompt injection&quot;
+</code></pre>
+
+<hr/>
+
+<p>#### 对齐技术对比 / Alignment Techniques Compared</p>
+
+<pre><code>
+技术              | 成本  | 可扩展 | 效果  | 主要风险
+-----------------|-------|--------|-------|------------------
+RLHF             | 高    | 低     | 好    | RM hacking, slow
+DPO              | 中    | 中     | 好    | 偏好数据质量
+Constitutional AI| 低    | 高     | 好    | 宪法设计难
+RLAIF            | 低    | 高     | 中    | AI偏见传播
+Auto Red-teaming | 中    | 高     | 好    | 需要好的judge
+
+当前趋势: RLAIF + Constitutional AI + Auto Red-teaming 的组合
+</code></pre>
+
+<hr/>
+
+<p>#### 可运行代码 / Runnable Code: 简化版 Constitutional AI</p>
+
+<pre><code>
+# pip install anthropic (or use any LLM API)
+# This demonstrates the Constitutional AI critique-revision loop
+
+CONSTITUTION = [
+    &quot;Be helpful, harmless, and honest.&quot;,
+    &quot;Do not assist with activities that could harm people.&quot;,
+    &quot;Respect user privacy and autonomy.&quot;,
+]
+
+def constitutional_ai_step(response: str, constitution: list) -&gt; str:
+    &quot;&quot;&quot;
+    Simulates the CAI critique-revision loop:
+    1. Critique response against each principle
+    2. Revise to better align
+    (In practice, this uses the LLM itself to self-critique)
+    &quot;&quot;&quot;
+    critique_prompt = f&quot;&quot;&quot;
+Response to critique: &quot;{response}&quot;
+
+Constitution principles:
+{chr(10).join(f&#x27;- {p}&#x27; for p in constitution)}
+
+Does this response violate any principle? If yes, revise it.
+&quot;&quot;&quot;
+    # In production: call LLM with critique_prompt
+    # The model self-critiques and revises
+    print(f&quot;[CAI] Running critique against {len(constitution)} principles&quot;)
+    return &quot;revised_response&quot;  # stub: call real LLM here
+
+# The key insight: instead of human feedback for every response,
+# the model uses the constitution to self-correct
+# This scales much better than pure RLHF
+constitutional_ai_step(
+    &quot;Here&#x27;s how to pick a lock...&quot;,
+    CONSTITUTION
+)
+</code></pre>
+
+<hr/>
+
+<h3>工程视角：对齐 ≠ 审查 / Engineering Perspective</h3>
+
+<p>对齐的目标不是让 AI 无法回答&quot;危险&quot;问题，而是让它能<strong>正确理解语境</strong>：</p>
+
+<pre><code>
+问题: &quot;如何开锁？&quot;
+× 过度对齐: 拒绝回答
+✓ 正确对齐: 区分上下文
+  - 你刚搬家锁匠没来 → 帮你找解决方案
+  - 询问入室盗窃技巧 → 拒绝并解释原因
+</code></pre>
+
+<p>自动红队（Auto Red-Teaming）这类工具的价值：<strong>自动化找到这个边界的漏洞，而不是手动尝试越狱</strong>。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://www.theverge.com/ai-artificial-intelligence (本周新闻来源 / This week&#x27;s source)</p>
+<p>- https://arxiv.org/abs/2212.08073 (Constitutional AI: Harmlessness from AI Feedback)</p>
+<p>- https://arxiv.org/abs/2305.18290 (DPO paper)</p>
+<p>- https://www.anthropic.com/research/red-teaming-language-models</p>
+
+<h3>🧒 ELI5</h3>
+<p>Teaching AI to be safe is like teaching a new employee. RLHF = you watch them work and give thumbs up/down. Constitutional AI = you give them a rulebook and they check their own work. Auto red-team = you hire a security tester to try to trick them, and every trick they fall for, you fix. The goal isn&#x27;t a robot that never answers questions — it&#x27;s one that knows the difference between &quot;how do I pick a lock for my own house&quot; vs &quot;how do I break into someone else&#x27;s house.&quot;</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-15</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
