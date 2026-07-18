@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-07-18</title>
+  <meta name="description" content="byte-by-byte daily lessons for Saturday, July 18, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Saturday, July 18, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-07-18.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-07-17.html" style="color:var(--text2)">← 2026-07-17</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-07-18</span>
+    <h1>Saturday, July 18, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a> <a href="#section-deepdive" class="nav-day-btn">🔬 Deep Dive</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-07-17.html" class="day-nav-btn">← 2026-07-17</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ System Design — Synthesis (Expert Phase, Day 94)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>🏗️ System Design — Synthesis (Expert Phase, Day 94)</h1>
+
+<blockquote><strong>Saturday — Deep Dive day.</strong> System Design section is in synthesis mode (all 60 curated topics exhausted).</blockquote>
+
+<h2>Today's Synthesis Note</h2>
+
+<p>This Saturday's content is focused on the <strong>Word Search deep dive</strong> (algorithms). On synthesis Saturdays for System Design, reflect on cross-cutting architectural patterns covered so far:</p>
+
+<p><strong>Key systems covered (Days 1–93):</strong></p>
+<ul><li>Distributed systems: Consistent Hashing, Raft consensus, CAP theorem</li><li>Storage: Key-Value Store, Time-Series DB, Distributed File System (HDFS)</li><li>Real-time: Chat (WhatsApp), Live Streaming (Twitch), Collaborative Editor (Google Docs)</li><li>Serving: CDN, API Gateway, Rate Limiter as Service</li><li>Data pipelines: Kafka-based event streaming, ELK logging</li></ul>
+
+<p><strong>Synthesis question to ponder:</strong></p>
+<p>How does a real-world system like GitHub combine: distributed file storage (HDFS-like), content-addressable hashing (consistent hashing ideas), CDN (static asset delivery), real-time (PR review notifications), and geospatial-aware routing (anycast CDN)?</p>
+
+<p>See the Saturday Deep Dive (./2026-07-18-deepdive.md) for today's main content.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">🧮 Word Search (LeetCode #79) — Backtracking Deep Dive</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>🧮 Word Search (LeetCode #79) — Backtracking Deep Dive</h1>
+
+<blockquote><strong>Note:</strong> This is a Saturday. The full content for this topic is in the Saturday Deep Dive (./2026-07-18-deepdive.md). This file is a reference stub.</blockquote>
+
+<h2>Quick Summary</h2>
+
+<p><strong>Problem:</strong> Given an <code>m×n</code> board of characters, determine if a given word exists — formed from sequentially adjacent cells (horizontal or vertical), where each cell may only be used once.</p>
+
+<p><strong>Pattern:</strong> Backtracking — mark cell as visited (<code>'#'</code>), recurse, restore.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def exist(board, word):&#10;    rows, cols = len(board), len(board[0])&#10;    def dfs(r, c, idx):&#10;        if idx == len(word): return True&#10;        if r &lt; 0 or r &gt;= rows or c &lt; 0 or c &gt;= cols: return False&#10;        if board[r][c] != word[idx]: return False&#10;        temp, board[r][c] = board[r][c], '#'&#10;        found = (dfs(r+1,c,idx+1) or dfs(r-1,c,idx+1) or&#10;                 dfs(r,c+1,idx+1) or dfs(r,c-1,idx+1))&#10;        board[r][c] = temp&#10;        return found&#10;    for r in range(rows):&#10;        for c in range(cols):&#10;            if dfs(r, c, 0): return True&#10;    return False">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> exist(board, word):
+    rows, cols = len(board), len(board[<span style="color:#56b6c2;">0</span>])
+    <span style="color:#c678dd;">def</span> dfs(r, c, idx):
+        <span style="color:#c678dd;">if</span> idx == len(word): <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+        <span style="color:#c678dd;">if</span> r &lt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">or</span> r &gt;= rows <span style="color:#c678dd;">or</span> c &lt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">or</span> c &gt;= cols: <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+        <span style="color:#c678dd;">if</span> board[r][c] != word[idx]: <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+        temp, board[r][c] = board[r][c], <span style="color:#e5c07b;">'#'</span>
+        found = (dfs(r+<span style="color:#56b6c2;">1</span>,c,idx+<span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">or</span> dfs(r-<span style="color:#56b6c2;">1</span>,c,idx+<span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">or</span>
+                 dfs(r,c+<span style="color:#56b6c2;">1</span>,idx+<span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">or</span> dfs(r,c-<span style="color:#56b6c2;">1</span>,idx+<span style="color:#56b6c2;">1</span>))
+        board[r][c] = temp
+        <span style="color:#c678dd;">return</span> found
+    <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> range(rows):
+        <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> range(cols):
+            <span style="color:#c678dd;">if</span> dfs(r, c, <span style="color:#56b6c2;">0</span>): <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+    <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span></code></pre>
+</div>
+
+<p><strong>Complexity:</strong> Time <code>O(m×n×4^L)</code>, Space <code>O(L)</code> (call stack)</p>
+
+<p>🔗 <a href="https://leetcode.com/problems/word-search/">LeetCode #79</a></p>
+<p>📹 <a href="https://www.youtube.com/watch?v=pfiQ_PS1g8E">NeetCode</a></p>
+
+<p><strong>Block progress:</strong> 6/9 in Backtracking block. Next: Palindrome Partitioning (#131).</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ Soft Skills — Synthesis (Expert Phase, Day 94)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>🗣️ Soft Skills — Synthesis (Expert Phase, Day 94)</h1>
+
+<blockquote><strong>Saturday — Deep Dive day.</strong> Soft skills section is in synthesis mode.</blockquote>
+
+<h2>Synthesis Reflection: Senior+ Communication Patterns</h2>
+
+<p>After covering 60 behavioral questions, the meta-pattern for senior/staff engineers:</p>
+
+<p><strong>The STAR+ Framework (STAR with Systemic Thinking):</strong></p>
+<ul><li><strong>Situation:</strong> Set scale context (millions of users, 10-team org, $X impact)</li><li><strong>Task:</strong> Clarify your specific role vs. the team's</li><li><strong>Action:</strong> Show trade-off reasoning, not just execution</li><li><strong>Result:</strong> Quantify, then reflect on what you'd do differently</li><li><strong>+Systemic:</strong> How did this change your team/org beyond the immediate outcome?</li></ul>
+
+<p><strong>Senior-level differentiation signals:</strong></p>
+<ol><li>You talk about <em>influencing without authority</em> (cross-team impact)</li><li>You show <em>proactive problem discovery</em> (not just firefighting)</li><li>You discuss <em>building systems</em> not just solving instances (runbook, postmortem process)</li><li>You mention <em>mentoring/multiplying</em> others as part of your impact</li><li>You're honest about failure — and what the failure taught the org</li></ol>
+
+<p><strong>Saturday reflection prompt:</strong> Think of your most recent engineering decision. Can you narrate it using STAR+? What was the systemic change it drove?</p>
+
+<p>See the Saturday Deep Dive (./2026-07-18-deepdive.md) for today's main content.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Synthesis (Expert Phase, Day 94)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>🤖 AI — Synthesis (Expert Phase, Day 94)</h1>
+
+<blockquote><strong>Saturday — Deep Dive day.</strong> AI section is in synthesis mode (all 30 curated topics exhausted).</blockquote>
+
+<h2>Today's Synthesis Note</h2>
+
+<p>Today's focus is the <strong>Word Search deep dive</strong> (backtracking on 2D grids). On synthesis Saturdays for AI, reflect on cross-cutting themes from Days 1–93:</p>
+
+<p><strong>Key AI topics covered:</strong></p>
+<ul><li><strong>Fundamentals:</strong> Transformers, attention, tokenization, embeddings</li><li><strong>Training/Tuning:</strong> RLHF, LoRA/QLoRA, RLAIF, knowledge distillation, synthetic data</li><li><strong>Serving:</strong> Inference optimization (KV cache, speculative decoding), quantization, MoE</li><li><strong>Applications:</strong> RAG, agents (ReAct, tool use), MCP, function calling, structured output</li><li><strong>Landscape:</strong> Open vs closed source, AGI debates, multimodal, diffusion, coding assistants</li><li><strong>Ops:</strong> Evaluation, monitoring, guardrails, cost management, context windows</li></ul>
+
+<p><strong>Cross-cutting connection to today's algorithm topic:</strong></p>
+<div class="diagram-block">Backtracking + pruning is directly analogous to how LLM agents explore tool-call plans. When an agent uses ReAct-style reasoning, each "thought → action → observation" is a DFS choice; failing branches get pruned. Word Search's frequency pre-check maps onto how well-designed agents refuse impossible tasks up front instead of wasting inference tokens.</div>
+
+<p><strong>Synthesis question to ponder:</strong></p>
+<p>How would you design an LLM-driven "structured search agent" that decides when to backtrack vs commit? What signal would tell it a branch is dead-end?</p>
+
+<p>See the Saturday Deep Dive (./2026-07-18-deepdive.md) for today's main content.</p>
+
+<div class="attention-card">
+  <h3>Attention Heatmap</h3>
+  <p>When the model processes <code>it</code>, it attends most strongly to <code>animal</code>.</p>
+  <div class="heatmap-wrap">
+    <table class="heatmap">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="heatmap-axis">The</th><th class="heatmap-axis">animal</th><th class="heatmap-axis">didnt</th><th class="heatmap-axis">cross</th><th class="heatmap-axis">the</th><th class="heatmap-axis">street</th><th class="heatmap-axis">because</th><th class="heatmap-axis">it</th><th class="heatmap-axis">was</th><th class="heatmap-axis">too</th><th class="heatmap-axis">tired</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="heatmap-axis row-label">it →</th>
+          <td><div class="heatmap-cell" title="The: 0.02" aria-label="The attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="animal: 0.86" aria-label="animal attention weight 0.86" style="background:rgba(167, 139, 250, 0.86);"></div></td><td><div class="heatmap-cell" title="didnt: 0.03" aria-label="didnt attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="cross: 0.04" aria-label="cross attention weight 0.04" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="the: 0.02" aria-label="the attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="street: 0.08" aria-label="street attention weight 0.08" style="background:rgba(167, 139, 250, 0.08);"></div></td><td><div class="heatmap-cell" title="because: 0.05" aria-label="because attention weight 0.05" style="background:rgba(167, 139, 250, 0.05);"></div></td><td><div class="heatmap-cell" title="it: 0.03" aria-label="it attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="was: 0.07" aria-label="was attention weight 0.07" style="background:rgba(167, 139, 250, 0.07);"></div></td><td><div class="heatmap-cell" title="too: 0.10" aria-label="too attention weight 0.10" style="background:rgba(167, 139, 250, 0.10);"></div></td><td><div class="heatmap-cell" title="tired: 0.30" aria-label="tired attention weight 0.30" style="background:rgba(167, 139, 250, 0.30);"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+      </div>
+    </div>
+    <div class="section-block" id="section-deepdive">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-deepdive" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🔬</span>
+        <div>
+          <div class="section-header-title">🔬 Deep Dive</div>
+          <div class="section-header-sub">🔬</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-deepdive">
+        <p>🔬 <strong>Saturday Deep Dive: 回溯算法与二维网格搜索 — Word Search &amp; Beyond (18 min read)</strong></p>
+<p>📊 NeetCode: 75/150 · SysDesign: 60/40✅ · Behavioral: 60/40✅ · Frontend: 37/50 · AI: 30/30✅</p>
+<p>🔥 Day 94 — Expert Phase</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<div class="diagram-block">回溯（Backtracking）是算法面试中最高频的模式之一。它的核心思想极其简单：**选择 → 递归 → 撤销**。但"简单"不等于"容易"——面试中真正拉开差距的，是如何剪枝、如何把模板适配到具体问题、以及如何分析复杂度。</div>
+
+<p>今天我们以 <strong>Word Search（LC #79）</strong> 为核心，深挖回溯在二维网格中的完整实现，然后拓展到：</p>
+<ul><li>为什么朴素 DFS 会超时，如何剪枝</li><li>访问标记的 3 种写法（in-place vs visited set vs bitmask）</li><li>Word Search II（多词同时搜索）如何用 Trie 优化</li><li>N-Queens 如何把同一模板推向 Hard 题</li><li>真实生产场景中的回溯思想</li></ul>
+
+<p><strong>English:</strong></p>
+<div class="diagram-block">Backtracking is one of the highest-frequency algorithm patterns in tech interviews. The core idea fits in one line: **choose → recurse → undo**. But what separates candidates is knowing how to prune, how to adapt the template, and how to reason about complexity.</div>
+
+<p>We'll use <strong>Word Search (LC #79)</strong> as our anchor problem, then expand outward to pruning strategies, Trie-based multi-word search, N-Queens, and real production use cases.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>回溯 = 带撤销的 DFS / Backtracking = DFS with Undo</h3>
+
+<p><strong>中文：</strong></p>
+<p>回溯算法本质上是在一棵<strong>隐式决策树</strong>上做 DFS。每个节点代表一个"当前状态"，每条边代表一个"选择"。当走到叶节点时得到一个完整解；当当前路径不可能产生有效解时，<strong>剪枝（prune）</strong>——直接返回，避免探索子树。</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="                    [开始]&#10;                  /    |    \&#10;              选A      选B      选C&#10;             / \      / \      / \&#10;           ...  ...  ...  ... ...  ...">Copy</button>
+  <pre><code class="language-text">                    [开始]
+                  /    |    \
+              选A      选B      选C
+             / \      / \      / \
+           ...  ...  ...  ... ...  ...</code></pre>
+</div>
+
+<p>关键性质：</p>
+<ol><li><strong>状态空间树</strong>：解的集合可以组织成一棵树</li><li><strong>约束传播</strong>：边界条件越早检查，剪掉的子树越多</li><li><strong>撤销（undo）必须精确</strong>：修改什么，撤销什么——不多不少</li></ol>
+
+<p><strong>English:</strong></p>
+<p>Backtracking explores an implicit decision tree. At each node, you make a choice, recurse deeper, then <strong>undo</strong> that choice before trying the next option. The power comes from pruning: if the current partial state can never lead to a valid solution, skip the entire subtree.</p>
+
+<p>Three mental models that help:</p>
+<ul><li><strong>State space tree</strong>: visualize all possible choices as a tree</li><li><strong>Constraint propagation</strong>: check constraints early, not at the leaf</li><li><strong>Exact undo</strong>: match every mutation with its precise reversal</li></ul>
+
+<h3>Word Search 问题定义</h3>
+
+<div class="diagram-block">Grid:
+A B C E
+S F C S
+A D E E
+
+word = "ABCCED"  → True
+word = "SEE"     → True  
+word = "ABCB"    → False (can't reuse cells)</div>
+
+<p><strong>搜索规则：</strong></p>
+<ul><li>从任意格子出发</li><li>每步只能走上下左右（4方向）</li><li>同一路径中不能重复使用同一格子</li><li>找到一条路径使得连起来的字母等于 word 即返回 True</li></ul>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>方案一：朴素回溯（Naive Backtracking）</h3>
+
+<p><strong>中文：先写能跑的，再优化。</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="class Solution:&#10;    def exist(self, board: list[list[str]], word: str) -&gt; bool:&#10;        rows, cols = len(board), len(board[0])&#10;        &#10;        def dfs(r: int, c: int, idx: int) -&gt; bool:&#10;            # Base case: matched all characters&#10;            if idx == len(word):&#10;                return True&#10;            &#10;            # Boundary + character check — prune early!&#10;            if (r &lt; 0 or r &gt;= rows or&#10;                c &lt; 0 or c &gt;= cols or&#10;                board[r][c] != word[idx]):&#10;                return False&#10;            &#10;            # Mark as visited by temporarily overwriting&#10;            # This is the &quot;in-place&quot; trick: no extra set needed&#10;            temp = board[r][c]&#10;            board[r][c] = '#'   # 标记已访问 / mark visited&#10;            &#10;            # Explore all 4 directions&#10;            found = (&#10;                dfs(r + 1, c, idx + 1) or&#10;                dfs(r - 1, c, idx + 1) or&#10;                dfs(r, c + 1, idx + 1) or&#10;                dfs(r, c - 1, idx + 1)&#10;            )&#10;            &#10;            # Undo the mark — this is the &quot;backtrack&quot; step&#10;            board[r][c] = temp  # 撤销标记 / restore&#10;            &#10;            return found&#10;        &#10;        # Try every cell as the starting point&#10;        for r in range(rows):&#10;            for c in range(cols):&#10;                if dfs(r, c, 0):&#10;                    return True&#10;        return False">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">class</span> Solution:
+    <span style="color:#c678dd;">def</span> exist(self, board: list[list[str]], word: str) -&gt; bool:
+        rows, cols = len(board), len(board[<span style="color:#56b6c2;">0</span>])
+        
+        <span style="color:#c678dd;">def</span> dfs(r: int, c: int, idx: int) -&gt; bool:
+            <span style="color:#5c6370;"># Base case: matched all characters</span>
+            <span style="color:#c678dd;">if</span> idx == len(word):
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+            
+            <span style="color:#5c6370;"># Boundary + character check — prune early!</span>
+            <span style="color:#c678dd;">if</span> (r &lt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">or</span> r &gt;= rows <span style="color:#c678dd;">or</span>
+                c &lt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">or</span> c &gt;= cols <span style="color:#c678dd;">or</span>
+                board[r][c] != word[idx]):
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+            
+            <span style="color:#5c6370;"># Mark as visited by temporarily overwriting</span>
+            <span style="color:#5c6370;"># This is the "in-place" trick: no extra set needed</span>
+            temp = board[r][c]
+            board[r][c] = <span style="color:#e5c07b;">'#'</span>   <span style="color:#5c6370;"># 标记已访问 / mark visited</span>
+            
+            <span style="color:#5c6370;"># Explore all 4 directions</span>
+            found = (
+                dfs(r + <span style="color:#56b6c2;">1</span>, c, idx + <span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">or</span>
+                dfs(r - <span style="color:#56b6c2;">1</span>, c, idx + <span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">or</span>
+                dfs(r, c + <span style="color:#56b6c2;">1</span>, idx + <span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">or</span>
+                dfs(r, c - <span style="color:#56b6c2;">1</span>, idx + <span style="color:#56b6c2;">1</span>)
+            )
+            
+            <span style="color:#5c6370;"># Undo the mark — this is the "backtrack" step</span>
+            board[r][c] = temp  <span style="color:#5c6370;"># 撤销标记 / restore</span>
+            
+            <span style="color:#c678dd;">return</span> found
+        
+        <span style="color:#5c6370;"># Try every cell as the starting point</span>
+        <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> range(rows):
+            <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> range(cols):
+                <span style="color:#c678dd;">if</span> dfs(r, c, <span style="color:#56b6c2;">0</span>):
+                    <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+        <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span></code></pre>
+</div>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<ul><li>Time: O(M × N × 4^L) — M×N starting cells, each path up to 4^L branches</li><li>Space: O(L) — recursion stack depth equals word length</li></ul>
+
+<p><strong>L</strong> is <code>len(word)</code>. For a 6×6 board and 10-char word, this is 36 × 4^10 ≈ 36M ops — feasible.</p>
+
+<hr/>
+
+<h3>方案二：关键剪枝优化</h3>
+
+<p><strong>中文：4 个剪枝，每一个都有实际效果。</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="class Solution:&#10;    def exist(self, board: list[list[str]], word: str) -&gt; bool:&#10;        rows, cols = len(board), len(board[0])&#10;        &#10;        # ============================================================&#10;        # PRUNING #1: Frequency check — O(M*N + L), saves huge time&#10;        # 如果 board 里某个字母的数量 &lt; word 里需要的数量，直接返回 False&#10;        # ============================================================&#10;        from collections import Counter&#10;        board_count = Counter(c for row in board for c in row)&#10;        word_count  = Counter(word)&#10;        for ch, cnt in word_count.items():&#10;            if board_count[ch] &lt; cnt:&#10;                return False&#10;        &#10;        # ============================================================&#10;        # PRUNING #2: Reverse word if tail is rarer than head&#10;        # 从频率更低的一端开始搜索 → 更快剪枝&#10;        # Example: word=&quot;AAAAAB&quot; → start from 'B' side&#10;        # ============================================================&#10;        if board_count[word[0]] &gt; board_count[word[-1]]:&#10;            word = word[::-1]&#10;        &#10;        def dfs(r: int, c: int, idx: int) -&gt; bool:&#10;            if idx == len(word):&#10;                return True&#10;            if (r &lt; 0 or r &gt;= rows or&#10;                c &lt; 0 or c &gt;= cols or&#10;                board[r][c] != word[idx]):&#10;                return False&#10;            &#10;            temp = board[r][c]&#10;            board[r][c] = '#'&#10;            &#10;            # ============================================================&#10;            # PRUNING #3: Short-circuit with 'or' — stops at first True&#10;            # Python 'or' short-circuits: once one branch returns True,&#10;            # the remaining branches are not evaluated&#10;            # ============================================================&#10;            found = (&#10;                dfs(r + 1, c, idx + 1) or&#10;                dfs(r - 1, c, idx + 1) or&#10;                dfs(r, c + 1, idx + 1) or&#10;                dfs(r, c - 1, idx + 1)&#10;            )&#10;            &#10;            board[r][c] = temp&#10;            return found&#10;        &#10;        for r in range(rows):&#10;            for c in range(cols):&#10;                # ============================================================&#10;                # PRUNING #4: Skip starting cells that don't match word[0]&#10;                # (implicit in dfs check, but can also be explicit)&#10;                # ============================================================&#10;                if dfs(r, c, 0):&#10;                    return True&#10;        return False">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">class</span> Solution:
+    <span style="color:#c678dd;">def</span> exist(self, board: list[list[str]], word: str) -&gt; bool:
+        rows, cols = len(board), len(board[<span style="color:#56b6c2;">0</span>])
+        
+        <span style="color:#5c6370;"># ============================================================</span>
+        <span style="color:#5c6370;"># PRUNING #1: Frequency check — O(M*N + L), saves huge time</span>
+        <span style="color:#5c6370;"># 如果 board 里某个字母的数量 &lt; word 里需要的数量，直接返回 False</span>
+        <span style="color:#5c6370;"># ============================================================</span>
+        <span style="color:#c678dd;">from</span> collections <span style="color:#c678dd;">import</span> Counter
+        board_count = Counter(c <span style="color:#c678dd;">for</span> row <span style="color:#c678dd;">in</span> board <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> row)
+        word_count  = Counter(word)
+        <span style="color:#c678dd;">for</span> ch, cnt <span style="color:#c678dd;">in</span> word_count.items():
+            <span style="color:#c678dd;">if</span> board_count[ch] &lt; cnt:
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+        
+        <span style="color:#5c6370;"># ============================================================</span>
+        <span style="color:#5c6370;"># PRUNING #2: Reverse word if tail is rarer than head</span>
+        <span style="color:#5c6370;"># 从频率更低的一端开始搜索 → 更快剪枝</span>
+        <span style="color:#5c6370;"># Example: word="AAAAAB" → start from 'B' side</span>
+        <span style="color:#5c6370;"># ============================================================</span>
+        <span style="color:#c678dd;">if</span> board_count[word[<span style="color:#56b6c2;">0</span>]] &gt; board_count[word[-<span style="color:#56b6c2;">1</span>]]:
+            word = word[::-<span style="color:#56b6c2;">1</span>]
+        
+        <span style="color:#c678dd;">def</span> dfs(r: int, c: int, idx: int) -&gt; bool:
+            <span style="color:#c678dd;">if</span> idx == len(word):
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+            <span style="color:#c678dd;">if</span> (r &lt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">or</span> r &gt;= rows <span style="color:#c678dd;">or</span>
+                c &lt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">or</span> c &gt;= cols <span style="color:#c678dd;">or</span>
+                board[r][c] != word[idx]):
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>
+            
+            temp = board[r][c]
+            board[r][c] = <span style="color:#e5c07b;">'#'</span>
+            
+            <span style="color:#5c6370;"># ============================================================</span>
+            <span style="color:#5c6370;"># PRUNING #3: Short-circuit with 'or' — stops at first True</span>
+            <span style="color:#5c6370;"># Python 'or' short-circuits: once one branch returns True,</span>
+            <span style="color:#5c6370;"># the remaining branches are not evaluated</span>
+            <span style="color:#5c6370;"># ============================================================</span>
+            found = (
+                dfs(r + <span style="color:#56b6c2;">1</span>, c, idx + <span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">or</span>
+                dfs(r - <span style="color:#56b6c2;">1</span>, c, idx + <span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">or</span>
+                dfs(r, c + <span style="color:#56b6c2;">1</span>, idx + <span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">or</span>
+                dfs(r, c - <span style="color:#56b6c2;">1</span>, idx + <span style="color:#56b6c2;">1</span>)
+            )
+            
+            board[r][c] = temp
+            <span style="color:#c678dd;">return</span> found
+        
+        <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> range(rows):
+            <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> range(cols):
+                <span style="color:#5c6370;"># ============================================================</span>
+                <span style="color:#5c6370;"># PRUNING #4: Skip starting cells that don't match word[0]</span>
+                <span style="color:#5c6370;"># (implicit in dfs check, but can also be explicit)</span>
+                <span style="color:#5c6370;"># ============================================================</span>
+                <span style="color:#c678dd;">if</span> dfs(r, c, <span style="color:#56b6c2;">0</span>):
+                    <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+        <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span></code></pre>
+</div>
+
+<hr/>
+
+<h3>方案三：3 种访问标记写法对比</h3>
+
+<p><strong>中文：in-place 改写最省空间，但需要保证撤销正确。</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Option A: In-place overwrite (推荐 / Recommended)&#10;# Pros: O(1) extra space, clean&#10;# Cons: board is mutated during search (not thread-safe)&#10;temp = board[r][c]&#10;board[r][c] = '#'&#10;# ... recurse ...&#10;board[r][c] = temp&#10;&#10;# Option B: visited set&#10;# Pros: board unchanged, intuitive&#10;# Cons: O(M*N) extra space, set add/remove overhead&#10;visited = set()&#10;visited.add((r, c))&#10;# ... recurse ...&#10;visited.remove((r, c))&#10;&#10;# Option C: bitmask (for very small grids, e.g., 4x4)&#10;# Pros: O(1) space, fast bitwise ops&#10;# Cons: only works when M*N ≤ 64&#10;mask |= (1 &lt;&lt; (r * cols + c))&#10;# ... recurse ...&#10;mask ^= (1 &lt;&lt; (r * cols + c))  # XOR to unset">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Option A: In-place overwrite (推荐 / Recommended)</span>
+<span style="color:#5c6370;"># Pros: O(1) extra space, clean</span>
+<span style="color:#5c6370;"># Cons: board is mutated during search (not thread-safe)</span>
+temp = board[r][c]
+board[r][c] = <span style="color:#e5c07b;">'#'</span>
+<span style="color:#5c6370;"># ... recurse ...</span>
+board[r][c] = temp
+
+<span style="color:#5c6370;"># Option B: visited set</span>
+<span style="color:#5c6370;"># Pros: board unchanged, intuitive</span>
+<span style="color:#5c6370;"># Cons: O(M*N) extra space, set add/remove overhead</span>
+visited = set()
+visited.add((r, c))
+<span style="color:#5c6370;"># ... recurse ...</span>
+visited.remove((r, c))
+
+<span style="color:#5c6370;"># Option C: bitmask (for very small grids, e.g., 4x4)</span>
+<span style="color:#5c6370;"># Pros: O(1) space, fast bitwise ops</span>
+<span style="color:#5c6370;"># Cons: only works when M*N ≤ 64</span>
+mask |= (<span style="color:#56b6c2;">1</span> &lt;&lt; (r * cols + c))
+<span style="color:#5c6370;"># ... recurse ...</span>
+mask ^= (<span style="color:#56b6c2;">1</span> &lt;&lt; (r * cols + c))  <span style="color:#5c6370;"># XOR to unset</span></code></pre>
+</div>
+
+<p><strong>面试中：用 in-place overwrite，解释清楚即可。</strong></p>
+
+<hr/>
+
+<h3>Word Search II — Trie 优化多词搜索</h3>
+
+<p><strong>中文：如果要同时搜索 words 列表中的所有词，朴素方法是对每个词跑一遍 DFS = O(W × M × N × 4^L)。用 Trie 可以把 W 个词的搜索合并成一次 DFS。</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="class TrieNode:&#10;    def __init__(self):&#10;        self.children: dict[str, 'TrieNode'] = {}&#10;        self.word: str | None = None  # store complete word at leaf&#10;&#10;class Solution:&#10;    def findWords(self, board: list[list[str]], words: list[str]) -&gt; list[str]:&#10;        # Build Trie from all words&#10;        root = TrieNode()&#10;        for w in words:&#10;            node = root&#10;            for ch in w:&#10;                node = node.children.setdefault(ch, TrieNode())&#10;            node.word = w  # mark end of word&#10;        &#10;        rows, cols = len(board), len(board[0])&#10;        result = []&#10;        &#10;        def dfs(r: int, c: int, node: TrieNode) -&gt; None:&#10;            ch = board[r][c]&#10;            &#10;            # KEY: check if this character exists in Trie&#10;            # If not, prune entire subtree — this is the Trie speedup&#10;            if ch not in node.children:&#10;                return&#10;            &#10;            next_node = node.children[ch]&#10;            &#10;            # Found a complete word&#10;            if next_node.word:&#10;                result.append(next_node.word)&#10;                next_node.word = None  # de-duplicate: don't add same word twice&#10;            &#10;            # Mark visited&#10;            board[r][c] = '#'&#10;            &#10;            for dr, dc in [(1,0),(-1,0),(0,1),(0,-1)]:&#10;                nr, nc = r + dr, c + dc&#10;                if 0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols and board[nr][nc] != '#':&#10;                    dfs(nr, nc, next_node)&#10;            &#10;            board[r][c] = ch  # restore&#10;            &#10;            # Optimization: prune empty Trie nodes (leaf pruning)&#10;            # If next_node has no more children and no word,&#10;            # remove it from parent to speed up future searches&#10;            if not next_node.children and not next_node.word:&#10;                del node.children[ch]&#10;        &#10;        for r in range(rows):&#10;            for c in range(cols):&#10;                dfs(r, c, root)&#10;        &#10;        return result">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">class</span> TrieNode:
+    <span style="color:#c678dd;">def</span> __init__(self):
+        self.children: dict[str, <span style="color:#e5c07b;">'TrieNode'</span>] = {}
+        self.word: str | <span style="color:#c678dd;">None</span> = <span style="color:#c678dd;">None</span>  <span style="color:#5c6370;"># store complete word at leaf</span>
+
+<span style="color:#c678dd;">class</span> Solution:
+    <span style="color:#c678dd;">def</span> findWords(self, board: list[list[str]], words: list[str]) -&gt; list[str]:
+        <span style="color:#5c6370;"># Build Trie from all words</span>
+        root = TrieNode()
+        <span style="color:#c678dd;">for</span> w <span style="color:#c678dd;">in</span> words:
+            node = root
+            <span style="color:#c678dd;">for</span> ch <span style="color:#c678dd;">in</span> w:
+                node = node.children.setdefault(ch, TrieNode())
+            node.word = w  <span style="color:#5c6370;"># mark end of word</span>
+        
+        rows, cols = len(board), len(board[<span style="color:#56b6c2;">0</span>])
+        result = []
+        
+        <span style="color:#c678dd;">def</span> dfs(r: int, c: int, node: TrieNode) -&gt; <span style="color:#c678dd;">None</span>:
+            ch = board[r][c]
+            
+            <span style="color:#5c6370;"># KEY: check if this character exists in Trie</span>
+            <span style="color:#5c6370;"># If not, prune entire subtree — this is the Trie speedup</span>
+            <span style="color:#c678dd;">if</span> ch <span style="color:#c678dd;">not</span> <span style="color:#c678dd;">in</span> node.children:
+                <span style="color:#c678dd;">return</span>
+            
+            next_node = node.children[ch]
+            
+            <span style="color:#5c6370;"># Found a complete word</span>
+            <span style="color:#c678dd;">if</span> next_node.word:
+                result.append(next_node.word)
+                next_node.word = <span style="color:#c678dd;">None</span>  <span style="color:#5c6370;"># de-duplicate: don't add same word twice</span>
+            
+            <span style="color:#5c6370;"># Mark visited</span>
+            board[r][c] = <span style="color:#e5c07b;">'#'</span>
+            
+            <span style="color:#c678dd;">for</span> dr, dc <span style="color:#c678dd;">in</span> [(<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">0</span>),(-<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">0</span>),(<span style="color:#56b6c2;">0</span>,<span style="color:#56b6c2;">1</span>),(<span style="color:#56b6c2;">0</span>,-<span style="color:#56b6c2;">1</span>)]:
+                nr, nc = r + dr, c + dc
+                <span style="color:#c678dd;">if</span> <span style="color:#56b6c2;">0</span> &lt;= nr &lt; rows <span style="color:#c678dd;">and</span> <span style="color:#56b6c2;">0</span> &lt;= nc &lt; cols <span style="color:#c678dd;">and</span> board[nr][nc] != <span style="color:#e5c07b;">'#'</span>:
+                    dfs(nr, nc, next_node)
+            
+            board[r][c] = ch  <span style="color:#5c6370;"># restore</span>
+            
+            <span style="color:#5c6370;"># Optimization: prune empty Trie nodes (leaf pruning)</span>
+            <span style="color:#5c6370;"># If next_node has no more children and no word,</span>
+            <span style="color:#5c6370;"># remove it from parent to speed up future searches</span>
+            <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> next_node.children <span style="color:#c678dd;">and</span> <span style="color:#c678dd;">not</span> next_node.word:
+                <span style="color:#c678dd;">del</span> node.children[ch]
+        
+        <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> range(rows):
+            <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> range(cols):
+                dfs(r, c, root)
+        
+        <span style="color:#c678dd;">return</span> result</code></pre>
+</div>
+
+<p><strong>Trie 优化效果：</strong></p>
+<ul><li>Without Trie: O(W × M × N × 4^L) — one full search per word</li><li>With Trie:    O(M × N × 4^L_max) — one search for all words simultaneously</li><li>关键：Trie 的前缀共享让多个词的公共前缀只走一次</li></ul>
+
+<hr/>
+
+<h3>N-Queens — 回溯模板的 Hard 变体</h3>
+
+<p><strong>中文：N-Queens 是同一个回溯模板，但"约束检查"更复杂。</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="class Solution:&#10;    def solveNQueens(self, n: int) -&gt; list[list[str]]:&#10;        result = []&#10;        &#10;        # Track which columns, diagonals are under attack&#10;        # 用 set 追踪哪些列、对角线、反对角线已被攻击&#10;        cols    = set()&#10;        diag    = set()   # r - c is constant along a diagonal&#10;        anti    = set()   # r + c is constant along anti-diagonal&#10;        &#10;        board = [['.'] * n for _ in range(n)]&#10;        &#10;        def backtrack(row: int) -&gt; None:&#10;            # Base case: placed queens in all n rows&#10;            if row == n:&#10;                result.append([''.join(r) for r in board])&#10;                return&#10;            &#10;            for col in range(n):&#10;                # Constraint check — prune invalid placements&#10;                if col in cols or (row - col) in diag or (row + col) in anti:&#10;                    continue&#10;                &#10;                # Choose&#10;                cols.add(col)&#10;                diag.add(row - col)&#10;                anti.add(row + col)&#10;                board[row][col] = 'Q'&#10;                &#10;                # Recurse&#10;                backtrack(row + 1)&#10;                &#10;                # Undo&#10;                cols.discard(col)&#10;                diag.discard(row - col)&#10;                anti.discard(row + col)&#10;                board[row][col] = '.'&#10;        &#10;        backtrack(0)&#10;        return result">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">class</span> Solution:
+    <span style="color:#c678dd;">def</span> solveNQueens(self, n: int) -&gt; list[list[str]]:
+        result = []
+        
+        <span style="color:#5c6370;"># Track which columns, diagonals are under attack</span>
+        <span style="color:#5c6370;"># 用 set 追踪哪些列、对角线、反对角线已被攻击</span>
+        cols    = set()
+        diag    = set()   <span style="color:#5c6370;"># r - c is constant along a diagonal</span>
+        anti    = set()   <span style="color:#5c6370;"># r + c is constant along anti-diagonal</span>
+        
+        board = [[<span style="color:#e5c07b;">'.'</span>] * n <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(n)]
+        
+        <span style="color:#c678dd;">def</span> backtrack(row: int) -&gt; <span style="color:#c678dd;">None</span>:
+            <span style="color:#5c6370;"># Base case: placed queens in all n rows</span>
+            <span style="color:#c678dd;">if</span> row == n:
+                result.append([<span style="color:#e5c07b;">''</span>.join(r) <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> board])
+                <span style="color:#c678dd;">return</span>
+            
+            <span style="color:#c678dd;">for</span> col <span style="color:#c678dd;">in</span> range(n):
+                <span style="color:#5c6370;"># Constraint check — prune invalid placements</span>
+                <span style="color:#c678dd;">if</span> col <span style="color:#c678dd;">in</span> cols <span style="color:#c678dd;">or</span> (row - col) <span style="color:#c678dd;">in</span> diag <span style="color:#c678dd;">or</span> (row + col) <span style="color:#c678dd;">in</span> anti:
+                    <span style="color:#c678dd;">continue</span>
+                
+                <span style="color:#5c6370;"># Choose</span>
+                cols.add(col)
+                diag.add(row - col)
+                anti.add(row + col)
+                board[row][col] = <span style="color:#e5c07b;">'Q'</span>
+                
+                <span style="color:#5c6370;"># Recurse</span>
+                backtrack(row + <span style="color:#56b6c2;">1</span>)
+                
+                <span style="color:#5c6370;"># Undo</span>
+                cols.discard(col)
+                diag.discard(row - col)
+                anti.discard(row + col)
+                board[row][col] = <span style="color:#e5c07b;">'.'</span>
+        
+        backtrack(<span style="color:#56b6c2;">0</span>)
+        <span style="color:#c678dd;">return</span> result</code></pre>
+</div>
+
+<p><strong>对角线技巧 / Diagonal Trick:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="For any cell (r, c):&#10;  - Same diagonal:       r - c = constant&#10;  - Same anti-diagonal:  r + c = constant&#10;&#10;Example (4x4):&#10;r-c diagonals:       r+c anti-diagonals:&#10;-3 -2 -1  0          0  1  2  3&#10;-2 -1  0  1          1  2  3  4&#10;-1  0  1  2          2  3  4  5&#10; 0  1  2  3          3  4  5  6">Copy</button>
+  <pre><code class="language-text">For any cell (r, c):
+  - Same diagonal:       r - c = constant
+  - Same anti-diagonal:  r + c = constant
+
+Example (4x4):
+r-c diagonals:       r+c anti-diagonals:
+-3 -2 -1  0          0  1  2  3
+-2 -1  0  1          1  2  3  4
+-1  0  1  2          2  3  4  5
+ 0  1  2  3          3  4  5  6</code></pre>
+</div>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文 &amp; English:</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# ❌ Gotcha 1: Forgetting to restore board[r][c]&#10;# 最常见错误：忘记撤销 in-place 标记&#10;# If you mark '#' but don't restore, later DFS branches see '#'&#10;board[r][c] = '#'&#10;result = dfs(...)&#10;# MUST restore before returning!&#10;board[r][c] = temp  # ← don't forget this&#10;&#10;# ❌ Gotcha 2: Off-by-one in base case&#10;# idx == len(word) means we matched ALL characters&#10;# Some people write idx == len(word) - 1 → misses last char&#10;if idx == len(word):   # ✅ correct&#10;    return True&#10;if idx == len(word) - 1 and board[r][c] == word[idx]:  # ✅ also correct&#10;    return True&#10;&#10;# ❌ Gotcha 3: Word Search II — duplicate results&#10;# If the same word can be found via multiple paths,&#10;# de-duplicate by clearing node.word after first find&#10;if next_node.word:&#10;    result.append(next_node.word)&#10;    next_node.word = None  # ← prevent duplicates&#10;&#10;# ❌ Gotcha 4: Empty board / single cell&#10;board = [[&quot;a&quot;]]&#10;word = &quot;a&quot;   # → True (idx hits len(word) immediately after matching)&#10;word = &quot;aa&quot;  # → False (can't reuse cell, no neighbors)&#10;&#10;# ❌ Gotcha 5: N-Queens — using list for cols check&#10;# O(n) lookup per placement → O(n^3) total&#10;# Use set for O(1) lookup → O(n^2) total">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># ❌ Gotcha 1: Forgetting to restore board[r][c]</span>
+<span style="color:#5c6370;"># 最常见错误：忘记撤销 in-place 标记</span>
+<span style="color:#5c6370;"># If you mark '#' but don't restore, later DFS branches see '#'</span>
+board[r][c] = <span style="color:#e5c07b;">'#'</span>
+result = dfs(...)
+<span style="color:#5c6370;"># MUST restore before returning!</span>
+board[r][c] = temp  <span style="color:#5c6370;"># ← don't forget this</span>
+
+<span style="color:#5c6370;"># ❌ Gotcha 2: Off-by-one in base case</span>
+<span style="color:#5c6370;"># idx == len(word) means we matched ALL characters</span>
+<span style="color:#5c6370;"># Some people write idx == len(word) - 1 → misses last char</span>
+<span style="color:#c678dd;">if</span> idx == len(word):   <span style="color:#5c6370;"># ✅ correct</span>
+    <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+<span style="color:#c678dd;">if</span> idx == len(word) - <span style="color:#56b6c2;">1</span> <span style="color:#c678dd;">and</span> board[r][c] == word[idx]:  <span style="color:#5c6370;"># ✅ also correct</span>
+    <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+
+<span style="color:#5c6370;"># ❌ Gotcha 3: Word Search II — duplicate results</span>
+<span style="color:#5c6370;"># If the same word can be found via multiple paths,</span>
+<span style="color:#5c6370;"># de-duplicate by clearing node.word after first find</span>
+<span style="color:#c678dd;">if</span> next_node.word:
+    result.append(next_node.word)
+    next_node.word = <span style="color:#c678dd;">None</span>  <span style="color:#5c6370;"># ← prevent duplicates</span>
+
+<span style="color:#5c6370;"># ❌ Gotcha 4: Empty board / single cell</span>
+board = [[<span style="color:#e5c07b;">"a"</span>]]
+word = <span style="color:#e5c07b;">"a"</span>   <span style="color:#5c6370;"># → True (idx hits len(word) immediately after matching)</span>
+word = <span style="color:#e5c07b;">"aa"</span>  <span style="color:#5c6370;"># → False (can't reuse cell, no neighbors)</span>
+
+<span style="color:#5c6370;"># ❌ Gotcha 5: N-Queens — using list for cols check</span>
+<span style="color:#5c6370;"># O(n) lookup per placement → O(n^3) total</span>
+<span style="color:#5c6370;"># Use set for O(1) lookup → O(n^2) total</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong> 回溯思想在生产代码里无处不在，只是换了个名字：</p>
+
+<ol><li><strong>正则引擎（Regex Engine）</strong></li></ol>
+<p>   - <code>re.match("a*b", "aab")</code> 内部就是回溯 NFA</p>
+<p>   - 著名的"灾难性回溯"（Catastrophic Backtracking）：<code>(a+)+b</code> 匹配 "aaaa..." 导致指数级爆炸</p>
+<p>   - 解法：使用 re2 引擎（Google），保证 O(n) 线性时间</p>
+
+<ol><li><strong>SAT/约束求解（Constraint Solving）</strong></li></ol>
+<p>   - Sudoku solver、日程安排、电路布局验证</p>
+<p>   - 工业级 SAT solver（Minisat、Z3）底层是 DPLL 算法 = 回溯 + 单位传播剪枝</p>
+
+<ol><li><strong>包依赖解析（Dependency Resolution）</strong></li></ol>
+<p>   - pip、npm、cargo 的版本解析本质是约束满足</p>
+<p>   - Cargo（Rust）用 pubgrub 算法，是 DPLL 的变体</p>
+
+<ol><li><strong>游戏 AI</strong></li></ol>
+<p>   - 国际象棋、围棋的 Alpha-Beta 剪枝 = 带剪枝的回溯在博弈树上的应用</p>
+
+<p><strong>English:</strong> Backtracking shows up constantly in production:</p>
+<ul><li>Regex engines use NFA-based backtracking (careful: catastrophic backtracking is a real DoS vector)</li><li>Package managers resolve version constraints via backtracking solvers</li><li>Database query optimizers explore join orderings with pruning</li></ul>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>中文：</strong> 以下是面试官最常追问的 5 个问题，附简要答案：</p>
+
+<hr/>
+
+<p><strong>Q1: "Word Search 的时间复杂度是多少？"</strong></p>
+
+<blockquote>O(M × N × 4^L)，其中 M×N 是 board 大小，L 是 word 长度。每个起点最多展开一棵深度为 L 的四叉树。实际中剪枝大幅降低常数。</blockquote>
+
+<p><strong>A: O(M × N × 4^L)</strong> — M×N starting points, each branching up to 4 ways per character, depth L. In practice pruning cuts this significantly.</p>
+
+<hr/>
+
+<p><strong>Q2: "为什么不用 visited set，而是直接改 board？"</strong></p>
+
+<blockquote>In-place 改写省去了 O(M×N) 的额外空间，也避免了 set 的 hash 开销。代价是：board 在 DFS 期间被临时修改，需要保证撤销正确。如果 board 是只读的（比如 const&amp;），则必须用 visited set。</blockquote>
+
+<p><strong>A:</strong> In-place saves O(M×N) space and avoids hash overhead. Trade-off: board is temporarily mutated — requires precise undo. Use visited set if board must remain immutable (e.g., multi-threaded search).</p>
+
+<hr/>
+
+<p><strong>Q3: "如何优化 Word Search II 到让 1000 个词同时搜索也不超时？"</strong></p>
+
+<blockquote>1. 用 Trie 合并所有词的搜索 → 从 O(W × M × N × 4^L) 降到 O(M × N × 4^L_max)</blockquote>
+<blockquote>2. 找到一个词后立即从 Trie 中删除（leaf pruning）→ 避免重复找已找到的词</blockquote>
+<blockquote>3. 频率剪枝：board 里没有某字母就不加入 Trie</blockquote>
+
+<p><strong>A:</strong> Trie merges all word searches into one DFS pass. Add leaf pruning (delete matched word's node) to prevent re-visiting already-found words. Frequency pre-filter eliminates words with impossible characters.</p>
+
+<hr/>
+
+<p><strong>Q4: "回溯和动态规划有什么区别？什么时候用哪个？"</strong></p>
+
+<blockquote>回溯：需要<strong>所有解</strong>，或者问题有<strong>路径约束</strong>（不能复用元素），用回溯。</blockquote>
+<blockquote>DP：只需要<strong>最优解或计数</strong>，子问题有<strong>重叠</strong>，用 DP。</blockquote>
+<blockquote>本质区别：DP 记忆化子问题结果；回溯不记忆，靠剪枝。</blockquote>
+
+<p><strong>A:</strong> Use backtracking when you need <strong>all solutions</strong> or have <strong>path constraints</strong> (can't reuse elements). Use DP when you need the <strong>optimal/count</strong> and subproblems <strong>overlap</strong>. Backtracking explores; DP remembers.</p>
+
+<hr/>
+
+<p><strong>Q5: "N-Queens 的 r-c 对角线技巧能解释一下吗？"</strong></p>
+
+<blockquote>在棋盘上，同一对角线（左上到右下）上的所有格子，<code>row - col</code> 值相同。同一反对角线上所有格子，<code>row + col</code> 值相同。所以用两个 set 分别存 <code>r-c</code> 和 <code>r+c</code>，O(1) 判断是否有冲突，比扫描整个 board O(n) 快得多。</blockquote>
+
+<p><strong>A:</strong> On any diagonal (top-left to bottom-right), all cells share the same <code>r - c</code> value. On any anti-diagonal, all cells share <code>r + c</code>. Store these in sets for O(1) conflict checks instead of scanning the board each time.</p>
+
+<hr/>
+
+<h2>🔗 Resources / 参考资料</h2>
+
+<ul><li>🔗 LeetCode #79 Word Search: https://leetcode.com/problems/word-search/</li><li>📹 NeetCode Word Search: https://www.youtube.com/watch?v=pfiQ_PS1g8E</li><li>🔗 LeetCode #212 Word Search II: https://leetcode.com/problems/word-search-ii/</li><li>📹 NeetCode Word Search II: https://www.youtube.com/watch?v=asbcE9mZz_U</li><li>🔗 LeetCode #51 N-Queens: https://leetcode.com/problems/n-queens/</li><li>📹 NeetCode N-Queens: https://www.youtube.com/watch?v=Ph95IHmRp5M</li><li>📖 Backtracking template cheat sheet: https://leetcode.com/explore/learn/card/recursion-ii/472/backtracking/</li></ul>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
