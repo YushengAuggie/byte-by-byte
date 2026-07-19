@@ -95,6 +95,18 @@ else
   exit 1
 fi
 
+# ── 3.5. Build day/archive pages + commit + push ─────────────────────
+# The email links to days/<date>.html ("View in browser"). The normal
+# verify-and-send path runs commit.sh which regenerates pages and pushes;
+# the backup path must do the same or the browser link 404s (esp. weekends).
+if bash "$REPO_DIR/scripts/commit.sh"; then
+  log "Pages regenerated + committed/pushed via commit.sh."
+else
+  log "WARNING: commit.sh failed — browser page may be missing/unpushed."
+  python3 "$REPO_DIR/scripts/send-telegram.py" \
+    "⚠️ byte-by-byte backup-send: email sent for $TODAY but commit.sh failed — days/$TODAY.html may 404 until fixed." 2>/dev/null || true
+fi
+
 # ── 4. Alert via Telegram ────────────────────────────────────────────
 ALERT="⚠️ byte-by-byte backup-send triggered for $TODAY ($CONTENT_TYPE). The review-and-send cron failed or timed out — backup sent email directly without QA review."
 python3 "$REPO_DIR/scripts/send-telegram.py" "$ALERT" 2>/dev/null || \
