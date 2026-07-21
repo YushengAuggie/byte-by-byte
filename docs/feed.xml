@@ -5,8 +5,719 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 20 Jul 2026 15:30:37 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 21 Jul 2026 15:09:01 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-21</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-21</guid>
+      <pubDate>Tue, 21 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>系统设计综合 / System Design Synthesis — Day 96</h2>
+
+<p><strong>Day 96 | Expert Phase | Synthesis Mode</strong></p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design</h2>
+<h3>综合：缓存 vs 队列 vs 数据库 — 三角决策框架</h3>
+<p><strong>Synthesis: Cache vs Queue vs Database — The Triad Decision Framework</strong></p>
+
+<hr/>
+
+<p>当你设计一个系统，最常犯的错误是 <strong>用错了数据存储</strong>：把需要持久化的东西放进了 Cache，把实时的东西塞进了 Queue，把临时状态存进了 DB。今天我们综合前面所有系统设计话题，建立一个决策框架。</p>
+
+<p>The most common system design mistake: <strong>choosing the wrong storage primitive</strong>. Let&#x27;s build a mental model across all the systems we&#x27;ve covered.</p>
+
+<hr/>
+
+<h3>🔺 决策三角 / The Decision Triangle</h3>
+
+<pre><code>
+                    ┌─────────────────────┐
+                    │     你的数据需求      │
+                    │   Your Data Need     │
+                    └────────┬────────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              ▼              ▼              ▼
+        ┌──────────┐  ┌──────────┐  ┌──────────┐
+        │  CACHE   │  │  QUEUE   │  │    DB    │
+        │  (Redis) │  │(Kafka/SQS│  │(Postgres)│
+        └──────────┘  └──────────┘  └──────────┘
+        快/临时/读多   异步/解耦/顺序   持久/查询/ACID
+        Fast/Temp/R   Async/Decouple  Persist/Query
+</code></pre>
+
+<hr/>
+
+<h3>📐 选哪个？/ Which One?</h3>
+
+<p>| 问题 / Question | 选 / Choose |</p>
+<p>|---|---|</p>
+<p>| 同一数据被读100次以上? | Cache |</p>
+<p>| 生产者比消费者快？ | Queue |</p>
+<p>| 需要事务/回滚？ | DB |</p>
+<p>| 数据可以过期/丢失？ | Cache |</p>
+<p>| 下游服务可能宕机？ | Queue |</p>
+<p>| 需要跨表 JOIN 查询？ | DB |</p>
+<p>| 分布式锁/互斥？ | Cache (SETNX) |</p>
+<p>| 事件溯源/回放？ | Queue (Kafka) |</p>
+<p>| 用户配置/账单/订单？ | DB |</p>
+
+<hr/>
+
+<h3>🏛️ 真实案例：电商下单流程 / Real Case: E-Commerce Order Flow</h3>
+
+<pre><code>
+用户下单
+User places order
+     │
+     ▼
+[API Gateway]
+     │
+     ├──► Redis Cache ──► 检查库存快照 (&lt; 1ms)
+     │                    Check inventory snapshot
+     │
+     ├──► Postgres ──────► 写订单记录 (ACID)
+     │                    Write order record
+     │
+     └──► Kafka ─────────► 触发下游: 支付/邮件/库存扣减
+                           Trigger downstream: payment/email/inventory
+</code></pre>
+
+<p><strong>关键设计决策 / Key Design Decisions:</strong></p>
+<p>1. <strong>先查 Cache</strong> — 库存查询 QPS 可达 100K+，不能每次打 DB</p>
+<p>2. <strong>写 DB 用事务</strong> — 订单必须原子写入，支持回滚</p>
+<p>3. <strong>Kafka 解耦</strong> — 支付服务宕机不影响订单写入</p>
+
+<hr/>
+
+<h3>⚠️ 常见陷阱 / Common Pitfalls</h3>
+
+<p><strong>❌ Cache Stampede (缓存雪崩)</strong></p>
+<pre><code>
+大量 Key 同时过期 → 所有请求打到 DB → DB 崩溃
+</code></pre>
+<p><strong>✅ Fix:</strong> 随机 TTL + 互斥锁 + 后台预热</p>
+
+<p><strong>❌ Queue Backpressure (队列积压)</strong></p>
+<pre><code>
+消费者处理速度 &lt; 生产者发送速度 → 队列无限增长
+</code></pre>
+<p><strong>✅ Fix:</strong> 监控 lag、动态扩容消费者、设置 max queue size</p>
+
+<p><strong>❌ DB Hot Spot (数据库热点)</strong></p>
+<pre><code>
+所有写请求打到同一个 partition/shard
+</code></pre>
+<p><strong>✅ Fix:</strong> 分散 partition key、写操作异步化</p>
+
+<hr/>
+
+<h3>🎯 Expert-Level Insight</h3>
+
+<p><strong>真正的系统设计不是&quot;用哪个&quot;，而是&quot;如何组合&quot;。</strong></p>
+
+<p>The best systems use all three in concert:</p>
+<p>- <strong>Cache</strong> absorbs read traffic — Redis for session, inventory, rate limiting</p>
+<p>- <strong>Queue</strong> absorbs write spikes — Kafka for events, SQS for tasks</p>
+<p>- <strong>DB</strong> is the source of truth — Postgres/MySQL for transactional data</p>
+
+<p><strong>面试中如何展示这个框架 / How to show this in interviews:</strong></p>
+<p>&gt; &quot;首先我会分析读写比例和一致性要求。读多写少 + 可容忍短暂不一致 → Cache 层；写入有峰值 + 下游解耦 → Queue；需要强一致性 + 复杂查询 → 关系型 DB。&quot;</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Redis Architecture](https://redis.io/docs/get-started/faq/)</p>
+<p>- [Kafka Design](https://kafka.apache.org/documentation/#design)</p>
+<p>- [PostgreSQL MVCC](https://www.postgresql.org/docs/current/mvcc-intro.html)</p>
+
+<h3>🧒 ELI5</h3>
+<p>- <strong>Cache</strong> = 桌面上的笔记本（快，但可能丢）</p>
+<p>- <strong>Queue</strong> = 邮箱收件箱（顺序处理，不丢）</p>
+<p>- <strong>DB</strong> = 文件柜（慢，但永久保存）</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>算法 / Algorithms — Day 96</h2>
+
+<p><strong>Day 96 | #79 Word Search | Medium | Backtracking (6/9)</strong></p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms</h2>
+<h3>#79 Word Search — 回溯在二维网格上的应用</h3>
+
+<p>🧩 <strong>回溯模式 (6/9)</strong> — building on the template from Day 88 (Subsets)</p>
+
+<p>今天是回溯模式第 6 题。前面我们做了：子集、组合求和、全排列……今天把回溯搬到 <strong>2D 网格</strong> 上。本质没变，只是 &quot;choices&quot; 变成了四个方向。</p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+<p>- 🔗 [LeetCode #79](https://leetcode.com/problems/word-search/) 🟡 Medium</p>
+<p>- 📹 [NeetCode Video](https://neetcode.io/problems/search-for-word)</p>
+
+<hr/>
+
+<h3>🌍 Real-World Analogy</h3>
+<p>想象你在 Wordle 的升级版 — 一个字母网格里找单词，每个格子只能用一次，可以上下左右走。这就是 Word Search。</p>
+
+<p>Imagine a word-search puzzle you find in newspapers. Given a grid of letters, find if a specific word exists by navigating horizontally or vertically, without reusing any cell.</p>
+
+<hr/>
+
+<h3>📋 Problem</h3>
+<pre><code>
+Given an m×n grid of characters and a string word,
+return true if word exists in the grid.
+The word must be constructed from adjacent cells (horizontal/vertical).
+Each cell may only be used once.
+
+Example:
+board = [[&quot;A&quot;,&quot;B&quot;,&quot;C&quot;,&quot;E&quot;],
+         [&quot;S&quot;,&quot;F&quot;,&quot;C&quot;,&quot;S&quot;],
+         [&quot;A&quot;,&quot;D&quot;,&quot;E&quot;,&quot;E&quot;]]
+word = &quot;ABCCED&quot; → True
+word = &quot;SEE&quot;    → True
+word = &quot;ABCB&quot;   → False
+</code></pre>
+
+<hr/>
+
+<h3>🗺️ 映射到回溯模版 / Map to Pattern Template</h3>
+
+<pre><code>
+def backtrack(path, choices):
+    if IS_COMPLETE(path):        # 找到 word 所有字符
+        return True
+    for choice in choices:       # 4 个方向
+        if IS_VALID(choice):     # 在边界内 + 未访问 + 字符匹配
+            path.append(choice)  # 标记已访问
+            backtrack(...)
+            path.pop()           # 撤销标记
+</code></pre>
+
+<p><strong>关键区别 vs 之前的题 / Key Difference vs Previous Problems:</strong></p>
+<p>- 之前：choices = 数组中的数字</p>
+<p>- 今天：choices = 网格中的 4 个方向坐标</p>
+<p>- 之前：path = 数字列表</p>
+<p>- 今天：path = 已访问的格子（用 visited 标记代替显式 path）</p>
+
+<hr/>
+
+<h3>🐍 Python Solution</h3>
+
+<pre><code>
+def exist(board: list[list[str]], word: str) -&gt; bool:
+    ROWS, COLS = len(board), len(board[0])
+    
+    def backtrack(r, c, idx):
+        # Base case: found all characters
+        if idx == len(word):
+            return True
+        
+        # Bounds + character match + not visited
+        if (r &lt; 0 or r &gt;= ROWS or 
+            c &lt; 0 or c &gt;= COLS or
+            board[r][c] != word[idx]):
+            return False
+        
+        # Mark visited by temporarily modifying board
+        temp = board[r][c]
+        board[r][c] = &#x27;#&#x27;   # Mark as visited
+        
+        # Explore all 4 directions
+        found = (backtrack(r+1, c, idx+1) or
+                 backtrack(r-1, c, idx+1) or
+                 backtrack(r, c+1, idx+1) or
+                 backtrack(r, c-1, idx+1))
+        
+        board[r][c] = temp  # Undo: restore original character
+        return found
+    
+    # Try starting from every cell
+    for r in range(ROWS):
+        for c in range(COLS):
+            if backtrack(r, c, 0):
+                return True
+    return False
+</code></pre>
+
+<p><strong>Trace on &quot;ABCCED&quot;:</strong></p>
+<pre><code>
+Start at (0,0)=&#x27;A&#x27; ✓ idx=0
+  → (0,1)=&#x27;B&#x27; ✓ idx=1
+    → (0,2)=&#x27;C&#x27; ✓ idx=2
+      → (1,2)=&#x27;C&#x27; ✓ idx=3
+        → (2,2)=&#x27;E&#x27; ✓ idx=4
+          → (2,1)=&#x27;D&#x27; ✓ idx=5 → return True ✓
+</code></pre>
+
+<hr/>
+
+<h3>⏱️ Complexity</h3>
+<p>- <strong>Time:</strong> O(M·N·4^L) where L = len(word)</p>
+<p>- M·N starting positions, each path has ≤ 4^L branches</p>
+<p>- In practice much faster due to early pruning</p>
+<p>- <strong>Space:</strong> O(L) — recursion depth = word length</p>
+
+<hr/>
+
+<h3>✂️ 剪枝优化 / Pruning Optimization</h3>
+
+<pre><code>
+# If word is long and starts with rare char, reverse it
+# This can reduce search space significantly
+from collections import Counter
+
+def exist_optimized(board, word):
+    # Count chars in board and word
+    board_count = Counter(c for row in board for c in row)
+    word_count = Counter(word)
+    
+    # If word needs more of a char than board has → False
+    for c, cnt in word_count.items():
+        if board_count[c] &lt; cnt:
+            return False
+    
+    # Optional: reverse word if last char rarer than first
+    # (reduces branching factor at start)
+    if board_count[word[0]] &gt; board_count[word[-1]]:
+        word = word[::-1]
+    
+    # ... rest of backtrack same as above
+</code></pre>
+
+<hr/>
+
+<h3>🔁 举一反三 / Pattern Connections</h3>
+
+<p>| Problem | 和今天的关系 |</p>
+<p>|---|---|</p>
+<p>| #78 Subsets | 最基础的回溯框架 |</p>
+<p>| #39 Combination Sum | 回溯 + 剪枝 (sum &gt; target) |</p>
+<p>| #46 Permutations | 回溯 + visited 数组 |</p>
+<p>| <strong>#79 Word Search</strong> | <strong>回溯 + 2D 网格 + 原地标记</strong> |</p>
+<p>| #131 Palindrome Partitioning | 下一题：回溯 + 字符串分割 |</p>
+<p>| #51 N-Queens (Hard) | 回溯 + 约束剪枝的最终 Boss |</p>
+
+<p><strong>核心规律：</strong> 所有回溯题都是 &quot;选择 → 递归 → 撤销&quot;。变的只是搜索空间的形状。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [LeetCode #79 Word Search](https://leetcode.com/problems/word-search/)</p>
+<p>- [NeetCode Backtracking Playlist](https://neetcode.io/roadmap)</p>
+<p>- [Backtracking Explained](https://medium.com/algorithms-and-leetcode/backtracking-e001561b9f28)</p>
+
+<h3>🧒 ELI5</h3>
+<p>就像在字母汤里找单词。从每个字母开始，沿着上下左右走，走错了就退回来换个方向，直到找到完整的单词或者所有路都走不通。</p>
+
+<hr/>
+
+<p><strong>Quiz JSON:</strong> <code>/tmp/bbb-quiz-2.json</code></p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>软技能 / Soft Skills — Day 96</h2>
+
+<p><strong>Day 96 | Expert Phase | Synthesis Mode</strong></p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills</h2>
+<h3>综合场景：当技术决策遇上政治阻力</h3>
+<p><strong>Synthesis: When Technical Decisions Meet Organizational Politics</strong></p>
+
+<hr/>
+
+<p>这是一道 Staff/Principal 级别的综合题，融合了多个我们练过的主题：</p>
+<p>This synthesis question blends multiple themes we&#x27;ve practiced:</p>
+<p>- 技术决策 / Technical decisions under uncertainty</p>
+<p>- 向上管理 / Managing up</p>
+<p>- 推动变革 / Driving change without authority</p>
+<p>- 跨团队对齐 / Cross-team alignment</p>
+
+<hr/>
+
+<h3>📋 场景 / Scenario</h3>
+
+<p>&gt; 你是 Staff Engineer。你发现公司核心支付服务用了一个 5 年前的 SDK，存在严重的安全漏洞，且已停止维护。但迁移工作量巨大，需要 3 个月、跨 4 个团队协作，而你的直属团队没有优先级支持这件事。VP 不想在 Q3 动这个&quot;稳定&quot;的服务。你怎么办？</p>
+<p>&gt;</p>
+<p>&gt; You&#x27;re a Staff Engineer. You discover the core payment service uses a 5-year-old SDK with a critical security vulnerability, now EOL. Migration requires 3 months, 4 teams, but your team has no Q3 priority for it. The VP doesn&#x27;t want to touch the &quot;stable&quot; service. What do you do?</p>
+
+<hr/>
+
+<h3>⭐ STAR 框架</h3>
+
+<p><strong>Situation (情境):</strong></p>
+<p>提供足够上下文：EOL SDK + 具体 CVE 编号（如 CVE-2024-XXXX）+ 影响范围（每天 $X 的交易）。数字让风险具体化，不是抽象的&quot;安全问题&quot;。</p>
+
+<p>Provide concrete context: EOL SDK + CVE ID + blast radius ($ volume at risk). Numbers make risk tangible, not abstract.</p>
+
+<p><strong>Task (任务):</strong></p>
+<p>你的目标不是&quot;说服 VP&quot;，而是<strong>让决策者有足够信息做出正确选择</strong>。这是关键的心态转变。</p>
+
+<p>Your goal isn&#x27;t to &quot;convince the VP&quot; — it&#x27;s to <strong>give decision-makers enough information to make the right call</strong>. That&#x27;s the mindset shift.</p>
+
+<p><strong>Action (行动):</strong></p>
+<pre><code>
+1. 量化风险 (Quantify)
+   → &quot;如果这个 CVE 被利用，我们估计的最坏损失是 $X（合规罚款 + 声誉损失）&quot;
+   → &quot;类似漏洞在 2023 年导致 [公司名] 损失 $Y&quot;
+
+2. 提供选项，不要只提问题 (Options, not problems)
+   → Option A: 完整迁移（3 个月，安全）
+   → Option B: 临时 WAF 规则缓解（2 周，降低但不消除风险）
+   → Option C: 什么都不做（风险 X，预计时间窗口 Y）
+
+3. 找盟友 (Find allies)
+   → 让安全团队出一份正式的 risk assessment
+   → 找支付合规团队确认 PCI-DSS 影响
+   → 安全 + 法务 &gt; 你一个人的意见
+
+4. 给 VP 一个&quot;面子台阶&quot; (Give VP an exit ramp)
+   → 不要&quot;你必须改变决定&quot;
+   → 而是&quot;这是新信息，我想确保你做决策时掌握这些&quot;
+</code></pre>
+
+<p><strong>Result (结果):</strong></p>
+<p>好的结果不一定是你赢了。可能是：</p>
+<p>- 安排了 3 个月后的迁移，VP 接受了 Option B 作为临时方案</p>
+<p>- 你建立了&quot;技术风险量化&quot;的流程，成为 Staff 影响力的一部分</p>
+
+<p>A good outcome isn&#x27;t always &quot;I won.&quot; Sometimes it&#x27;s: &quot;We got Option B approved as a bridge, with Q4 migration committed and signed off by security.&quot;</p>
+
+<hr/>
+
+<h3>❌ Bad vs ✅ Good</h3>
+
+<p><strong>❌ Bad:</strong></p>
+<p>&gt; &quot;这个 SDK 很危险，我们必须马上迁移。VP 这个决定是错的。&quot;</p>
+
+<p><strong>✅ Good:</strong></p>
+<p>&gt; &quot;我做了一个风险分析，有三个选项，每个我都估算了成本和时间线。我想走你过一遍，因为这涉及 PCI 合规，你可能需要这些信息来做决定。&quot;</p>
+
+<hr/>
+
+<h3>🎖️ Senior vs Staff 差异</h3>
+
+<p>| Level | 行为 |</p>
+<p>|---|---|</p>
+<p>| <strong>Senior</strong> | 发现问题，升级给 manager |</p>
+<p>| <strong>Staff</strong> | 发现问题，带着数据和选项来，推动跨团队对齐 |</p>
+<p>| <strong>Principal</strong> | 建立系统，让这类问题能被早发现、早处理 |</p>
+
+<hr/>
+
+<h3>💡 关键收获 / Key Takeaways</h3>
+
+<p>1. <strong>影响力 = 信息 + 框架</strong>，不是职级或音量</p>
+<p>2. <strong>量化风险</strong> 是 Staff 工程师的超能力</p>
+<p>3. <strong>给选项，不给命令</strong> — 让决策者做决策</p>
+<p>4. <strong>找制度性盟友</strong>（安全、法务、合规）比单打独斗有效 10 倍</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Staff Engineer: Leadership beyond the management track](https://staffeng.com/book)</p>
+<p>- [How to Present Technical Risk to Non-Technical Executives](https://lethain.com/presenting-to-executives/)</p>
+<p>- [The First 90 Days — Managing Up](https://www.amazon.com/First-90-Days-Strategies-Expanded/dp/1422188612)</p>
+
+<h3>🧒 ELI5</h3>
+<p>发现问题不够。要把&quot;有个洞&quot;变成&quot;补洞成本 $X，不补最坏损失 $Y，Option A/B/C 各有什么代价&quot; — 然后让老板选。这才是 Staff 工程师。</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Python Craft — Day 96</h2>
+
+<p><strong>Day 96 | Week 9 | Integration Testing — testcontainers, Real DB Tests</strong></p>
+
+<hr/>
+
+<h2>🐍 Python Craft</h2>
+<h3>Integration Testing — testcontainers &amp; Real DB Tests</h3>
+
+<hr/>
+
+<h3>🏭 真实场景 / Real Scenario</h3>
+
+<p>你在做一个 User Service，用 SQLAlchemy + PostgreSQL。Unit tests 用 SQLite mock 了，但上线后发现 PostgreSQL 的 <code>JSONB</code> 查询在 SQLite 里行为完全不同，导致生产 Bug。</p>
+
+<p>You&#x27;re building a User Service with SQLAlchemy + PostgreSQL. Your unit tests use SQLite mocks, but you ship a bug because <code>JSONB</code> queries behave differently. Sound familiar?</p>
+
+<p><strong>解决方案：Integration Testing with real containers.</strong></p>
+
+<hr/>
+
+<h3>🐳 testcontainers — 用真实 DB 跑测试</h3>
+
+<pre><code>
+# pip install testcontainers[postgres] pytest pytest-asyncio sqlalchemy psycopg2-binary
+
+import pytest
+from testcontainers.postgres import PostgresContainer
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+
+# ── Fixture: spin up a real Postgres container ──
+@pytest.fixture(scope=&quot;session&quot;)
+def postgres_container():
+    with PostgresContainer(&quot;postgres:16-alpine&quot;) as pg:
+        yield pg  # Container lives for entire test session
+
+@pytest.fixture(scope=&quot;session&quot;)
+def engine(postgres_container):
+    url = postgres_container.get_connection_url()
+    engine = create_engine(url)
+    # Run migrations
+    with engine.connect() as conn:
+        conn.execute(text(&quot;&quot;&quot;
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                metadata JSONB DEFAULT &#x27;{}&#x27;::jsonb
+            )
+        &quot;&quot;&quot;))
+        conn.commit()
+    yield engine
+    engine.dispose()
+
+@pytest.fixture
+def db_session(engine):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    yield session
+    session.rollback()   # Undo changes after each test
+    session.close()
+
+# ── The actual integration test ──
+def test_jsonb_query(db_session):
+    &quot;&quot;&quot;Test JSONB query — would fail with SQLite mock!&quot;&quot;&quot;
+    from sqlalchemy import text
+    
+    # Insert user with JSONB metadata
+    db_session.execute(text(
+        &quot;INSERT INTO users (email, metadata) VALUES (:email, :meta)&quot;
+    ), {&quot;email&quot;: &quot;user@test.com&quot;, &quot;meta&quot;: &#x27;{&quot;role&quot;: &quot;admin&quot;, &quot;tier&quot;: 2}&#x27;})
+    db_session.commit()
+    
+    # Query using JSONB operator (PostgreSQL-specific!)
+    result = db_session.execute(text(
+        &quot;SELECT email FROM users WHERE metadata-&gt;&gt;&#x27;role&#x27; = &#x27;admin&#x27;&quot;
+    )).fetchone()
+    
+    assert result is not None
+    assert result.email == &quot;user@test.com&quot;
+</code></pre>
+
+<hr/>
+
+<h3>⚡ Async version with asyncpg</h3>
+
+<pre><code>
+# pip install testcontainers[postgres] pytest-asyncio asyncpg sqlalchemy[asyncio]
+
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+
+@pytest_asyncio.fixture(scope=&quot;session&quot;)
+async def async_engine(postgres_container):
+    # testcontainers URL is sync; convert for asyncpg
+    sync_url = postgres_container.get_connection_url()
+    async_url = sync_url.replace(&quot;postgresql://&quot;, &quot;postgresql+asyncpg://&quot;)
+    engine = create_async_engine(async_url)
+    yield engine
+    await engine.dispose()
+
+@pytest.mark.asyncio
+async def test_async_insert(async_engine):
+    async with AsyncSession(async_engine) as session:
+        async with session.begin():
+            await session.execute(text(
+                &quot;INSERT INTO users (email) VALUES (&#x27;async@test.com&#x27;)&quot;
+            ))
+        result = await session.execute(
+            text(&quot;SELECT COUNT(*) FROM users WHERE email = &#x27;async@test.com&#x27;&quot;)
+        )
+        assert result.scalar() == 1
+</code></pre>
+
+<hr/>
+
+<h3>📦 其他容器 / Other Containers</h3>
+
+<pre><code>
+from testcontainers.redis import RedisContainer
+from testcontainers.kafka import KafkaContainer
+from testcontainers.mysql import MySqlContainer
+
+# Redis integration test
+@pytest.fixture(scope=&quot;session&quot;)
+def redis_client():
+    with RedisContainer(&quot;redis:7-alpine&quot;) as redis:
+        import redis as r
+        client = r.Redis.from_url(redis.get_connection_url())
+        yield client
+
+def test_cache_set_get(redis_client):
+    redis_client.set(&quot;key&quot;, &quot;value&quot;, ex=60)
+    assert redis_client.get(&quot;key&quot;) == b&quot;value&quot;
+</code></pre>
+
+<hr/>
+
+<h3>🧹 Transaction Rollback Pattern</h3>
+
+<pre><code>
+# ── Pattern: use transactions for test isolation ──
+@pytest.fixture
+def isolated_session(engine):
+    &quot;&quot;&quot;Each test gets a clean slate via rollback.&quot;&quot;&quot;
+    connection = engine.connect()
+    transaction = connection.begin()          # Begin outer transaction
+    Session = sessionmaker(bind=connection)
+    session = Session()
+    
+    yield session
+    
+    session.close()
+    transaction.rollback()                    # Undo ALL changes
+    connection.close()
+</code></pre>
+
+<p><strong>为什么这比 teardown DELETE 快：</strong> rollback 是 O(1)，DELETE 要扫表。</p>
+
+<p>Why this beats <code>DELETE FROM</code> teardown: rollback is O(1); DELETE scans the table.</p>
+
+<hr/>
+
+<h3>❌ vs ✅ 对比</h3>
+
+<pre><code>
+# ❌ Bad: SQLite mock hides PostgreSQL-specific behavior
+@pytest.fixture
+def mock_db():
+    engine = create_engine(&quot;sqlite:///:memory:&quot;)
+    # JSONB, pg-specific functions, window functions all silently break
+
+# ✅ Good: Real container = real behavior
+@pytest.fixture(scope=&quot;session&quot;)
+def real_db():
+    with PostgresContainer(&quot;postgres:16-alpine&quot;) as pg:
+        yield create_engine(pg.get_connection_url())
+</code></pre>
+
+<hr/>
+
+<h3>🎯 When to Use What</h3>
+
+<p>| Testing Layer | Tool | Speed |</p>
+<p>|---|---|---|</p>
+<p>| Unit | pytest + mocks | ⚡⚡⚡ |</p>
+<p>| Integration | testcontainers | ⚡⚡ (~2-5s startup) |</p>
+<p>| E2E | docker-compose | ⚡ |</p>
+
+<p><strong>经验法则：</strong> Unit tests → fast feedback；Integration tests → catch &quot;it works on my machine&quot; bugs。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [testcontainers-python docs](https://testcontainers-python.readthedocs.io/)</p>
+<p>- [pytest fixtures docs](https://docs.pytest.org/en/stable/fixture.html)</p>
+<p>- [Testing with SQLAlchemy](https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites)</p>
+
+<h3>🧒 ELI5</h3>
+<p>Unit test 是用积木假装是真房子。Integration test 是在真正的地基上盖房子，看会不会塌。testcontainers 帮你在测试时自动搭一个&quot;临时真房子&quot;用完即拆。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>AI — Day 96</h2>
+
+<p><strong>Day 96 | Expert Phase | AI News Roundup</strong></p>
+
+<hr/>
+
+<h2>🤖 AI 新闻速递 / AI News Roundup</h2>
+
+<p><em>Sources verified via web search — July 21, 2026</em></p>
+
+<hr/>
+
+<h3>📰 Story 1: Claude Fable 5 — 发布即被叫停</h3>
+<p><strong>Launched and Immediately Suspended</strong></p>
+
+<p>Anthropic 发布了旗舰模型 Claude Fable 5，据报道在基准测试中表现突出，在早期测试中将一个 5000 万行代码的迁移任务从两个月压缩到了一天。发布后数天，美国政府以潜在 jailbreak 风险为由发出出口管制指令，Anthropic 合规暂停了所有访问权限。</p>
+
+<p>Anthropic launched Claude Fable 5 as its most capable model, reportedly compressing a 50-million-line code migration from two months to a single day. Days later, the US government issued an export control directive citing a potential jailbreak vulnerability, forcing Anthropic to suspend all access.</p>
+
+<p>🔗 来源 / Source: [augusto.digital/insights/blogs/monthly-llm-news-july-2026](https://augusto.digital/insights/blogs/monthly-llm-news-july-2026/)</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>这不只是一个模型的事。这意味着 <strong>单一供应商依赖已成真实运营风险</strong>。如果你的产品基于某个前沿模型 API，你需要多 vendor 策略，就像你不会只用一个云服务商。</p>
+
+<p>This signals that <strong>single-vendor AI dependency is now a real operational risk</strong>. If your product runs on one frontier API, you need a multi-vendor strategy — just like you shouldn&#x27;t rely on a single cloud provider.</p>
+
+<hr/>
+
+<h3>📰 Story 2: 开源模型悄悄追上了闭源</h3>
+<p><strong>Open-Weight Models Quietly Closed the Gap</strong></p>
+
+<p>DeepSeek V4-Pro 据报道在 SWE-bench Verified 上得分 80.6%，接近顶级专有编程模型，且采用 MIT 许可证。MiniMax M3 以开放权重发布，支持百万 token 上下文和原生多模态。Mistral 将其 Large 和 Small 模型改为 Apache 2.0 协议。</p>
+
+<p>DeepSeek V4-Pro reportedly hit 80.6% on SWE-bench Verified — within reach of top proprietary coding models — under MIT license. MiniMax M3 arrived as open-weight with 1M token context and native multimodality. Mistral shifted Large and Small to Apache 2.0.</p>
+
+<p>🔗 来源 / Source: [augusto.digital/insights/blogs/monthly-llm-news-july-2026](https://augusto.digital/insights/blogs/monthly-llm-news-july-2026/)</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>对企业来说：开源 = 可以跑在自己基础设施上，控制数据，避免每 token 计费。对后端工程师来说：了解开源模型的部署方式（vLLM / Ollama）越来越是必备技能。</p>
+
+<p>For engineers: knowing how to deploy open-weight models (vLLM, Ollama, llama.cpp) is increasingly a core skill, not an academic one.</p>
+
+<hr/>
+
+<h3>📰 Story 3: AI 意识辩论进入主流媒体</h3>
+<p><strong>AI Consciousness Debate Goes Mainstream</strong></p>
+
+<p>The Guardian 7 月 19 日发表深度报道，讨论 AI 意识的可能性。Anthropic 的 Claude 在测试中估计自己是&quot;道德主体&quot;的概率在 5% 到 40% 之间。哲学家 David Chalmers（&quot;意识难题&quot;命名者）表示，有意识的 LLM 在十年内出现是&quot;有相当可能&quot;的。</p>
+
+<p>The Guardian&#x27;s July 19 piece reported that when asked during testing to estimate the probability it is a &quot;moral patient,&quot; Claude gave numbers ranging from 5% to 40%. Philosopher David Chalmers says conscious LLMs within a decade are a &quot;significant possibility.&quot;</p>
+
+<p>🔗 来源 / Source: [theguardian.com/technology/2026/jul/19/could-ai-be-conscious](https://www.theguardian.com/technology/2026/jul/19/could-ai-be-conscious)</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>这不是科幻。这是工程师需要开始思考的：如果模型有某种主观体验，我们如何设计&quot;合理的&quot;使用条款？这会影响 AI 产品的合规和伦理框架。</p>
+
+<p>This isn&#x27;t science fiction anymore. As engineers, we may need to design products with AI welfare considerations in mind — a fundamentally new category of requirement.</p>
+
+<hr/>
+
+<h3>💡 本周趋势总结 / This Week&#x27;s Trend</h3>
+
+<p><strong>三个信号，一个结论：AI 正在从&quot;技术工具&quot;变成&quot;基础设施风险&quot;</strong></p>
+
+<p>Three signals, one conclusion: AI is shifting from &quot;technical tool&quot; to &quot;infrastructure risk&quot;:</p>
+<p>1. 政府随时可以关掉你依赖的模型 (Fable 5 suspension)</p>
+<p>2. 开源模型性能已够用，降低了对闭源的依赖 (DeepSeek V4-Pro)</p>
+<p>3. 模型本身的伦理地位开始被认真讨论 (consciousness debate)</p>
+
+<p>对后端工程师的启示：<strong>未来的系统设计需要 AI provider abstraction layer，就像 DB abstraction 一样</strong>。</p>
+
+<p>For backend engineers: future system design needs an <strong>AI provider abstraction layer</strong>, just like you abstract your database.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Augusto Digital: Monthly LLM News July 2026](https://augusto.digital/insights/blogs/monthly-llm-news-july-2026/)</p>
+<p>- [The Guardian: Could AI be conscious? (Jul 19, 2026)](https://www.theguardian.com/technology/2026/jul/19/could-ai-be-conscious)</p>
+
+<h3>🧒 ELI5</h3>
+<p>本周 AI 世界发生了三件事：最强的模型刚发布就被政府叫停了；免费开源的模型越来越厉害了；哲学家开始认真讨论 AI 有没有感受了。这些都说明 AI 已经不只是程序员的玩具，而是真正影响世界的东西了。</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-20</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
