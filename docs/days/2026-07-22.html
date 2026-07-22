@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-07-22</title>
+  <meta name="description" content="byte-by-byte daily lessons for Wednesday, July 22, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Wednesday, July 22, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-07-22.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-07-21.html" style="color:var(--text2)">← 2026-07-21</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-07-22</span>
+    <h1>Wednesday, July 22, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-07-21.html" class="day-nav-btn">← 2026-07-21</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 97 (Synthesis)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>🏗️ 系统设计 / System Design — Day 97 (Synthesis)</h1>
+<p><strong>Expert Phase · Synthesis Mode</strong></p>
+
+<h2>缓存、队列与一致性：三角权衡深度拆解</h2>
+
+<p>想象你是 Meta/字节跳动的高级架构师，需要同时应对：</p>
+<ul><li>10亿 DAU 的 Feed 系统</li><li>秒杀/热点事件瞬间百倍流量</li><li>跨数据中心的最终一致性</li></ul>
+
+<p>这不是单一设计题，而是真实系统中<strong>最难的三角权衡</strong>。</p>
+
+<hr/>
+
+<h2>三角关系：缓存 × 消息队列 × 一致性</h2>
+
+<div class="diagram-block">           ┌─────────────────────┐
+           │    Client (CDN)     │
+           └──────────┬──────────┘
+                      │
+           ┌──────────▼──────────┐
+           │   API Gateway /     │
+           │   Load Balancer     │
+           └──┬──────────────┬───┘
+              │              │
+   ┌──────────▼──┐      ┌───▼──────────┐
+   │  Cache Layer │      │  Queue Layer  │
+   │  (Redis L1)  │      │  (Kafka)      │
+   └──────┬───────┘      └──────┬────────┘
+          │                     │
+   ┌──────▼──────────────────────▼───────┐
+   │         DB Cluster (Primary/Replica) │
+   │         + CDC (Change Data Capture)  │
+   └─────────────────────────────────────┘</div>
+
+<hr/>
+
+<h2>为什么这样设计？核心权衡</h2>
+
+<h3>1. 缓存策略选择</h3>
+
+<table><thead><tr><th>策略</th><th>优势</th><th>风险</th><th>适用场景</th></tr></thead><tbody><tr><td>Cache-Aside</td><td>精确控制、缓存未命中可容忍</td><td>缓存击穿、代码侵入</td><td>读多写少（用户 profile）</td></tr><tr><td>Write-Through</td><td>写入即更新，强一致</td><td>写放大、延迟增加</td><td>金融交易记录</td></tr><tr><td>Write-Behind</td><td>高吞吐写入、DB 压力小</td><td>数据可能丢失</td><td>计数器、日志</td></tr><tr><td>Read-Through</td><td>代码简洁</td><td>冷启动慢</td><td>ORM 场景</td></tr></tbody></table>
+
+<p><strong>真实教训</strong>：Twitter 的热点用户（Obama, Elon）导致缓存被无效化后雪崩。解法：<strong>特殊缓存层 + 读穿策略</strong>，不走普通 invalidation。</p>
+
+<h3>2. 消息队列：解耦还是增加复杂度？</h3>
+
+<p><strong>用队列（Kafka/SQS）当：</strong></p>
+<ul><li>下游系统处理速度不匹配（削峰填谷）</li><li>需要 event sourcing / audit trail</li><li>多个消费者需要同一事件</li></ul>
+
+<p><strong>不用队列当：</strong></p>
+<ul><li>需要同步确认（支付成功页面）</li><li>延迟要求 &lt; 10ms（游戏同步）</li><li>团队没有运维能力</li></ul>
+
+<h3>3. 一致性模型选择</h3>
+
+<div class="diagram-block">Strong → Sequential → Causal → Eventual
+  ↑                               ↑
+高延迟、高成本              低延迟、可扩展
+Spanner/TiDB             DynamoDB/Cassandra</div>
+
+<p><strong>真实 Meta 架构</strong>：<code>TAO（The Associations and Objects）</code> 系统用 <strong>Causal Consistency</strong>，不是 Strong。为什么？因为你看到帖子比朋友晚 100ms 完全可以接受，但写 4ms 的强一致代价太高。</p>
+
+<hr/>
+
+<h2>综合设计：Feed 系统 + 热点事件</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# 热点检测 + 动态缓存调整&#10;class HotKeyDetector:&#10;    def __init__(self, redis_client, threshold=1000):&#10;        self.redis = redis_client&#10;        self.threshold = threshold  # requests/sec&#10;&#10;    def track_and_decide(self, key: str) -&gt; str:&#10;        count = self.redis.incr(f&quot;hotkey:{key}&quot;)&#10;        self.redis.expire(f&quot;hotkey:{key}&quot;, 60)&#10;&#10;        if count &gt; self.threshold:&#10;            # Hot key: replicate to local cache&#10;            return &quot;LOCAL_CACHE&quot;&#10;        return &quot;REDIS_CACHE&quot;&#10;&#10;# Fan-out 策略动态切换&#10;def get_fanout_strategy(user_follower_count: int) -&gt; str:&#10;    if user_follower_count &lt; 1000:&#10;        return &quot;PUSH&quot;    # 写扩散: 发布时推送到所有粉丝 timeline&#10;    elif user_follower_count &lt; 1_000_000:&#10;        return &quot;HYBRID&quot;  # 混合：小 V push，大 V pull&#10;    else:&#10;        return &quot;PULL&quot;    # 读扩散: 读取时实时聚合（大 V 专用）">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># 热点检测 + 动态缓存调整</span>
+<span style="color:#c678dd;">class</span> HotKeyDetector:
+    <span style="color:#c678dd;">def</span> __init__(self, redis_client, threshold=<span style="color:#56b6c2;">1000</span>):
+        self.redis = redis_client
+        self.threshold = threshold  <span style="color:#5c6370;"># requests/sec</span>
+
+    <span style="color:#c678dd;">def</span> track_and_decide(self, key: str) -&gt; str:
+        count = self.redis.incr(f<span style="color:#e5c07b;">"hotkey:{key}"</span>)
+        self.redis.expire(f<span style="color:#e5c07b;">"hotkey:{key}"</span>, <span style="color:#56b6c2;">60</span>)
+
+        <span style="color:#c678dd;">if</span> count &gt; self.threshold:
+            <span style="color:#5c6370;"># Hot key: replicate to local cache</span>
+            <span style="color:#c678dd;">return</span> <span style="color:#e5c07b;">"LOCAL_CACHE"</span>
+        <span style="color:#c678dd;">return</span> <span style="color:#e5c07b;">"REDIS_CACHE"</span>
+
+<span style="color:#5c6370;"># Fan-out 策略动态切换</span>
+<span style="color:#c678dd;">def</span> get_fanout_strategy(user_follower_count: int) -&gt; str:
+    <span style="color:#c678dd;">if</span> user_follower_count &lt; <span style="color:#56b6c2;">1000</span>:
+        <span style="color:#c678dd;">return</span> <span style="color:#e5c07b;">"PUSH"</span>    <span style="color:#5c6370;"># 写扩散: 发布时推送到所有粉丝 timeline</span>
+    <span style="color:#c678dd;">elif</span> user_follower_count &lt; 1_000_000:
+        <span style="color:#c678dd;">return</span> <span style="color:#e5c07b;">"HYBRID"</span>  <span style="color:#5c6370;"># 混合：小 V push，大 V pull</span>
+    <span style="color:#c678dd;">else</span>:
+        <span style="color:#c678dd;">return</span> <span style="color:#e5c07b;">"PULL"</span>    <span style="color:#5c6370;"># 读扩散: 读取时实时聚合（大 V 专用）</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>别踩这个坑</h2>
+
+<p>❌ <strong>缓存穿透</strong>：查询不存在的 key，每次都打 DB。</p>
+<p>✅ 解法：布隆过滤器（Bloom Filter）预检 + 缓存空值</p>
+
+<p>❌ <strong>缓存雪崩</strong>：大量 key 同时过期，DB 被打垮。</p>
+<p>✅ 解法：TTL 加随机抖动（<code>ttl = base_ttl + random(0, 300)</code>）</p>
+
+<p>❌ <strong>分布式锁滥用</strong>：每个操作都加锁，吞吐量下降 10x。</p>
+<p>✅ 解法：只在 critical section 加锁；用 CAS（Compare-And-Swap）替代锁</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://blog.x.com/engineering/en_us/topics/infrastructure/2023/twitter-recommendation-algorithm">Twitter's architecture at scale</a></li><li><a href="https://www.usenix.org/system/files/conference/atc13/atc13-bronson.pdf">Facebook TAO paper</a></li><li><a href="https://docs.aws.amazon.com/wellarchitected/latest/framework/reliability.html">AWS well-architected caching</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>就像超市：热门商品（缓存）放收银台旁边，不热门的才去仓库拿（数据库）。但如果所有商品同时清空，收银台就崩了——所以要分批补货，而且先检查仓库有没有货（布隆过滤器）再去找。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 97</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>💻 算法 / Algorithms — Day 97</h1>
+<p><strong>#131 Palindrome Partitioning · Medium · Backtracking</strong></p>
+
+<p>🧩 <strong>回溯模式 (7/9)</strong> — building on the template from Day 88 (Subsets)</p>
+
+<p>今天是回溯 block 第 7 题。模板还是那个，但今天的变化是：<strong>剪枝条件变成了回文检测</strong>。</p>
+
+<hr/>
+
+<h2>问题</h2>
+<p>🔗 <a href="https://leetcode.com/problems/palindrome-partitioning/">LeetCode #131</a> 🟡 Medium</p>
+<p>📹 <a href="https://neetcode.io/problems/palindrome-partitioning">NeetCode Solution</a></p>
+
+<p>给定字符串 <code>s</code>，将其分割为若干子串，使每个子串都是回文串。返回所有可能的分割方式。</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Input: s = &quot;aab&quot;&#10;Output: [[&quot;a&quot;,&quot;a&quot;,&quot;b&quot;],[&quot;aa&quot;,&quot;b&quot;]]">Copy</button>
+  <pre><code class="language-text">Input: s = "aab"
+Output: [["a","a","b"],["aa","b"]]</code></pre>
+</div>
+
+<hr/>
+
+<h2>真实世界类比</h2>
+<p>想象你在切披萨，每一刀只能在"对称"的位置切——如果一段饼是回文的才允许那一刀。你要找出所有合法的切法。</p>
+
+<hr/>
+
+<h2>模板映射</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def backtrack(path, choices):&#10;    if IS_COMPLETE(path):      # 分割到末尾&#10;        result.append(path[:])&#10;        return&#10;    for choice in choices:     # 枚举每个切割点&#10;        if IS_VALID(choice):   # 子串是回文？&#10;            path.append(choice)&#10;            backtrack(path, NEXT_CHOICES)&#10;            path.pop()         # 撤销">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> backtrack(path, choices):
+    <span style="color:#c678dd;">if</span> IS_COMPLETE(path):      <span style="color:#5c6370;"># 分割到末尾</span>
+        result.append(path[:])
+        <span style="color:#c678dd;">return</span>
+    <span style="color:#c678dd;">for</span> choice <span style="color:#c678dd;">in</span> choices:     <span style="color:#5c6370;"># 枚举每个切割点</span>
+        <span style="color:#c678dd;">if</span> IS_VALID(choice):   <span style="color:#5c6370;"># 子串是回文？</span>
+            path.append(choice)
+            backtrack(path, NEXT_CHOICES)
+            path.pop()         <span style="color:#5c6370;"># 撤销</span></code></pre>
+</div>
+
+<p><strong>今天的关键变化</strong>：</p>
+<ul><li><code>IS_COMPLETE</code> = <code>start == len(s)</code> (遍历完整个字符串)</li><li><code>IS_VALID</code> = <code>is_palindrome(s[start:end])</code> ← 核心剪枝！</li><li><code>NEXT_CHOICES</code> = <code>range(start+1, len(s)+1)</code> (下一个起点到末尾)</li></ul>
+
+<hr/>
+
+<h2>Python 解法 + Trace</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def partition(s: str) -&gt; list[list[str]]:&#10;    result = []&#10;    n = len(s)&#10;&#10;    def is_palindrome(sub: str) -&gt; bool:&#10;        return sub == sub[::-1]&#10;&#10;    def backtrack(start: int, path: list[str]):&#10;        # IS_COMPLETE: 分割到字符串末尾&#10;        if start == n:&#10;            result.append(path[:])&#10;            return&#10;&#10;        for end in range(start + 1, n + 1):&#10;            substring = s[start:end]&#10;            # IS_VALID: 只有回文才继续递归&#10;            if is_palindrome(substring):&#10;                path.append(substring)&#10;                backtrack(end, path)   # 递归，起点向后移&#10;                path.pop()             # 撤销（回溯）&#10;&#10;    backtrack(0, [])&#10;    return result&#10;&#10;# Trace for s = &quot;aab&quot;&#10;# backtrack(0, [])&#10;#   end=1: &quot;a&quot; ✅ → path=[&quot;a&quot;]&#10;#     end=2: &quot;a&quot; ✅ → path=[&quot;a&quot;,&quot;a&quot;]&#10;#       end=3: &quot;b&quot; ✅ → path=[&quot;a&quot;,&quot;a&quot;,&quot;b&quot;] → COMPLETE ✅&#10;#     end=3: &quot;ab&quot; ❌ palindrome? No → skip&#10;#   end=2: &quot;aa&quot; ✅ → path=[&quot;aa&quot;]&#10;#     end=3: &quot;b&quot; ✅ → path=[&quot;aa&quot;,&quot;b&quot;] → COMPLETE ✅&#10;#   end=3: &quot;aab&quot; ❌ palindrome? No → skip&#10;# Result: [[&quot;a&quot;,&quot;a&quot;,&quot;b&quot;], [&quot;aa&quot;,&quot;b&quot;]]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> partition(s: str) -&gt; list[list[str]]:
+    result = []
+    n = len(s)
+
+    <span style="color:#c678dd;">def</span> is_palindrome(sub: str) -&gt; bool:
+        <span style="color:#c678dd;">return</span> sub == sub[::-<span style="color:#56b6c2;">1</span>]
+
+    <span style="color:#c678dd;">def</span> backtrack(start: int, path: list[str]):
+        <span style="color:#5c6370;"># IS_COMPLETE: 分割到字符串末尾</span>
+        <span style="color:#c678dd;">if</span> start == n:
+            result.append(path[:])
+            <span style="color:#c678dd;">return</span>
+
+        <span style="color:#c678dd;">for</span> end <span style="color:#c678dd;">in</span> range(start + <span style="color:#56b6c2;">1</span>, n + <span style="color:#56b6c2;">1</span>):
+            substring = s[start:end]
+            <span style="color:#5c6370;"># IS_VALID: 只有回文才继续递归</span>
+            <span style="color:#c678dd;">if</span> is_palindrome(substring):
+                path.append(substring)
+                backtrack(end, path)   <span style="color:#5c6370;"># 递归，起点向后移</span>
+                path.pop()             <span style="color:#5c6370;"># 撤销（回溯）</span>
+
+    backtrack(<span style="color:#56b6c2;">0</span>, [])
+    <span style="color:#c678dd;">return</span> result
+
+<span style="color:#5c6370;"># Trace for s = "aab"</span>
+<span style="color:#5c6370;"># backtrack(0, [])</span>
+<span style="color:#5c6370;">#   end=1: "a" ✅ → path=["a"]</span>
+<span style="color:#5c6370;">#     end=2: "a" ✅ → path=["a","a"]</span>
+<span style="color:#5c6370;">#       end=3: "b" ✅ → path=["a","a","b"] → COMPLETE ✅</span>
+<span style="color:#5c6370;">#     end=3: "ab" ❌ palindrome? No → skip</span>
+<span style="color:#5c6370;">#   end=2: "aa" ✅ → path=["aa"]</span>
+<span style="color:#5c6370;">#     end=3: "b" ✅ → path=["aa","b"] → COMPLETE ✅</span>
+<span style="color:#5c6370;">#   end=3: "aab" ❌ palindrome? No → skip</span>
+<span style="color:#5c6370;"># Result: [["a","a","b"], ["aa","b"]]</span></code></pre>
+</div>
+
+<p><strong>时间复杂度</strong>: O(n · 2^n) — 每个字符可以是切割点或不切割</p>
+<p><strong>空间复杂度</strong>: O(n) 递归栈深度</p>
+
+<hr/>
+
+<h2>优化：DP 预处理回文</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def partition_optimized(s: str) -&gt; list[list[str]]:&#10;    n = len(s)&#10;    # dp[i][j] = True if s[i..j] is palindrome&#10;    dp = [[False] * n for _ in range(n)]&#10;&#10;    for i in range(n - 1, -1, -1):&#10;        for j in range(i, n):&#10;            if s[i] == s[j] and (j - i &lt;= 2 or dp[i+1][j-1]):&#10;                dp[i][j] = True&#10;&#10;    result = []&#10;    def backtrack(start, path):&#10;        if start == n:&#10;            result.append(path[:])&#10;            return&#10;        for end in range(start, n):&#10;            if dp[start][end]:  # O(1) lookup instead of O(n) check&#10;                path.append(s[start:end+1])&#10;                backtrack(end + 1, path)&#10;                path.pop()&#10;&#10;    backtrack(0, [])&#10;    return result&#10;# Time: O(n * 2^n) worst case, but palindrome check is O(1)">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> partition_optimized(s: str) -&gt; list[list[str]]:
+    n = len(s)
+    <span style="color:#5c6370;"># dp[i][j] = True if s[i..j] is palindrome</span>
+    dp = [[<span style="color:#c678dd;">False</span>] * n <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(n)]
+
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(n - <span style="color:#56b6c2;">1</span>, -<span style="color:#56b6c2;">1</span>, -<span style="color:#56b6c2;">1</span>):
+        <span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(i, n):
+            <span style="color:#c678dd;">if</span> s[i] == s[j] <span style="color:#c678dd;">and</span> (j - i &lt;= <span style="color:#56b6c2;">2</span> <span style="color:#c678dd;">or</span> dp[i+<span style="color:#56b6c2;">1</span>][j-<span style="color:#56b6c2;">1</span>]):
+                dp[i][j] = <span style="color:#c678dd;">True</span>
+
+    result = []
+    <span style="color:#c678dd;">def</span> backtrack(start, path):
+        <span style="color:#c678dd;">if</span> start == n:
+            result.append(path[:])
+            <span style="color:#c678dd;">return</span>
+        <span style="color:#c678dd;">for</span> end <span style="color:#c678dd;">in</span> range(start, n):
+            <span style="color:#c678dd;">if</span> dp[start][end]:  <span style="color:#5c6370;"># O(1) lookup instead of O(n) check</span>
+                path.append(s[start:end+<span style="color:#56b6c2;">1</span>])
+                backtrack(end + <span style="color:#56b6c2;">1</span>, path)
+                path.pop()
+
+    backtrack(<span style="color:#56b6c2;">0</span>, [])
+    <span style="color:#c678dd;">return</span> result
+<span style="color:#5c6370;"># Time: O(n * 2^n) worst case, but palindrome check is O(1)</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>与 Block 其他题的联系 (举一反三)</h2>
+
+<table><thead><tr><th>题目</th><th>剪枝条件</th><th>区别</th></tr></thead><tbody><tr><td>#78 Subsets</td><td>无剪枝，全取</td><td>最基础</td></tr><tr><td>#39 Combination Sum</td><td><code>sum &lt;= target</code></td><td>剪枝是数值</td></tr><tr><td>#79 Word Search (Day 96)</td><td>越界/已访问</td><td>2D + visited</td></tr><tr><td><strong>#131 Palindrome</strong> (今天)</td><td><code>is_palindrome</code></td><td>剪枝是字符串属性</td></tr><tr><td>#51 N-Queens (下下题)</td><td>行/列/对角线冲突</td><td>二维约束</td></tr></tbody></table>
+
+<p><strong>模式总结</strong>：回溯的精华不在"回溯本身"，在<strong>剪枝条件</strong>。剪枝越好，性能越好。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://leetcode.com/problems/palindrome-partitioning/">LeetCode #131</a></li><li><a href="https://neetcode.io/problems/palindrome-partitioning">NeetCode explanation</a></li><li><a href="https://leetcode.com/explore/learn/card/recursion-ii/472/backtracking/2654/">Backtracking guide - Leetcode patterns</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>像拼图：你有一串字母，每次找一段对称的切下来，然后继续处理剩下的。如果某段不对称就跳过那个切法。把所有合法的切法都找出来。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 97 (Synthesis)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>🗣️ 软技能 / Soft Skills — Day 97 (Synthesis)</h1>
+<p><strong>Expert Phase · New Scenario</strong></p>
+
+<h2>新场景：技术债务 vs. 新功能的年度预算争夺战</h2>
+
+<blockquote>"你是一个 50 人工程团队的 Staff Engineer。年度规划季节到了，业务方要求 80% 的工程资源投入新功能，但你知道系统技术债务已经导致过去两个季度生产事故增加了 40%。你怎么办？"</blockquote>
+
+<p>这是一道<strong>高阶题</strong>，考察你同时应对技术判断、商业意识、组织影响力三个维度。</p>
+
+<hr/>
+
+<h2>为什么这道题很难</h2>
+
+<p>普通工程师只会说：「我们需要还债」。</p>
+<p>Senior 工程师会说：「让我们找到平衡点」。</p>
+<p><strong>Staff 工程师</strong> 会说：「让我把技术风险翻译成业务语言，让 CTO/VP 做有信息的决策」。</p>
+
+<hr/>
+
+<h2>STAR 框架拆解</h2>
+
+<h3>Situation（情境）</h3>
+<p>量化现状：</p>
+<ul><li>"过去 2 个季度，P0/P1 事故增加 40%，平均 MTTR（恢复时间）从 45 分钟升至 3 小时"</li><li>"核心结账模块有 12,000 行无测试的遗留代码，每次修改都需要额外 30% 的开发时间"</li><li>"三名高级工程师在过去一季度各自花费 ~30% 时间在'应急救火'"</li></ul>
+
+<p><strong>关键</strong>：数字比形容词有力。"很多技术债"不如"这季度额外损耗了 2 个工程师·月"。</p>
+
+<h3>Task（任务）</h3>
+<p>你的角色：</p>
+<ul><li>不是"说服业务方接受你的方案"</li><li>是"帮助所有 stakeholders 做一个信息完整的资源分配决策"</li></ul>
+
+<h3>Action（行动）</h3>
+
+<p><strong>Step 1: 建立「风险登记册」</strong></p>
+<div class="diagram-block">技术债务类别       | 业务影响          | 解决成本 | 优先级
+结账模块遗留代码    | P0 事故风险 High  | 6 人·周  | P0
+认证系统版本过期    | 安全漏洞 Medium   | 2 人·周  | P1
+测试覆盖率 &lt;20%    | 发布速度慢 Low    | 4 人·周  | P2</div>
+
+<p><strong>Step 2: 将技术风险翻译为业务影响</strong></p>
+<p>不说：「我们的数据库连接池要重构」</p>
+<p>要说：「如果不解决，下次 Black Friday 流量峰值有 60% 概率导致 2+ 小时宕机，去年此类事故直接损失约 $X 万」</p>
+
+<p><strong>Step 3: 提出可选方案（而非单一答案）</strong></p>
+<ul><li>方案A：70% 新功能 / 30% 技术债（推荐）</li><li>方案B：50/50 一个季度，之后恢复 80/20</li><li>方案C：维持 80/20 但接受风险，签字确认</li></ul>
+
+<p><strong>Step 4: 让业务方做选择</strong></p>
+<p>你给的是信息和选项，不是命令。但你要清晰表达每个选项的后果。</p>
+
+<h3>Result（结果）</h3>
+<p>展示结果时强调决策质量，而非仅仅结果：</p>
+<ul><li>"我们最终选择了方案 A，下个季度事故降低了 60%"</li><li>"更重要的是，这建立了工程-业务之间的信任框架，之后的规划季我们不再需要为这种争论花 3 周时间"</li></ul>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<p><strong>❌ 坏的回答</strong>：</p>
+<blockquote>"我跟 VP 说技术债务很重要，他们不听，我很沮丧但还是做了妥协。"</blockquote>
+
+<p><strong>✅ 好的回答</strong>：</p>
+<blockquote>"我把技术债务翻译成业务语言，用数据建立了风险登记册，主动邀请 VP of Product 参与讨论权衡，最终我们一起做了一个双方都信服的决策。"</blockquote>
+
+<hr/>
+
+<h2>Senior/Staff 进阶提示</h2>
+
+<ul><li><strong>避免「工程 vs 业务」的对立框架</strong>——你是 translator，不是 fighter</li><li><strong>预建信任</strong>：平时就在 Eng-Product 同步会分享系统健康指标，别等到规划季才「突袭」</li><li><strong>Rule of thumb</strong>：Google、Netflix 工程团队通行标准是 20% 时间投入可靠性/技术基础设施</li></ul>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+<ol><li>技术决策要翻译成业务语言，用数字说话</li><li>给选项而非命令，让 stakeholder 做有信息的选择</li><li>Staff 的影响力来自建立系统性框架，不是每次单独说服</li></ol>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://sre.google/sre-book/eliminating-toil/">Google SRE Book – Managing Toil</a></li><li><a href="https://staffeng.com/book">Will Larson – Staff Engineer: Leadership Beyond the Management Track</a></li><li><a href="https://martinfowler.com/bliki/TechnicalDebt.html">Martin Fowler – Technical Debt</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>就像你家的管道坏了，你每天用水桶接水（救火）。老板说：我们要建更多房间（新功能）！你要做的不是吵架，而是给老板看：每月因为漏水损失多少钱，修管道只需要多少钱，让他自己算清楚再决定。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 97</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>🤖 AI — Day 97</h1>
+<p><strong>AI News Roundup · July 2026</strong></p>
+
+<p>本周 AI 世界大事速览（来源：搜索结果，2026年7月）</p>
+
+<hr/>
+
+<h2>📰 本周重要新闻</h2>
+
+<h3>1. OpenAI GPT-5.6 家族发布 — 三款专用变体</h3>
+<p>OpenAI 推出 GPT-5.6 家族，三款各有分工：</p>
+<ul><li><strong>Sol</strong> — 重推理任务（类似 o3）</li><li><strong>Terra</strong> — 成本优先（性价比路线）</li><li><strong>Luna</strong> — 速度优先（低延迟场景）</li></ul>
+
+<p>这标志着 frontier 模型开始<strong>垂直分化</strong>，不再是一个大模型通吃。对工程师意味着：选模型时要根据任务特点匹配，而非默认用最贵的。</p>
+
+<p>来源：<a href="https://www.rauljitechnologies.com/blog/july-2026-ai-model-wave/">rauljitechnologies.com</a></p>
+
+<h3>2. xAI 发布 Grok 4.5，中国 Kimi K3 也来了</h3>
+<p>Elon Musk 旗下 xAI 发布 Grok 4.5，同期 Moonshot AI 推出 Kimi K3。全球 LLM 竞争格局：美国、中国、欧洲三足鼎立。开源阵营（DeepSeek V4-Pro、MiniMax M3）表现"据报道接近闭源顶级模型"。</p>
+
+<p>来源：<a href="https://champaignmagazine.com/2026/07/12/ai-by-ai-weekly-top-5-july-6-12-2026/">champaignmagazine.com</a></p>
+
+<h3>3. Hugging Face 遭 AI Agent 自主攻击</h3>
+<p>⚠️ 本周最值得工程师关注的安全事件：Hugging Face 检测到一次<strong>完全由 AI Agent 自主驱动的基础设施入侵</strong>。更戏剧的是，他们用自家 AI 系统检测并分析了这次攻击。</p>
+
+<p><strong>含义</strong>：AI agent 的安全边界已经不是理论问题。构建 agent 系统时，需要像对待人类员工一样设权限边界（least privilege principle）。</p>
+
+<p>来源：<a href="https://huggingface.co/blog/security-incident-july-2026">huggingface.co/blog/security-incident-july-2026</a></p>
+
+<h3>4. AI 价格战加速：Token 成本大降</h3>
+<p>主要提供商（据报道包括 OpenAI、Meta 等各主流厂商）的 output token 成本大幅下降，使大规模 AI 部署对更多企业变得可行。AI 正从"实验阶段"进入"生产骨干"阶段。</p>
+
+<p>来源：<a href="https://www.nextmoca.com/blog/weekly-ai-wrap-july-13-19-2026/">nextmoca.com</a></p>
+
+<hr/>
+
+<h2>🔥 工程师视角：这周学什么？</h2>
+
+<p><strong>Agent 安全</strong>变成了必修课。构建 agent 系统的工程师，记住这三条：</p>
+<ol><li><strong>最小权限</strong>：agent 只能访问它需要的资源</li><li><strong>输入验证</strong>：防止 prompt injection / tool abuse</li><li><strong>可观测性</strong>：每个 agent 动作都要有日志和审计</li></ol>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# 不好的做法：agent 可以执行任意 shell&#10;def agent_tool(command: str):&#10;    import subprocess&#10;    return subprocess.run(command, shell=True)  # ❌ Dangerous&#10;&#10;# 好的做法：白名单 + 沙箱&#10;ALLOWED_TOOLS = {&quot;search&quot;, &quot;read_file&quot;, &quot;write_file&quot;}&#10;def agent_tool(tool_name: str, params: dict):&#10;    if tool_name not in ALLOWED_TOOLS:&#10;        raise PermissionError(f&quot;Tool {tool_name} not allowed&quot;)&#10;    return TOOL_REGISTRY[tool_name](**params)  # ✅ Bounded">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># 不好的做法：agent 可以执行任意 shell</span>
+<span style="color:#c678dd;">def</span> agent_tool(command: str):
+    <span style="color:#c678dd;">import</span> subprocess
+    <span style="color:#c678dd;">return</span> subprocess.run(command, shell=<span style="color:#c678dd;">True</span>)  <span style="color:#5c6370;"># ❌ Dangerous</span>
+
+<span style="color:#5c6370;"># 好的做法：白名单 + 沙箱</span>
+ALLOWED_TOOLS = {<span style="color:#e5c07b;">"search"</span>, <span style="color:#e5c07b;">"read_file"</span>, <span style="color:#e5c07b;">"write_file"</span>}
+<span style="color:#c678dd;">def</span> agent_tool(tool_name: str, params: dict):
+    <span style="color:#c678dd;">if</span> tool_name <span style="color:#c678dd;">not</span> <span style="color:#c678dd;">in</span> ALLOWED_TOOLS:
+        <span style="color:#c678dd;">raise</span> PermissionError(f<span style="color:#e5c07b;">"Tool {tool_name} not allowed"</span>)
+    <span style="color:#c678dd;">return</span> TOOL_REGISTRY[tool_name](**params)  <span style="color:#5c6370;"># ✅ Bounded</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://augusto.digital/insights/blogs/monthly-llm-news-july-2026/">Monthly LLM News July 2026 – augusto.digital</a></li><li><a href="https://huggingface.co/blog/security-incident-july-2026">Hugging Face Security Incident</a></li><li><a href="https://www.nextmoca.com/blog/weekly-ai-wrap-july-13-19-2026/">AI Weekly Wrap July 13-19</a></li><li><a href="https://www.rauljitechnologies.com/blog/july-2026-ai-model-wave/">July 2026 AI Model Wave</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>这周 AI 界发生了三件大事：1) OpenAI 出了三款专用模型，就像厨师刀、菜刀、水果刀各有分工；2) Hugging Face 被一个 AI 机器人偷偷入侵，幸好发现了；3) AI 用起来越来越便宜，大家都开始真正用它干活了。</p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
