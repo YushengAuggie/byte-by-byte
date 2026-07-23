@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-07-23</title>
+  <meta name="description" content="byte-by-byte daily lessons for Thursday, July 23, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Thursday, July 23, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-07-23.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-07-22.html" style="color:var(--text2)">← 2026-07-22</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-07-23</span>
+    <h1>Thursday, July 23, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-07-22.html" class="day-nav-btn">← 2026-07-22</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 98 (Synthesis)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>🏗️ 系统设计 / System Design — Day 98 (Synthesis)</h1>
+<p><strong>Expert Phase — Cross-Topic Synthesis</strong></p>
+
+<hr/>
+
+<h2>综合对比 / Synthesis: 数据库选型决策框架</h2>
+<h3>When to Choose What — 8 DB Types Compared</h3>
+
+<p>你是系统设计面试中的候选人，面试官说："为我们设计一个需要存储用户配置、会话数据、内容推荐、时间序列指标、全文搜索和地理位置查询的平台。"这道题的核心不是某一个数据库——而是<strong>多个数据库协同工作</strong>。</p>
+
+<hr/>
+
+<h2>决策矩阵 / Decision Matrix</h2>
+
+<div class="diagram-block">需求 / Need              | 选型 / Choice          | 原因 / Why
+-------------------------|------------------------|-------------------------------
+用户配置、关系数据        | PostgreSQL (SQL)       | ACID, joins, structured
+会话 / 缓存              | Redis                  | In-memory, TTL, O(1)
+内容推荐、社交图谱        | Neo4j / DGraph         | Graph traversal, relationships
+时间序列指标              | InfluxDB / TimescaleDB | Optimized for time-range scans
+全文搜索                  | Elasticsearch          | Inverted index, ranking
+地理位置                  | PostGIS / MongoDB Geo  | Geospatial indexes
+非结构化文档              | MongoDB                | Flexible schema, JSON-native
+大规模分析                | Redshift / BigQuery    | Columnar, OLAP</div>
+
+<hr/>
+
+<h2>架构图 / Architecture</h2>
+
+<div class="diagram-block">                    ┌────────────────────────────────────────────┐
+                    │            API Gateway / BFF               │
+                    └────────┬───────┬───────┬────────┬──────────┘
+                             │       │       │        │
+                    ┌────────▼──┐  ┌─▼────┐ │   ┌───▼──────────┐
+                    │PostgreSQL │  │Redis │ │   │Elasticsearch  │
+                    │(users,    │  │(cache│ │   │(search, logs) │
+                    │ orders)   │  │ sess)│ │   └──────────────┘
+                    └───────────┘  └──────┘ │
+                                            │
+                    ┌───────────────────┐   ▼
+                    │   InfluxDB        │  Neo4j
+                    │(metrics, timeseries│  (social graph,
+                    │ monitoring)        │   recommendations)
+                    └───────────────────┘</div>
+
+<hr/>
+
+<h2>核心权衡 / Key Tradeoffs</h2>
+
+<p><strong>1. 一致性 vs 可用性</strong></p>
+<ul><li>PostgreSQL: Strong consistency (ACID) → 适合金融、订单</li><li>Redis: Eventual consistency (optional) → 适合缓存、会话</li><li>Cassandra: Eventual by default → 适合写密集、全球分布</li></ul>
+
+<p><strong>2. 读 vs 写优化</strong></p>
+<ul><li>Elasticsearch: 写入慢（index建立），读极快</li><li>InfluxDB: 追加写极快，随机写差</li><li>PostgreSQL: 均衡，靠索引调优</li></ul>
+
+<p><strong>3. Schema 灵活性 vs 查询能力</strong></p>
+<ul><li>MongoDB: 无 schema，但 JOIN 痛苦</li><li>PostgreSQL: Rigid schema，强查询</li><li>组合策略：核心关系 → SQL，扩展属性 → JSON column</li></ul>
+
+<hr/>
+
+<h2>面试中常被考的组合 / Classic Interview Combos</h2>
+
+<div class="diagram-block">系统              | 主DB           | 辅助
+-----------------|----------------|------------------
+Twitter/X        | MySQL/Postgres  | Redis (timeline), Elasticsearch (search)
+Uber             | MySQL           | Redis (location cache), PostGIS
+Netflix          | Cassandra       | Elasticsearch (search), Redis (session)
+Airbnb           | MySQL           | Elasticsearch (search), Redis (cache)
+WhatsApp         | HBase/Cassandra | Redis (presence), MySQL (metadata)</div>
+
+<p><strong>面试技巧 / Interview Tip:</strong></p>
+<p>当面试官问"你会用什么数据库？"正确答案几乎永远是：</p>
+<blockquote>"这取决于读/写比例、数据结构、一致性需求和查询模式。让我分析一下……"</blockquote>
+
+<p>然后用上面的框架逐一分析。</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<ul><li>❌ 默认所有东西用 PostgreSQL（"RDBMS first"思维）</li><li>❌ 把 Redis 当主数据库（内存有限，非持久化）</li><li>❌ 忘记考虑 data locality（地理分布 → 多区域复制）</li><li>✅ 先问清楚 QPS、数据量、一致性要求，再选型</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://www.postgresql.org/docs/current/index.html</li><li>https://redis.io/docs/latest/</li><li>https://www.elastic.co/guide/index.html</li><li>https://docs.influxdata.com/influxdb/v2/</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>就像家里的收纳：衣服放衣柜（结构化），零食随便堆一个箱子（非结构化），常用钥匙放门口（缓存），账单按日期归档（时间序列）。不同的东西放不同的地方，效率最高。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 98</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>💻 算法 / Algorithms — Day 98</h1>
+<div class="diagram-block">**#17 Letter Combinations of a Phone Number** | 🟡 Medium | Backtracking (8/9)</div>
+
+<hr/>
+
+<p>🧩 <strong>回溯模式 (8/9)</strong> — building on the template from Day 88</p>
+
+<p>今天是回溯 block 的第 8 题（共 9 题）。模版一样，变化在于：<strong>每一步的 choices 不是固定集合，而是由当前输入字符决定</strong>。</p>
+
+<hr/>
+
+<h2>问题 / Problem</h2>
+
+<p>🔗 <a href="https://leetcode.com/problems/letter-combinations-of-a-phone-number/">LeetCode #17</a> | 📹 <a href="https://neetcode.io/problems/phone-number-letter-combinations">NeetCode</a></p>
+
+<p>给定数字字符串（如 <code>"23"</code>），返回手机九宫格上所有可能的字母组合。</p>
+
+<div class="diagram-block">2 → abc
+3 → def
+"23" → ["ad","ae","af","bd","be","bf","cd","ce","cf"]</div>
+
+<p><strong>生活类比：</strong> 想象老式 T9 手机打字——每按一个数字键，可能对应多个字母。你想列出所有可能的拼写组合。</p>
+
+<hr/>
+
+<h2>映射到回溯模版 / Pattern Mapping</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# 通用模版&#10;def backtrack(path, choices):&#10;    if IS_COMPLETE(path):      # len(path) == len(digits)&#10;        result.append(path[:])&#10;        return&#10;    for choice in choices:     # phone_map[digits[len(path)]]&#10;        path.append(choice)&#10;        backtrack(path, NEXT_CHOICES)  # 自动由下一个 digit 决定&#10;        path.pop()">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># 通用模版</span>
+<span style="color:#c678dd;">def</span> backtrack(path, choices):
+    <span style="color:#c678dd;">if</span> IS_COMPLETE(path):      <span style="color:#5c6370;"># len(path) == len(digits)</span>
+        result.append(path[:])
+        <span style="color:#c678dd;">return</span>
+    <span style="color:#c678dd;">for</span> choice <span style="color:#c678dd;">in</span> choices:     <span style="color:#5c6370;"># phone_map[digits[len(path)]]</span>
+        path.append(choice)
+        backtrack(path, NEXT_CHOICES)  <span style="color:#5c6370;"># 自动由下一个 digit 决定</span>
+        path.pop()</code></pre>
+</div>
+
+<p><strong>与前几题的区别 / What's Different:</strong></p>
+<table><thead><tr><th>题目</th><th>choices 来源</th><th>关键约束</th></tr></thead><tbody><tr><td>Subsets #78</td><td>固定数组索引</td><td>不重复</td></tr><tr><td>Permutations #46</td><td>剩余未用元素</td><td>全选</td></tr><tr><td><strong>Phone #17</strong></td><td><strong>phone_map[digit]</strong></td><td><strong>每层不同选项集</strong></td></tr></tbody></table>
+
+<hr/>
+
+<h2>Python 解法 / Solution</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from typing import List&#10;&#10;def letterCombinations(digits: str) -&gt; List[str]:&#10;    if not digits:&#10;        return []&#10;    &#10;    phone_map = {&#10;        &quot;2&quot;: &quot;abc&quot;, &quot;3&quot;: &quot;def&quot;, &quot;4&quot;: &quot;ghi&quot;, &quot;5&quot;: &quot;jkl&quot;,&#10;        &quot;6&quot;: &quot;mno&quot;, &quot;7&quot;: &quot;pqrs&quot;, &quot;8&quot;: &quot;tuv&quot;, &quot;9&quot;: &quot;wxyz&quot;&#10;    }&#10;    &#10;    result = []&#10;    &#10;    def backtrack(index: int, path: list):&#10;        # Base case: path length == digits length&#10;        if index == len(digits):&#10;            result.append(&quot;&quot;.join(path))&#10;            return&#10;        &#10;        # Choices: letters for current digit&#10;        for letter in phone_map[digits[index]]:&#10;            path.append(letter)&#10;            backtrack(index + 1, path)  # next digit&#10;            path.pop()  # undo&#10;    &#10;    backtrack(0, [])&#10;    return result&#10;&#10;# Trace for &quot;23&quot;:&#10;# backtrack(0, []) → choices: a,b,c&#10;#   backtrack(1, [a]) → choices: d,e,f&#10;#     backtrack(2, [a,d]) → DONE → &quot;ad&quot;&#10;#     backtrack(2, [a,e]) → DONE → &quot;ae&quot;&#10;#     backtrack(2, [a,f]) → DONE → &quot;af&quot;&#10;#   backtrack(1, [b]) → &quot;bd&quot;,&quot;be&quot;,&quot;bf&quot;&#10;#   backtrack(1, [c]) → &quot;cd&quot;,&quot;ce&quot;,&quot;cf&quot;">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> typing <span style="color:#c678dd;">import</span> List
+
+<span style="color:#c678dd;">def</span> letterCombinations(digits: str) -&gt; List[str]:
+    <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> digits:
+        <span style="color:#c678dd;">return</span> []
+    
+    phone_map = {
+        <span style="color:#e5c07b;">"2"</span>: <span style="color:#e5c07b;">"abc"</span>, <span style="color:#e5c07b;">"3"</span>: <span style="color:#e5c07b;">"def"</span>, <span style="color:#e5c07b;">"4"</span>: <span style="color:#e5c07b;">"ghi"</span>, <span style="color:#e5c07b;">"5"</span>: <span style="color:#e5c07b;">"jkl"</span>,
+        <span style="color:#e5c07b;">"6"</span>: <span style="color:#e5c07b;">"mno"</span>, <span style="color:#e5c07b;">"7"</span>: <span style="color:#e5c07b;">"pqrs"</span>, <span style="color:#e5c07b;">"8"</span>: <span style="color:#e5c07b;">"tuv"</span>, <span style="color:#e5c07b;">"9"</span>: <span style="color:#e5c07b;">"wxyz"</span>
+    }
+    
+    result = []
+    
+    <span style="color:#c678dd;">def</span> backtrack(index: int, path: list):
+        <span style="color:#5c6370;"># Base case: path length == digits length</span>
+        <span style="color:#c678dd;">if</span> index == len(digits):
+            result.append(<span style="color:#e5c07b;">""</span>.join(path))
+            <span style="color:#c678dd;">return</span>
+        
+        <span style="color:#5c6370;"># Choices: letters for current digit</span>
+        <span style="color:#c678dd;">for</span> letter <span style="color:#c678dd;">in</span> phone_map[digits[index]]:
+            path.append(letter)
+            backtrack(index + <span style="color:#56b6c2;">1</span>, path)  <span style="color:#5c6370;"># next digit</span>
+            path.pop()  <span style="color:#5c6370;"># undo</span>
+    
+    backtrack(<span style="color:#56b6c2;">0</span>, [])
+    <span style="color:#c678dd;">return</span> result
+
+<span style="color:#5c6370;"># Trace for "23":</span>
+<span style="color:#5c6370;"># backtrack(0, []) → choices: a,b,c</span>
+<span style="color:#5c6370;">#   backtrack(1, [a]) → choices: d,e,f</span>
+<span style="color:#5c6370;">#     backtrack(2, [a,d]) → DONE → "ad"</span>
+<span style="color:#5c6370;">#     backtrack(2, [a,e]) → DONE → "ae"</span>
+<span style="color:#5c6370;">#     backtrack(2, [a,f]) → DONE → "af"</span>
+<span style="color:#5c6370;">#   backtrack(1, [b]) → "bd","be","bf"</span>
+<span style="color:#5c6370;">#   backtrack(1, [c]) → "cd","ce","cf"</span></code></pre>
+</div>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<ul><li>Time: O(4^n × n) — 最多4个字母/digit，n是长度，×n是join操作</li><li>Space: O(n) — 递归深度</li></ul>
+
+<hr/>
+
+<h2>举一反三 / Connect to Pattern Block</h2>
+
+<div class="diagram-block">回溯 Block 进度 (8/9):
+✅ #78 Subsets        → 组合，start 递增
+✅ #39 Combination Sum → 可重复用，start 不变
+✅ #46 Permutations   → 全排列，used[] 标记
+✅ #90 Subsets II     → 去重 subsets，排序+skip
+✅ #40 Combination Sum II → 去重 combinations
+✅ #79 Word Search    → 2D grid + visited
+✅ #131 Palindrome Partition → 剪枝 + 回文检查
+🎯 #17 Phone Number   → **每层不同 choices（今天）**
+⏳ #51 N-Queens       → 最难，二维约束</div>
+
+<p><strong>Phone #17 的独特点：</strong> <code>choices</code> 不是常量，而是 <code>phone_map[digits[index]]</code> — 每层 choices 都不同，但回溯框架完全不变。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://leetcode.com/problems/letter-combinations-of-a-phone-number/</li><li>https://neetcode.io/roadmap</li><li>https://en.wikipedia.org/wiki/E.161 (Phone keypad layout history)</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>想象你要猜一个密码，第一位可能是 a、b、c（数字 2），第二位可能是 d、e、f（数字 3）。你就把所有组合都试一遍：ad、ae、af、bd、be、bf……这就是回溯——系统地把所有路径都走一遍。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 98 (Synthesis)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>🗣️ 软技能 / Soft Skills — Day 98 (Synthesis)</h1>
+<p><strong>Expert Phase — Fresh Senior/Staff Scenario</strong></p>
+
+<hr/>
+
+<h2>新情景题 / Fresh Scenario: 技术路线分歧</h2>
+
+<p><strong>问题 / Question:</strong></p>
+<blockquote>你是 Staff Engineer。产品团队和你的直属团队在下一个大版本的技术路线上产生了严重分歧——产品团队要求用一套更快交付的第三方 SaaS 方案，而你的工程团队认为应该自研以保持长期控制权和成本优化。两边都有充分的理由，而 VP 要求你在下周的全员会上给出推荐方案。你会怎么做？</blockquote>
+
+<hr/>
+
+<h2>为什么这道题很重要 / Why This Matters</h2>
+
+<p>这是 Staff/Principal 级面试的核心题型：<strong>跨组织对齐 + 技术决策 + 向上管理</strong>。它考察你是否能：</p>
+<ul><li>在不确定性下做出有依据的推荐</li><li>建立信任而不是制造胜负</li><li>以数据和框架代替情绪和直觉</li></ul>
+
+<hr/>
+
+<h2>STAR 分解 / STAR Framework</h2>
+
+<p><strong>Situation:</strong> 两个有合理立场的团队，高压时间线，VP 期待你的推荐</p>
+
+<p><strong>Task:</strong> 在一周内给出可辩护的技术路线决策</p>
+
+<p><strong>Action (Staff 级别的打法):</strong></p>
+
+<p><strong>第一步：信息收集（2天）</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="- 和产品团队：为什么急？SaaS 方案的具体选项是什么？vendor lock-in 风险是否评估过？&#10;- 和工程团队：自研的资源估算是多少？维护成本？谁来 own it？&#10;- 数据：现有系统的 pain points，用户规模，预期增长">Copy</button>
+  <pre><code class="language-text">- 和产品团队：为什么急？SaaS 方案的具体选项是什么？vendor lock-in 风险是否评估过？
+- 和工程团队：自研的资源估算是多少？维护成本？谁来 own it？
+- 数据：现有系统的 pain points，用户规模，预期增长</code></pre>
+</div>
+
+<p><strong>第二步：决策框架（不是"谁赢"，是"什么条件下用哪个"）</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="                  Make (自研)          Buy (SaaS)&#10;--------------+-------------------+------------------&#10;短期交付速度   |      ❌ 慢         |      ✅ 快&#10;长期成本       |      ✅ 可控       |      ❌ 随规模增&#10;定制化能力     |      ✅ 完全控制   |      ❌ 受限&#10;维护负担       |      ❌ 需要团队   |      ✅ vendor 负责&#10;数据主权       |      ✅ 自有       |      ❓ 取决于合同">Copy</button>
+  <pre><code class="language-text">                  Make (自研)          Buy (SaaS)
+--------------+-------------------+------------------
+短期交付速度   |      ❌ 慢         |      ✅ 快
+长期成本       |      ✅ 可控       |      ❌ 随规模增
+定制化能力     |      ✅ 完全控制   |      ❌ 受限
+维护负担       |      ❌ 需要团队   |      ✅ vendor 负责
+数据主权       |      ✅ 自有       |      ❓ 取决于合同</code></pre>
+</div>
+
+<p><strong>第三步：给出有条件的推荐（"It depends + here's the framework"）</strong></p>
+
+<p>✅ <strong>好的推荐措辞：</strong></p>
+<blockquote>"在当前 18 个月的产品冲刺周期内，我推荐使用 SaaS 方案，但附带三个条件：数据导出 API 必须可用、合同有明确的退出条款、我们在第 12 个月做 build/buy 再评估。如果这三个条件无法满足，风险太高，我们应该在接下来 6 周内启动自研 MVP 验证。"</blockquote>
+
+<hr/>
+
+<h2>❌ 不好的回答 vs ✅ 好的回答</h2>
+
+<p><strong>❌ Bad:</strong></p>
+<blockquote>"我支持工程团队，自研更灵活。"（过于简单，没有数据支撑，显得偏袒）</blockquote>
+
+<p><strong>❌ Also Bad:</strong></p>
+<blockquote>"我支持产品团队，我们需要快速交付。"（放弃了技术视角，不像 Staff）</blockquote>
+
+<p><strong>✅ Good:</strong></p>
+<blockquote>"这不是二选一，是在特定约束下的优先级选择。我会用 3 天收集数据，建立决策矩阵，并在全员会上呈现：在什么条件下 SaaS 是对的，在什么条件下自研是对的，以及我的推荐和背后的 assumptions。"</blockquote>
+
+<hr/>
+
+<h2>Senior/Staff 级加分点 / Senior Signals</h2>
+
+<ul><li><strong>建立 decision criteria 而不是 opinions</strong> — 面试官想看到结构化思维</li><li><strong>主动对齐利益相关方</strong> — 在会议前而不是在会议上暴露分歧</li><li><strong>给出可撤销的决定</strong> — "我们先 SaaS，第 12 月评估" 比 "永远 SaaS" 更有弹性</li><li><strong>量化风险</strong> — "vendor lock-in 可能导致未来 2 年的迁移成本超过自研成本" 比 "vendor lock-in 不好" 有力</li></ul>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+
+<ol><li><strong>Staff 不 pick sides — Staff builds decision frameworks</strong></li><li>用数据+条件推荐，而不是情绪化立场</li><li>向上管理：让 VP 看到你的思考过程，而不只是结论</li><li>为决定设置"触发器"——什么条件下推翻这个决定</li></ol>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://staffeng.com/guides/deciding-technical-direction</li><li>https://pragmaticengineer.com/blog/making-technical-decisions</li><li>https://aws.amazon.com/blogs/enterprise-strategy/build-vs-buy-a-few-lessons-learned/</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>想象你是班级的"调解员"：A 同学说"我们去打球"，B 同学说"我们去图书馆"。最好的做法不是站队，而是问清楚"我们今天的目标是什么？"，然后根据目标推荐最合适的方案。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 98</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>🤖 AI — Day 98</h1>
+<p><strong>News Roundup — July 23, 2026</strong></p>
+
+<hr/>
+
+<h2>📰 AI 新闻 / AI News</h2>
+
+<hr/>
+
+<h3>📌 Story 1: AI 公司隐藏巨额债务 / AI Companies Hiding Massive Debt</h3>
+<p><strong>来源 / Source:</strong> <a href="https://futurism.com/artificial-intelligence/ai-companies-hide-debt-off-balance-sheet">Futurism</a> (citing Nikkei Asia investigation)</p>
+
+<p>根据日本经济新闻（Nikkei Asia）的调查，Alphabet、Microsoft、Amazon、Meta、Oracle 五家科技巨头在资产负债表外隐藏了据报道约 1.65 万亿美元的债务——超过了它们在财务报告中正式披露的约 1.35 万亿美元。这些债务主要来自数据中心租约和 GPU 供应合同。Meta 一家的表外债务据报道约为 4200 亿美元，接近其透明债务的三倍。</p>
+
+<p>部分专家将此与 2001 年 Enron 事件相比较——Enron 通过特殊目的载体隐藏债务，最终崩溃。</p>
+
+<p><strong>对工程师的启示 / Engineering Takeaway:</strong></p>
+<p>这说明 AI infra 的投资规模远超公众认知。GPU 集群、数据中心的资本支出正在重塑整个行业的财务结构。作为工程师，理解公司的 AI infra 成本结构越来越重要。</p>
+
+<p>📌 Source: https://futurism.com/artificial-intelligence/ai-companies-hide-debt-off-balance-sheet</p>
+<p>📌 Original investigation: https://asia.nikkei.com/business/technology/five-us-tech-giants-hidden-debts-soar-to-1.65tn-on-opaque-ai-funding</p>
+
+<hr/>
+
+<h3>📌 Story 2: 陶哲轩用 ChatGPT 探索数学猜想 / Terence Tao Uses ChatGPT for Math Conjecture</h3>
+<p><strong>来源 / Source:</strong> Hacker News / ChatGPT shared conversation</p>
+
+<p>顶级数学家陶哲轩（Terence Tao）公开分享了他用 ChatGPT 探索 Jacobian 猜想反例的对话记录，在 Hacker News 引发热议（据报道 1000+ 点赞）。</p>
+
+<p>这次对话展示了一个顶级领域专家如何"驾驭" LLM：短而精准的问题、大量使用专业术语、快速迭代。社区讨论中有人指出：<strong>LLM 的价值与用户的领域深度正相关</strong>——越懂行的人越能从中获益，因为他们能快速识别错误并精准导向。</p>
+
+<p><strong>关键洞察 / Key Insight:</strong></p>
+<blockquote>"AI 工具放大的是专业能力，而不是替代它。" — 社区讨论总结</blockquote>
+
+<p>HN 链接: https://news.ycombinator.com/item?id=49010345</p>
+
+<hr/>
+
+<h3>📌 Story 3 (Synthesis): AI Bubble 讨论升温 / AI Bubble Talk Intensifies</h3>
+
+<p>结合上述两条新闻，业界对 AI 泡沫的讨论在 2026 年中段明显升温：</p>
+<ul><li>一方面，LLM 确实在帮助顶级专家做更高效的工作</li><li>另一方面，支撑这些模型的基础设施成本据报道远超公开披露的数字</li></ul>
+
+<p><strong>工程师的角度 / Engineering Perspective:</strong></p>
+<p>无论宏观叙事如何，技术能力本身仍在快速进步。关注点应放在：</p>
+<ol><li>如何用好现有工具（如 Tao 展示的那样）</li><li>如何设计成本高效的 AI infra（KV cache、quantization、speculative decoding）</li><li>如何评估 AI 功能的真实 ROI</li></ol>
+
+<hr/>
+
+<h2>💡 本周 AI 趋势总结 / Weekly AI Theme</h2>
+
+<p><strong>"AI as Infrastructure"</strong> — AI 不再只是产品功能，而是正在成为基础设施投资的一部分，成本结构与云计算早期相似。对工程师来说，这意味着 AI cost optimization（量化、缓存、批处理）将越来越成为核心技能。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://futurism.com/artificial-intelligence/ai-companies-hide-debt-off-balance-sheet</li><li>https://asia.nikkei.com/business/technology/five-us-tech-giants-hidden-debts-soar-to-1.65tn-on-opaque-ai-funding</li><li>https://news.ycombinator.com/item?id=49010345</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>科技公司在说"我们花了 X 买 AI 设备"，但其实悄悄签了很多借钱的合同，真正的花费据报道比公开数字多很多。就像你说"我今天花了 100 块"，但没告诉爸妈你还刷了信用卡。</p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>

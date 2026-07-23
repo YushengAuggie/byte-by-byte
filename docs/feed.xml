@@ -5,8 +5,575 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 22 Jul 2026 15:09:16 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 23 Jul 2026 15:13:57 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-23</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-23</guid>
+      <pubDate>Thu, 23 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 98 (Synthesis)</h2>
+<p><strong>Expert Phase — Cross-Topic Synthesis</strong></p>
+
+<hr/>
+
+<h2>综合对比 / Synthesis: 数据库选型决策框架</h2>
+<h3>When to Choose What — 8 DB Types Compared</h3>
+
+<p>你是系统设计面试中的候选人，面试官说：&quot;为我们设计一个需要存储用户配置、会话数据、内容推荐、时间序列指标、全文搜索和地理位置查询的平台。&quot;这道题的核心不是某一个数据库——而是<strong>多个数据库协同工作</strong>。</p>
+
+<hr/>
+
+<h2>决策矩阵 / Decision Matrix</h2>
+
+<pre><code>
+需求 / Need              | 选型 / Choice          | 原因 / Why
+-------------------------|------------------------|-------------------------------
+用户配置、关系数据        | PostgreSQL (SQL)       | ACID, joins, structured
+会话 / 缓存              | Redis                  | In-memory, TTL, O(1)
+内容推荐、社交图谱        | Neo4j / DGraph         | Graph traversal, relationships
+时间序列指标              | InfluxDB / TimescaleDB | Optimized for time-range scans
+全文搜索                  | Elasticsearch          | Inverted index, ranking
+地理位置                  | PostGIS / MongoDB Geo  | Geospatial indexes
+非结构化文档              | MongoDB                | Flexible schema, JSON-native
+大规模分析                | Redshift / BigQuery    | Columnar, OLAP
+</code></pre>
+
+<hr/>
+
+<h2>架构图 / Architecture</h2>
+
+<pre><code>
+                    ┌────────────────────────────────────────────┐
+                    │            API Gateway / BFF               │
+                    └────────┬───────┬───────┬────────┬──────────┘
+                             │       │       │        │
+                    ┌────────▼──┐  ┌─▼────┐ │   ┌───▼──────────┐
+                    │PostgreSQL │  │Redis │ │   │Elasticsearch  │
+                    │(users,    │  │(cache│ │   │(search, logs) │
+                    │ orders)   │  │ sess)│ │   └──────────────┘
+                    └───────────┘  └──────┘ │
+                                            │
+                    ┌───────────────────┐   ▼
+                    │   InfluxDB        │  Neo4j
+                    │(metrics, timeseries│  (social graph,
+                    │ monitoring)        │   recommendations)
+                    └───────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>核心权衡 / Key Tradeoffs</h2>
+
+<p><strong>1. 一致性 vs 可用性</strong></p>
+<p>- PostgreSQL: Strong consistency (ACID) → 适合金融、订单</p>
+<p>- Redis: Eventual consistency (optional) → 适合缓存、会话</p>
+<p>- Cassandra: Eventual by default → 适合写密集、全球分布</p>
+
+<p><strong>2. 读 vs 写优化</strong></p>
+<p>- Elasticsearch: 写入慢（index建立），读极快</p>
+<p>- InfluxDB: 追加写极快，随机写差</p>
+<p>- PostgreSQL: 均衡，靠索引调优</p>
+
+<p><strong>3. Schema 灵活性 vs 查询能力</strong></p>
+<p>- MongoDB: 无 schema，但 JOIN 痛苦</p>
+<p>- PostgreSQL: Rigid schema，强查询</p>
+<p>- 组合策略：核心关系 → SQL，扩展属性 → JSON column</p>
+
+<hr/>
+
+<h2>面试中常被考的组合 / Classic Interview Combos</h2>
+
+<pre><code>
+系统              | 主DB           | 辅助
+-----------------|----------------|------------------
+Twitter/X        | MySQL/Postgres  | Redis (timeline), Elasticsearch (search)
+Uber             | MySQL           | Redis (location cache), PostGIS
+Netflix          | Cassandra       | Elasticsearch (search), Redis (session)
+Airbnb           | MySQL           | Elasticsearch (search), Redis (cache)
+WhatsApp         | HBase/Cassandra | Redis (presence), MySQL (metadata)
+</code></pre>
+
+<p><strong>面试技巧 / Interview Tip:</strong></p>
+<p>当面试官问&quot;你会用什么数据库？&quot;正确答案几乎永远是：</p>
+<p>&gt; &quot;这取决于读/写比例、数据结构、一致性需求和查询模式。让我分析一下……&quot;</p>
+
+<p>然后用上面的框架逐一分析。</p>
+
+<hr/>
+
+<h2>别踩这个坑 / Common Mistakes</h2>
+
+<p>- ❌ 默认所有东西用 PostgreSQL（&quot;RDBMS first&quot;思维）</p>
+<p>- ❌ 把 Redis 当主数据库（内存有限，非持久化）</p>
+<p>- ❌ 忘记考虑 data locality（地理分布 → 多区域复制）</p>
+<p>- ✅ 先问清楚 QPS、数据量、一致性要求，再选型</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://www.postgresql.org/docs/current/index.html</p>
+<p>- https://redis.io/docs/latest/</p>
+<p>- https://www.elastic.co/guide/index.html</p>
+<p>- https://docs.influxdata.com/influxdb/v2/</p>
+
+<h2>🧒 ELI5</h2>
+<p>就像家里的收纳：衣服放衣柜（结构化），零食随便堆一个箱子（非结构化），常用钥匙放门口（缓存），账单按日期归档（时间序列）。不同的东西放不同的地方，效率最高。</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 98</h2>
+<p><strong>#17 Letter Combinations of a Phone Number</strong> | 🟡 Medium | Backtracking (8/9)</p>
+
+<hr/>
+
+<p>🧩 <strong>回溯模式 (8/9)</strong> — building on the template from Day 88</p>
+
+<p>今天是回溯 block 的第 8 题（共 9 题）。模版一样，变化在于：<strong>每一步的 choices 不是固定集合，而是由当前输入字符决定</strong>。</p>
+
+<hr/>
+
+<h2>问题 / Problem</h2>
+
+<p>🔗 [LeetCode #17](https://leetcode.com/problems/letter-combinations-of-a-phone-number/) | 📹 [NeetCode](https://neetcode.io/problems/phone-number-letter-combinations)</p>
+
+<p>给定数字字符串（如 <code>&quot;23&quot;</code>），返回手机九宫格上所有可能的字母组合。</p>
+
+<pre><code>
+2 → abc
+3 → def
+&quot;23&quot; → [&quot;ad&quot;,&quot;ae&quot;,&quot;af&quot;,&quot;bd&quot;,&quot;be&quot;,&quot;bf&quot;,&quot;cd&quot;,&quot;ce&quot;,&quot;cf&quot;]
+</code></pre>
+
+<p><strong>生活类比：</strong> 想象老式 T9 手机打字——每按一个数字键，可能对应多个字母。你想列出所有可能的拼写组合。</p>
+
+<hr/>
+
+<h2>映射到回溯模版 / Pattern Mapping</h2>
+
+<pre><code>
+# 通用模版
+def backtrack(path, choices):
+    if IS_COMPLETE(path):      # len(path) == len(digits)
+        result.append(path[:])
+        return
+    for choice in choices:     # phone_map[digits[len(path)]]
+        path.append(choice)
+        backtrack(path, NEXT_CHOICES)  # 自动由下一个 digit 决定
+        path.pop()
+</code></pre>
+
+<p><strong>与前几题的区别 / What&#x27;s Different:</strong></p>
+<p>| 题目 | choices 来源 | 关键约束 |</p>
+<p>|------|------------|---------|</p>
+<p>| Subsets #78 | 固定数组索引 | 不重复 |</p>
+<p>| Permutations #46 | 剩余未用元素 | 全选 |</p>
+<p>| <strong>Phone #17</strong> | <strong>phone_map[digit]</strong> | <strong>每层不同选项集</strong> |</p>
+
+<hr/>
+
+<h2>Python 解法 / Solution</h2>
+
+<pre><code>
+from typing import List
+
+def letterCombinations(digits: str) -&gt; List[str]:
+    if not digits:
+        return []
+    
+    phone_map = {
+        &quot;2&quot;: &quot;abc&quot;, &quot;3&quot;: &quot;def&quot;, &quot;4&quot;: &quot;ghi&quot;, &quot;5&quot;: &quot;jkl&quot;,
+        &quot;6&quot;: &quot;mno&quot;, &quot;7&quot;: &quot;pqrs&quot;, &quot;8&quot;: &quot;tuv&quot;, &quot;9&quot;: &quot;wxyz&quot;
+    }
+    
+    result = []
+    
+    def backtrack(index: int, path: list):
+        # Base case: path length == digits length
+        if index == len(digits):
+            result.append(&quot;&quot;.join(path))
+            return
+        
+        # Choices: letters for current digit
+        for letter in phone_map[digits[index]]:
+            path.append(letter)
+            backtrack(index + 1, path)  # next digit
+            path.pop()  # undo
+    
+    backtrack(0, [])
+    return result
+
+# Trace for &quot;23&quot;:
+# backtrack(0, []) → choices: a,b,c
+#   backtrack(1, [a]) → choices: d,e,f
+#     backtrack(2, [a,d]) → DONE → &quot;ad&quot;
+#     backtrack(2, [a,e]) → DONE → &quot;ae&quot;
+#     backtrack(2, [a,f]) → DONE → &quot;af&quot;
+#   backtrack(1, [b]) → &quot;bd&quot;,&quot;be&quot;,&quot;bf&quot;
+#   backtrack(1, [c]) → &quot;cd&quot;,&quot;ce&quot;,&quot;cf&quot;
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(4^n × n) — 最多4个字母/digit，n是长度，×n是join操作</p>
+<p>- Space: O(n) — 递归深度</p>
+
+<hr/>
+
+<h2>举一反三 / Connect to Pattern Block</h2>
+
+<pre><code>
+回溯 Block 进度 (8/9):
+✅ #78 Subsets        → 组合，start 递增
+✅ #39 Combination Sum → 可重复用，start 不变
+✅ #46 Permutations   → 全排列，used[] 标记
+✅ #90 Subsets II     → 去重 subsets，排序+skip
+✅ #40 Combination Sum II → 去重 combinations
+✅ #79 Word Search    → 2D grid + visited
+✅ #131 Palindrome Partition → 剪枝 + 回文检查
+🎯 #17 Phone Number   → **每层不同 choices（今天）**
+⏳ #51 N-Queens       → 最难，二维约束
+</code></pre>
+
+<p><strong>Phone #17 的独特点：</strong> <code>choices</code> 不是常量，而是 <code>phone_map[digits[index]]</code> — 每层 choices 都不同，但回溯框架完全不变。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://leetcode.com/problems/letter-combinations-of-a-phone-number/</p>
+<p>- https://neetcode.io/roadmap</p>
+<p>- https://en.wikipedia.org/wiki/E.161 (Phone keypad layout history)</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象你要猜一个密码，第一位可能是 a、b、c（数字 2），第二位可能是 d、e、f（数字 3）。你就把所有组合都试一遍：ad、ae、af、bd、be、bf……这就是回溯——系统地把所有路径都走一遍。</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 98 (Synthesis)</h2>
+<p><strong>Expert Phase — Fresh Senior/Staff Scenario</strong></p>
+
+<hr/>
+
+<h2>新情景题 / Fresh Scenario: 技术路线分歧</h2>
+
+<p><strong>问题 / Question:</strong></p>
+<p>&gt; 你是 Staff Engineer。产品团队和你的直属团队在下一个大版本的技术路线上产生了严重分歧——产品团队要求用一套更快交付的第三方 SaaS 方案，而你的工程团队认为应该自研以保持长期控制权和成本优化。两边都有充分的理由，而 VP 要求你在下周的全员会上给出推荐方案。你会怎么做？</p>
+
+<hr/>
+
+<h2>为什么这道题很重要 / Why This Matters</h2>
+
+<p>这是 Staff/Principal 级面试的核心题型：<strong>跨组织对齐 + 技术决策 + 向上管理</strong>。它考察你是否能：</p>
+<p>- 在不确定性下做出有依据的推荐</p>
+<p>- 建立信任而不是制造胜负</p>
+<p>- 以数据和框架代替情绪和直觉</p>
+
+<hr/>
+
+<h2>STAR 分解 / STAR Framework</h2>
+
+<p><strong>Situation:</strong> 两个有合理立场的团队，高压时间线，VP 期待你的推荐</p>
+
+<p><strong>Task:</strong> 在一周内给出可辩护的技术路线决策</p>
+
+<p><strong>Action (Staff 级别的打法):</strong></p>
+
+<p><strong>第一步：信息收集（2天）</strong></p>
+<pre><code>
+- 和产品团队：为什么急？SaaS 方案的具体选项是什么？vendor lock-in 风险是否评估过？
+- 和工程团队：自研的资源估算是多少？维护成本？谁来 own it？
+- 数据：现有系统的 pain points，用户规模，预期增长
+</code></pre>
+
+<p><strong>第二步：决策框架（不是&quot;谁赢&quot;，是&quot;什么条件下用哪个&quot;）</strong></p>
+<pre><code>
+                  Make (自研)          Buy (SaaS)
+--------------+-------------------+------------------
+短期交付速度   |      ❌ 慢         |      ✅ 快
+长期成本       |      ✅ 可控       |      ❌ 随规模增
+定制化能力     |      ✅ 完全控制   |      ❌ 受限
+维护负担       |      ❌ 需要团队   |      ✅ vendor 负责
+数据主权       |      ✅ 自有       |      ❓ 取决于合同
+</code></pre>
+
+<p><strong>第三步：给出有条件的推荐（&quot;It depends + here&#x27;s the framework&quot;）</strong></p>
+
+<p>✅ <strong>好的推荐措辞：</strong></p>
+<p>&gt; &quot;在当前 18 个月的产品冲刺周期内，我推荐使用 SaaS 方案，但附带三个条件：数据导出 API 必须可用、合同有明确的退出条款、我们在第 12 个月做 build/buy 再评估。如果这三个条件无法满足，风险太高，我们应该在接下来 6 周内启动自研 MVP 验证。&quot;</p>
+
+<hr/>
+
+<h2>❌ 不好的回答 vs ✅ 好的回答</h2>
+
+<p><strong>❌ Bad:</strong></p>
+<p>&gt; &quot;我支持工程团队，自研更灵活。&quot;（过于简单，没有数据支撑，显得偏袒）</p>
+
+<p><strong>❌ Also Bad:</strong></p>
+<p>&gt; &quot;我支持产品团队，我们需要快速交付。&quot;（放弃了技术视角，不像 Staff）</p>
+
+<p><strong>✅ Good:</strong></p>
+<p>&gt; &quot;这不是二选一，是在特定约束下的优先级选择。我会用 3 天收集数据，建立决策矩阵，并在全员会上呈现：在什么条件下 SaaS 是对的，在什么条件下自研是对的，以及我的推荐和背后的 assumptions。&quot;</p>
+
+<hr/>
+
+<h2>Senior/Staff 级加分点 / Senior Signals</h2>
+
+<p>- <strong>建立 decision criteria 而不是 opinions</strong> — 面试官想看到结构化思维</p>
+<p>- <strong>主动对齐利益相关方</strong> — 在会议前而不是在会议上暴露分歧</p>
+<p>- <strong>给出可撤销的决定</strong> — &quot;我们先 SaaS，第 12 月评估&quot; 比 &quot;永远 SaaS&quot; 更有弹性</p>
+<p>- <strong>量化风险</strong> — &quot;vendor lock-in 可能导致未来 2 年的迁移成本超过自研成本&quot; 比 &quot;vendor lock-in 不好&quot; 有力</p>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+
+<p>1. <strong>Staff 不 pick sides — Staff builds decision frameworks</strong></p>
+<p>2. 用数据+条件推荐，而不是情绪化立场</p>
+<p>3. 向上管理：让 VP 看到你的思考过程，而不只是结论</p>
+<p>4. 为决定设置&quot;触发器&quot;——什么条件下推翻这个决定</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://staffeng.com/guides/deciding-technical-direction</p>
+<p>- https://pragmaticengineer.com/blog/making-technical-decisions</p>
+<p>- https://aws.amazon.com/blogs/enterprise-strategy/build-vs-buy-a-few-lessons-learned/</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象你是班级的&quot;调解员&quot;：A 同学说&quot;我们去打球&quot;，B 同学说&quot;我们去图书馆&quot;。最好的做法不是站队，而是问清楚&quot;我们今天的目标是什么？&quot;，然后根据目标推荐最合适的方案。</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🎨 前端 / Python Craft — Day 98</h2>
+<p><strong>Generators &amp; itertools — Memory-Efficient Processing</strong></p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在处理一个 10GB 的服务器日志文件，需要找出所有 5xx 错误并统计每分钟的错误数。用列表加载整个文件会 OOM（内存溢出）。你会怎么做？</p>
+
+<p>答案：<strong>Generator + itertools</strong>。</p>
+
+<hr/>
+
+<h2>Generator 基础 / Generator Basics</h2>
+
+<pre><code>
+# ❌ 内存炸弹 — 一次性加载所有行
+def read_errors_bad(filename: str) -&gt; list:
+    with open(filename) as f:
+        return [line for line in f if &quot;5xx&quot; in line]  # 10GB → OOM
+
+# ✅ Generator — 按需产出，内存只用一行
+def read_errors(filename: str):
+    with open(filename) as f:
+        for line in f:
+            if &quot;5xx&quot; in line:
+                yield line  # 暂停，等待下一次 next() 调用
+
+# 使用
+for error_line in read_errors(&quot;access.log&quot;):
+    process(error_line)  # 同一时刻内存里只有一行
+</code></pre>
+
+<p><strong>Generator 工作原理 / How it Works:</strong></p>
+<pre><code>
+调用 read_errors() → 返回 generator 对象（不执行函数体）
+next(gen)          → 执行到第一个 yield，返回值，暂停
+next(gen)          → 从上次暂停处继续，执行到下一个 yield
+StopIteration      → 函数体执行完毕
+</code></pre>
+
+<hr/>
+
+<h2>Generator Expression vs List Comprehension</h2>
+
+<pre><code>
+import sys
+
+# List comprehension — 全部在内存
+squares_list = [x**2 for x in range(1_000_000)]
+print(sys.getsizeof(squares_list))  # ~8MB
+
+# Generator expression — 几乎不占内存
+squares_gen = (x**2 for x in range(1_000_000))
+print(sys.getsizeof(squares_gen))   # ~200 bytes
+
+# 用法相同，但内存差异巨大！
+total = sum(squares_gen)  # 懒计算
+</code></pre>
+
+<hr/>
+
+<h2>itertools — 标准库的瑞士军刀</h2>
+
+<pre><code>
+import itertools
+
+# islice — 取前 N 个（不加载整个迭代器）
+from itertools import islice
+first_100_errors = list(islice(read_errors(&quot;huge.log&quot;), 100))
+
+# chain — 合并多个迭代器
+log_files = [&quot;jan.log&quot;, &quot;feb.log&quot;, &quot;mar.log&quot;]
+all_errors = itertools.chain.from_iterable(
+    read_errors(f) for f in log_files
+)
+
+# groupby — 按 key 分组（需要已排序！）
+from itertools import groupby
+import re
+
+def parse_minute(line: str) -&gt; str:
+    # Extract &quot;2026-07-23 08:01&quot; from log line
+    match = re.search(r&#x27;\d{4}-\d{2}-\d{2} \d{2}:\d{2}&#x27;, line)
+    return match.group(0) if match else &quot;unknown&quot;
+
+# Count errors per minute
+for minute, errors in groupby(read_errors(&quot;access.log&quot;), key=parse_minute):
+    count = sum(1 for _ in errors)
+    print(f&quot;{minute}: {count} errors&quot;)
+
+# takewhile / dropwhile — 条件截断
+from itertools import takewhile, dropwhile
+
+lines = [&quot;INFO start&quot;, &quot;INFO running&quot;, &quot;ERROR boom&quot;, &quot;INFO recover&quot;]
+before_error = list(takewhile(lambda l: &quot;ERROR&quot; not in l, lines))
+# [&quot;INFO start&quot;, &quot;INFO running&quot;]
+
+# batched (Python 3.12+) — 分批处理
+from itertools import batched
+for batch in batched(read_errors(&quot;huge.log&quot;), 1000):
+    bulk_insert(batch)  # 每次插入1000条
+</code></pre>
+
+<hr/>
+
+<h2>实战：流式处理管道 / Streaming Pipeline</h2>
+
+<pre><code>
+from itertools import islice, groupby
+from collections import Counter
+
+def pipeline(filename: str, top_n: int = 10):
+    &quot;&quot;&quot;
+    Read logs → filter errors → parse → count → top N
+    全程 O(1) 内存（除了最终的 Counter）
+    &quot;&quot;&quot;
+    def read_lines(f):
+        with open(f) as fh:
+            yield from fh
+    
+    def filter_5xx(lines):
+        return (line for line in lines if &quot; 5&quot; in line)
+    
+    def extract_path(lines):
+        for line in lines:
+            parts = line.split()
+            yield parts[6] if len(parts) &gt; 6 else &quot;unknown&quot;
+    
+    paths = extract_path(filter_5xx(read_lines(filename)))
+    return Counter(paths).most_common(top_n)
+
+# Usage:
+top_errors = pipeline(&quot;access.log&quot;, top_n=10)
+</code></pre>
+
+<hr/>
+
+<h2>什么时候用 / When to Use</h2>
+
+<p>✅ 使用 Generator/itertools:</p>
+<p>- 数据集大于可用内存</p>
+<p>- 只需要遍历一次（日志、流数据、文件）</p>
+<p>- 构建数据处理管道</p>
+
+<p>❌ 不要用:</p>
+<p>- 需要多次遍历同一个序列（generator 用完不能重置）</p>
+<p>- 数据集小且需要随机访问</p>
+<p>- 需要 len() 或索引操作</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://docs.python.org/3/library/itertools.html</p>
+<p>- https://docs.python.org/3/glossary.html#term-generator</p>
+<p>- https://realpython.com/introduction-to-python-generators/</p>
+<p>- https://docs.python.org/3/library/itertools.html#itertools.batched</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象你要数一整个海滩的沙子。普通方法：先把所有沙子装进口袋（内存炸）。Generator 方法：一粒一粒数，数完一粒再拿下一粒，你的口袋只需要装一粒沙子。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 98</h2>
+<p><strong>News Roundup — July 23, 2026</strong></p>
+
+<hr/>
+
+<h2>📰 AI 新闻 / AI News</h2>
+
+<hr/>
+
+<h3>📌 Story 1: AI 公司隐藏巨额债务 / AI Companies Hiding Massive Debt</h3>
+<p><strong>来源 / Source:</strong> [Futurism](https://futurism.com/artificial-intelligence/ai-companies-hide-debt-off-balance-sheet) (citing Nikkei Asia investigation)</p>
+
+<p>根据日本经济新闻（Nikkei Asia）的调查，Alphabet、Microsoft、Amazon、Meta、Oracle 五家科技巨头在资产负债表外隐藏了据报道约 1.65 万亿美元的债务——超过了它们在财务报告中正式披露的约 1.35 万亿美元。这些债务主要来自数据中心租约和 GPU 供应合同。Meta 一家的表外债务据报道约为 4200 亿美元，接近其透明债务的三倍。</p>
+
+<p>部分专家将此与 2001 年 Enron 事件相比较——Enron 通过特殊目的载体隐藏债务，最终崩溃。</p>
+
+<p><strong>对工程师的启示 / Engineering Takeaway:</strong></p>
+<p>这说明 AI infra 的投资规模远超公众认知。GPU 集群、数据中心的资本支出正在重塑整个行业的财务结构。作为工程师，理解公司的 AI infra 成本结构越来越重要。</p>
+
+<p>📌 Source: https://futurism.com/artificial-intelligence/ai-companies-hide-debt-off-balance-sheet</p>
+<p>📌 Original investigation: https://asia.nikkei.com/business/technology/five-us-tech-giants-hidden-debts-soar-to-1.65tn-on-opaque-ai-funding</p>
+
+<hr/>
+
+<h3>📌 Story 2: 陶哲轩用 ChatGPT 探索数学猜想 / Terence Tao Uses ChatGPT for Math Conjecture</h3>
+<p><strong>来源 / Source:</strong> Hacker News / ChatGPT shared conversation</p>
+
+<p>顶级数学家陶哲轩（Terence Tao）公开分享了他用 ChatGPT 探索 Jacobian 猜想反例的对话记录，在 Hacker News 引发热议（据报道 1000+ 点赞）。</p>
+
+<p>这次对话展示了一个顶级领域专家如何&quot;驾驭&quot; LLM：短而精准的问题、大量使用专业术语、快速迭代。社区讨论中有人指出：<strong>LLM 的价值与用户的领域深度正相关</strong>——越懂行的人越能从中获益，因为他们能快速识别错误并精准导向。</p>
+
+<p><strong>关键洞察 / Key Insight:</strong></p>
+<p>&gt; &quot;AI 工具放大的是专业能力，而不是替代它。&quot; — 社区讨论总结</p>
+
+<p>HN 链接: https://news.ycombinator.com/item?id=49010345</p>
+
+<hr/>
+
+<h3>📌 Story 3 (Synthesis): AI Bubble 讨论升温 / AI Bubble Talk Intensifies</h3>
+
+<p>结合上述两条新闻，业界对 AI 泡沫的讨论在 2026 年中段明显升温：</p>
+<p>- 一方面，LLM 确实在帮助顶级专家做更高效的工作</p>
+<p>- 另一方面，支撑这些模型的基础设施成本据报道远超公开披露的数字</p>
+
+<p><strong>工程师的角度 / Engineering Perspective:</strong></p>
+<p>无论宏观叙事如何，技术能力本身仍在快速进步。关注点应放在：</p>
+<p>1. 如何用好现有工具（如 Tao 展示的那样）</p>
+<p>2. 如何设计成本高效的 AI infra（KV cache、quantization、speculative decoding）</p>
+<p>3. 如何评估 AI 功能的真实 ROI</p>
+
+<hr/>
+
+<h2>💡 本周 AI 趋势总结 / Weekly AI Theme</h2>
+
+<p><strong>&quot;AI as Infrastructure&quot;</strong> — AI 不再只是产品功能，而是正在成为基础设施投资的一部分，成本结构与云计算早期相似。对工程师来说，这意味着 AI cost optimization（量化、缓存、批处理）将越来越成为核心技能。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://futurism.com/artificial-intelligence/ai-companies-hide-debt-off-balance-sheet</p>
+<p>- https://asia.nikkei.com/business/technology/five-us-tech-giants-hidden-debts-soar-to-1.65tn-on-opaque-ai-funding</p>
+<p>- https://news.ycombinator.com/item?id=49010345</p>
+
+<h2>🧒 ELI5</h2>
+<p>科技公司在说&quot;我们花了 X 买 AI 设备&quot;，但其实悄悄签了很多借钱的合同，真正的花费据报道比公开数字多很多。就像你说&quot;我今天花了 100 块&quot;，但没告诉爸妈你还刷了信用卡。</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-22</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
