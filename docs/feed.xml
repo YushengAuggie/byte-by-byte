@@ -5,8 +5,624 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 23 Jul 2026 15:13:57 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 24 Jul 2026 16:45:52 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-24</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-24</guid>
+      <pubDate>Fri, 24 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>Day 99 — System Design Synthesis: 分布式系统一致性模型全景 / Consistency Models in Distributed Systems</h2>
+
+<h2>🏗️ 系统设计综合 / System Design Synthesis</h2>
+
+<p><strong>主题：分布式一致性模型 — 从最终到线性化</strong></p>
+<p><strong>Topic: Distributed Consistency Models — From Eventual to Linearizability</strong></p>
+
+<hr/>
+
+<h3>为什么这很重要 / Why This Matters</h3>
+
+<p>过去99天里你学了几十个系统：缓存、数据库、消息队列、分布式锁、共识协议。它们全都在解决同一个核心问题：<strong>多个节点如何就数据状态达成一致？</strong></p>
+
+<p>Over 99 days you&#x27;ve seen dozens of systems: caches, databases, message queues, distributed locks, consensus protocols. They all solve the same core problem: <strong>how do multiple nodes agree on data state?</strong></p>
+
+<hr/>
+
+<h3>一致性模型谱系 / The Consistency Spectrum</h3>
+
+<pre><code>
+强 (Strong) ←————————————————————→ 弱 (Weak)
+
+Linearizability → Sequential → Causal → Eventual
+     ↑                ↑           ↑          ↑
+  Zookeeper        Raft/Paxos   Dynamo    Cassandra
+  etcd             consensus    DynamoDB  Redis (async)
+  Single-node DB               Kafka*
+</code></pre>
+
+<p><strong>线性化 Linearizability</strong></p>
+<p>- Every op appears instantaneous at some point between start and end</p>
+<p>- Example: Google Spanner (TrueTime), Zookeeper</p>
+<p>- Cost: high latency (cross-region coordination)</p>
+
+<p><strong>顺序一致性 Sequential Consistency</strong></p>
+<p>- All nodes see same order of ops, but may lag real time</p>
+<p>- Example: Raft-based systems (etcd, CockroachDB)</p>
+<p>- Cost: requires leader election, leader becomes bottleneck</p>
+
+<p><strong>因果一致性 Causal Consistency</strong></p>
+<p>- Ops that are causally related appear in order; concurrent ops may differ</p>
+<p>- Example: DynamoDB (with vector clocks), MongoDB (sessions)</p>
+<p>- Good balance for social media, collaborative editing</p>
+
+<p><strong>最终一致性 Eventual Consistency</strong></p>
+<p>- Given no new writes, all replicas converge eventually</p>
+<p>- Example: Cassandra, S3, DNS</p>
+<p>- Cost: application must handle stale reads, conflicts</p>
+
+<hr/>
+
+<h3>你见过这些在哪里 / Where You&#x27;ve Seen These</h3>
+
+<p>| System (你学过的) | Consistency Model | Why They Chose It |</p>
+<p>|---|---|---|</p>
+<p>| Redis (primary) | Linearizable | Single-threaded, sync writes |</p>
+<p>| Redis Cluster | Eventual | Async replication, prefer availability |</p>
+<p>| Kafka | Sequential (per-partition) | Ordered log, partition = unit of ordering |</p>
+<p>| Cassandra | Tunable (ONE → QUORUM → ALL) | Tradeoff at query time |</p>
+<p>| Zookeeper / etcd | Linearizable | Coordination requires strong guarantees |</p>
+<p>| DynamoDB | Eventual (default) / Strong (option) | Cost: strong reads 2x price |</p>
+<p>| Google Spanner | External consistency (beyond linearizable!) | TrueTime atomic clocks |</p>
+<p>| PostgreSQL | Serializable (strongest SQL level) | MVCC + snapshot isolation |</p>
+
+<hr/>
+
+<h3>关键权衡 / Key Tradeoffs (Expert Level)</h3>
+
+<p><strong>CAP ≠ 简单的三选二 CAP is not a simple pick-2</strong></p>
+
+<p>Modern nuance: You don&#x27;t choose between C and A globally. You choose <strong>per operation</strong>. Cassandra lets you choose consistency level per read/write.</p>
+
+<p><strong>PACELC 模型更准确 PACELC is more accurate:</strong></p>
+<pre><code>
+If Partition: choose Availability vs Consistency
+Else (normal): choose Latency vs Consistency
+</code></pre>
+<p>DynamoDB = PA/EL (available + low latency by default)</p>
+<p>Spanner = PC/EC (consistent always, higher latency)</p>
+
+<p><strong>向量时钟 vs 最后写入赢 Vector Clocks vs Last-Write-Wins</strong></p>
+<p>- Vector clocks track causality but add metadata overhead</p>
+<p>- LWW is simpler but can silently discard data</p>
+<p>- CRDTs (Conflict-free Replicated Data Types) are the modern solution — design data structures that merge deterministically</p>
+
+<hr/>
+
+<h3>面试中如何使用这个知识 / How to Use in Interviews</h3>
+
+<p>面试官问&quot;你怎么保证数据一致性？&quot;时，别说&quot;用数据库&quot;。说：</p>
+
+<p>When an interviewer asks &quot;how do you ensure data consistency?&quot;, don&#x27;t say &quot;use a database.&quot; Say:</p>
+
+<p>&gt; &quot;First I&#x27;d clarify the consistency requirement. For inventory counts (双十一 flash sale), I need strong consistency at checkout — use Redis with single leader or SQL with serializable isolation. For user feed ranking, eventual consistency is fine and I&#x27;d use Cassandra with QUORUM reads for a balance.&quot;</p>
+
+<p><strong>✅ Framing:</strong> Consistency is a spectrum. State the tradeoff explicitly, then justify your choice.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://jepsen.io/consistency — Kyle Kingsbury&#x27;s definitive consistency model map</p>
+<p>- https://lamport.azurewebsites.net/pubs/time-clocks.pdf — Lamport&#x27;s original paper on logical clocks</p>
+<p>- https://www.allthingsdistributed.com/2008/12/eventually_consistent.html — Werner Vogels (Amazon CTO) on eventual consistency</p>
+<p>- https://cloud.google.com/spanner/docs/true-time-external-consistency — Google Spanner TrueTime</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象你和朋友在不同城市更新同一个共享购物清单。强一致性：每次更新前都打电话确认，慢但准确。最终一致性：各自记笔记，隔天同步，可能有冲突。大多数系统选择中间路线。</p>
+
+<p>Imagine you and friends in different cities update a shared grocery list. Strong consistency: call each other before every edit — slow but accurate. Eventual consistency: each person keeps notes, sync tomorrow — might have conflicts. Most systems pick something in between.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>Day 99 — Algorithms: #51 N-Queens (Hard) — Backtracking</h2>
+
+<h2>💻 算法 / Algorithms — #51 N-Queens (Hard)</h2>
+
+<p>🧩 <strong>回溯模式 (9/9)</strong> — The grand finale of this block! 构建在模版上的终极挑战</p>
+
+<hr/>
+
+<h3>模式回顾 / Pattern Review</h3>
+<p>这是回溯块的第9题，也是最后一题。回顾一下模版：</p>
+
+<p>This is the 9th and final problem in the backtracking block. Quick template recap:</p>
+
+<pre><code>
+def backtrack(path, choices):
+    if IS_COMPLETE(path):
+        result.append(path[:])
+        return
+    for choice in choices:
+        if IS_VALID(choice):
+            path.append(choice)
+            backtrack(path, NEXT_CHOICES)
+            path.pop()  # undo
+</code></pre>
+
+<hr/>
+
+<h3>真实类比 / Real-World Analogy</h3>
+
+<p>想象你要在8×8国际象棋棋盘上放8个皇后，每个皇后可以攻击同行、同列、同对角线的所有格子。你每行放一个，一旦发现冲突就回退，换个位置。</p>
+
+<p>Imagine placing 8 queens on a chessboard so no queen can attack another — same row, column, or diagonal is invalid. Place one per row; if conflict detected, backtrack and try next column.</p>
+
+<hr/>
+
+<h3>问题 / Problem</h3>
+
+<p>[🔗 LeetCode #51](https://leetcode.com/problems/n-queens/) 🔴 Hard | [📹 NeetCode](https://neetcode.io/problems/n-queens)</p>
+
+<p>Given an integer <code>n</code>, return all distinct solutions to the n-queens puzzle. Each solution contains a distinct board configuration.</p>
+
+<hr/>
+
+<h3>如何映射到模版 / Mapping to Template</h3>
+
+<p>| 模版概念 | N-Queens 对应 |</p>
+<p>|---|---|</p>
+<p>| <code>path</code> | 每行皇后所在的列号 <code>[col0, col1, ...]</code> |</p>
+<p>| <code>IS_COMPLETE</code> | <code>len(path) == n</code> |</p>
+<p>| <code>choices</code> | 列号 <code>0..n-1</code> |</p>
+<p>| <code>IS_VALID</code> | 没有列冲突、没有对角线冲突 |</p>
+<p>| <code>NEXT_CHOICES</code> | 下一行的列号 |</p>
+
+<p><strong>关键洞察：每行只放一个皇后</strong>，所以行冲突自动不存在。只需检查列和对角线。</p>
+
+<p>Key insight: we place exactly one queen per row, so row conflicts are impossible. Only check column and diagonal.</p>
+
+<hr/>
+
+<h3>Python 解法 / Solution</h3>
+
+<pre><code>
+def solveNQueens(n: int) -&gt; list[list[str]]:
+    result = []
+    # Track which cols and diagonals are occupied
+    cols = set()
+    pos_diag = set()  # (row + col) same for each positive diagonal
+    neg_diag = set()  # (row - col) same for each negative diagonal
+    
+    board = [[&#x27;.&#x27; for _ in range(n)] for _ in range(n)]
+    
+    def backtrack(row: int) -&gt; None:
+        if row == n:
+            # Convert board to required format
+            result.append([&#x27;&#x27;.join(r) for r in board])
+            return
+        
+        for col in range(n):
+            # IS_VALID check
+            if col in cols or (row + col) in pos_diag or (row - col) in neg_diag:
+                continue
+            
+            # CHOOSE
+            cols.add(col)
+            pos_diag.add(row + col)
+            neg_diag.add(row - col)
+            board[row][col] = &#x27;Q&#x27;
+            
+            # RECURSE
+            backtrack(row + 1)
+            
+            # UNDO (backtrack)
+            cols.remove(col)
+            pos_diag.remove(row + col)
+            neg_diag.remove(row - col)
+            board[row][col] = &#x27;.&#x27;
+    
+    backtrack(0)
+    return result
+
+# Trace n=4:
+# row=0: try col=1 → valid → board[0][1]=&#x27;Q&#x27;
+#   row=1: try col=3 → valid (no col conflict, diag: 1+1≠3+0, 1-1≠3-1... check) 
+#   → board[1][3]=&#x27;Q&#x27;
+#     row=2: try col=0 → valid → board[2][0]=&#x27;Q&#x27;
+#       row=3: try col=2 → valid → board[3][2]=&#x27;Q&#x27; → SOLUTION ✅
+</code></pre>
+
+<p><strong>时间复杂度:</strong> O(n!) — n choices for row 0, n-1 for row 1, etc.</p>
+<p><strong>空间复杂度:</strong> O(n²) for board storage</p>
+
+<hr/>
+
+<h3>关键优化：对角线的数学 / Diagonal Math</h3>
+
+<p>对角线碰撞的判断是这道题最巧妙的地方：</p>
+
+<p>The diagonal trick is the key insight:</p>
+<p>- <strong>正对角线（↗）</strong>: <code>row + col</code> is constant along the same diagonal</p>
+<p>- <strong>负对角线（↙）</strong>: <code>row - col</code> is constant along the same diagonal</p>
+
+<pre><code>
+row=0, col=2: pos_diag = 2, neg_diag = -2
+row=1, col=1: pos_diag = 2 ← SAME! They&#x27;re on the same diagonal
+row=1, col=3: pos_diag = 4, neg_diag = -2 ← neg_diag conflict with (0,2)!
+</code></pre>
+
+<hr/>
+
+<h3>举一反三：整个回溯块回顾 / Block Retrospective</h3>
+
+<p>| 问题 | 关键变体 | 剪枝策略 |</p>
+<p>|---|---|---|</p>
+<p>| #78 Subsets | No duplicates, no constraints | None needed |</p>
+<p>| #39 Combination Sum | Reuse elements allowed | Skip if <code>target &lt; 0</code> |</p>
+<p>| #46 Permutations | Order matters, no repeats | Use <code>visited</code> set |</p>
+<p>| #90 Subsets II | <strong>Duplicates</strong> in input | Sort + skip same element at same level |</p>
+<p>| #40 Combination Sum II | Each element once, deduplicate | Sort + skip |</p>
+<p>| #79 Word Search | 2D grid, mark visited | Mark cell, unmark on backtrack |</p>
+<p>| #131 Palindrome Partitioning | Check palindrome validity | Precompute palindrome table |</p>
+<p>| #17 Phone Numbers | Map digits to letters | None needed |</p>
+<p>| <strong>#51 N-Queens</strong> | <strong>Constraint satisfaction</strong> | <strong>Set-based O(1) validity</strong> |</p>
+
+<p><strong>核心洞察：剪枝越早，速度越快。</strong> N-Queens 用 O(1) set lookup 代替 O(n) board scan。</p>
+
+<p>Core insight: prune early, prune fast. N-Queens uses O(1) set lookup instead of O(n) board scan.</p>
+
+<hr/>
+
+<h3>📝 Quiz</h3>
+<pre><code>
+{&quot;question&quot;:&quot;In N-Queens, what condition do two queens on (r1,c1) and (r2,c2) share if they&#x27;re on the same positive diagonal?&quot;,&quot;options&quot;:[&quot;r1+c1 == r2+c2&quot;,&quot;r1-c1 == r2-c2&quot;,&quot;r1*c1 == r2*c2&quot;,&quot;abs(r1-r2) == abs(c1-c2) and r1==r2&quot;],&quot;correct_index&quot;:0}
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://leetcode.com/problems/n-queens/</p>
+<p>- https://neetcode.io/problems/n-queens</p>
+<p>- https://en.wikipedia.org/wiki/Eight_queens_puzzle</p>
+
+<h3>🧒 ELI5</h3>
+<p>在棋盘上放皇后，皇后会攻击同行同列同斜线。每行放一个，放不了就退回来换列，直到每行都有一个安全的皇后为止。就像解数独：尝试 → 发现冲突 → 擦掉 → 换一个。</p>
+
+<p>Place queens on a chessboard where each queen attacks its row, column, and diagonals. Place one per row, backtrack when stuck, until every row has a safe queen. Like solving a Sudoku: try → find conflict → erase → try next.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>Day 99 — Soft Skills Synthesis: 技术领导力综合 / Technical Leadership Synthesis</h2>
+
+<h2>🗣️ 软技能综合 / Soft Skills Synthesis</h2>
+
+<p><strong>主题：高级场景 — 当工程系统与组织现实碰撞</strong></p>
+<p><strong>Topic: Senior Scenario — When Engineering Systems Meet Organizational Reality</strong></p>
+
+<hr/>
+
+<h3>场景 / Scenario</h3>
+
+<p>&gt; You&#x27;re a Staff Engineer. Your team&#x27;s core service is hitting its scaling limits — you need a major architectural overhaul. But: your manager just committed the roadmap to 3 big feature launches in Q3, your key infra engineer is leaving in 6 weeks, and another team is actively building something that will make part of your redesign irrelevant in 4 months. What do you do?</p>
+
+<p>&gt; 你是 Staff 工程师。团队核心服务快撑不住了——需要大规模架构重构。但是：你的经理刚刚承诺 Q3 发布 3 个大功能，你的核心基础设施工程师 6 周后要离职，另一个团队正在做的东西会在 4 个月后让你的部分重构变得多余。你怎么办？</p>
+
+<hr/>
+
+<h3>为什么这道题难 / Why This Is Hard</h3>
+
+<p>这道题考察的不是技术能力，而是你能否：</p>
+
+<p>This tests not your technical skills, but whether you can:</p>
+<p>- <strong>Hold complexity</strong>: multiple conflicting constraints simultaneously</p>
+<p>- <strong>Sequence work strategically</strong>: what to do now vs. defer vs. abandon</p>
+<p>- <strong>Influence without authority</strong>: getting buy-in under pressure</p>
+<p>- <strong>Make irreversible vs. reversible decisions</strong>: choose reversible paths when uncertain</p>
+
+<hr/>
+
+<h3>STAR 分解 / STAR Framework</h3>
+
+<p><strong>Situation:</strong> 多重约束同时压下来 — 技术债、人员流失、跨团队依赖、已承诺的 roadmap</p>
+
+<p><strong>Task:</strong> 决定在有限的工程容量下，如何推进架构升级而不 derail 功能交付</p>
+
+<p><strong>Action (the real answer):</strong></p>
+
+<p>1. <strong>立即行动：知识转移</strong> — 不管架构怎么变，那个离职工程师的知识不能丢。在他们离职前安排1:1、写架构文档、做 pairing session。</p>
+<p><em>Immediate: Knowledge transfer. Whatever the architecture, capture departing engineer&#x27;s knowledge NOW.</em></p>
+
+<p>2. <strong>协调，不单打独斗：找另一个团队</strong> — 拿着你的设计草稿去找他们，问&quot;你们做完之后的接口是什么？我们的边界在哪里？&quot;可能可以直接对齐，避免重复造轮子。</p>
+<p><em>Coordinate with the other team: bring your draft design and ask where the seam is. You might align and avoid duplicated effort.</em></p>
+
+<p>3. <strong>分离关注点：把重构分成&quot;必须做&quot;和&quot;应该做&quot;</strong> — 哪些是为了支撑 Q3 功能不得不做的？哪些是理想化的&quot;干净&quot;但可以等？做前者，为后者写 ADR 留痕迹。</p>
+<p><em>Decompose: what&#x27;s needed to survive Q3 vs. what&#x27;s architectural idealism? Do the former; write an ADR for the latter.</em></p>
+
+<p>4. <strong>向上管理：给经理一个选择，不是问题</strong> — 不要说&quot;我们有问题&quot;，说&quot;我们有三条路：A（最小改动支撑 Q3，技术债累积），B（Q3 延一个功能换稳定性），C（并行投入一个人专做基础设施）。我的推荐是 B，原因是……&quot;</p>
+<p><em>Manage up: present options, not problems. &quot;Here are 3 paths with tradeoffs. I recommend B because...&quot;</em></p>
+
+<p><strong>Result:</strong> This approach shows you can navigate ambiguity, sequence work, build alignment, and make explicit tradeoffs — not just code.</p>
+
+<hr/>
+
+<h3>❌ 初级工程师的回答 / Junior Response (avoid)</h3>
+<p>&quot;I would just finish the features first, then fix the architecture.&quot;</p>
+<p>→ 忽略了技术债的复利效应和人员流失的紧迫性</p>
+
+<h3>✅ Staff 级回答 / Staff Response</h3>
+<p>Frame the architectural work as <strong>risk management</strong>, not gold-plating. Quantify: &quot;If we don&#x27;t address the scaling ceiling, feature B&#x27;s launch will trigger 3x traffic and we&#x27;ll likely have an incident. That&#x27;s a P0 risk vs. delaying one feature.&quot;</p>
+
+<hr/>
+
+<h3>Senior/Staff 关键技巧 / Senior/Staff Tips</h3>
+
+<p>1. <strong>显式说明决策的可逆性</strong> — Saying &quot;this is a two-way door&quot; vs. &quot;this is a one-way door&quot; changes the urgency and stakeholder buy-in needed.</p>
+
+<p>2. <strong>写 ADR（Architecture Decision Records）</strong> — 即使决策没有实施，写下&quot;我们考虑了 X，决定不做，原因是 Y&quot;也很有价值。三个月后当有人质疑时，你有记录。</p>
+
+<p>3. <strong>交叉团队对齐 &gt; 独自做对的决定</strong> — A slightly worse technical decision with strong alignment will execute better than the perfect decision nobody believes in.</p>
+
+<hr/>
+
+<h3>Key Takeaways</h3>
+
+<p>- <strong>约束是真实的，优先级要明确</strong> — Don&#x27;t pretend constraints don&#x27;t exist. Name them explicitly, then sequence.</p>
+<p>- <strong>知识转移是紧急的，不是可选的</strong> — Bus factor &gt; 1 is a non-negotiable engineering hygiene item.</p>
+<p>- <strong>向上管理是你的工作</strong> — If your manager doesn&#x27;t know the tradeoffs, that&#x27;s on you.</p>
+<p>- <strong>跨团队对齐乘数效应</strong> — Coordination costs 2 hours; misalignment costs 2 months.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://lethain.com/staff-engineer/ — Will Larson&#x27;s Staff Engineer blog</p>
+<p>- https://www.oreilly.com/library/view/an-elegant-puzzle/9781491998571/ — Will Larson&#x27;s book on engineering management</p>
+<p>- https://docs.aws.amazon.com/prescriptive-guidance/latest/architectural-decision-records/welcome.html — ADR guide (AWS)</p>
+
+<h3>🧒 ELI5</h3>
+<p>Staff 工程师不是&quot;最厉害的程序员&quot;，而是&quot;能让团队在混乱中向正确方向走的人&quot;。面对多重约束，不是选择一个完美答案，而是找到一条所有人都能接受、能执行的路。</p>
+
+<p>A Staff Engineer isn&#x27;t &quot;best programmer&quot; — it&#x27;s &quot;person who keeps the team moving in the right direction amid chaos.&quot; With multiple constraints, don&#x27;t find the perfect answer; find the path everyone can accept and execute.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Day 99 — Python Craft: dataclasses vs pydantic vs attrs — When to Use Each</h2>
+
+<h2>🎨 Python Craft — dataclasses vs pydantic vs attrs</h2>
+
+<p><strong>场景：你在做一个 dashboard API，需要定义一个 User 数据模型。用哪个？</strong></p>
+<p><strong>Scenario: You&#x27;re building a dashboard API and need to define a User data model. Which one?</strong></p>
+
+<hr/>
+
+<h3>真实代码对比 / Code Comparison</h3>
+
+<p>同一个 <code>User</code> 模型，三种方式：</p>
+
+<pre><code>
+# ── 1. dataclasses (stdlib, Python 3.7+) ──────────────────
+from dataclasses import dataclass, field
+from typing import Optional
+
+@dataclass
+class UserDC:
+    name: str
+    age: int
+    email: Optional[str] = None
+    tags: list[str] = field(default_factory=list)
+
+# ✅ Works: UserDC(name=&quot;Alice&quot;, age=30)
+# ❌ No validation: UserDC(name=&quot;Alice&quot;, age=&quot;thirty&quot;) → no error!
+
+
+# ── 2. pydantic (v2, external package) ────────────────────
+from pydantic import BaseModel, EmailStr, field_validator
+
+class UserPydantic(BaseModel):
+    name: str
+    age: int
+    email: Optional[EmailStr] = None
+    tags: list[str] = []
+
+    @field_validator(&quot;age&quot;)
+    @classmethod
+    def age_must_be_positive(cls, v: int) -&gt; int:
+        if v &lt; 0:
+            raise ValueError(&quot;age must be positive&quot;)
+        return v
+
+# ✅ Validation: UserPydantic(name=&quot;Alice&quot;, age=-1) → ValidationError!
+# ✅ JSON: user.model_dump(), UserPydantic.model_validate(json_data)
+
+
+# ── 3. attrs (external package, older) ────────────────────
+import attr
+
+@attr.s(auto_attribs=True)
+class UserAttrs:
+    name: str
+    age: int = attr.ib(validator=attr.validators.instance_of(int))
+    email: Optional[str] = None
+    tags: list[str] = attr.Factory(list)
+
+# ✅ Validation via validators
+# ✅ Slots, frozen, hash customization
+</code></pre>
+
+<hr/>
+
+<h3>猜输出 / Quiz: What&#x27;s the Behavior?</h3>
+
+<pre><code>
+from dataclasses import dataclass
+
+@dataclass
+class Config:
+    host: str
+    port: int = 8080
+
+c = Config(host=&quot;localhost&quot;, port=&quot;9000&quot;)  # Note: port is a string!
+print(type(c.port))  # A) int  B) str  C) ValueError  D) TypeError
+</code></pre>
+
+<p><strong>答案 / Answer: B) <code>str</code></strong> — dataclasses don&#x27;t validate types! Annotations are hints only.</p>
+
+<hr/>
+
+<h3>决策框架 / Decision Framework</h3>
+
+<pre><code>
+你需要什么？
+│
+├── 只是数据容器，无需验证，不依赖外部包
+│   → dataclasses ✅ (stdlib, zero cost)
+│
+├── API 输入/输出、配置解析、需要验证
+│   → pydantic ✅ (FastAPI的标配, JSON schema, 自动docs)
+│
+├── 大量自定义 (slots, frozen, hash, 复杂validator)
+│   → attrs ✅ (最灵活，但学习曲线更陡)
+│
+└── 不可变值对象 (NamedTuple-like)
+    → dataclass(frozen=True) or NamedTuple
+</code></pre>
+
+<hr/>
+
+<h3>❌ 常见错误 / Common Mistakes</h3>
+
+<pre><code>
+# ❌ Bad: mutable default in dataclass
+@dataclass
+class Bad:
+    tags: list = []  # ValueError: mutable default!
+
+# ✅ Good: use field(default_factory=...)
+@dataclass
+class Good:
+    tags: list = field(default_factory=list)
+
+
+# ❌ Bad: using dataclasses for API request bodies
+@app.post(&quot;/user&quot;)
+async def create_user(user: UserDC):  # No type coercion from JSON!
+    ...
+
+# ✅ Good: pydantic for FastAPI
+@app.post(&quot;/user&quot;)
+async def create_user(user: UserPydantic):  # Auto-parses + validates
+    ...
+</code></pre>
+
+<hr/>
+
+<h3>实际选择指南 / Practical Guide</h3>
+
+<p>| 场景 | 推荐 |</p>
+<p>|---|---|</p>
+<p>| FastAPI 请求/响应体 | pydantic (FastAPI内置) |</p>
+<p>| 配置解析 (.env, yaml) | pydantic-settings |</p>
+<p>| 内部 DTO，不需要验证 | dataclasses |</p>
+<p>| 复杂领域对象，需要 slots/frozen | attrs |</p>
+<p>| 简单值对象 | dataclass(frozen=True) |</p>
+<p>| ORM models (SQLAlchemy) | SQLAlchemy models (有自己的系统) |</p>
+
+<hr/>
+
+<h3>📝 Quiz</h3>
+<pre><code>
+{&quot;question&quot;:&quot;You&#x27;re building a FastAPI endpoint that accepts JSON request bodies with type coercion and validation. Which Python data modeling library is the natural choice?&quot;,&quot;options&quot;:[&quot;dataclasses (stdlib)&quot;,&quot;attrs&quot;,&quot;pydantic&quot;,&quot;NamedTuple&quot;],&quot;correct_index&quot;:2}
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://docs.python.org/3/library/dataclasses.html — Python dataclasses docs</p>
+<p>- https://docs.pydantic.dev/latest/ — Pydantic v2 docs</p>
+<p>- https://www.attrs.org/en/stable/ — attrs docs</p>
+<p>- https://realpython.com/python-data-classes/ — Real Python comparison</p>
+
+<h3>🧒 ELI5</h3>
+<p>三个数据容器工具，从简到强：dataclass 是轻量级便利贴，pydantic 是有验证功能的表单，attrs 是可配置的专业工具箱。大多数时候用前两个就够了。</p>
+
+<p>Three data container tools, simple to powerful: dataclasses are lightweight sticky notes, pydantic is a form with validation, attrs is a professional configurable toolkit. Most projects only need the first two.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>Day 99 — AI News Roundup (July 2026)</h2>
+
+<h2>🤖 AI 新闻速览 / AI News Roundup</h2>
+
+<p><strong>本周 AI 圈热闹非凡，从新模型发布到重磅诉讼落地。</strong></p>
+<p><strong>A busy week in AI — from major model launches to landmark lawsuit settlements.</strong></p>
+
+<hr/>
+
+<h3>📰 Story 1: OpenAI 发布 GPT-5.6 三档模型 + ChatGPT Work Agent</h3>
+
+<p>OpenAI 在 7 月 9 日发布了据报道其&quot;最强大的系统&quot;—— GPT-5.6 三档模型：<strong>Sol</strong>（旗舰级，处理复杂专业任务）、<strong>Terra</strong>（中档，据报道价格约为 GPT-5.5 的一半）、<strong>Luna</strong>（最小最便宜）。同时推出 <strong>ChatGPT Work</strong>——一个能&quot;执行完整工作&quot;而非只回答问题的 agent。GPT-5.6 Sol 据报道上下文约 105 万 tokens。</p>
+
+<p>OpenAI released GPT-5.6 in three tiers on July 9: <strong>Sol</strong> (flagship for complex tasks), <strong>Terra</strong> (mid-range, reportedly ~half the cost of GPT-5.5), <strong>Luna</strong> (smallest, cheapest). Alongside it: <strong>ChatGPT Work</strong>, an agent designed to complete entire jobs rather than answer questions.</p>
+
+<p>🔗 https://spacedaily.com/m-on-july-9-2026-openai-opened-its-most-powerful-system-yet-to-the-public-gpt-5-6-in-three-tiers-named-sol-terra-and-luna-alongside-an-agent-it-calls-chatgpt-work-built-to-carry/</p>
+<p>🔗 https://openai.com/news/product-releases/</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> 分层定价 + agent-first framing 标志着 OpenAI 从&quot;chat completion API&quot;向&quot;完成任务的 workforce&quot;转型。Terra 的价格降幅（据报道）会加速企业级采用。</p>
+
+<hr/>
+
+<h3>📰 Story 2: Anthropic 与 AMD 战略合作 + $5B 投资 + Bartz 诉讼终审</h3>
+
+<p><strong>技术方面：</strong> Anthropic 与 AMD 宣布战略合作，将部署据报道高达 2 GW 的 AMD Instinct MI450 系列 GPU（Helios rack-scale 解决方案）。首个 gigawatt 部署据报道从 2027 年上半年开始。AMD 将向 Anthropic 进行据报道高达 50 亿美元的战略股权投资。</p>
+
+<p><strong>法律方面：</strong> Bartz 诉 Anthropic 版权侵权集体诉讼获得最终批准 —— Anthropic 因使用据报道包含数百万本非法上传书籍的盗版数据集训练 AI，被处以 <strong>15 亿美元</strong>罚金。据报道是版权侵权诉讼史上最大和解金额。</p>
+
+<p><strong>Tech side:</strong> Anthropic and AMD announced a strategic partnership to deploy up to a reported 2 GW of AMD MI450 GPUs, with a reported equity investment of up to $5B from AMD. First gigawatt reportedly ships H1 2027.</p>
+
+<p><strong>Legal side:</strong> Bartz v Anthropic copyright class action received final approval — Anthropic penalized $1.5B for using pirated book datasets in training. Reportedly the largest copyright suit recovery ever.</p>
+
+<p>🔗 https://ir.amd.com/news-events/press-releases/detail/1292/amd-and-anthropic-announce-strategic-partnership-to-deploy-up-to-2-gigawatts-of-amd-instinct-mi450-series-gpus</p>
+<p>🔗 https://writerbeware.blog/2026/07/23/anthropic-settlement-update-final-settlement-approved/</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> AMD 交易是 Nvidia 主导 GPU 供应格局的重大挑战。同时，版权诉讼确立了训练数据来源的法律先例——所有 lab 都在重新审视数据管道。</p>
+
+<hr/>
+
+<h3>📰 Story 3: EU 对 Google 下达 DMA 合规命令 (AI 互操作性)</h3>
+
+<p>欧盟委员会 7 月 16 日根据 Digital Markets Act (DMA) 向 Google 发布了具有约束力的规范措施。目标：确保竞争对手的 AI 服务能在 Android 设备上获得平等访问权，第三方搜索引擎能访问 Google Search 数据。据报道用户将能通过语音激活自己偏好的 AI 助手，并让它们在应用内执行操作。</p>
+
+<p>The European Commission issued binding DMA measures to Google on July 16. Goal: ensure competitor AI services get equal access on Android devices, and third-party search engines can access Google Search data. Users reportedly will be able to activate preferred AI assistants via voice commands and use them for in-app actions.</p>
+
+<p>🔗 https://digital-markets-act.ec.europa.eu/commission-provides-guidance-google-ai-interoperability-android-and-sharing-google-search-data-under-2026-07-16_en</p>
+
+<p><strong>为什么重要 / Why it matters:</strong> 这是全球 AI 互操作性监管的最大动作。如果 Android 强制打开 assistant API，Apple、Microsoft 也会面临类似压力。Perplexity、Claude 等 assistant 是最大受益者。</p>
+
+<hr/>
+
+<h3>🎯 本周主题 / This Week&#x27;s Theme</h3>
+
+<p><strong>&quot;Vertical integration meets horizontal regulation&quot;</strong></p>
+
+<p>- OpenAI 用 agent 向下延伸到工作流（vertical integration）</p>
+<p>- Anthropic 用 AMD 交易向下延伸到硬件（vertical integration）</p>
+<p>- EU 用 DMA 强制横向开放（horizontal deregulation）</p>
+
+<p>三大 lab 都在&quot;垂直整合&quot;（agent、硬件、数据），而监管在&quot;横向打开&quot;（互操作、数据访问）。这两股力量的角力将决定 2027 年的 AI 竞争格局。</p>
+
+<hr/>
+
+<h3>📚 References (all sources cited above are real URLs)</h3>
+<p>- OpenAI: https://openai.com/news/</p>
+<p>- Anthropic: https://www.anthropic.com/news</p>
+<p>- EU DMA: https://digital-markets-act.ec.europa.eu/</p>
+
+<h3>🧒 ELI5</h3>
+<p>本周的 AI 新闻讲了三个故事：OpenAI 发布了更聪明的 ChatGPT 家族并推出能替你干活的 agent；Anthropic 找到了 Nvidia 之外的芯片供应商（AMD）但也为过去用盗版书训练付了大笔罚金；欧盟要求 Google 让别家的 AI 助手在安卓手机上跑得和 Google 自己的一样顺。</p>
+
+<p>This week&#x27;s AI news: OpenAI released smarter ChatGPT models plus a &quot;do the work&quot; agent; Anthropic found a chip supplier besides Nvidia (AMD) but also paid a huge fine for training on pirated books; the EU told Google to let other AI assistants work as smoothly on Android as Google&#x27;s own.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-23</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
