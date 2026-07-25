@@ -5,8 +5,435 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 24 Jul 2026 16:45:52 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 25 Jul 2026 15:09:05 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-25</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-25</guid>
+      <pubDate>Sat, 25 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: 动态规划一维 DP — 从爬楼梯到 LIS (15 min read)</strong></p>
+<p>📊 NeetCode: 79/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 Day 100 milestone!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>动态规划（Dynamic Programming，DP）是面试中最难攻克、也最值得投入的算法专题。很多候选人看到 DP 题就慌——因为它没有固定套路，只有思维框架。本期深度解析一维 DP 的核心模式：从最简单的 Climbing Stairs，到经典的 Coin Change、House Robber，再到稍难的 Longest Increasing Subsequence（LIS）。掌握这条学习路径，你就打通了 DP 的任督二脉。</p>
+
+<p><strong>English：</strong></p>
+<p>Dynamic Programming is the most feared yet highest-ROI algorithm topic in FAANG interviews. The key insight: DP isn&#x27;t a single technique—it&#x27;s a <em>thinking pattern</em>. This deep dive covers the canonical 1D DP progression: Climbing Stairs → Coin Change → House Robber → Longest Increasing Subsequence. Master these four, and you&#x27;ll have the mental models to tackle ~60% of DP problems you&#x27;ll see on-site.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>什么是 DP？/ What is DP?</h3>
+
+<p><strong>中文：</strong></p>
+<p>DP 的本质是：<strong>把大问题拆成小问题，记住小问题的答案，避免重复计算</strong>。</p>
+
+<p>两个必要条件：</p>
+<p>1. <strong>最优子结构（Optimal Substructure）</strong>：大问题的最优解可以由子问题的最优解构成</p>
+<p>2. <strong>重叠子问题（Overlapping Subproblems）</strong>：同一个子问题会被多次求解</p>
+
+<p><strong>两种实现方式：</strong></p>
+<p>- <strong>Top-down（记忆化递归）</strong>：从大问题出发，递归解小问题，用 memo 缓存结果</p>
+<p>- <strong>Bottom-up（迭代填表）</strong>：从最小子问题出发，逐步构建答案</p>
+
+<p><strong>English：</strong></p>
+<p>DP&#x27;s essence: <strong>break big problems into smaller ones, remember the answers, avoid recomputation.</strong></p>
+
+<p>Two prerequisites:</p>
+<p>1. <strong>Optimal Substructure</strong>: the optimal answer to a big problem can be built from optimal answers to subproblems</p>
+<p>2. <strong>Overlapping Subproblems</strong>: the same subproblem gets solved many times without DP</p>
+
+<p><strong>Two implementations:</strong></p>
+<p>- <strong>Top-down (memoization)</strong>: start from the big problem, recurse, cache results in a memo dict</p>
+<p>- <strong>Bottom-up (tabulation)</strong>: start from base cases, fill a DP table iteratively</p>
+
+<hr/>
+
+<h3>DP 的思维框架 / The DP Mental Model</h3>
+
+<pre><code>
+Step 1: 定义状态 — dp[i] 代表什么？
+         Define state — what does dp[i] mean?
+
+Step 2: 推导转移方程 — dp[i] 如何从之前的状态得到？
+         Find recurrence — how does dp[i] relate to dp[i-1], dp[i-2], ...?
+
+Step 3: 确定初始值 — dp[0], dp[1] 等基础情况
+         Establish base cases — what are dp[0], dp[1]?
+
+Step 4: 确定计算顺序 — 通常从小到大
+         Determine order — usually left to right
+
+Step 5: 提取答案 — dp[n] 还是 max(dp)?
+         Extract answer — dp[n] or max(dp[i])?
+</code></pre>
+
+<hr/>
+
+<h3>一维 DP 的四种核心模式 / Four Core 1D DP Patterns</h3>
+
+<p>| Pattern | 代表题 | dp[i] 含义 | 转移方程 |</p>
+<p>|---------|--------|-----------|---------|</p>
+<p>| <strong>线性路径</strong> | Climbing Stairs | 到达第 i 阶的方法数 | <code>dp[i] = dp[i-1] + dp[i-2]</code> |</p>
+<p>| <strong>选或不选</strong> | House Robber | 前 i 个房子的最大抢劫金额 | <code>dp[i] = max(dp[i-1], dp[i-2] + nums[i])</code> |</p>
+<p>| <strong>背包/无界</strong> | Coin Change | 凑出金额 i 的最少硬币数 | <code>dp[i] = min(dp[i-coin]+1)</code> for each coin |</p>
+<p>| <strong>序列增长</strong> | LIS | 以 nums[i] 结尾的最长递增子序列 | <code>dp[i] = max(dp[j]+1)</code> where <code>nums[j] &lt; nums[i]</code> |</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Problem 1: Climbing Stairs (Easy) — DP 入门</h3>
+<p>🔗 https://leetcode.com/problems/climbing-stairs/</p>
+<p>📹 https://www.youtube.com/watch?v=Y0lT9Fck7qI</p>
+
+<p><strong>题意 / Problem:</strong> n 阶楼梯，每次走 1 或 2 步，有多少种走法？</p>
+
+<pre><code>
+def climbStairs(n: int) -&gt; int:
+    # Base cases
+    # 0 stairs: 1 way (do nothing)
+    # 1 stair:  1 way (one single step)
+    if n &lt;= 1:
+        return 1
+    
+    # dp[i] = number of distinct ways to reach stair i
+    # Recurrence: to reach stair i, you came from i-1 (one step)
+    #             OR from i-2 (two steps) → add both
+    # This is literally Fibonacci!
+    
+    # Space-optimized: only need last two values
+    prev2, prev1 = 1, 1  # dp[0]=1, dp[1]=1
+    
+    for i in range(2, n + 1):
+        curr = prev1 + prev2   # dp[i] = dp[i-1] + dp[i-2]
+        prev2 = prev1
+        prev1 = curr
+    
+    return prev1
+
+# Test
+assert climbStairs(2) == 2   # [1+1, 2]
+assert climbStairs(3) == 3   # [1+1+1, 1+2, 2+1]
+assert climbStairs(5) == 8
+</code></pre>
+
+<p><strong>关键洞察 / Key Insight:</strong> Climbing Stairs = Fibonacci. The DP table looks like: <code>[1, 1, 2, 3, 5, 8, 13...]</code>. Once you see this, you can solve in O(n) time, O(1) space.</p>
+
+<hr/>
+
+<h3>Problem 2: House Robber (Medium) — 选或不选模式</h3>
+<p>🔗 https://leetcode.com/problems/house-robber/</p>
+<p>📹 https://www.youtube.com/watch?v=73r3KWiEvyk</p>
+
+<p><strong>题意 / Problem:</strong> 一排房子，不能偷相邻两间，求最大金额。</p>
+
+<pre><code>
+def rob(nums: list[int]) -&gt; int:
+    # dp[i] = max money robbing from houses 0..i
+    # At house i, we either:
+    #   SKIP it:  dp[i] = dp[i-1]             (same as best up to i-1)
+    #   ROB  it:  dp[i] = dp[i-2] + nums[i]   (can&#x27;t rob i-1, so go back to i-2)
+    # dp[i] = max(skip, rob) = max(dp[i-1], dp[i-2] + nums[i])
+    
+    if not nums:
+        return 0
+    if len(nums) == 1:
+        return nums[0]
+    
+    # Space-optimized: dp[i-2]=prev2, dp[i-1]=prev1
+    prev2 = nums[0]               # dp[0] = first house value
+    prev1 = max(nums[0], nums[1]) # dp[1] = max of first two
+    
+    for i in range(2, len(nums)):
+        curr = max(prev1, prev2 + nums[i])  # skip vs rob
+        prev2 = prev1
+        prev1 = curr
+    
+    return prev1
+
+# Test
+assert rob([1, 2, 3, 1]) == 4    # rob house 0 (1) + house 2 (3)
+assert rob([2, 7, 9, 3, 1]) == 12  # rob house 0 (2) + house 2 (9) + house 4 (1)
+</code></pre>
+
+<p><strong>变体陷阱 / Common Variant:</strong> House Robber II (circular array). Split into two sub-problems: rob <code>nums[0..n-2]</code> OR <code>nums[1..n-1]</code>, take the max.</p>
+
+<hr/>
+
+<h3>Problem 3: Coin Change (Medium) — 无界背包模式</h3>
+<p>🔗 https://leetcode.com/problems/coin-change/</p>
+<p>📹 https://www.youtube.com/watch?v=H9bfqozjoqs</p>
+
+<p><strong>题意 / Problem:</strong> 给定面值 coins，凑出 amount 的最少硬币数（每种硬币可用无限次）。</p>
+
+<pre><code>
+def coinChange(coins: list[int], amount: int) -&gt; int:
+    # dp[i] = minimum coins needed to make amount i
+    # Initialize with infinity (impossible state)
+    dp = [float(&#x27;inf&#x27;)] * (amount + 1)
+    dp[0] = 0  # base case: 0 coins needed to make amount 0
+    
+    # For each amount from 1 to target:
+    # try every coin denomination
+    # if we can make (i - coin), then dp[i] = dp[i-coin] + 1
+    
+    for i in range(1, amount + 1):
+        for coin in coins:
+            if coin &lt;= i:  # can use this coin
+                # Use this coin: costs 1 coin + whatever it took to make (i-coin)
+                dp[i] = min(dp[i], dp[i - coin] + 1)
+    
+    # If still inf, amount is unreachable
+    return dp[amount] if dp[amount] != float(&#x27;inf&#x27;) else -1
+
+# Test
+assert coinChange([1, 5, 10, 25], 41) == 4  # 25 + 10 + 5 + 1
+assert coinChange([2], 3) == -1              # impossible
+assert coinChange([1, 2, 5], 11) == 3        # 5 + 5 + 1
+
+# Trace dp for coins=[1,5], amount=6:
+# dp[0]=0
+# dp[1]=min(inf, dp[0]+1)=1             (use coin=1)
+# dp[2]=min(inf, dp[1]+1)=2             (use coin=1)
+# dp[5]=min(dp[4]+1, dp[0]+1)=1         (use coin=5)
+# dp[6]=min(dp[5]+1, dp[1]+1)=2         (5+1 or 1+1+1+1+1+1)
+</code></pre>
+
+<p><strong>区分 0/1 背包 vs 无界背包 / 0-1 vs Unbounded:</strong></p>
+<p>- <strong>Coin Change = 无界背包（Unbounded Knapsack）</strong>: 每种硬币可用无限次，外层遍历 amount，内层遍历 coins</p>
+<p>- <strong>0/1 背包</strong>: 每件物品只能用一次，外层遍历物品，内层<strong>从大到小</strong>遍历容量（防止重复选取）</p>
+
+<hr/>
+
+<h3>Problem 4: Longest Increasing Subsequence (Medium) — 序列 DP</h3>
+<p>🔗 https://leetcode.com/problems/longest-increasing-subsequence/</p>
+<p>📹 https://www.youtube.com/watch?v=cjWnW0hdF1Y</p>
+
+<p><strong>题意 / Problem:</strong> 求数组的最长严格递增子序列长度。</p>
+
+<pre><code>
+def lengthOfLIS(nums: list[int]) -&gt; int:
+    n = len(nums)
+    # dp[i] = length of longest increasing subsequence ENDING at index i
+    # Key: &quot;ending at i&quot; — nums[i] must be the LAST element
+    dp = [1] * n  # every element is a subsequence of length 1 by itself
+    
+    # For each position i, look back at all j &lt; i
+    # If nums[j] &lt; nums[i], we can extend the subsequence ending at j
+    for i in range(1, n):
+        for j in range(i):
+            if nums[j] &lt; nums[i]:           # can extend
+                dp[i] = max(dp[i], dp[j] + 1)  # extend LIS ending at j
+    
+    return max(dp)  # answer is the max across all ending positions
+
+# Test
+assert lengthOfLIS([10,9,2,5,3,7,101,18]) == 4  # [2,3,7,101] or [2,5,7,101]
+assert lengthOfLIS([0,1,0,3,2,3]) == 4           # [0,1,2,3]
+assert lengthOfLIS([7,7,7,7]) == 1               # all equal, not strictly increasing
+
+# Trace [10,9,2,5,3,7]:
+# dp = [1, 1, 1, ?, ?, ?]
+# i=3 (nums[3]=5): j=2(nums[2]=2&lt;5) → dp[3]=max(1,dp[2]+1)=2
+# i=4 (nums[4]=3): j=2(nums[2]=2&lt;3) → dp[4]=max(1,dp[2]+1)=2
+# i=5 (nums[5]=7): j=2,3,4 all &lt; 7 → dp[5]=max(dp[2]+1,dp[3]+1,dp[4]+1)=3
+# dp = [1,1,1,2,2,3] → max=3
+</code></pre>
+
+<p><strong>O(n log n) 优化 / Optimization — Patience Sorting:</strong></p>
+
+<pre><code>
+import bisect
+
+def lengthOfLIS_fast(nums: list[int]) -&gt; int:
+    # tails[i] = smallest tail of all increasing subsequences of length i+1
+    # This is NOT the actual LIS, but its length equals LIS length
+    tails = []
+    
+    for num in nums:
+        pos = bisect.bisect_left(tails, num)  # find insertion point
+        if pos == len(tails):
+            tails.append(num)    # extend: new longest subsequence
+        else:
+            tails[pos] = num     # replace: maintain smallest possible tail
+    
+    return len(tails)
+
+# This runs in O(n log n) — critical for n &gt; 10^4
+assert lengthOfLIS_fast([10,9,2,5,3,7,101,18]) == 4
+</code></pre>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p><strong>1. 初始化陷阱</strong></p>
+<pre><code>
+# Coin Change: 初始化为 float(&#x27;inf&#x27;)，不是 0
+# 如果初始化为 0，min() 会永远返回 0 而不是正确答案
+
+# House Robber: 处理 len(nums) == 1 的情况
+# 如果只有一间房，直接返回 nums[0]
+</code></pre>
+
+<p><strong>2. 空间优化时的更新顺序</strong></p>
+<pre><code>
+# House Robber 空间优化：必须先保存 curr，再更新 prev
+# 错误写法：
+prev2 = prev1          # ❌ 此时 prev1 已被覆盖
+prev1 = max(...)
+
+# 正确写法：
+curr = max(prev1, prev2 + nums[i])
+prev2 = prev1          # ✓ 先移动 prev2
+prev1 = curr           # ✓ 再更新 prev1
+</code></pre>
+
+<p><strong>3. LIS 的&quot;严格递增&quot;</strong></p>
+<pre><code>
+# 严格递增：nums[j] &lt; nums[i]  (不含等号)
+# 非严格递增：nums[j] &lt;= nums[i]
+# 题目通常要求严格，注意看清楚
+</code></pre>
+
+<p><strong>4. Coin Change 无解时</strong></p>
+<pre><code>
+# dp[amount] 仍为 inf → 返回 -1，不要忘记这个判断
+return dp[amount] if dp[amount] != float(&#x27;inf&#x27;) else -1
+</code></pre>
+
+<p><strong>English:</strong></p>
+
+<p>1. <strong>Initialization matters:</strong> Coin Change uses <code>inf</code> (not 0) as &quot;impossible&quot; sentinel. Using 0 will corrupt your <code>min()</code>.</p>
+<p>2. <strong>Update order in space optimization:</strong> Save <code>curr</code> before reassigning <code>prev1</code>/<code>prev2</code>.</p>
+<p>3. <strong>Strict vs non-strict LIS:</strong> <code>&lt;</code> vs <code>&lt;=</code> changes the answer for arrays with duplicates.</p>
+<p>4. <strong>Unreachable state:</strong> Always check if <code>dp[target]</code> is still <code>inf</code> before returning.</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>DP 不只是算法题里的玩具，它在工业界无处不在：</p>
+
+<p>| 应用场景 | DP 模型 | 类似题目 |</p>
+<p>|---------|---------|---------|</p>
+<p>| <strong>Git diff / 代码 diff</strong> | 编辑距离（Edit Distance）| LeetCode 72 |</p>
+<p>| <strong>拼写纠错</strong> | 最小编辑操作数 | Edit Distance |</p>
+<p>| <strong>自动补全排序</strong> | 最长公共子序列 | LCS |</p>
+<p>| <strong>基因比对（BLAST）</strong> | Smith-Waterman 算法 | LCS 变体 |</p>
+<p>| <strong>背包问题</strong> | 0/1 背包 | Partition Equal Subset Sum |</p>
+<p>| <strong>股票交易策略</strong> | 状态机 DP | Best Time to Buy Stock IV |</p>
+<p>| <strong>编译器优化</strong> | 矩阵链乘法 | Matrix Chain Multiplication |</p>
+<p>| <strong>路由协议（Bellman-Ford）</strong> | 最短路径 DP | Network Delay Time |</p>
+
+<p><strong>Senior Engineer 视角：</strong> 在分布式系统中，Coin Change 的思维直接对应资源调度问题：如何用最少数量的机器实例处理 N 个任务（容量有限的无界背包）。DP 的&quot;记住子问题结果&quot;哲学也是 memoization cache 的设计原理。</p>
+
+<p><strong>English:</strong></p>
+
+<p>DP isn&#x27;t academic—it powers real systems:</p>
+
+<p>- <strong>Git diff</strong>: The <code>diff</code> algorithm uses Edit Distance (DP) to compute minimal edits between two files</p>
+<p>- <strong>Autocorrect</strong>: Spell checkers use Edit Distance to find nearest valid words</p>
+<p>- <strong>Genomics</strong>: BLAST (DNA sequence alignment) uses Smith-Waterman, a DP variant</p>
+<p>- <strong>Compilers</strong>: Optimal expression parsing uses interval DP (matrix chain multiplication)</p>
+<p>- <strong>Networking</strong>: Bellman-Ford shortest path is literally DP over graph states</p>
+<p>- <strong>Kubernetes scheduling</strong>: Bin-packing pod assignments → Knapsack DP approximations</p>
+
+<p>The Coin Change mental model maps directly to <strong>resource allocation</strong>: &quot;What&#x27;s the minimum number of servers needed to handle N requests given server capacities?&quot;</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Setting:</strong> You&#x27;re at the whiteboard. Interviewer says: &quot;Solve Coin Change.&quot;</p>
+
+<hr/>
+
+<p><strong>Q1: 你能先说说暴力解法吗？/ Can you start with the brute force?</strong></p>
+
+<p>A: 暴力法是递归穷举所有组合。对于金额 <code>amount</code>，尝试每种硬币 <code>c</code>，递归求解 <code>amount - c</code>，时间复杂度 O(S^n)（S=amount，n=硬币种数）。</p>
+
+<p><em>Brute force: recursive enumeration of all combinations. For amount S with n coin types, time is O(S^n). This is exponential—unacceptable for large inputs.</em></p>
+
+<hr/>
+
+<p><strong>Q2: 为什么这里用 Bottom-up DP 而不是 Top-down？/ Why bottom-up over top-down here?</strong></p>
+
+<p>A: 两种方法都可以，时间复杂度相同 O(S×n)。Bottom-up 的优势是没有递归栈溢出风险，对大 amount 更稳定。Top-down 写起来更直觉，适合思路整理阶段。</p>
+
+<p><em>Both work with same O(S×n) complexity. Bottom-up avoids recursion stack overflow for large amounts. Top-down is more intuitive for working out the recurrence mentally—I often derive it top-down, then implement bottom-up.</em></p>
+
+<hr/>
+
+<p><strong>Q3: 如果硬币不能重复使用（0/1 背包），怎么改？/ What if each coin can only be used once?</strong></p>
+
+<p>A: 需要把内层循环改成<strong>从大到小</strong>遍历（保证每枚硬币只计入一次）：</p>
+<pre><code>
+for coin in coins:
+    for i in range(amount, coin - 1, -1):  # 从大到小！
+        dp[i] = min(dp[i], dp[i - coin] + 1)
+</code></pre>
+
+<p><em>Reverse the inner loop to iterate <code>amount</code> down to <code>coin</code>. This prevents using the same coin twice because we process larger amounts before smaller ones.</em></p>
+
+<hr/>
+
+<p><strong>Q4: LIS 的 O(n log n) 解法能解释一下 Patience Sort 的直觉吗？/ Can you explain Patience Sorting intuitively?</strong></p>
+
+<p>A: 想象打牌：把数字按纸牌放入&quot;牌堆&quot;，规则是每张牌只能放在比它大的牌上面（严格），否则新开一堆。最终牌堆数 = LIS 长度。<code>bisect_left</code> 找到应该放置的最左边牌堆位置，用当前数字替换该堆顶部（保持最小尾部，为后续更多牌留空间）。</p>
+
+<p><em>Think of it like the card game Patience (Solitaire): place each number on the leftmost pile whose top card is ≥ current number, or start a new pile. The number of piles equals the LIS length. Binary search finds the placement in O(log n) per card.</em></p>
+
+<hr/>
+
+<p><strong>Q5: House Robber II（环形）怎么处理？/ How do you handle the circular variant?</strong></p>
+
+<p>A: 关键观察：在环形数组中，第一个和最后一个房子不能同时被抢。因此把问题拆成两个子问题：</p>
+<p>1. 不考虑最后一个房子：<code>rob(nums[0..n-2])</code></p>
+<p>2. 不考虑第一个房子：<code>rob(nums[1..n-1])</code></p>
+<p>取两者最大值即可。时间 O(n)，空间 O(1)。</p>
+
+<p><em>Key observation: first and last house are adjacent in a circle, so they can&#x27;t both be robbed. Split into two linear sub-problems: rob <code>nums[0..n-2]</code> OR <code>nums[1..n-1]</code>. Take the max. Elegant reduction to the problem we already solved.</em></p>
+
+<hr/>
+
+<h2>总结 / Summary</h2>
+
+<p><strong>中文：</strong></p>
+<p>今天覆盖了 1D DP 的四种核心模式：</p>
+<p>- <strong>线性路径（Climbing Stairs）</strong>：Fibonacci 变体，先求小再求大</p>
+<p>- <strong>选或不选（House Robber）</strong>：每个位置二选一，转移方程 <code>max(skip, take)</code></p>
+<p>- <strong>无界背包（Coin Change）</strong>：每个状态依赖更小的状态，可重复选择</p>
+<p>- <strong>序列 DP（LIS）</strong>：以每个元素&quot;结尾&quot;定义状态，最后取 max</p>
+
+<p><strong>答题模板记住：</strong> 定义状态 → 写转移方程 → 确定初始值 → 填表计算 → 提取答案</p>
+
+<p><strong>English:</strong></p>
+<p>Four 1D DP patterns mastered today:</p>
+<p>- <strong>Linear path (Climbing Stairs)</strong>: Fibonacci-like, small → large</p>
+<p>- <strong>Pick or skip (House Robber)</strong>: binary choice at each step, <code>max(skip, take)</code></p>
+<p>- <strong>Unbounded knapsack (Coin Change)</strong>: reusable items, build up from 0</p>
+<p>- <strong>Sequence DP (LIS)</strong>: define state as &quot;ending at index i&quot;, take global max</p>
+
+<p><strong>The universal DP template:</strong> Define state → Write recurrence → Set base cases → Fill table → Extract answer</p>
+
+<p>🔗 <strong>NeetCode DP Playlist:</strong> https://www.youtube.com/playlist?list=PLot-Xpze53ldAVx3a_QCGQaGHvzFkVfxP</p>
+<p>🔗 <strong>LeetCode DP Study Plan:</strong> https://leetcode.com/study-plan/dynamic-programming/</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-24</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
