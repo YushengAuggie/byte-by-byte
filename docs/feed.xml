@@ -5,8 +5,794 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 26 Jul 2026 15:08:52 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 27 Jul 2026 15:09:50 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-27</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-27</guid>
+      <pubDate>Mon, 27 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>系统设计综合 / System Design Synthesis — Day 101</h2>
+<p><strong>Day 61 (Synthesis Mode) · Expert Phase</strong></p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design — Expert Synthesis</h2>
+
+<h3>从单点到全局：分布式系统的权衡地图</h3>
+<h3>From Single Points to Global Scale: The Trade-off Map of Distributed Systems</h3>
+
+<hr/>
+
+<h3>想象你在做技术 Review / Imagine You&#x27;re Doing a Tech Review</h3>
+
+<p>你的团队正在设计一个新的后端服务。Tech Lead 问了这个问题：</p>
+
+<p>&gt; &quot;我们用 Kafka 还是 Redis Pub/Sub？要不要加 Consistent Hashing？要不要用 Saga 还是 2PC？&quot;</p>
+
+<p>这些不是孤立的问题——它们背后是一张<strong>权衡地图 (Trade-off Map)</strong>。</p>
+
+<p>Your team is designing a new backend service. The Tech Lead asks:</p>
+
+<p>&gt; &quot;Kafka vs Redis Pub/Sub? Consistent Hashing or not? Saga vs 2PC?&quot;</p>
+
+<p>These aren&#x27;t isolated questions — they&#x27;re all part of a <strong>trade-off map</strong>.</p>
+
+<hr/>
+
+<h3>核心权衡矩阵 / Core Trade-off Matrix</h3>
+
+<pre><code>
+TOPIC               OPTION A              OPTION B           WHEN TO PICK A
+─────────────────────────────────────────────────────────────────────────
+消息队列            Kafka                 Redis Pub/Sub      持久化/重放/高吞吐
+Message Queue       (persistent,durable)  (ephemeral,fast)   vs 低延迟/简单订阅
+
+分布式事务          2PC (Strong)          Saga (Eventual)    金融强一致 vs
+Distributed Txn     (blocking, slow)      (async, complex)   跨微服务最终一致
+
+缓存策略            Write-Through         Write-Behind        读多写少 vs
+Cache Strategy      (sync, safe)          (async, faster)     写密集型
+
+一致性哈希          Consistent Hashing    Modulo Hashing      节点增减频繁 vs
+Partitioning        (minimal resharding)  (simple, mass       固定分片数
+                                           resharding)
+
+数据库选型          PostgreSQL (SQL)       Cassandra (NoSQL)   复杂查询/事务 vs
+DB Selection        (ACID, joins)         (AP, wide-column)   写密集/地理分布
+
+API 通信            REST                  gRPC               公开 API vs
+API Protocol        (human-readable)      (binary, fast)      内部微服务
+</code></pre>
+
+<hr/>
+
+<h3>系统组合：三种典型架构 / Three Archetypical Architectures</h3>
+
+<p>#### 1. 读密集型系统 (Read-Heavy) — e.g. Twitter Feed</p>
+<pre><code>
+[Client] → [CDN/Edge Cache]
+              ↓
+         [API Gateway + Rate Limiter]
+              ↓
+    [Read Replicas × N] ← hot data
+         [Redis Cache Layer]
+              ↓
+         [Primary DB] ← writes only
+</code></pre>
+<p><strong>关键洞察 / Key Insight:</strong> 90%流量命中缓存，主库只处理写。</p>
+<p>Read replicas + CDN absorb load. Primary DB is write-only.</p>
+
+<p>#### 2. 写密集型系统 (Write-Heavy) — e.g. IoT / Metrics</p>
+<pre><code>
+[Devices] → [Kafka / Kinesis] → [Stream Processor]
+                                      ↓
+                              [Time-Series DB] (InfluxDB)
+                                      ↓
+                              [Aggregation Layer]
+                                      ↓
+                              [Dashboard / Alerts]
+</code></pre>
+<p><strong>关键洞察 / Key Insight:</strong> 写操作先缓冲，异步落库。背压 (backpressure) 保护下游。</p>
+<p>Buffer writes with a queue. Protect downstream with backpressure.</p>
+
+<p>#### 3. 事务型系统 (Transaction-Heavy) — e.g. Payment</p>
+<pre><code>
+[API] → [Idempotency Check] → [DB Transaction (2PC or Saga)]
+              ↓ (duplicate?)
+         [Return cached result]
+              ↓ (new?)
+    [Debit Account → Credit Account → Record Ledger]
+         via Saga: each step + compensating transaction
+</code></pre>
+<p><strong>关键洞察 / Key Insight:</strong> Idempotency key 防止重复扣款。Saga 比 2PC 更适合跨服务。</p>
+<p>Idempotency keys prevent duplicate charges. Saga &gt; 2PC across microservices.</p>
+
+<hr/>
+
+<h3>常见 Expert 面试陷阱 / Expert Interview Traps</h3>
+
+<p>| 陷阱 Trap | 错误思路 Wrong | 正确思路 Right |</p>
+<p>|-----------|--------------|----------------|</p>
+<p>| &quot;用 Redis 做持久化&quot; | 默认 Redis 可靠 | Redis 是缓存，不是主库；配合持久化 DB |</p>
+<p>| &quot;加更多副本解决写瓶颈&quot; | 副本减少读压力 | 写瓶颈需要分片 (sharding)，不是副本 |</p>
+<p>| &quot;Kafka 解决一切消息问题&quot; | Kafka 万能 | 简单通知用 Redis Pub/Sub；Kafka 适合持久化/重放 |</p>
+<p>| &quot;微服务就要用 2PC&quot; | 跨服务强一致 | 2PC 阻塞性强，跨服务首选 Saga + 补偿 |</p>
+
+<hr/>
+
+<h3>面试答题框架：5分钟架构对话 / 5-Minute Architecture Framework</h3>
+
+<pre><code>
+1. 澄清需求 (1 min): QPS? DAU? 读写比? 强一致还是最终一致?
+2. 高层架构 (2 min): 画3层图 (Client → Service → DB)
+3. 深入关键组件 (1 min): 面试官感兴趣的那一层
+4. 权衡讨论 (1 min): &quot;我选X而不是Y，因为...&quot;
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [System Design Primer — Scalability](https://github.com/donnemartin/system-design-primer)</p>
+<p>- [Designing Data-Intensive Applications — Kleppmann](https://dataintensive.net/)</p>
+<p>- [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)</p>
+
+<h3>🧒 ELI5</h3>
+<p><strong>如果你家有5个孩子喝水：</strong></p>
+<p>- <strong>读密集 =</strong> 提前多备几瓶水 (缓存)</p>
+<p>- <strong>写密集 =</strong> 所有孩子同时倒水，先排队等 (队列)</p>
+<p>- <strong>事务型 =</strong> 钱包扣钱和存钱必须同时成功，否则都撤销</p>
+
+<p><strong>If you have 5 kids at home:</strong></p>
+<p>- <strong>Read-heavy =</strong> Pre-fill many water bottles (cache)</p>
+<p>- <strong>Write-heavy =</strong> Everyone pours at once; line up first (queue)</p>
+<p>- <strong>Transactional =</strong> Debit and credit must both succeed, or neither does</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>算法 / Algorithms — Day 101</h2>
+<p><strong>#200 Number of Islands (Medium) · Graphs · Day 80/150</strong></p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms — #200 Number of Islands 🟡 — Graphs</h2>
+
+<hr/>
+
+<h2>🧩 新模式 / New Pattern: 图遍历模式 (BFS/DFS)</h2>
+
+<p>📍 <strong>This block:</strong> 13 problems</p>
+
+<p><strong>什么时候用 / When to use:</strong> 连通性、最短路径、拓扑排序、岛屿问题</p>
+<p>When to use: connected components, shortest path, topological sort, grid/matrix traversal, islands</p>
+
+<p><strong>识别信号 / Signals:</strong> connected components, shortest path, topological sort, grid/matrix traversal, islands</p>
+
+<p><strong>通用模版 / Template:</strong></p>
+<pre><code>
+# BFS Template
+from collections import deque
+
+def bfs(graph, start):
+    queue = deque([start])
+    visited = {start}
+    while queue:
+        node = queue.popleft()
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+# DFS Template (Iterative)
+def dfs(graph, start):
+    stack = [start]
+    visited = {start}
+    while stack:
+        node = stack.pop()
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                stack.append(neighbor)
+
+# DFS Template (Recursive)
+def dfs_recursive(graph, node, visited=None):
+    if visited is None:
+        visited = set()
+    visited.add(node)
+    for neighbor in graph[node]:
+        if neighbor not in visited:
+            dfs_recursive(graph, neighbor, visited)
+</code></pre>
+
+<p><strong>核心洞察 / Key Insight:</strong> BFS = 最短路径（无权图），DFS = 连通性/路径探索。visited 集合防止死循环</p>
+<p>BFS = shortest path (unweighted), DFS = connectivity/path exploration. <code>visited</code> set prevents infinite loops.</p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+<p>- [LeetCode #200](https://leetcode.com/problems/number-of-islands/) 🟡 Medium</p>
+<p>- [NeetCode Video](https://neetcode.io/problems/count-islands)</p>
+
+<hr/>
+
+<h3>现实类比 / Real-World Analogy</h3>
+
+<p>想象你有一张卫星地图，上面有陆地 <code>&#x27;1&#x27;</code> 和海洋 <code>&#x27;0&#x27;</code>。</p>
+<p>你需要数清楚有多少块独立的陆地（岛屿）。</p>
+
+<p>这就像 <strong>感染控制</strong>：每次发现一个新病例（未访问的 <code>&#x27;1&#x27;</code>），就把该病例的所有相连感染区域标记为已处理，然后统计独立的爆发次数。</p>
+
+<p>Imagine a satellite map with land <code>&#x27;1&#x27;</code> and ocean <code>&#x27;0&#x27;</code>.</p>
+<p>You need to count distinct landmasses. Think of it like <strong>infection control</strong>: each new unvisited <code>&#x27;1&#x27;</code> starts a new outbreak cluster — mark all connected cells and count clusters.</p>
+
+<hr/>
+
+<h3>题目 → 套用模式 / Problem → Map to Template</h3>
+
+<pre><code>
+grid:
+1 1 0 0 0
+1 1 0 0 0
+0 0 1 0 0
+0 0 0 1 1
+
+Answer: 3 islands
+</code></pre>
+
+<p><strong>映射到图遍历模版：</strong></p>
+<p>- 节点 Node = grid cell <code>(row, col)</code></p>
+<p>- 邻居 Neighbor = 上下左右四个方向</p>
+<p>- 访问标记 Visited = 修改 grid 为 <code>&#x27;0&#x27;</code> (原地标记) 或用 visited set</p>
+<p>- 每次发现未访问的 <code>&#x27;1&#x27;</code>，启动 BFS/DFS，计数器 +1</p>
+
+<hr/>
+
+<h3>Python Solution with Trace</h3>
+
+<pre><code>
+def numIslands(grid: list[list[str]]) -&gt; int:
+    if not grid:
+        return 0
+    
+    rows, cols = len(grid), len(grid[0])
+    islands = 0
+    
+    def dfs(r, c):
+        # Base case: out of bounds or water
+        if r &lt; 0 or r &gt;= rows or c &lt; 0 or c &gt;= cols or grid[r][c] == &#x27;0&#x27;:
+            return
+        
+        # Mark as visited (sink the island)
+        grid[r][c] = &#x27;0&#x27;
+        
+        # Explore 4 directions
+        dfs(r + 1, c)
+        dfs(r - 1, c)
+        dfs(r, c + 1)
+        dfs(r, c - 1)
+    
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == &#x27;1&#x27;:  # Found unvisited land
+                islands += 1        # New island!
+                dfs(r, c)           # Sink entire island
+    
+    return islands
+
+# Trace on small example:
+# grid = [[&quot;1&quot;,&quot;1&quot;,&quot;0&quot;],[&quot;0&quot;,&quot;1&quot;,&quot;0&quot;],[&quot;0&quot;,&quot;0&quot;,&quot;1&quot;]]
+# (0,0) = &#x27;1&#x27; → islands=1, DFS sinks (0,0),(0,1),(1,1)
+# (2,2) = &#x27;1&#x27; → islands=2, DFS sinks (2,2)
+# Result: 2
+</code></pre>
+
+<p><strong>时间复杂度 / Time:</strong> O(M×N) — visit each cell once</p>
+<p><strong>空间复杂度 / Space:</strong> O(M×N) — recursion stack in worst case (all land)</p>
+
+<hr/>
+
+<h3>BFS 版本 / BFS Alternative</h3>
+
+<pre><code>
+from collections import deque
+
+def numIslands_bfs(grid):
+    rows, cols = len(grid), len(grid[0])
+    islands = 0
+    
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == &#x27;1&#x27;:
+                islands += 1
+                grid[r][c] = &#x27;0&#x27;
+                queue = deque([(r, c)])
+                while queue:
+                    row, col = queue.popleft()
+                    for dr, dc in [(1,0),(-1,0),(0,1),(0,-1)]:
+                        nr, nc = row + dr, col + dc
+                        if 0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols and grid[nr][nc] == &#x27;1&#x27;:
+                            grid[nr][nc] = &#x27;0&#x27;  # Mark immediately to avoid duplicate queue entries
+                            queue.append((nr, nc))
+    
+    return islands
+</code></pre>
+
+<p><strong>BFS vs DFS 选哪个？/ Which to choose?</strong></p>
+<p>- DFS：代码更简洁；深度大时有栈溢出风险</p>
+<p>- BFS：无递归栈溢出；更适合&quot;最短路径&quot;变体</p>
+<p>- 对本题：两者等价，DFS 更简洁</p>
+
+<hr/>
+
+<h3>举一反三 / Pattern Block Preview (1/13)</h3>
+
+<p>| 题目 | 变化点 Twist |</p>
+<p>|------|-------------|</p>
+<p>| <strong>#695 Max Area</strong> (next) | 不只是数个数，还要统计最大面积 |</p>
+<p>| <strong>#994 Rotting Oranges</strong> | BFS + 时间层 (multi-source BFS) |</p>
+<p>| <strong>#207 Course Schedule</strong> | 有向图 + 环检测 (cycle detection) |</p>
+<p>| <strong>#127 Word Ladder</strong> | BFS 最短路径（字符变换） |</p>
+
+<p>核心模版不变，关键是识别：<strong>这是连通性问题还是最短路径问题？</strong></p>
+<p>The template stays the same — just identify: <strong>connectivity vs. shortest path?</strong></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [LeetCode #200 — Number of Islands](https://leetcode.com/problems/number-of-islands/)</p>
+<p>- [NeetCode — Graphs Playlist](https://neetcode.io/roadmap)</p>
+<p>- [Graph Algorithms Visualization](https://visualgo.net/en/graphds)</p>
+
+<h3>🧒 ELI5</h3>
+<p><strong>想象你在玩扫雷，但反过来：</strong></p>
+<p>找到一块陆地，就把所有相连的陆地都染成蓝色（变成水）。</p>
+<p>数一数你染了几次，就是有几座岛屿！</p>
+
+<p><strong>Think of it like Minesweeper in reverse:</strong></p>
+<p>When you find land, flood all connected land with water.</p>
+<p>Count how many times you flood — that&#x27;s your answer!</p>
+
+<hr/>
+
+<h3>📝 Quiz</h3>
+<pre><code>
+{&quot;question&quot;:&quot;#200 Number of Islands — 为什么 BFS 比 DFS 更适合超大 grid？&quot;,&quot;options&quot;:[&quot;BFS 时间复杂度更低&quot;,&quot;BFS 避免了递归栈溢出 (stack overflow)&quot;,&quot;BFS 不需要 visited 集合&quot;,&quot;BFS 代码更简洁&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>软技能 / Soft Skills — Day 101</h2>
+<p><strong>Day 61 (Synthesis Mode) · Expert Phase</strong></p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills — Expert Synthesis: The Art of the Difficult Conversation</h2>
+
+<hr/>
+
+<h3>为什么难话难说？/ Why Hard Conversations Are Hard</h3>
+
+<p>你已经走过了 60 个行为面试题的洗礼。回顾这些题目，有一个共同主线：</p>
+
+<p>&gt; <strong>最难的不是技术决策，而是&quot;说难听但正确的话&quot;。</strong></p>
+
+<p>You&#x27;ve covered 60 behavioral questions. There&#x27;s a recurring thread:</p>
+
+<p>&gt; <strong>The hardest part isn&#x27;t the technical decision — it&#x27;s saying the uncomfortable-but-right thing.</strong></p>
+
+<hr/>
+
+<h3>五类&quot;难话&quot; / Five Types of Hard Conversations (Senior/Staff Level)</h3>
+
+<pre><code>
+1. 向上管理 (Managing Up)
+   &quot;这个方向不对，老板。&quot;
+   
+2. 横向推动 (Lateral Influence)
+   &quot;我不是你的上级，但这事得改。&quot;
+   
+3. 向下反馈 (Downward Feedback)
+   &quot;你做得不够好，我们聊聊。&quot;
+   
+4. 公开认错 (Owning Mistakes)
+   &quot;这个 incident 是我的决策导致的。&quot;
+   
+5. 说不 (Saying No)
+   &quot;这个 feature 我们不做，原因是...&quot;
+</code></pre>
+
+<hr/>
+
+<h3>场景题 / Fresh Senior Scenario</h3>
+
+<p><strong>Q: 你是一位 Staff Engineer。你的 VP 要求在下个 sprint 内上线一个功能，但你评估这会引入严重的技术债务，且有安全风险。PM 已经向客户承诺了上线日期。你怎么办？</strong></p>
+
+<p><strong>Q: You&#x27;re a Staff Engineer. Your VP wants a feature shipped in the next sprint, but you assess it will introduce significant tech debt and a security vulnerability. The PM has already committed a date to customers. What do you do?</strong></p>
+
+<hr/>
+
+<h3>STAR Framework 拆解</h3>
+
+<p><strong>Situation（情境）:</strong></p>
+<p>&gt; 我在上家公司遇到类似情况。PM 向大客户承诺了一个 auth 功能的上线日期，但我在 design review 时发现该实现会绕过 RBAC 检查，潜在暴露其他租户数据。</p>
+
+<p><strong>Task（任务）:</strong></p>
+<p>&gt; 我需要在不破坏客户关系的前提下，阻止上线，或找到一个可接受的替代方案。</p>
+
+<p><strong>Action（行动）:</strong></p>
+<p>&gt; 1. <strong>先记录风险</strong>：写了一份 2 页的风险备忘录，附上 CVSS 评分和潜在影响。</p>
+<p>&gt; 2. <strong>私下找 PM</strong>：不是&quot;你答应了错误的事&quot;，而是&quot;我发现了一个可能让你难堪的风险，我们一起看看&quot;。</p>
+<p>&gt; 3. <strong>提供选项，不是只说不</strong>：Option A（全量上线，2周）= 安全风险；Option B（限量灰度，本周）= 按时但范围受限；Option C（安全版本，+1周）= 推迟但正确。</p>
+<p>&gt; 4. <strong>升级时机</strong>：PM 选了 A，我升级到 VP，带着同样的文档，同样的语气。</p>
+
+<p><strong>Result（结果）:</strong></p>
+<p>&gt; VP 选了 Option C，推迟1周。事后 PM 感谢我帮她避免了一个客户数据事故。</p>
+
+<hr/>
+
+<h3>❌ Bad vs ✅ Good</h3>
+
+<p>| | Bad | Good |</p>
+<p>|-|-----|------|</p>
+<p>| 说不方式 | &quot;这样做不行&quot; | &quot;这里有个风险，我有3个选项&quot; |</p>
+<p>| 升级时机 | 背后直接找 VP | 先尝试横向解决，再升级 |</p>
+<p>| 文档 | 口头说说 | 书面 + 数据 + 影响量化 |</p>
+<p>| 语气 | 对抗性 | 解决问题导向 |</p>
+
+<hr/>
+
+<h3>Senior/Staff 的&quot;难话&quot;原则</h3>
+
+<p>1. <strong>书面化比口头说更有力</strong> — 一份 Loom 录像或文档，比 Slack 消息更难被忽略</p>
+<p>2. <strong>选项 &gt; 否决</strong> — 说不时永远给 2-3 个替代选项</p>
+<p>3. <strong>私下先试</strong> — 公开场合升级是最后手段，不是第一步</p>
+<p>4. <strong>量化影响</strong> — &quot;安全风险&quot;比不上 &quot;CVSS 7.8，可能暴露 N 个客户的数据&quot;</p>
+
+<hr/>
+
+<h3>Key Takeaways</h3>
+
+<p>- <strong>难话不难，难在时机和框架。</strong> Hard conversations aren&#x27;t hard — the hard part is timing and framing.</p>
+<p>- <strong>Senior engineers say the quiet part out loud.</strong> 初级工程师沉默，高级工程师说出来。</p>
+<p>- <strong>&quot;我注意到一个风险&quot;比&quot;你错了&quot;有效得多。</strong> &quot;I noticed a risk&quot; &gt; &quot;you&#x27;re wrong.&quot;</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Radical Candor — Kim Scott](https://www.radicalcandor.com/)</p>
+<p>- [The Fearless Organization — Amy Edmondson](https://fearlessorganization.com/)</p>
+<p>- [StaffEng.com — Stories from Staff Engineers](https://staffeng.com/stories)</p>
+
+<h3>🧒 ELI5</h3>
+<p><strong>如果你的朋友要做一件危险的事，你怎么说？</strong></p>
+<p>&quot;你这样不行！&quot;→ 他生气</p>
+<p>&quot;我担心这样会受伤，我们能不能试试这个？&quot;→ 他听进去了</p>
+
+<p><strong>If your friend is about to do something dangerous:</strong></p>
+<p>&quot;You can&#x27;t do that!&quot; → they get defensive</p>
+<p>&quot;I&#x27;m worried this might hurt you — can we try this instead?&quot; → they actually listen</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Python Craft — Day 101</h2>
+<p><strong>Caching Patterns — lru_cache, Redis, Memoization · Day 41</strong></p>
+
+<hr/>
+
+<h2>🎨 Python Craft — 缓存模式 / Caching Patterns — lru_cache, Redis, Memoization</h2>
+
+<hr/>
+
+<h3>真实场景 / Real Scenario</h3>
+
+<p>你在做一个 dashboard，需要频繁计算用户权限矩阵（每次查询都要 JOIN 5 张表，耗时 200ms）。请求量增加后，你的 DB CPU 飙到 90%。</p>
+
+<p>You&#x27;re building a dashboard. Computing the permission matrix requires 5-table JOINs (200ms each). As traffic scales, your DB CPU hits 90%.</p>
+
+<p><strong>解法：缓存。但缓存哪一层？怎么缓存？</strong></p>
+<p><strong>Solution: Cache. But which layer, and how?</strong></p>
+
+<hr/>
+
+<h3>三层缓存策略 / Three-Layer Caching Strategy</h3>
+
+<pre><code>
+Layer 1: In-Process (lru_cache)     ← 最快, 进程内, 重启丢失
+Layer 2: Local Cache (dict + TTL)   ← 简单自制, 无并发保护
+Layer 3: Distributed (Redis)        ← 跨进程/实例, 持久化可选
+</code></pre>
+
+<hr/>
+
+<h3>Layer 1: functools.lru_cache</h3>
+
+<pre><code>
+from functools import lru_cache
+import time
+
+# Pure functions only — no side effects, no mutable args
+@lru_cache(maxsize=128)
+def get_permissions(user_id: int, role: str) -&gt; frozenset:
+    &quot;&quot;&quot;Cache up to 128 unique (user_id, role) combos&quot;&quot;&quot;
+    # Simulated expensive DB call
+    time.sleep(0.2)
+    return frozenset([&quot;read&quot;, &quot;write&quot;] if role == &quot;admin&quot; else [&quot;read&quot;])
+
+# First call: 200ms
+perms = get_permissions(42, &quot;admin&quot;)
+
+# Second call: ~0ms (cache hit!)
+perms = get_permissions(42, &quot;admin&quot;)
+
+# Check cache stats
+print(get_permissions.cache_info())
+# CacheInfo(hits=1, misses=1, maxsize=128, currsize=1)
+
+# Manual cache clear (e.g., after role change)
+get_permissions.cache_clear()
+</code></pre>
+
+<p><strong>⚠️ lru_cache 的限制 / Limitations:</strong></p>
+<p>- 参数必须是 hashable（不能传 list, dict）</p>
+<p>- 无 TTL（永不过期，除非 maxsize 满了 LRU 淘汰）</p>
+<p>- 进程级别，多进程/多实例不共享</p>
+
+<hr/>
+
+<h3>Layer 1.5: cache_with_ttl (手动实现)</h3>
+
+<pre><code>
+import time
+from functools import wraps
+
+def ttl_cache(ttl_seconds=60):
+    &quot;&quot;&quot;Decorator: in-memory cache with TTL&quot;&quot;&quot;
+    def decorator(func):
+        cache = {}
+        
+        @wraps(func)
+        def wrapper(*args):
+            key = args
+            now = time.monotonic()
+            
+            if key in cache:
+                result, expires_at = cache[key]
+                if now &lt; expires_at:
+                    return result  # Cache hit
+            
+            result = func(*args)
+            cache[key] = (result, now + ttl_seconds)
+            return result
+        
+        wrapper.cache_clear = lambda: cache.clear()
+        return wrapper
+    return decorator
+
+@ttl_cache(ttl_seconds=300)  # 5-minute TTL
+def get_user_profile(user_id: int) -&gt; dict:
+    return {&quot;id&quot;: user_id, &quot;name&quot;: &quot;Alice&quot;}  # Expensive DB call
+</code></pre>
+
+<hr/>
+
+<h3>Layer 3: Redis 缓存 (分布式)</h3>
+
+<pre><code>
+import redis
+import json
+import hashlib
+from functools import wraps
+
+r = redis.Redis(host=&#x27;localhost&#x27;, port=6379, decode_responses=True)
+
+def redis_cache(ttl=300, prefix=&quot;cache&quot;):
+    &quot;&quot;&quot;Redis-backed cache decorator&quot;&quot;&quot;
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Build cache key
+            key_data = f&quot;{prefix}:{func.__name__}:{args}:{sorted(kwargs.items())}&quot;
+            cache_key = hashlib.md5(key_data.encode()).hexdigest()[:16]
+            full_key = f&quot;{prefix}:{func.__name__}:{cache_key}&quot;
+            
+            # Try cache first
+            cached = r.get(full_key)
+            if cached:
+                return json.loads(cached)
+            
+            # Miss: compute + store
+            result = func(*args, **kwargs)
+            r.setex(full_key, ttl, json.dumps(result))
+            return result
+        
+        return wrapper
+    return decorator
+
+@redis_cache(ttl=300, prefix=&quot;permissions&quot;)
+def get_user_permissions(user_id: int) -&gt; list:
+    # Shared across ALL instances — scales horizontally!
+    return [&quot;read&quot;, &quot;write&quot;]  # Expensive computation
+</code></pre>
+
+<hr/>
+
+<h3>Cache Invalidation Strategies 缓存失效策略</h3>
+
+<pre><code>
+# 1. Time-based (TTL) — simplest
+r.setex(&quot;user:42:perms&quot;, 300, json.dumps(perms))
+
+# 2. Event-based — explicit invalidation on write
+def update_user_role(user_id, new_role):
+    db.update(user_id, role=new_role)
+    r.delete(f&quot;permissions:get_user_permissions:{user_id}&quot;)  # Invalidate!
+
+# 3. Write-through — update cache AND DB together
+def update_and_cache(user_id, data):
+    db.update(user_id, data)
+    r.setex(f&quot;user:{user_id}&quot;, 300, json.dumps(data))
+
+# 4. Cache-aside (most common pattern)
+def get_user(user_id):
+    cached = r.get(f&quot;user:{user_id}&quot;)
+    if cached:
+        return json.loads(cached)
+    user = db.get(user_id)          # DB miss
+    r.setex(f&quot;user:{user_id}&quot;, 300, json.dumps(user))
+    return user
+</code></pre>
+
+<hr/>
+
+<h3>常见错误 ❌ vs 正确做法 ✅</h3>
+
+<pre><code>
+# ❌ Cache stampede (thundering herd)
+# All 1000 requests hit DB simultaneously when cache expires
+def bad_cache(key):
+    val = r.get(key)
+    if not val:
+        val = expensive_query()  # 1000 concurrent calls!
+        r.setex(key, 60, val)
+    return val
+
+# ✅ Probabilistic Early Expiration (PER) to prevent stampede
+import random
+import math
+
+def good_cache(key, beta=1.0):
+    val, expiry = r.get_with_ttl(key)
+    remaining = expiry - time.time()
+    # Refresh early with some probability as TTL shrinks
+    if remaining - beta * math.log(random.random()) &lt; 0:
+        val = expensive_query()
+        r.setex(key, 60, val)
+    return val
+</code></pre>
+
+<hr/>
+
+<h3>When to Use / When NOT to Use</h3>
+
+<p>| Use Cache | Don&#x27;t Cache |</p>
+<p>|-----------|-------------|</p>
+<p>| Read &gt; Write ratio | Financial transactions (stale = bad) |</p>
+<p>| Expensive computation | Data that changes every request |</p>
+<p>| Stable reference data | Per-user private mutations |</p>
+<p>| Public/shared data | When consistency is critical |</p>
+
+<hr/>
+
+<h3>📝 Quiz</h3>
+<pre><code>
+{&quot;question&quot;:&quot;以下哪种情况最不适合用缓存？&quot;,&quot;options&quot;:[&quot;用户权限矩阵（每分钟变化一次）&quot;,&quot;商品价格（实时竞价）&quot;,&quot;网站首页静态内容&quot;,&quot;热门搜索词自动补全&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Python functools.lru_cache docs](https://docs.python.org/3/library/functools.html#functools.lru_cache)</p>
+<p>- [Redis Caching Patterns](https://redis.io/docs/manual/patterns/)</p>
+<p>- [Cache Stampede / Thundering Herd](https://en.wikipedia.org/wiki/Cache_stampede)</p>
+
+<h3>🧒 ELI5</h3>
+<p><strong>缓存就像你的记忆：</strong></p>
+<p>第一次学 2×3=6，算了好一会儿。</p>
+<p>之后每次问你，直接说 &quot;6&quot;，不用重新算。</p>
+<p>但如果答案变了（比如题目改了），你得清除记忆重新学。</p>
+
+<p><strong>Cache = your memory:</strong></p>
+<p>First time 2×3=6 takes effort.</p>
+<p>After that — instant answer, no thinking needed.</p>
+<p>But if the answer changes, clear the memory and recompute!</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>AI — Day 101</h2>
+<p><strong>AI News Roundup · Day 101</strong></p>
+
+<hr/>
+
+<h2>🤖 AI — 本周要闻 / AI News Roundup (Week of July 27, 2026)</h2>
+
+<hr/>
+
+<h3>📰 Story 1: AI 模型价格战重塑市场格局</h3>
+<h3>AI Model Price War Reshapes the Market</h3>
+
+<p>各大 AI 服务商在 7 月掀起激烈价格竞争，包括 Google 新推出的 Gemini 3.6 Flash、Gemini 3.5 Flash-Lite，以及 xAI 的 Grok 4.5、OpenAI 的 GPT-5.6 多个变体（据报道代号 Sol/Terra/Luna）。据报道，输出 Token 成本从此前的 $25–$50 / 1M tokens 骤降至 $4–$6，降幅逾 80%。</p>
+
+<p>A fierce price war erupted among AI providers in July. Google launched Gemini 3.6 Flash, 3.5 Flash-Lite, and 3.5 Flash Cyber; xAI released Grok 4.5; OpenAI reportedly released GPT-5.6 variants. Output token costs reportedly dropped from $25–$50 to $4–$6 per 1M tokens — an over 80% reduction.</p>
+
+<p><strong>对开发者的意义 / What it means for devs:</strong></p>
+<p>过去&quot;AI 太贵，实验一下就好&quot;的心态正在消失。许多原本因成本放弃的 production AI 功能，现在的成本已经可以接受。</p>
+<p>The &quot;AI is too expensive for production&quot; mindset is fading. Features once shelved for cost reasons are now economically viable.</p>
+
+<p>📎 Source: [Google Blog — Gemini 3.6 Flash](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-6-flash-3-5-flash-lite-3-5-flash-cyber/) | [buildez.ai AI July 2026 summary](https://buildez.ai/blog/ai-future-july-2026-revolution)</p>
+
+<hr/>
+
+<h3>📰 Story 2: EU AI Act 正式进入执法阶段</h3>
+<h3>EU AI Act Enters Enforcement Phase</h3>
+
+<p>2026 年 7 月 10 日，欧盟《人工智能法案》(AI Act) 正式进入执法阶段。法案以<strong>风险分级</strong>为核心：高风险 AI 系统（如医疗、执法、就业决策）需通过合规审查；所有 AI 聊天机器人须明确披露其 AI 身份。</p>
+
+<p>On July 10, 2026, the EU AI Act officially entered its enforcement phase. Core principle: <strong>risk-based tiers</strong>. High-risk AI (medical, law enforcement, employment decisions) must pass compliance reviews. All AI chatbots must disclose they are AI.</p>
+
+<p><strong>对工程师的实际影响 / Practical impact for engineers:</strong></p>
+<p>- 在欧洲部署的 AI 系统需新增&quot;AI 披露&quot;UI</p>
+<p>- 高风险场景需要可解释性日志和人工审核接口</p>
+<p>- GDPR + AI Act 双重合规成为欧洲 AI 产品标配</p>
+
+<p>In Europe: add AI disclosure UI, log model decisions for explainability, and build human-review hooks for high-risk flows. GDPR + AI Act compliance is now baseline.</p>
+
+<p>📎 Source: [teachaitools.blog — EU AI Act Enforcement Begins](https://teachaitools.blog/blog/eu-ai-act-enforcement-begins-july-2026)</p>
+
+<hr/>
+
+<h3>📰 Story 3: MIT/Stanford 研究——自我纠错能力比模型规模更重要</h3>
+<h3>MIT/Stanford: Self-Correction Beats Raw Model Size</h3>
+
+<p>MIT 和 Stanford 研究人员发表研究指出：对于复杂数学和逻辑推理任务，模型在推理过程中<strong>自我纠错的能力</strong>比模型参数规模更关键。这一发现支持了&quot;o 系列&quot;和&quot;思维链&quot;推理模型的设计方向。</p>
+
+<p>Researchers from MIT and Stanford found that a model&#x27;s ability to <strong>self-correct during reasoning</strong> is a more critical factor for hard math/logic tasks than sheer model size. This validates the design direction of &quot;thinking&quot; models like the o-series and Chain-of-Thought variants.</p>
+
+<p><strong>工程启示 / Engineering takeaway:</strong></p>
+<p>- 在 Agent 系统中，给模型&quot;反思&quot;步骤可能比升级模型更有效</p>
+<p>- 小模型 + 多次推理迭代 &gt; 大模型 + 单次推理（某些场景）</p>
+
+<p>In agent pipelines, adding a reflection/self-critique step may outperform upgrading to a larger model.</p>
+
+<p>📎 Source: [skycrumbs.com — AI Research July 2026](https://skycrumbs.com/blog/ai-research-july-2026)</p>
+
+<hr/>
+
+<h3>💡 本周一句话总结 / One-line Summary</h3>
+
+<p>&gt; <strong>AI 的门槛在降低，合规的门槛在升高，推理能力在变深。</strong></p>
+<p>&gt; AI is getting cheaper, regulation is getting stricter, and reasoning is getting smarter.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- [Google Gemini 3.6 Flash Blog Post](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-6-flash-3-5-flash-lite-3-5-flash-cyber/)</p>
+<p>- [EU AI Act Enforcement — teachaitools.blog](https://teachaitools.blog/blog/eu-ai-act-enforcement-begins-july-2026)</p>
+<p>- [AI July 2026 Revolution — buildez.ai](https://buildez.ai/blog/ai-future-july-2026-revolution)</p>
+<p>- [AI Research July 2026 — skycrumbs.com](https://skycrumbs.com/blog/ai-research-july-2026)</p>
+
+<h3>🧒 ELI5</h3>
+<p><strong>AI 新闻三句话版：</strong></p>
+<p>1. AI 越来越便宜了——以前贵得用不起，现在用得起了 💰</p>
+<p>2. 欧洲出了新规定：AI 要告诉你&quot;我是 AI&quot; 🇪🇺</p>
+<p>3. 科学家发现：AI 能自己检查错误比 AI 有多大更重要 🧠</p>
+
+<p><strong>AI news in 3 lines:</strong></p>
+<p>1. AI got way cheaper — what was unaffordable is now viable 💰</p>
+<p>2. EU law: AI must say &quot;I am an AI&quot; to users 🇪🇺</p>
+<p>3. Self-correction matters more than model size for hard reasoning 🧠</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-26</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
