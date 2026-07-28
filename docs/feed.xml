@@ -5,8 +5,697 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 27 Jul 2026 15:09:50 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 28 Jul 2026 15:11:13 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-07-28</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-07-28</guid>
+      <pubDate>Tue, 28 Jul 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计综合 / System Design Synthesis — Day 102</h2>
+
+<p>&gt; <strong>Expert Synthesis:</strong> 今天不介绍新题目，而是跨越我们学过的系统进行横向对比。</p>
+
+<hr/>
+
+<h2>横向对比：数据一致性 vs 可用性的权衡 / Cross-System: Consistency vs Availability Trade-offs</h2>
+
+<p>你已经学了 60 个系统设计题。今天回答一个真正的专家问题：</p>
+
+<p><strong>面试官问：&quot;你如何在系统设计中选择一致性策略？&quot;</strong></p>
+
+<p>This is the question that separates Staff engineers from senior engineers.</p>
+
+<hr/>
+
+<h2>框架：按业务影响分级 / Tiered by Business Impact</h2>
+
+<pre><code>
+                    一致性要求 (Consistency Requirement)
+                    强 ◄───────────────────────► 最终
+
+金融/支付系统          ✅ Strong Consistency
+(Payment, Banking)    Stripe, Order Matching Engine
+                      → 两阶段提交, XA, Saga (串行)
+
+用户数据/配置          ✅ Read-your-writes
+(Profile, Settings)   Chat System, Feature Flags
+                      → Leader读, 粘性Session
+
+社交/推荐              ✅ Eventual Consistency
+(Feed, Likes, Views)  YouTube, Twitter, Recommendation
+                      → 异步复制, CRDT, 读修复
+
+缓存/统计              ✅ Best Effort
+(Counters, Metrics)   CDN, Monitoring, Autocomplete
+                      → TTL失效, 近似值
+</code></pre>
+
+<hr/>
+
+<h2>真实案例对比 / Real-World Pattern Comparison</h2>
+
+<h3>🔴 强一致性：支付系统 vs 分布式锁</h3>
+
+<p>| 系统 | 一致性机制 | 代价 |</p>
+<p>|------|-----------|------|</p>
+<p>| Stripe (Payment) | Saga + Idempotency Keys | 延迟高，需幂等 |</p>
+<p>| Zookeeper/etcd (Lock) | Raft 共识 | Leader 瓶颈 |</p>
+<p>| Order Matching Engine | 单线程队列 | 水平扩展困难 |</p>
+
+<p><strong>核心洞察 / Key Insight:</strong></p>
+<p>强一致性通常意味着<strong>序列化</strong>（单点或全局锁）。当你引入分布式时，要么接受延迟，要么接受复杂性。</p>
+
+<hr/>
+
+<h3>🟡 因果一致性：聊天系统 vs 协作编辑器</h3>
+
+<p>| 系统 | 一致性机制 | 用户感知 |</p>
+<p>|------|-----------|---------|</p>
+<p>| WhatsApp (Chat) | 消息顺序 + 已读回执 | 消息不乱序 |</p>
+<p>| Google Docs (Collab) | OT / CRDT | 合并冲突透明 |</p>
+
+<p><strong>为什么 Chat 不需要 Strong Consistency？</strong></p>
+<p>因为消息送达的顺序在不同设备间可以有微小差异（1-2秒），用户不会注意到。但如果消息丢失，用户一定会发现。→ <strong>高可用性优先，因果顺序次之。</strong></p>
+
+<hr/>
+
+<h3>🟢 最终一致性：YouTube vs Recommendation Engine</h3>
+
+<pre><code>
+YouTube 播放量计数:
+User View → Kafka → Counter Service → Approximate Count
+                                     (±0.1% is fine)
+
+Recommendation:
+User Action → Feature Store (async) → Model (stale is OK)
+             (30min lag acceptable for personalization)
+</code></pre>
+
+<p><strong>为什么最终一致性够用？</strong></p>
+<p>推荐系统的&quot;正确答案&quot;本身就是模糊的。没人知道&quot;正确&quot;推荐是什么，所以数据滞后 30 分钟也不影响用户体验。</p>
+
+<hr/>
+
+<h2>专家决策树 / Expert Decision Tree</h2>
+
+<pre><code>
+面对一个新系统，问自己:
+
+1. 数据不一致会导致金钱损失吗？
+   → YES → Strong Consistency (Saga / 2PC / Single-leader)
+   → NO  → 继续
+
+2. 用户能察觉到数据过期吗（&lt; 1 秒）？
+   → YES → Read-your-writes / Session Consistency
+   → NO  → 继续
+
+3. 数据冲突可以自动合并吗？
+   → YES → CRDT / Eventual Consistency
+   → NO  → Last-Write-Wins + Conflict Resolution UI
+</code></pre>
+
+<hr/>
+
+<h2>常见面试陷阱 / Common Interview Traps</h2>
+
+<p><strong>❌ 错误回答：</strong> &quot;我会用强一致性保证正确性&quot;</p>
+<p>→ 面试官追问：&quot;那你的系统怎么扩展？&quot;你就没话说了。</p>
+
+<p><strong>✅ 正确思路：</strong></p>
+<p>&quot;这个系统的核心业务操作（X）需要强一致性，但（Y 和 Z）可以接受最终一致性。我会用 Saga 模式处理 X，用异步事件总线处理 Y/Z。&quot;</p>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<p>- [Consistency Models — Jepsen](https://jepsen.io/consistency)</p>
+<p>- [Designing Data-Intensive Applications — Kleppmann](https://dataintensive.net/)</p>
+<p>- [AWS re:Invent — Patterns for Distributed Systems](https://www.youtube.com/results?search_query=aws+reinvent+consistency+patterns)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你和朋友在不同城市共享一个 Google Sheet。</p>
+
+<p>- <strong>强一致性</strong> = 每次编辑都要对方确认才保存（超慢，超准）</p>
+<p>- <strong>最终一致性</strong> = 你们各自编辑，等网络好了再合并（快，偶尔有冲突）</p>
+<p>- <strong>现实</strong> = Google Docs 用的是&quot;操作变换&quot;（OT），既快又尽量准。</p>
+
+<p>Strong consistency is like waiting for your friend to say &quot;OK&quot; before every edit. Eventually consistent is editing freely and syncing later. Real systems pick something in between.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 81: #695 Max Area of Island (Medium)</h2>
+
+<p>🧩 <strong>图遍历模式 (BFS/DFS) — 2/13</strong> — building on the template from Day 80 (Number of Islands)</p>
+
+<hr/>
+
+<h2>今日题目 / Today&#x27;s Problem</h2>
+
+<p><strong>#695 Max Area of Island</strong> | 🟡 Medium</p>
+<p>🔗 [LeetCode](https://leetcode.com/problems/max-area-of-island/) | 📹 [NeetCode](https://neetcode.io/problems/max-area-of-island)</p>
+
+<hr/>
+
+<h2>和模板的关系 / How This Maps to the Template</h2>
+
+<p>上一题 #200 Number of Islands：<strong>数有多少个连通分量</strong>（count components）</p>
+<p>今天 #695 Max Area of Island：<strong>找最大连通分量的面积</strong>（find max component size）</p>
+
+<p>变化点很小：只需要在 DFS 时<strong>累计格子数</strong>，然后取最大值。</p>
+
+<pre><code>
+# Day 80 模板回顾 (BFS)
+# visited = {start}
+# while queue: node = queue.popleft() → 数量 +1 per component
+
+# 今天的变化: 每个连通分量不止 +1，而是累计 DFS 访问的格子数
+</code></pre>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象你是地图分析师，手里有一张海洋地图，陆地用 <code>1</code> 表示，海洋用 <code>0</code>。</p>
+<p>你的任务：找出<strong>面积最大的岛屿</strong>有多大。</p>
+
+<p>You&#x27;re a GIS analyst. Given a satellite image as a binary grid, find the largest contiguous landmass.</p>
+
+<hr/>
+
+<h2>解题思路 / Solution Approach</h2>
+
+<pre><code>
+from typing import List
+
+class Solution:
+    def maxAreaOfIsland(self, grid: List[List[int]]) -&gt; int:
+        if not grid:
+            return 0
+        
+        rows, cols = len(grid), len(grid[0])
+        visited = set()
+        max_area = 0
+        
+        def dfs(r, c) -&gt; int:
+            # Base case: out of bounds, water, or already visited
+            if (r &lt; 0 or r &gt;= rows or 
+                c &lt; 0 or c &gt;= cols or 
+                grid[r][c] == 0 or 
+                (r, c) in visited):
+                return 0  # contributes 0 area
+            
+            visited.add((r, c))
+            # Count this cell + all 4 neighbors
+            return (1 + 
+                    dfs(r + 1, c) + 
+                    dfs(r - 1, c) + 
+                    dfs(r, c + 1) + 
+                    dfs(r, c - 1))
+        
+        for r in range(rows):
+            for c in range(cols):
+                if grid[r][c] == 1 and (r, c) not in visited:
+                    area = dfs(r, c)
+                    max_area = max(max_area, area)
+        
+        return max_area
+</code></pre>
+
+<hr/>
+
+<h2>执行追踪 / Step-by-Step Trace</h2>
+
+<pre><code>
+grid = [
+  [0,1,1,0,0],
+  [0,1,0,0,0],
+  [0,0,0,1,1],
+]
+
+Scan (0,1): island found → DFS
+  visit (0,1) → 1
+  visit (0,2) → 1
+  visit (1,1) → 1
+  → area = 3, max_area = 3
+
+Scan (2,3): island found → DFS
+  visit (2,3) → 1
+  visit (2,4) → 1
+  → area = 2, max_area = 3
+
+Return: 3
+</code></pre>
+
+<hr/>
+
+<h2>和 #200 的对比 / Comparison with Number of Islands</h2>
+
+<p>| | #200 Number of Islands | #695 Max Area of Island |</p>
+<p>|---|---|---|</p>
+<p>| 目标 | 计连通分量数 | 找最大分量面积 |</p>
+<p>| DFS 返回值 | void (只标记访问) | int (返回格子数) |</p>
+<p>| 全局状态 | count++ | max_area = max(...) |</p>
+<p>| 时间复杂度 | O(M×N) | O(M×N) |</p>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+
+<p>- <strong>Time:</strong> O(M × N) — 每个格子最多访问一次</p>
+<p>- <strong>Space:</strong> O(M × N) — visited set + 递归栈深度</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Variations</h2>
+
+<p>这道题是 Graphs 模块第 2 题。接下来的变体：</p>
+
+<p>- <strong>#133 Clone Graph</strong> — 同样 DFS，但要重建节点（HashMap 追踪映射）</p>
+<p>- <strong>#286 Walls and Gates</strong> — BFS 多源同时出发（multi-source BFS）</p>
+<p>- <strong>#994 Rotting Oranges</strong> — BFS + 时间模拟（分钟计步）</p>
+<p>- <strong>#417 Pacific Atlantic</strong> — 反向 DFS（从边界往内扫）</p>
+
+<p>关键洞察：<strong>岛屿问题 = DFS 统计；最短路径问题 = BFS 层序。</strong></p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;In maxAreaOfIsland, what does the DFS function return when it hits a water cell (grid[r][c]==0)?&quot;,&quot;options&quot;:[&quot;1&quot;,&quot;0&quot;,&quot;-1&quot;,&quot;None&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [LeetCode #695](https://leetcode.com/problems/max-area-of-island/)</p>
+<p>- [NeetCode Video](https://neetcode.io/problems/max-area-of-island)</p>
+<p>- [Graph Algorithms Visualized](https://visualgo.net/en/dfsbfs)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>你在玩扫雷。陆地格子是安全区，海洋格子是雷。每次发现一块陆地，就用手指（DFS）走遍所有连着的陆地，数数有几格。最后报告走过的最大连续陆地面积。</p>
+
+<p>You&#x27;re in a maze made of land (1) and water (0). Whenever you step on land, you explore all connected land tiles by walking in 4 directions, counting as you go. You want to find the biggest &quot;island&quot; you can walk across.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills Synthesis — Day 102</h2>
+
+<p>&gt; <strong>Expert Synthesis:</strong> 60 道行为题全部覆盖后，今天做 Staff-level 场景整合。</p>
+
+<hr/>
+
+<h2>今日场景：新管理者困境 / New Manager Dilemma</h2>
+
+<p><strong>题目 / Scenario:</strong></p>
+
+<p>你刚晋升为 Engineering Manager（或 Staff Engineer 承担 tech lead 职责）。你的组里有一位资深工程师，技术能力强，但在技术评审中频繁打断别人、否定 junior 的想法，导致团队心理安全感下降。你如何处理？</p>
+
+<p>You&#x27;ve just become an EM (or Staff TL). A senior engineer on your team is technically strong but dominates design reviews, dismisses junior ideas, and is killing psychological safety. What do you do?</p>
+
+<hr/>
+
+<h2>为什么这个场景是 Staff+ 核心考察？</h2>
+
+<p>这道题同时考察：</p>
+<p>- <strong>Influence without authority</strong>（你不一定是他的直属上级）</p>
+<p>- <strong>Feedback to a peer senior</strong>（不是 junior，更难）</p>
+<p>- <strong>Culture vs. productivity trade-off</strong>（他产出高，但破坏团队）</p>
+<p>- <strong>Long-term thinking</strong>（短期保他，长期失团队）</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Breakdown</h2>
+
+<h3>Situation</h3>
+<p>团队进行周度系统设计评审。这位 Senior SWE 每次都能发现真正的问题（+1 技术价值），但也会说&quot;这想法太幼稚了&quot;或直接打断别人（-1 心理安全）。两个 junior engineer 已经停止在评审中发言。</p>
+
+<h3>Task</h3>
+<p>作为 Tech Lead，我需要改善团队协作氛围，同时保留他的技术贡献。</p>
+
+<h3>Action (3步)</h3>
+
+<p><strong>第一步：1-on-1 直接反馈（非正式，先建立信任）</strong></p>
+
+<p>&gt; &quot;我注意到你在评审中发现了很多真正的问题——这很有价值。我想聊聊我观察到的另一面：当你用&#x27;这太幼稚了&#x27;这样的表述时，我看到 A 和 B 后来就不再发言了。我觉得这不是你想要的结果，对吗？&quot;</p>
+
+<p>关键：<strong>描述行为，不攻击人格。</strong> 说&quot;我观察到&quot;而不是&quot;你总是&quot;。</p>
+
+<p><strong>第二步：给他新的角色定位（把能量引导向正面）</strong></p>
+
+<p>请他在评审前先私下看 doc 并准备 2-3 个问题——这样他的批判性思维在评审中以&quot;问题&quot;形式出现，而不是否定陈述：</p>
+<p>- ❌ &quot;这个方案太幼稚了&quot;</p>
+<p>- ✅ &quot;如果流量是现在的 10 倍，这里会发生什么？&quot;</p>
+
+<p><strong>第三步：公开肯定 junior 贡献，重塑评审文化</strong></p>
+
+<p>在评审结束时，主持人（你）点名表扬提出好问题的 junior。这告诉整个团队：<strong>这个空间是安全的。</strong></p>
+
+<h3>Result</h3>
+<p>两周后，两位 junior 恢复发言。三个月后，该 senior 开始主动 mentor 新人（他意识到自己的影响力）。他的 review 质量不降，团队心理安全感上升。</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<p>| | 做法 |</p>
+<p>|---|---|</p>
+<p>| ❌ 回避冲突 | &quot;他技术好，我不好意思说&quot; → 问题扩大 |</p>
+<p>| ❌ 越级处理 | 直接升级给他的 manager → 破坏信任 |</p>
+<p>| ❌ 公开批评 | 在评审中当场纠正 → 制造对立 |</p>
+<p>| ✅ 私下直接 | 1-on-1，基于观察，非评判 |</p>
+<p>| ✅ 角色重定向 | 让他的优势变成正向影响力 |</p>
+<p>| ✅ 文化示范 | 用你自己的行为塑造团队规范 |</p>
+
+<hr/>
+
+<h2>Senior/Staff Tips</h2>
+
+<p><strong>为什么 Staff 工程师要处理这类问题？</strong></p>
+<p>Staff 的 scope 是&quot;团队健康 + 技术方向&quot;，而不只是自己写的代码。一个低心理安全感的团队会错过最好的想法——因为有人在 25 岁时想到了解决方案，但因为害怕被嘲笑而沉默了。</p>
+
+<p><strong>关键词汇：</strong></p>
+<p>- Psychological safety（心理安全感）— Amy Edmondson, Google Project Aristotle</p>
+<p>- Behavior vs. character feedback（行为 vs 人格反馈）</p>
+<p>- Sponsor vs. critic（支持者 vs 批评者）</p>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+
+<p>1. <strong>反馈要及时、私下、基于行为</strong>（不能等年终）</p>
+<p>2. <strong>把能量引导向正面，而非压制</strong></p>
+<p>3. <strong>文化由你的公开行为塑造</strong>，不由政策塑造</p>
+<p>4. <strong>Staff 工程师的影响力 = 技术 × 团队健康</strong></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [The Fearless Organization — Amy Edmondson](https://www.amazon.com/Fearless-Organization-Psychological-Workplace-Innovation/dp/1119477247)</p>
+<p>- [Google Project Aristotle — Re:Work](https://rework.withgoogle.com/print/guides/5721312655835136/)</p>
+<p>- [Radical Candor — Kim Scott](https://www.radicalcandor.com/)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你的班级里有一个聪明的同学，每次别人说答案都说&quot;你说错了，好蔗啊&quot;。其实他自己的答案是对的，但其他人开始不敢举手了。你作为班长，要私下告诉他：&quot;你的答案确实好，但我注意到小明最近不举手了。你觉得我们能换种方式？&quot;</p>
+
+<p>Imagine the smartest kid in class who is always right but makes others afraid to speak. Your job isn&#x27;t to silence them—it&#x27;s to channel their energy so everyone wins.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🎨 Python Craft — Day 42: Serialization — JSON, msgpack, pickle, protobuf</h2>
+
+<p><strong>Category:</strong> Data &amp; Performance | <strong>Week 11</strong> | <strong>Phase:</strong> Expert</p>
+
+<hr/>
+
+<h2>为什么序列化很重要 / Why Serialization Matters</h2>
+
+<p>你在构建一个微服务平台，服务间需要传递复杂的 Python 对象。选错序列化方案会导致：</p>
+<p>- 性能瓶颈（高吞吐场景慢 10x）</p>
+<p>- 跨语言兼容问题</p>
+<p>- 安全漏洞（pickle 反序列化攻击）</p>
+<p>- 版本兼容噩梦</p>
+
+<p>You&#x27;re building a microservices platform. Choosing the wrong serialization can create 10x performance bottlenecks, security vulnerabilities, or versioning nightmares.</p>
+
+<hr/>
+
+<h2>四种方案对比 / Four Approaches</h2>
+
+<pre><code>
+import json
+import pickle
+import msgpack
+# pip install msgpack protobuf
+
+data = {
+    &quot;user_id&quot;: 12345,
+    &quot;name&quot;: &quot;Yusheng&quot;,
+    &quot;scores&quot;: [98, 87, 95, 100],
+    &quot;active&quot;: True
+}
+
+# ─── 1. JSON ───────────────────────────────────────
+# Human-readable, universal, but slow and verbose
+json_bytes = json.dumps(data).encode(&quot;utf-8&quot;)
+# Size: ~80 bytes, any language can read it
+
+# ─── 2. msgpack ────────────────────────────────────
+# pip install msgpack
+# Binary JSON — 2-4x faster, 20-40% smaller
+msgpack_bytes = msgpack.packb(data, use_bin_type=True)
+# Size: ~50 bytes, still schema-less
+
+# ─── 3. pickle ─────────────────────────────────────
+# Python-native, can serialize ANYTHING
+# ⚠️ NEVER unpickle untrusted data (code execution)
+pickle_bytes = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
+# Size: ~100 bytes, Python-only
+
+# ─── 4. protobuf ───────────────────────────────────
+# Schema-first, strongly typed, fastest at scale
+# Define schema in .proto file, generate Python classes
+# Size: ~30 bytes, any language, schema enforced
+
+# Quick benchmark comparison:
+import timeit
+import sys
+
+print(f&quot;JSON size:    {len(json_bytes)} bytes&quot;)
+print(f&quot;msgpack size: {len(msgpack_bytes)} bytes&quot;)
+print(f&quot;pickle size:  {sys.getsizeof(pickle_bytes)} bytes&quot;)
+</code></pre>
+
+<hr/>
+
+<h2>性能实测 / Performance Benchmark</h2>
+
+<pre><code>
+import timeit
+
+n = 100_000
+
+json_time = timeit.timeit(
+    lambda: json.dumps(data), number=n
+)
+msgpack_time = timeit.timeit(
+    lambda: msgpack.packb(data, use_bin_type=True), number=n
+)
+
+print(f&quot;JSON:    {json_time:.3f}s for {n} ops&quot;)
+print(f&quot;msgpack: {msgpack_time:.3f}s for {n} ops&quot;)
+# Typical: msgpack is 2-3x faster than json
+</code></pre>
+
+<hr/>
+
+<h2>决策框架 / When to Use What</h2>
+
+<pre><code>
+需要人类可读 / debugging / REST API?
+  → JSON ✅
+
+跨语言通信，需要 schema 验证，高吞吐？
+  → Protobuf ✅ (gRPC 默认)
+
+Python 内部缓存 / 短期任务队列？
+  → msgpack (安全) 或 pickle (仅限受信任数据)
+
+⚠️ 危险区 / NEVER DO:
+  - unpickle(redis.get(&quot;user_data&quot;))  # 如果 Redis 被攻破
+  - pickle.loads(request.body)        # RCE 漏洞！
+</code></pre>
+
+<hr/>
+
+<h2>❌ 常见错误 vs ✅ 正确做法</h2>
+
+<pre><code>
+# ❌ 错误：pickle 序列化用户输入的数据存到 Redis
+import redis
+r = redis.Redis()
+user_object = get_user_from_request()
+r.set(&quot;user:123&quot;, pickle.dumps(user_object))  # 危险！
+
+# ✅ 正确：JSON 或 msgpack 用于外部数据
+import json
+r.set(&quot;user:123&quot;, json.dumps(user_object.__dict__))
+
+# ✅ 高性能内部服务用 msgpack
+r.set(&quot;user:123&quot;, msgpack.packb(user_object.__dict__, use_bin_type=True))
+</code></pre>
+
+<hr/>
+
+<h2>Protobuf 快速入门 / Protobuf Quickstart</h2>
+
+<pre><code>
+// user.proto
+syntax = &quot;proto3&quot;;
+message User {
+  int32 user_id = 1;
+  string name = 2;
+  repeated int32 scores = 3;
+  bool active = 4;
+}
+</code></pre>
+
+<pre><code>
+# After: protoc --python_out=. user.proto
+from user_pb2 import User
+
+user = User(user_id=12345, name=&quot;Yusheng&quot;, 
+            scores=[98, 87, 95], active=True)
+proto_bytes = user.SerializeToString()
+# ~30 bytes, strongly typed, backward compatible
+</code></pre>
+
+<hr/>
+
+<h2>总结 / Summary</h2>
+
+<p>| 方案 | 速度 | 大小 | 跨语言 | 安全 | 使用场景 |</p>
+<p>|------|------|------|--------|------|---------|</p>
+<p>| JSON | ⭐⭐ | ⭐⭐ | ✅ | ✅ | REST API, 调试 |</p>
+<p>| msgpack | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ✅ | ✅ | 内部服务, 缓存 |</p>
+<p>| pickle | ⭐⭐⭐ | ⭐⭐⭐ | ❌ | ⚠️ | Python 任务队列 |</p>
+<p>| protobuf | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ✅ | ✅ | gRPC, 高吞吐 |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Python msgpack docs](https://msgpack-python.readthedocs.io/)</p>
+<p>- [Protocol Buffers Python Tutorial](https://protobuf.dev/getting-started/pythontutorial/)</p>
+<p>- [Python pickle security warning](https://docs.python.org/3/library/pickle.html#restricting-globals)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>序列化就是把 Python 字典&quot;打包&quot;成快递箱，发给另一台服务器。</p>
+<p>- JSON = 用纸盒，人人都能开</p>
+<p>- msgpack = 用泡沫箱，更小更快</p>
+<p>- pickle = 用魔法箱，只有 Python 能开，如果邮差是坏人会爆炸</p>
+<p>- protobuf = 用定制模具，最紧凑，但要先定义模具形状</p>
+
+<p>Serialization is packing your Python objects into a box to ship across the network. JSON is a cardboard box (universal), msgpack is a foam box (smaller, faster), pickle is a magic box (Python-only, dangerous from strangers), and protobuf is a custom mold (smallest, fastest, but needs a schema first).</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI News — Day 102 (July 28, 2026)</h2>
+
+<p>&gt; <strong>Expert Synthesis + News Mode</strong></p>
+
+<hr/>
+
+<h2>本周 AI 大事 / This Week in AI</h2>
+
+<h3>🔬 Story 1: 推理模型的关键突破 — &quot;自我纠错&quot;比&quot;更长思维链&quot;更重要</h3>
+
+<p><strong>来源 / Source:</strong> [Skycrumbs — AI Research July 2026](https://skycrumbs.com/blog/ai-research-july-2026)</p>
+
+<p>MIT 和 Stanford 研究人员本月发表预印本，研究推理模型（Reasoning Models）在数学和逻辑难题上成功的关键因素。</p>
+
+<p><strong>核心发现：</strong></p>
+<p>不是模型越大越好，也不是思维链越长越好——<strong>关键在于模型能不能在推理过程中识别并修正自己的错误。</strong></p>
+
+<p>&gt; The key factor isn&#x27;t model size but how the model is trained to self-correct during the reasoning process. Models that learn to identify and fix errors in their own reasoning chains outperform models that generate longer but uncorrected chains.</p>
+
+<p><strong>工程含义 / Engineering implications:</strong></p>
+<p>- 更小的模型，如果训练时强化&quot;错误识别&quot;，可以媲美更大的模型</p>
+<p>- 多家实验室据报道正在根据这一发现调整训练资源分配</p>
+<p>- 这与 OpenAI o-series 和 Claude Extended Thinking 的方向一致</p>
+
+<hr/>
+
+<h3>🔬 Story 2: DeepMind &quot;前瞻性信用分配&quot; — 让模型看到更远的后果</h3>
+
+<p><strong>来源 / Source:</strong> [Skycrumbs — AI Research July 2026](https://skycrumbs.com/blog/ai-research-july-2026)</p>
+
+<p>DeepMind 发布了一种新训练方法：<strong>Prospective Credit Assignment（前瞻性信用分配）</strong></p>
+
+<p><strong>问题背景：</strong></p>
+<p>在复杂多步任务中（如修复真实代码库的 bug），模型早期做出的错误决策会在后续步骤中被放大。传统强化学习很难让模型&quot;看到&quot;当前决策对 20 步之后的影响。</p>
+
+<p><strong>DeepMind 的方法：</strong> 训练模型在做每个决策时，同时预测该决策对最终结果的影响（&quot;如果我现在选 A，10 步后会怎样？&quot;）</p>
+
+<p><strong>结果：</strong> 在 SWE-Bench（要求模型修复真实 GitHub 问题）上取得了据报道的显著提升。</p>
+
+<p><strong>为什么这对 Senior 工程师有意义：</strong></p>
+<p>- 这是 AI 在软件工程任务上可靠性提升的核心突破方向</p>
+<p>- 长期意味着 AI coding assistant 在&quot;大型代码库重构&quot;等任务上会越来越能干</p>
+
+<hr/>
+
+<h3>📦 Story 3: 7月模型爆发 — Claude Opus 5, Kimi K3, Gemini 3.6</h3>
+
+<p><strong>来源 / Source:</strong> [llm-stats.com](https://llm-stats.com/llm-updates)</p>
+
+<p>7 月密集发布：</p>
+
+<p>| 模型 | 发布方 | 日期 |</p>
+<p>|------|--------|------|</p>
+<p>| Claude Opus 5 | Anthropic | 7/23 |</p>
+<p>| Kimi K3 | Moonshot AI | 7/15 |</p>
+<p>| Grok 4.5 | xAI | 7/15 |</p>
+<p>| Gemini 3.6 Flash | Google | 7/20 |</p>
+
+<p><strong>Kimi K3 被称为&quot;目前最大的开源权重模型&quot;</strong>，据报道在编程测试中表现接近美国顶级系统。这是中国开源 AI 竞争力的重要信号。</p>
+
+<hr/>
+
+<h2>深度洞察：为什么&quot;自我纠错&quot;是未来方向 / Deep Dive</h2>
+
+<pre><code>
+# 直觉理解推理模型的两种训练方式
+
+# 方式 A：Long Chain of Thought（单纯让它想更多步）
+# 效果：在简单问题上好，但复杂问题上会&quot;滚雪球&quot;——
+# 早期错误不会被修正，越想越偏
+
+# 方式 B：Self-Correction Training（训练它识别并修正错误）
+def reasoning_with_self_correction(problem):
+    draft = initial_reasoning(problem)
+    
+    # 关键步骤：模型被训练识别自己推理中的错误
+    issues = identify_errors_in_reasoning(draft)
+    
+    if issues:
+        corrected = revise_reasoning(draft, issues)
+        return corrected
+    return draft
+
+# MIT/Stanford 的发现：B 比 A 更有效
+# → 训练目标应该是&quot;正确地思考&quot;，不是&quot;多思考&quot;
+</code></pre>
+
+<p>这和人类学习是一样的：<strong>反思比死记更有效。</strong></p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Skycrumbs — AI Research Breakthroughs in July 2026](https://skycrumbs.com/blog/ai-research-july-2026)</p>
+<p>- [LLM Stats — Model Updates](https://llm-stats.com/llm-updates)</p>
+<p>- [OpenAI o-series — Reasoning with chain-of-thought](https://openai.com/blog/learning-to-reason-with-llms)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象两个学生做数学题：</p>
+<p>- 学生 A：每道题写 10 步，从不回头检查</p>
+<p>- 学生 B：写 5 步，但每步都问自己&quot;我这步对吗？&quot;</p>
+
+<p>MIT 发现：<strong>B 的成绩更好。</strong> AI 研究者们现在在训练模型学&quot;自我检查&quot;，而不只是&quot;多想几步&quot;。</p>
+
+<p>Think of two students: one writes 10 steps without checking, one writes 5 steps but verifies each one. MIT found the second student scores higher. AI labs are now training models to check their own reasoning, not just think longer.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-07-27</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
