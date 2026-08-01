@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-08-01</title>
+  <meta name="description" content="byte-by-byte daily lessons for Saturday, August 1, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Saturday, August 1, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-08-01.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-07-31.html" style="color:var(--text2)">← 2026-07-31</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-08-01</span>
+    <h1>Saturday, August 1, 2026</h1>
+    <div class="page-header-meta">
+      <span>5 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a> <a href="#section-deepdive" class="nav-day-btn">🔬 Deep Dive</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-07-31.html" class="day-nav-btn">← 2026-07-31</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ System Design — Synthesis (Expert Phase, Day 106)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>🏗️ System Design — Synthesis (Expert Phase, Day 106)</h1>
+
+<blockquote><strong>Saturday — Deep Dive day.</strong> System Design section is in synthesis mode (all 60 curated topics exhausted).</blockquote>
+
+<h2>Today's Synthesis Note</h2>
+
+<p>Today's Saturday Deep Dive focuses on <strong>图遍历模式 — BFS/DFS 精讲 (Graph Traversal Patterns)</strong>. The full deep-dive content is in 2026-08-01-deepdive.md (./2026-08-01-deepdive.md).</p>
+
+<p>Graph traversal underpins many system design concepts covered this program: CDN cache invalidation (multi-source BFS), microservice dependency detection (topological sort), geospatial systems (BFS on grids), and distributed systems failure propagation analysis.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">🧮 Rotting Oranges (LeetCode #994) — BFS Deep Dive</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>🧮 Rotting Oranges (LeetCode #994) — BFS Deep Dive</h1>
+
+<blockquote><strong>Note:</strong> This is a Saturday. The full content for this topic is in the Saturday Deep Dive (./2026-08-01-deepdive.md). This file is a reference stub.</blockquote>
+
+<h2>Quick Summary</h2>
+
+<ul><li><strong>Pattern:</strong> Graphs — Multi-Source BFS</li><li><strong>LeetCode:</strong> https://leetcode.com/problems/rotting-oranges/</li><li><strong>NeetCode:</strong> https://www.youtube.com/watch?v=y704fEOx0s0</li><li><strong>Difficulty:</strong> Medium</li></ul>
+
+<h2>Core Idea</h2>
+
+<p>Multi-source BFS: enqueue all initially rotten oranges simultaneously at time=0, then spread. Track <code>fresh_count</code> to detect unreachable oranges.</p>
+
+<p>See Saturday Deep Dive (./2026-08-01-deepdive.md) for complete theory, implementation, edge cases, and interview Q&amp;A.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">💬 Behavioral / Soft Skills — Synthesis (Expert Phase, Day 106)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>💬 Behavioral / Soft Skills — Synthesis (Expert Phase, Day 106)</h1>
+
+<blockquote><strong>Saturday — Deep Dive day.</strong> Behavioral section is in synthesis mode (all 60 curated questions exhausted).</blockquote>
+
+<h2>Today's Synthesis Note</h2>
+
+<p>Today's Saturday Deep Dive covers graph traversal patterns. The full deep-dive content is in 2026-08-01-deepdive.md (./2026-08-01-deepdive.md).</p>
+
+<p><strong>Synthesis theme:</strong> Graph-structured thinking appears in engineering leadership too — mapping team dependencies (topological sort), understanding how failures propagate across teams (BFS), and finding shortest paths to unblock teammates. The mental models transfer.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI Concepts — Synthesis (Expert Phase, Day 106)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>🤖 AI Concepts — Synthesis (Expert Phase, Day 106)</h1>
+
+<blockquote><strong>Saturday — Deep Dive day.</strong> AI section is in synthesis mode (all 30 curated concepts exhausted).</blockquote>
+
+<h2>Today's Synthesis Note</h2>
+
+<p>Today's Saturday Deep Dive covers graph traversal patterns. The full deep-dive content is in 2026-08-01-deepdive.md (./2026-08-01-deepdive.md).</p>
+
+<p><strong>Synthesis note:</strong> Graph traversal is foundational to modern AI systems: knowledge graphs use BFS for entity relationship traversal; RAG pipelines use graph-based chunking; neural network backpropagation is a topological sort over the computation graph; agent planning (ReAct) builds DAGs of tool calls. The patterns learned today are literally inside every major AI framework.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-deepdive">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-deepdive" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🔬</span>
+        <div>
+          <div class="section-header-title">🔬 Deep Dive</div>
+          <div class="section-header-sub">🔬</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-deepdive">
+        <p>🔬 <strong>Saturday Deep Dive: 图遍历模式 — BFS/DFS 精讲 (15 min read)</strong></p>
+<p>📊 NeetCode: 84/150 · SysDesign: 60/60 · Behavioral: 60/60 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 106-day streak!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p>图遍历是算法面试的核心骨架。几乎所有涉及"连通性"、"最短路径"、"依赖关系"的问题，底层都是一张图。掌握图遍历，等于掌握了以下所有题型的通解：岛屿计数、课程表调度、单词接龙、腐烂的橘子……</p>
+
+<p>Graph traversal is the backbone of coding interviews. Nearly every problem involving "connectivity," "shortest path," or "dependencies" is secretly a graph problem. Master BFS/DFS, and you unlock: island counting, course scheduling, word ladders, rotting oranges, and much more.</p>
+
+<p><strong>核心问题 / Core question:</strong> 给定起点，你能到达哪里？到达需要多少步？图是否有环？  </p>
+<p><strong>Core question:</strong> From a starting node, what can you reach? In how many steps? Does the graph have a cycle?</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>两把钥匙 / Two Keys</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="BFS（广度优先搜索）        DFS（深度优先搜索）&#10;━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━&#10;数据结构: queue (deque)    数据结构: stack（或递归调用栈）&#10;遍历顺序: 层层扩展          遍历顺序: 一条路走到底&#10;擅长:    最短路径（无权图）   擅长:    连通性、路径枚举、环检测&#10;时间:    O(V+E)            时间:    O(V+E)&#10;空间:    O(V)              空间:    O(V)（栈深度）">Copy</button>
+  <pre><code class="language-text">BFS（广度优先搜索）        DFS（深度优先搜索）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+数据结构: queue (deque)    数据结构: stack（或递归调用栈）
+遍历顺序: 层层扩展          遍历顺序: 一条路走到底
+擅长:    最短路径（无权图）   擅长:    连通性、路径枚举、环检测
+时间:    O(V+E)            时间:    O(V+E)
+空间:    O(V)              空间:    O(V)（栈深度）</code></pre>
+</div>
+
+<p><strong>BFS</strong> 就像石头投入水中的涟漪——从起点向外一圈圈扩散。每一圈代表"距离起点 k 步"的所有节点。  </p>
+<p><strong>BFS</strong> is like ripples in water — it expands outward layer by layer. Each layer = all nodes exactly k steps away.</p>
+
+<p><strong>DFS</strong> 就像走迷宫——沿一条路走到底，退回来再走另一条。  </p>
+<p><strong>DFS</strong> is like navigating a maze — go as deep as possible, then backtrack.</p>
+
+<h3>图的四种常见形式 / Four Common Graph Forms</h3>
+
+<div class="diagram-block">1. 邻接表 (Adjacency List)  →  graph = {node: [neighbors]}
+2. 矩阵/网格 (Grid)         →  grid[r][c], 四个方向 [(0,1),(0,-1),(1,0),(-1,0)]
+3. 边列表 (Edge List)       →  edges = [(u,v), (u,v), ...]  → 先建邻接表
+4. 隐式图 (Implicit Graph)  →  字符串变换、状态空间（单词接龙、滑块谜题）</div>
+
+<h3>visited 集合：防止死循环 / Preventing Infinite Loops</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="visited = set()&#10;visited.add(start)     # BFS: 入队时标记&#10;visited.add(node)      # DFS: 进入时标记">Copy</button>
+  <pre><code class="language-python">visited = set()
+visited.add(start)     <span style="color:#5c6370;"># BFS: 入队时标记</span>
+visited.add(node)      <span style="color:#5c6370;"># DFS: 进入时标记</span></code></pre>
+</div>
+
+<p><strong>关键陷阱 / Key trap:</strong> BFS 必须在入队时标记 visited，而不是出队时。否则同一节点会被入队多次，时间复杂度退化为指数级。  </p>
+<p><strong>Key trap:</strong> In BFS, mark visited <em>when enqueuing</em>, not when dequeuing. Otherwise the same node gets enqueued multiple times, exploding complexity.</p>
+
+<h3>多源 BFS（Multi-Source BFS）</h3>
+
+<p>这是今天的重点之一。普通 BFS 从单个起点出发，多源 BFS 从<strong>所有起点同时出发</strong>。</p>
+
+<p>Standard BFS starts from one source. Multi-source BFS starts from <strong>all sources simultaneously</strong> — as if they're all at distance 0.</p>
+
+<p><strong>适用场景 / When to use:</strong> 当有多个"源"且你想知道每个节点距离"最近的源"有多远时。  </p>
+<p><strong>Use when:</strong> You have multiple "sources" and want the distance from each cell to the <em>nearest</em> source.</p>
+
+<p>例题：腐烂的橘子 (Rotting Oranges, #994) — 多个腐烂橘子同时向外蔓延。  </p>
+<p>Example: Rotting Oranges (#994) — multiple rotten oranges spread simultaneously.</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>2.1 模板代码 / Template Code</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from collections import deque&#10;&#10;# ──────────────────────────────────────────────&#10;# BFS Template (single source, returns distances)&#10;# ──────────────────────────────────────────────&#10;def bfs(graph: dict, start) -&gt; dict:&#10;    dist = {start: 0}          # tracks visited + distance&#10;    queue = deque([start])&#10;    &#10;    while queue:&#10;        node = queue.popleft()&#10;        for neighbor in graph[node]:&#10;            if neighbor not in dist:   # not visited yet&#10;                dist[neighbor] = dist[node] + 1&#10;                queue.append(neighbor)  # mark on enqueue!&#10;    &#10;    return dist&#10;&#10;&#10;# ──────────────────────────────────────────────&#10;# DFS Template (iterative, single source)&#10;# ──────────────────────────────────────────────&#10;def dfs(graph: dict, start) -&gt; set:&#10;    visited = set()&#10;    stack = [start]&#10;    &#10;    while stack:&#10;        node = stack.pop()&#10;        if node in visited:&#10;            continue&#10;        visited.add(node)&#10;        for neighbor in graph[node]:&#10;            if neighbor not in visited:&#10;                stack.append(neighbor)&#10;    &#10;    return visited&#10;&#10;&#10;# ──────────────────────────────────────────────&#10;# Grid BFS Template (4-directional)&#10;# ──────────────────────────────────────────────&#10;def grid_bfs(grid, start_r, start_c):&#10;    rows, cols = len(grid), len(grid[0])&#10;    DIRS = [(0, 1), (0, -1), (1, 0), (-1, 0)]&#10;    &#10;    visited = set()&#10;    visited.add((start_r, start_c))&#10;    queue = deque([(start_r, start_c, 0)])  # (row, col, distance)&#10;    &#10;    while queue:&#10;        r, c, dist = queue.popleft()&#10;        for dr, dc in DIRS:&#10;            nr, nc = r + dr, c + dc&#10;            if (0 &lt;= nr &lt; rows and          # in bounds&#10;                0 &lt;= nc &lt; cols and          # in bounds&#10;                (nr, nc) not in visited and  # not visited&#10;                grid[nr][nc] != 0):          # not blocked&#10;                &#10;                visited.add((nr, nc))&#10;                queue.append((nr, nc, dist + 1))">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> collections <span style="color:#c678dd;">import</span> deque
+
+<span style="color:#5c6370;"># ──────────────────────────────────────────────</span>
+<span style="color:#5c6370;"># BFS Template (single source, returns distances)</span>
+<span style="color:#5c6370;"># ──────────────────────────────────────────────</span>
+<span style="color:#c678dd;">def</span> bfs(graph: dict, start) -&gt; dict:
+    dist = {start: <span style="color:#56b6c2;">0</span>}          <span style="color:#5c6370;"># tracks visited + distance</span>
+    queue = deque([start])
+    
+    <span style="color:#c678dd;">while</span> queue:
+        node = queue.popleft()
+        <span style="color:#c678dd;">for</span> neighbor <span style="color:#c678dd;">in</span> graph[node]:
+            <span style="color:#c678dd;">if</span> neighbor <span style="color:#c678dd;">not</span> <span style="color:#c678dd;">in</span> dist:   <span style="color:#5c6370;"># not visited yet</span>
+                dist[neighbor] = dist[node] + <span style="color:#56b6c2;">1</span>
+                queue.append(neighbor)  <span style="color:#5c6370;"># mark on enqueue!</span>
+    
+    <span style="color:#c678dd;">return</span> dist
+
+
+<span style="color:#5c6370;"># ──────────────────────────────────────────────</span>
+<span style="color:#5c6370;"># DFS Template (iterative, single source)</span>
+<span style="color:#5c6370;"># ──────────────────────────────────────────────</span>
+<span style="color:#c678dd;">def</span> dfs(graph: dict, start) -&gt; set:
+    visited = set()
+    stack = [start]
+    
+    <span style="color:#c678dd;">while</span> stack:
+        node = stack.pop()
+        <span style="color:#c678dd;">if</span> node <span style="color:#c678dd;">in</span> visited:
+            <span style="color:#c678dd;">continue</span>
+        visited.add(node)
+        <span style="color:#c678dd;">for</span> neighbor <span style="color:#c678dd;">in</span> graph[node]:
+            <span style="color:#c678dd;">if</span> neighbor <span style="color:#c678dd;">not</span> <span style="color:#c678dd;">in</span> visited:
+                stack.append(neighbor)
+    
+    <span style="color:#c678dd;">return</span> visited
+
+
+<span style="color:#5c6370;"># ──────────────────────────────────────────────</span>
+<span style="color:#5c6370;"># Grid BFS Template (4-directional)</span>
+<span style="color:#5c6370;"># ──────────────────────────────────────────────</span>
+<span style="color:#c678dd;">def</span> grid_bfs(grid, start_r, start_c):
+    rows, cols = len(grid), len(grid[<span style="color:#56b6c2;">0</span>])
+    DIRS = [(<span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">1</span>), (<span style="color:#56b6c2;">0</span>, -<span style="color:#56b6c2;">1</span>), (<span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">0</span>), (-<span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">0</span>)]
+    
+    visited = set()
+    visited.add((start_r, start_c))
+    queue = deque([(start_r, start_c, <span style="color:#56b6c2;">0</span>)])  <span style="color:#5c6370;"># (row, col, distance)</span>
+    
+    <span style="color:#c678dd;">while</span> queue:
+        r, c, dist = queue.popleft()
+        <span style="color:#c678dd;">for</span> dr, dc <span style="color:#c678dd;">in</span> DIRS:
+            nr, nc = r + dr, c + dc
+            <span style="color:#c678dd;">if</span> (<span style="color:#56b6c2;">0</span> &lt;= nr &lt; rows <span style="color:#c678dd;">and</span>          <span style="color:#5c6370;"># in bounds</span>
+                <span style="color:#56b6c2;">0</span> &lt;= nc &lt; cols <span style="color:#c678dd;">and</span>          <span style="color:#5c6370;"># in bounds</span>
+                (nr, nc) <span style="color:#c678dd;">not</span> <span style="color:#c678dd;">in</span> visited <span style="color:#c678dd;">and</span>  <span style="color:#5c6370;"># not visited</span>
+                grid[nr][nc] != <span style="color:#56b6c2;">0</span>):          <span style="color:#5c6370;"># not blocked</span>
+                
+                visited.add((nr, nc))
+                queue.append((nr, nc, dist + <span style="color:#56b6c2;">1</span>))</code></pre>
+</div>
+
+<h3>2.2 Rotting Oranges — 多源 BFS 完整实现</h3>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/rotting-oranges/  </p>
+<p>📹 NeetCode: https://www.youtube.com/watch?v=y704fEOx0s0</p>
+
+<p><strong>问题 / Problem:</strong> 网格中，<code>0</code>=空，<code>1</code>=新鲜橘子，<code>2</code>=腐烂橘子。每分钟，腐烂橘子使4邻格的新鲜橘子腐烂。返回所有橘子腐烂所需的最少分钟数，如果不可能则返回 <code>-1</code>。</p>
+
+<p><strong>Grid:</strong> <code>0</code>=empty, <code>1</code>=fresh orange, <code>2</code>=rotten orange. Each minute, rotten oranges rot adjacent fresh ones. Return minimum minutes to rot all, or <code>-1</code> if impossible.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from collections import deque&#10;&#10;def orangesRotting(grid: list[list[int]]) -&gt; int:&#10;    rows, cols = len(grid), len(grid[0])&#10;    DIRS = [(0, 1), (0, -1), (1, 0), (-1, 0)]&#10;    &#10;    # Step 1: Find all initial rotten oranges (multi-sources)&#10;    # and count fresh oranges&#10;    queue = deque()&#10;    fresh_count = 0&#10;    &#10;    for r in range(rows):&#10;        for c in range(cols):&#10;            if grid[r][c] == 2:&#10;                queue.append((r, c, 0))  # (row, col, time)&#10;            elif grid[r][c] == 1:&#10;                fresh_count += 1&#10;    &#10;    # Edge case: no fresh oranges at all&#10;    if fresh_count == 0:&#10;        return 0&#10;    &#10;    # Step 2: Multi-source BFS — all rotten oranges spread simultaneously&#10;    max_time = 0&#10;    &#10;    while queue:&#10;        r, c, time = queue.popleft()&#10;        &#10;        for dr, dc in DIRS:&#10;            nr, nc = r + dr, c + dc&#10;            &#10;            # Check bounds and freshness&#10;            if (0 &lt;= nr &lt; rows and&#10;                0 &lt;= nc &lt; cols and&#10;                grid[nr][nc] == 1):        # only fresh oranges&#10;                &#10;                grid[nr][nc] = 2           # mark as rotten (in-place = visited)&#10;                fresh_count -= 1           # one fewer fresh orange&#10;                max_time = max(max_time, time + 1)&#10;                queue.append((nr, nc, time + 1))&#10;    &#10;    # Step 3: If fresh_count &gt; 0, some oranges are unreachable&#10;    return max_time if fresh_count == 0 else -1">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> collections <span style="color:#c678dd;">import</span> deque
+
+<span style="color:#c678dd;">def</span> orangesRotting(grid: list[list[int]]) -&gt; int:
+    rows, cols = len(grid), len(grid[<span style="color:#56b6c2;">0</span>])
+    DIRS = [(<span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">1</span>), (<span style="color:#56b6c2;">0</span>, -<span style="color:#56b6c2;">1</span>), (<span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">0</span>), (-<span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">0</span>)]
+    
+    <span style="color:#5c6370;"># Step 1: Find all initial rotten oranges (multi-sources)</span>
+    <span style="color:#5c6370;"># and count fresh oranges</span>
+    queue = deque()
+    fresh_count = <span style="color:#56b6c2;">0</span>
+    
+    <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> range(rows):
+        <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> range(cols):
+            <span style="color:#c678dd;">if</span> grid[r][c] == <span style="color:#56b6c2;">2</span>:
+                queue.append((r, c, <span style="color:#56b6c2;">0</span>))  <span style="color:#5c6370;"># (row, col, time)</span>
+            <span style="color:#c678dd;">elif</span> grid[r][c] == <span style="color:#56b6c2;">1</span>:
+                fresh_count += <span style="color:#56b6c2;">1</span>
+    
+    <span style="color:#5c6370;"># Edge case: no fresh oranges at all</span>
+    <span style="color:#c678dd;">if</span> fresh_count == <span style="color:#56b6c2;">0</span>:
+        <span style="color:#c678dd;">return</span> <span style="color:#56b6c2;">0</span>
+    
+    <span style="color:#5c6370;"># Step 2: Multi-source BFS — all rotten oranges spread simultaneously</span>
+    max_time = <span style="color:#56b6c2;">0</span>
+    
+    <span style="color:#c678dd;">while</span> queue:
+        r, c, time = queue.popleft()
+        
+        <span style="color:#c678dd;">for</span> dr, dc <span style="color:#c678dd;">in</span> DIRS:
+            nr, nc = r + dr, c + dc
+            
+            <span style="color:#5c6370;"># Check bounds and freshness</span>
+            <span style="color:#c678dd;">if</span> (<span style="color:#56b6c2;">0</span> &lt;= nr &lt; rows <span style="color:#c678dd;">and</span>
+                <span style="color:#56b6c2;">0</span> &lt;= nc &lt; cols <span style="color:#c678dd;">and</span>
+                grid[nr][nc] == <span style="color:#56b6c2;">1</span>):        <span style="color:#5c6370;"># only fresh oranges</span>
+                
+                grid[nr][nc] = <span style="color:#56b6c2;">2</span>           <span style="color:#5c6370;"># mark as rotten (in-place = visited)</span>
+                fresh_count -= <span style="color:#56b6c2;">1</span>           <span style="color:#5c6370;"># one fewer fresh orange</span>
+                max_time = max(max_time, time + <span style="color:#56b6c2;">1</span>)
+                queue.append((nr, nc, time + <span style="color:#56b6c2;">1</span>))
+    
+    <span style="color:#5c6370;"># Step 3: If fresh_count &gt; 0, some oranges are unreachable</span>
+    <span style="color:#c678dd;">return</span> max_time <span style="color:#c678dd;">if</span> fresh_count == <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">else</span> -<span style="color:#56b6c2;">1</span></code></pre>
+</div>
+
+<p><strong>关键洞察 / Key insights:</strong></p>
+<ol><li><strong>多源同时出发</strong>：把所有初始腐烂橘子一次性加入队列，它们"同时"开始蔓延，自动计算出正确的"最早腐烂时间"。  </li></ol>
+<p>   <strong>All sources start simultaneously:</strong> Add all initial rotten oranges to the queue at once. They spread at the same rate, so BFS naturally finds the minimum time.</p>
+
+<ol><li><strong>原地标记已访问</strong>：直接将 <code>grid[nr][nc]</code> 改为 <code>2</code> 即可标记"已访问"，无需额外的 <code>visited</code> 集合。  </li></ol>
+<p>   <strong>In-place visited marking:</strong> Mutate <code>grid[nr][nc] = 2</code> to mark visited — no extra set needed.</p>
+
+<ol><li><strong>最终检查</strong>：用 <code>fresh_count</code> 判断是否有孤岛（被 <code>0</code> 包围的新鲜橘子）。  </li></ol>
+<p>   <strong>Final check:</strong> <code>fresh_count &gt; 0</code> means isolated fresh oranges exist (surrounded by empty cells).</p>
+
+<h3>2.3 相关变体 — 从"腐烂橘子"到"最短路径" / Variants</h3>
+
+<p><strong>Walls and Gates (#286)</strong>：把所有 gates（值为0的格子）同时加入队列，BFS 向外扩散填写距离。和腐烂橘子完全同构。  </p>
+<p><strong>Walls and Gates:</strong> Add all gates simultaneously, BFS outward to fill distances. Identical structure to Rotting Oranges.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def wallsAndGates(rooms):&#10;    rows, cols = len(rooms), len(rooms[0])&#10;    DIRS = [(0,1),(0,-1),(1,0),(-1,0)]&#10;    INF = 2**31 - 1&#10;    &#10;    queue = deque()&#10;    for r in range(rows):&#10;        for c in range(cols):&#10;            if rooms[r][c] == 0:        # gate = source&#10;                queue.append((r, c))&#10;    &#10;    while queue:&#10;        r, c = queue.popleft()&#10;        for dr, dc in DIRS:&#10;            nr, nc = r + dr, c + dc&#10;            if (0 &lt;= nr &lt; rows and&#10;                0 &lt;= nc &lt; cols and&#10;                rooms[nr][nc] == INF):   # unvisited room&#10;                rooms[nr][nc] = rooms[r][c] + 1&#10;                queue.append((nr, nc))">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> wallsAndGates(rooms):
+    rows, cols = len(rooms), len(rooms[<span style="color:#56b6c2;">0</span>])
+    DIRS = [(<span style="color:#56b6c2;">0</span>,<span style="color:#56b6c2;">1</span>),(<span style="color:#56b6c2;">0</span>,-<span style="color:#56b6c2;">1</span>),(<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">0</span>),(-<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">0</span>)]
+    INF = <span style="color:#56b6c2;">2</span>**<span style="color:#56b6c2;">31</span> - <span style="color:#56b6c2;">1</span>
+    
+    queue = deque()
+    <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> range(rows):
+        <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> range(cols):
+            <span style="color:#c678dd;">if</span> rooms[r][c] == <span style="color:#56b6c2;">0</span>:        <span style="color:#5c6370;"># gate = source</span>
+                queue.append((r, c))
+    
+    <span style="color:#c678dd;">while</span> queue:
+        r, c = queue.popleft()
+        <span style="color:#c678dd;">for</span> dr, dc <span style="color:#c678dd;">in</span> DIRS:
+            nr, nc = r + dr, c + dc
+            <span style="color:#c678dd;">if</span> (<span style="color:#56b6c2;">0</span> &lt;= nr &lt; rows <span style="color:#c678dd;">and</span>
+                <span style="color:#56b6c2;">0</span> &lt;= nc &lt; cols <span style="color:#c678dd;">and</span>
+                rooms[nr][nc] == INF):   <span style="color:#5c6370;"># unvisited room</span>
+                rooms[nr][nc] = rooms[r][c] + <span style="color:#56b6c2;">1</span>
+                queue.append((nr, nc))</code></pre>
+</div>
+
+<h3>2.4 DFS 的经典用法 — 岛屿计数 / Classic DFS: Number of Islands</h3>
+
+<p>🔗 https://leetcode.com/problems/number-of-islands/</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def numIslands(grid: list[list[str]]) -&gt; int:&#10;    if not grid:&#10;        return 0&#10;    &#10;    rows, cols = len(grid), len(grid[0])&#10;    count = 0&#10;    &#10;    def dfs(r, c):&#10;        # Base cases: out of bounds or water or already visited&#10;        if (r &lt; 0 or r &gt;= rows or&#10;            c &lt; 0 or c &gt;= cols or&#10;            grid[r][c] != '1'):&#10;            return&#10;        &#10;        grid[r][c] = '0'   # mark visited (sink the land)&#10;        dfs(r+1, c)&#10;        dfs(r-1, c)&#10;        dfs(r, c+1)&#10;        dfs(r, c-1)&#10;    &#10;    for r in range(rows):&#10;        for c in range(cols):&#10;            if grid[r][c] == '1':&#10;                count += 1&#10;                dfs(r, c)   # flood-fill this island&#10;    &#10;    return count">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> numIslands(grid: list[list[str]]) -&gt; int:
+    <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> grid:
+        <span style="color:#c678dd;">return</span> <span style="color:#56b6c2;">0</span>
+    
+    rows, cols = len(grid), len(grid[<span style="color:#56b6c2;">0</span>])
+    count = <span style="color:#56b6c2;">0</span>
+    
+    <span style="color:#c678dd;">def</span> dfs(r, c):
+        <span style="color:#5c6370;"># Base cases: out of bounds or water or already visited</span>
+        <span style="color:#c678dd;">if</span> (r &lt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">or</span> r &gt;= rows <span style="color:#c678dd;">or</span>
+            c &lt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">or</span> c &gt;= cols <span style="color:#c678dd;">or</span>
+            grid[r][c] != <span style="color:#e5c07b;">'1'</span>):
+            <span style="color:#c678dd;">return</span>
+        
+        grid[r][c] = <span style="color:#e5c07b;">'0'</span>   <span style="color:#5c6370;"># mark visited (sink the land)</span>
+        dfs(r+<span style="color:#56b6c2;">1</span>, c)
+        dfs(r-<span style="color:#56b6c2;">1</span>, c)
+        dfs(r, c+<span style="color:#56b6c2;">1</span>)
+        dfs(r, c-<span style="color:#56b6c2;">1</span>)
+    
+    <span style="color:#c678dd;">for</span> r <span style="color:#c678dd;">in</span> range(rows):
+        <span style="color:#c678dd;">for</span> c <span style="color:#c678dd;">in</span> range(cols):
+            <span style="color:#c678dd;">if</span> grid[r][c] == <span style="color:#e5c07b;">'1'</span>:
+                count += <span style="color:#56b6c2;">1</span>
+                dfs(r, c)   <span style="color:#5c6370;"># flood-fill this island</span>
+    
+    <span style="color:#c678dd;">return</span> count</code></pre>
+</div>
+
+<p><strong>DFS 在这里更自然</strong>：我们不关心距离，只关心"连通分量"的数量。每次遇到陆地，DFS 淹没整座岛，count += 1。  </p>
+<p><strong>DFS is more natural here:</strong> We don't care about distances, only the number of connected components. Each time we hit land, DFS floods the whole island, count += 1.</p>
+
+<h3>2.5 拓扑排序 — 课程表 / Topological Sort: Course Schedule</h3>
+
+<p>🔗 https://leetcode.com/problems/course-schedule/</p>
+
+<p>图论的杀手锏之一：有向无环图（DAG）的拓扑排序，解决"依赖关系"问题。</p>
+
+<p>One of graph theory's most powerful tools: topological sort on a DAG solves dependency ordering problems.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from collections import deque&#10;&#10;def canFinish(numCourses: int, prerequisites: list[list[int]]) -&gt; bool:&#10;    # Build adjacency list and in-degree array&#10;    graph = [[] for _ in range(numCourses)]&#10;    in_degree = [0] * numCourses&#10;    &#10;    for course, prereq in prerequisites:&#10;        graph[prereq].append(course)   # prereq → course&#10;        in_degree[course] += 1&#10;    &#10;    # Kahn's Algorithm: start with nodes that have no prerequisites&#10;    queue = deque()&#10;    for i in range(numCourses):&#10;        if in_degree[i] == 0:&#10;            queue.append(i)&#10;    &#10;    completed = 0&#10;    while queue:&#10;        course = queue.popleft()&#10;        completed += 1&#10;        &#10;        for next_course in graph[course]:&#10;            in_degree[next_course] -= 1&#10;            if in_degree[next_course] == 0:   # all prereqs satisfied&#10;                queue.append(next_course)&#10;    &#10;    # If we completed all courses, no cycle exists&#10;    return completed == numCourses">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> collections <span style="color:#c678dd;">import</span> deque
+
+<span style="color:#c678dd;">def</span> canFinish(numCourses: int, prerequisites: list[list[int]]) -&gt; bool:
+    <span style="color:#5c6370;"># Build adjacency list and in-degree array</span>
+    graph = [[] <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(numCourses)]
+    in_degree = [<span style="color:#56b6c2;">0</span>] * numCourses
+    
+    <span style="color:#c678dd;">for</span> course, prereq <span style="color:#c678dd;">in</span> prerequisites:
+        graph[prereq].append(course)   <span style="color:#5c6370;"># prereq → course</span>
+        in_degree[course] += <span style="color:#56b6c2;">1</span>
+    
+    <span style="color:#5c6370;"># Kahn's Algorithm: start with nodes that have no prerequisites</span>
+    queue = deque()
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(numCourses):
+        <span style="color:#c678dd;">if</span> in_degree[i] == <span style="color:#56b6c2;">0</span>:
+            queue.append(i)
+    
+    completed = <span style="color:#56b6c2;">0</span>
+    <span style="color:#c678dd;">while</span> queue:
+        course = queue.popleft()
+        completed += <span style="color:#56b6c2;">1</span>
+        
+        <span style="color:#c678dd;">for</span> next_course <span style="color:#c678dd;">in</span> graph[course]:
+            in_degree[next_course] -= <span style="color:#56b6c2;">1</span>
+            <span style="color:#c678dd;">if</span> in_degree[next_course] == <span style="color:#56b6c2;">0</span>:   <span style="color:#5c6370;"># all prereqs satisfied</span>
+                queue.append(next_course)
+    
+    <span style="color:#5c6370;"># If we completed all courses, no cycle exists</span>
+    <span style="color:#c678dd;">return</span> completed == numCourses</code></pre>
+</div>
+
+<p><strong>直觉 / Intuition:</strong> 拓扑排序 = BFS on in-degree。每次取"没有前置依赖的节点"，处理后更新其邻居的 in-degree。如果最终处理了所有节点，说明无环。  </p>
+<p><strong>Intuition:</strong> Topological sort = BFS on in-degrees. Take nodes with no remaining prerequisites, process them, then reduce their successors' in-degrees. If all nodes processed → no cycle.</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<h3>🚨 常见错误 / Common Mistakes</h3>
+
+<p><strong>1. BFS 出队时才 mark visited（不是入队时）</strong>  </p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# ❌ WRONG — same node enqueued multiple times&#10;while queue:&#10;    node = queue.popleft()&#10;    visited.add(node)           # too late!&#10;    for neighbor in graph[node]:&#10;        if neighbor not in visited:&#10;            queue.append(neighbor)&#10;&#10;# ✅ CORRECT — mark on enqueue&#10;while queue:&#10;    node = queue.popleft()&#10;    for neighbor in graph[node]:&#10;        if neighbor not in visited:&#10;            visited.add(neighbor)   # mark on enqueue&#10;            queue.append(neighbor)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># ❌ WRONG — same node enqueued multiple times</span>
+<span style="color:#c678dd;">while</span> queue:
+    node = queue.popleft()
+    visited.add(node)           <span style="color:#5c6370;"># too late!</span>
+    <span style="color:#c678dd;">for</span> neighbor <span style="color:#c678dd;">in</span> graph[node]:
+        <span style="color:#c678dd;">if</span> neighbor <span style="color:#c678dd;">not</span> <span style="color:#c678dd;">in</span> visited:
+            queue.append(neighbor)
+
+<span style="color:#5c6370;"># ✅ CORRECT — mark on enqueue</span>
+<span style="color:#c678dd;">while</span> queue:
+    node = queue.popleft()
+    <span style="color:#c678dd;">for</span> neighbor <span style="color:#c678dd;">in</span> graph[node]:
+        <span style="color:#c678dd;">if</span> neighbor <span style="color:#c678dd;">not</span> <span style="color:#c678dd;">in</span> visited:
+            visited.add(neighbor)   <span style="color:#5c6370;"># mark on enqueue</span>
+            queue.append(neighbor)</code></pre>
+</div>
+
+<p><strong>2. 网格越界检查顺序错误（短路求值救你）</strong>  </p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# ✅ bounds check BEFORE accessing grid[nr][nc]&#10;if 0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols and grid[nr][nc] == 1:&#10;#   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;#   Python short-circuits: if bounds fail, grid access never happens">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># ✅ bounds check BEFORE accessing grid[nr][nc]</span>
+<span style="color:#c678dd;">if</span> <span style="color:#56b6c2;">0</span> &lt;= nr &lt; rows <span style="color:#c678dd;">and</span> <span style="color:#56b6c2;">0</span> &lt;= nc &lt; cols <span style="color:#c678dd;">and</span> grid[nr][nc] == <span style="color:#56b6c2;">1</span>:
+<span style="color:#5c6370;">#   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span>
+<span style="color:#5c6370;">#   Python short-circuits: if bounds fail, grid access never happens</span></code></pre>
+</div>
+
+<p><strong>3. 多源 BFS 忘记处理"全部已腐烂"边界</strong>  </p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="if fresh_count == 0:&#10;    return 0   # Don't run BFS at all — answer is already 0">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">if</span> fresh_count == <span style="color:#56b6c2;">0</span>:
+    <span style="color:#c678dd;">return</span> <span style="color:#56b6c2;">0</span>   <span style="color:#5c6370;"># Don't run BFS at all — answer is already 0</span></code></pre>
+</div>
+
+<p><strong>4. 拓扑排序中漏掉孤立节点</strong>  </p>
+<p>初始化时，所有 in-degree == 0 的节点（包括没有任何依赖的独立课程）都要加入队列。  </p>
+<p>When initializing, add ALL nodes with in-degree == 0 to the queue, including isolated nodes with no edges.</p>
+
+<p><strong>5. 递归 DFS 的栈溢出</strong>  </p>
+<p>大网格（比如 300×300）可能导致递归深度达到 90000，超出 Python 默认栈限制。生产中优先用迭代 DFS 或 BFS。  </p>
+<p>Large grids (e.g., 300×300) can push recursion depth to 90,000+, exceeding Python's default limit. Use iterative DFS or BFS in production.</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p>图遍历无处不在，只是通常不叫"BFS/DFS"：</p>
+
+<p>BFS/DFS is everywhere in production — it just doesn't wear the label:</p>
+
+<table><thead><tr><th>生产场景 / Production Use Case</th><th>对应算法 / Algorithm</th></tr></thead><tbody><tr><td>社交网络"认识的人" (LinkedIn 2nd connections)</td><td>BFS，按层扩展</td></tr><tr><td>CDN 内容失效传播 (cache invalidation cascade)</td><td>多源 BFS，从失效节点向外</td></tr><tr><td>微服务依赖图，检测循环依赖</td><td>DFS + 拓扑排序</td></tr><tr><td>Kubernetes Pod 调度顺序</td><td>拓扑排序</td></tr><tr><td>Git merge / rebase DAG 遍历</td><td>DFS on commit graph</td></tr><tr><td>打包工具（webpack/rollup）模块依赖</td><td>DFS，后序遍历 = 构建顺序</td></tr><tr><td>数据库 CASCADE DELETE</td><td>DFS on foreign key graph</td></tr><tr><td>网络故障扩散分析</td><td>多源 BFS from failed nodes</td></tr></tbody></table>
+
+<p><strong>真实案例 / Real example:</strong> 当 Netflix 一个微服务宕机时，SRE 工具用 BFS 遍历服务依赖图来计算"受影响的下游服务"。这和腐烂橘子的多源 BFS 在结构上完全相同。  </p>
+<p><strong>Real example:</strong> When a Netflix microservice fails, the SRE tooling uses BFS on the service dependency graph to compute "affected downstream services" — structurally identical to Rotting Oranges' multi-source BFS.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Q1: 腐烂橘子为什么用 BFS 而不是 DFS？</strong>  </p>
+<p><strong>Q1: Why BFS instead of DFS for Rotting Oranges?</strong></p>
+
+<p><strong>A:</strong> BFS 天然保证"按层扩展"，即每一轮处理的都是同一时刻腐烂的橘子。DFS 会优先向某个方向深入，无法正确模拟"同时蔓延"。凡是"最短时间/步数"问题，首选 BFS。  </p>
+<p><strong>A:</strong> BFS expands level by level, correctly simulating "all oranges rot simultaneously." DFS would go deep in one direction first, giving wrong timing. For "minimum time/steps," always reach for BFS first.</p>
+
+<hr/>
+
+<p><strong>Q2: 什么时候用多源 BFS？</strong>  </p>
+<p><strong>Q2: When do you use multi-source BFS?</strong></p>
+
+<p><strong>A:</strong> 当有多个起点，且你想知道每个节点到"最近起点"的距离时。实现方式：初始化时将所有起点同时入队（距离=0），之后标准 BFS 即可。同一个框架适用于：腐烂橘子、Walls and Gates、矩阵中的 01 矩阵（#542）。  </p>
+<p><strong>A:</strong> When you have multiple sources and want each node's distance to the <em>nearest</em> source. Initialize by enqueuing all sources at distance 0, then run standard BFS. Works for: Rotting Oranges, Walls and Gates, 01 Matrix (#542).</p>
+
+<hr/>
+
+<p><strong>Q3: 如何判断一道题是 BFS 还是 DFS？</strong>  </p>
+<p><strong>Q3: How do you decide between BFS and DFS?</strong></p>
+
+<p><strong>A:</strong> 经验法则：  </p>
+<ul><li>需要"最短路径"或"最少步数" → <strong>BFS</strong></li><li>需要"是否可达"或"连通分量数" → <strong>DFS 或 BFS 均可</strong>，DFS 递归更简洁</li><li>需要"所有路径"或"回溯" → <strong>DFS</strong></li><li>有拓扑依赖/环检测 → <strong>BFS（Kahn）或 DFS（颜色标记）</strong></li></ul>
+
+<p><strong>A (rule of thumb):</strong></p>
+<ul><li>"Shortest path / minimum steps" → <strong>BFS</strong></li><li>"Reachability / connected components" → <strong>either; DFS is simpler recursively</strong></li><li>"All paths / backtracking" → <strong>DFS</strong></li><li>"Topological order / cycle detection" → <strong>BFS (Kahn's) or DFS (coloring)</strong></li></ul>
+
+<hr/>
+
+<p><strong>Q4: 如果图很大（100万节点），递归 DFS 会有什么问题？</strong>  </p>
+<p><strong>Q4: What's the problem with recursive DFS on a very large graph?</strong></p>
+
+<p><strong>A:</strong> Python 默认递归深度限制约 1000（<code>sys.getrecursionlimit()</code>）。百万节点的图会立即栈溢出。解决方案：  </p>
+<ol><li>迭代 DFS（用显式栈）  </li><li><code>sys.setrecursionlimit(10**6)</code>（生产代码中不推荐）  </li><li>换用 BFS（天然迭代）</li></ol>
+
+<p><strong>A:</strong> Python's default recursion limit is ~1000 (<code>sys.getrecursionlimit()</code>). A million-node graph stack-overflows immediately. Solutions: (1) iterative DFS with explicit stack, (2) <code>sys.setrecursionlimit()</code> (not recommended in production), (3) use BFS (inherently iterative).</p>
+
+<hr/>
+
+<p><strong>Q5: 请描述 Kahn 算法和 DFS 拓扑排序的区别，各在什么场景下更合适？</strong>  </p>
+<p><strong>Q5: Compare Kahn's algorithm vs DFS-based topological sort — when would you prefer each?</strong></p>
+
+<p><strong>A:</strong>  </p>
+<ul><li><strong>Kahn（BFS）</strong>：迭代，直接输出拓扑序，环检测简单（最后 <code>completed == numNodes</code>），适合生产代码。同时也可以输出所有可能的拓扑序（加个优先队列）。</li><li><strong>DFS 拓扑排序</strong>：递归，后序遍历（完成时入栈），代码更短，但需要额外的"颜色标记"（白/灰/黑）来检测环。适合需要递归实现的场景。</li></ul>
+
+<p><strong>A:</strong></p>
+<ul><li><strong>Kahn (BFS):</strong> Iterative, outputs topological order directly, simple cycle detection (<code>completed == numNodes</code>). Preferred in production. Also supports lexicographically smallest order with a min-heap.</li><li><strong>DFS topological sort:</strong> Recursive, uses post-order (push on finish), shorter code but needs three-color marking (white/gray/black) for cycle detection. Better when recursive style is preferred.</li></ul>
+
+<hr/>
+
+<h2>总结 / Summary</h2>
+
+<div class="diagram-block">图遍历速查 / Quick Reference
+
+需要最短路径?          → BFS
+需要所有路径?          → DFS + 回溯
+需要检测连通性?        → BFS 或 DFS
+有多个源?              → 多源 BFS (全部入队，distance=0)
+有依赖关系/环?         → Kahn 拓扑排序 (BFS on in-degree)
+网格题?                → BFS/DFS + 四方向 DIRS + 边界检查</div>
+
+<p><strong>本周练习题 / Practice This Week:</strong></p>
+<ul><li>#994 Rotting Oranges → 多源 BFS</li><li>#200 Number of Islands → DFS 连通分量</li><li>#207 Course Schedule → Kahn 拓扑排序</li><li>#127 Word Ladder → 隐式图 BFS（Hard，本模式的终极题）</li></ul>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
