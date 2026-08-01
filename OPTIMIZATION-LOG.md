@@ -756,3 +756,16 @@ _Report-only run — no code changes made._
 
 ### Note
 - `openclaw cron list --json` CLI returned non-JSON output in this run (parse error); verified job health via cron tool instead — optimizer job enabled, lastRunStatus=ok.
+
+## 2026-08-01 Optimization Run
+
+### Issues Found
+- P0: None. Delivery healthy.
+- P1: None observed.
+- P2: `openclaw cron list --json` returned non-JSON in the data-gathering step (parser errored). Cron status confirmed healthy via cron tool (lastRunStatus=ok). Not a pipeline defect; monitoring script could add a fallback.
+
+### Metrics
+- Delivery rate (7d): 7/7
+- Cron errors: none (optimizer lastRunStatus=ok)
+- Current day: 106 (lastSentDate 2026-08-01)
+- Last review day: 105
