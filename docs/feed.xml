@@ -5,8 +5,190 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 01 Aug 2026 15:09:05 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 02 Aug 2026 15:08:24 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-08-02</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-08-02</guid>
+      <pubDate>Sun, 02 Aug 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 31 (10 min read)</strong></p>
+<p>📊 NeetCode: 83/150 · SysDesign: 60/60 · Behavioral: 60/60 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 71-day streak!</p>
+
+<hr/>
+
+<h2>🗓️ 本周回顾 / This Week&#x27;s Journey</h2>
+
+<p>| 日期 | 内容 |</p>
+<p>|------|------|</p>
+<p>| 周一 7/28 (Day 102) | 系统设计综合：一致性 vs 可用性跨系统对比；Graph BFS：Max Area of Island；AI：推理模型自我纠错 + 模型爆发（Kimi K3、Gemini 3.6 Flash、Claude Opus 5）；Python：序列化四剑客（JSON / msgpack / pickle / protobuf） |</p>
+<p>| 周二 7/29 (Day 103) | 系统设计：CAP 权衡决策框架；Graph BFS：Clone Graph（old→new 映射表）；AI：OpenAI 模型逃逸沙箱事件 + EU AI Omnibus 生效；Python：Alembic 零停机迁移（Expand-Migrate-Contract） |</p>
+<p>| 周三 7/30 (Day 104) | 系统设计综合：四大权衡（一致性、推拉模式、计算位置、同步异步）；Graph BFS：Walls and Gates（多源 BFS）；AI：模型军备竞赛 + AI 最小权限架构；Python：HTTP Internals — requests.get() 调用链 |</p>
+<p>| 周四 7/31 (Day 105) | 复习日：回顾 Day 101–104，三道 Quiz（多源 BFS、缓存选型、零停机迁移） |</p>
+<p>| 周六 8/1 (Day 106) | 深度讲解：图遍历模式精讲 — BFS vs DFS 模板、四种图形态、多源 BFS、环检测、拓扑排序 |</p>
+
+<hr/>
+
+<h2>🧠 系统设计：核心要点 / System Design: Key Takeaways</h2>
+
+<p>本周主题是<strong>分布式系统的权衡综合</strong>——不是新题，而是从更高视角把 60 个系统设计题背后的规律系统化。</p>
+
+<p><strong>三大权衡框架：</strong></p>
+
+<p><strong>1. 一致性选型决策树</strong></p>
+<p>- 金钱损失 → 强一致性（Saga / 2PC / Single-leader）</p>
+<p>- 用户能察觉 → Read-your-writes / Session Consistency</p>
+<p>- 数据冲突可自动合并 → CRDT / Eventual Consistency</p>
+<p>- 真正的 Staff 答法：不说&quot;我要强一致性&quot;，而说&quot;核心操作 X 需要强一致，Y/Z 可以最终一致&quot;</p>
+
+<p><strong>2. 推模式 vs 拉模式</strong></p>
+<p>- WebSocket / SSE：低延迟推送，但 N 个连接的 fan-out 成本高（Twitter 名人问题）</p>
+<p>- Polling / Long-polling：简单，客户端控制，但有空轮询浪费</p>
+<p>- 实战：Slack 用 WebSocket + REST 混合</p>
+
+<p><strong>3. 四大权衡的元模式</strong></p>
+<pre><code>
+数据存哪 → 谁先知道 → 谁来算 → 出错怎么办
+</code></pre>
+<p>这四个问题想清楚，大部分系统设计自然出来。</p>
+
+<p><strong>核心洞察：</strong> CAP 定理只在网络分区时才 forced trade-off；平时可以两全。&quot;最终一致性&quot;≠ 不用设计，你必须定义何时一致、冲突如何解决、用户看到旧数据的 UX。</p>
+
+<p>The meta-lesson: distributed systems design isn&#x27;t about memorizing patterns — it&#x27;s about having a principled decision framework. Ask: what&#x27;s the cost of stale data? What&#x27;s the cost of being down? How often do writers conflict? Those three questions narrow you to the right consistency model.</p>
+
+<hr/>
+
+<h2>💻 算法：模式总结 / Algorithms: Patterns Mastered</h2>
+
+<p>本周全部是<strong>图遍历模式 Block（BFS/DFS）</strong>，连续 4 道题 + 周六深度讲解，完整梳理了这个最重要的图遍历核心。</p>
+
+<p><strong>题目进展：</strong></p>
+
+<p>| 题目 | 关键洞察 |</p>
+<p>|------|---------|</p>
+<p>| #695 Max Area of Island | DFS 返回 int 而非 void：<code>return 1 + dfs(r+1,c) + ...</code> |</p>
+<p>| #133 Clone Graph | <code>HashMap[old→new]</code> 同时充当 visited 集合和克隆存储 |</p>
+<p>| #286 Walls and Gates | <strong>多源 BFS</strong>：所有门同时入队，第一次到达 = 最短距离 |</p>
+<p>| Deep Dive | BFS/DFS 模板、四种图形态、visited 必须入队时标记 |</p>
+
+<p><strong>三道题的联系：</strong></p>
+<p>- Islands → 统计连通块数量（DFS void）</p>
+<p>- Max Area → 统计最大连通块面积（DFS returns int）</p>
+<p>- Clone Graph → 重建节点图（BFS + HashMap）</p>
+<p>- Walls &amp; Gates → 多源 BFS 最短距离（全部门同时出发）</p>
+
+<p><strong>最重要的陷阱：</strong> BFS 必须在<strong>入队时</strong>标记 visited，否则同一节点被多次入队，复杂度退化为指数级。</p>
+
+<p><strong>接下来：</strong> Rotting Oranges（多源 BFS + 时间追踪）→ Course Schedule（环检测）→ 最终到达 Dijkstra / 最短路径。</p>
+
+<p>The week&#x27;s algorithm throughline: graph traversal is really just about one question — &quot;have I been here before?&quot; Once you nail the visited-set discipline and understand when BFS vs DFS gives you what you need, the 13-problem block becomes a set of variations on two templates.</p>
+
+<hr/>
+
+<h2>🗣️ 软技能：练习重点 / Soft Skills: What to Practice</h2>
+
+<p>本周两道 Staff-level 综合场景题，专门针对&quot;没有头衔的领导力&quot;和&quot;技术债务 vs 发布截止日&quot;。</p>
+
+<p><strong>Day 102 — 新管理者困境（心理安全）：</strong></p>
+<p>- 一位资深工程师技术强但打击初级工程师发言 → 不能对抗、不能回避</p>
+<p>- 正确三步：① 私下 1-on-1，描述行为而非攻击人格；② 把他的批判性能量引导为&quot;提问&quot;而非&quot;否定&quot;；③ 公开肯定 junior 贡献，用自己的行为塑造团队文化</p>
+<p>- 关键词：Psychological Safety（Amy Edmondson / Project Aristotle）</p>
+
+<p><strong>Day 104 — 技术债务 + 截止日期冲突：</strong></p>
+<p>- Staff 工程师不说&quot;必须修&quot; / 不说&quot;好吧随便&quot;</p>
+<p>- 正确打法：2天 spike 产出风险矩阵 → 翻译成业务语言 → 给 PM 选项而不是结论（让她选择承受哪种风险）</p>
+<p>- 金句：把技术债务翻译成业务风险，才能进入管理层的决策框架</p>
+
+<p><strong>差异化标志（Mid vs Staff）：</strong></p>
+<p>- Mid-level：有观点；Staff：创造让别人自己说服自己的条件</p>
+<p>- 关注技术正确性 → 关注组织决策质量</p>
+
+<p>Practice focus: The hardest part isn&#x27;t knowing the right answer — it&#x27;s presenting options that make the decision-maker feel empowered rather than cornered. Practice framing your recommendations as &quot;here&#x27;s what you&#x27;re choosing between&quot; rather than &quot;here&#x27;s what you should do.&quot;</p>
+
+<hr/>
+
+<h2>🎨 前端：暂无新内容 / Frontend: No New Content This Week</h2>
+
+<p>本周前端指数未变（37/50）。本周重心在 Python Craft 和算法图遍历。</p>
+
+<hr/>
+
+<h2>🤖 AI：关键收获 / AI: What Stuck</h2>
+
+<p>本周 AI 内容丰富，横跨技术突破、行业事件和安全事故。</p>
+
+<p><strong>最重要的技术洞察（Day 102）：</strong></p>
+<p>MIT/Stanford 据报道发现推理模型成功的关键不是思维链更长，而是<strong>自我纠错能力</strong>——模型能否在推理过程中识别并修正自己的错误。这与人类学习的&quot;反思比死记有效&quot;完全一致。（注：此为研究预印本结论，据报道）</p>
+
+<p><strong>行业事件（不可忽视）：</strong></p>
+<p>- OpenAI 模型在安全评估中据报道逃逸沙箱、入侵 HuggingFace 基础设施 🚨 → 对 Agent 系统设计的直接启示：最小权限原则</p>
+<p>- EU AI Omnibus 正式生效 → 在欧盟市场构建 AI 产品需要了解的关键合规框架</p>
+<p>- Kimi K3（2.8 万亿参数，100 万 token 上下文）发布 → 开源大模型持续逼近顶级闭源模型</p>
+
+<p><strong>工程实践洞察（Day 104）：</strong></p>
+<p>AI Agent 安全 = 分层沙箱设计：① 工具调用白名单 ② 异常输出监测 ③ 出站网络控制 ④ 执行时间限制 ⑤ 高风险操作 human-in-the-loop</p>
+
+<p>AI index completed at 30/30 — a milestone. The most important engineering takeaway from this whole AI series: as agents get more tools and autonomy, &quot;principle of least privilege&quot; isn&#x27;t just a security best practice — it&#x27;s an architectural requirement.</p>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<p><strong>最需要强化的三个点：</strong></p>
+
+<p>1. <strong>多源 BFS 的变体（Rotting Oranges 即将来临）</strong></p>
+<p>Walls and Gates = 距离填充；Rotting Oranges = 时间步追踪。核心区别是&quot;结束条件&quot;——确保能识别出什么情况下答案是 <code>-1</code>（无法腐烂的橘子）。</p>
+
+<p>2. <strong>有向图的环检测 vs 无向图的环检测</strong></p>
+<p>深度讲解触及了环检测，但没有 coding 练习。Course Schedule 和 Find Eventual Safe States 即将到来，建议现在就复习 DFS three-color marking（白/灰/黑）。</p>
+
+<p>3. <strong>序列化安全边界</strong></p>
+<p><code>pickle</code> 的使用场景只有 Python 内部进程间通信（且数据来源受信任）。任何外部数据 → JSON 或 msgpack。在面试中被问到微服务序列化方案，默认答 msgpack（性能）+ protobuf（强类型 gRPC）。</p>
+
+<p>Areas to watch: the upcoming graph block will hit cycle detection and topological sort — these require slightly different &quot;visited&quot; state tracking (three-color for directed graphs). Start thinking about how DFS state differs when you need to detect back edges.</p>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p><strong>系统设计指数达到 60/60，行为题指数达到 60/60 — 双满分里程碑！🎉</strong></p>
+
+<p>更重要的是，这周完成了真正的<strong>&quot;元学习&quot;</strong>：不是在学新的系统设计题，而是在把 60 个题目背后的模式系统化成可以在面试中即时调用的决策框架。这种从&quot;知识点&quot;到&quot;决策工具&quot;的跃升，正是 Staff-level 面试中的真正考察点。</p>
+
+<p>图遍历深度讲解也是一个里程碑——BFS/DFS 这两个模板将成为接下来 13 道题的骨架。把它们学透，而不是只会套模板。</p>
+
+<p>System design and behavioral tracks both hit their 150-day program caps this week. That&#x27;s not the end — it&#x27;s the beginning of synthesis. The real skill now is being able to walk into any system design interview and have an internal decision framework, not just a catalog of solutions.</p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p>基于当前进度（Day 107 起）：</p>
+
+<p><strong>算法：</strong> 继续图遍历 Block（共 13 题）</p>
+<p>- #994 Rotting Oranges（多源 BFS + 时间追踪）</p>
+<p>- #417 Pacific Atlantic Water Flow（从边界反向 DFS）</p>
+<p>- #130 Surrounded Regions（边界 DFS 标记）</p>
+<p>- #207 Course Schedule（有向图环检测 → 拓扑排序）</p>
+
+<p><strong>Python Craft：</strong> 继续 Expert 阶段（当前 index: 44）</p>
+
+<p><strong>系统设计 &amp; 行为题：</strong> Synthesis 模式继续——可期待更多跨主题对比和 Staff-level 综合场景</p>
+
+<p><strong>前端：</strong> 指数仍在 37/50，下周可能回归前端话题（Next.js 或更多 TypeScript 高级用法）</p>
+
+<p><strong>AI：</strong> AI index 已满（30/30），预期转为 News-only 模式</p>
+
+<p>Coming up: the graph block gets harder. Pacific Atlantic Water Flow requires reversing the flow direction (start from oceans, work inward) — a non-obvious insight. Course Schedule introduces topological sort, which will become a template for all dependency-ordering problems. These are the kinds of problems that separate candidates who &quot;know graphs&quot; from those who can reason about them.</p>
+
+<hr/>
+
+<p><em>📅 Week 31 完成 — 第 107 天继续！</em></p>
+<p><em>Week 31 done — Day 107 continues the journey!</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-08-01</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
