@@ -769,3 +769,22 @@ _Report-only run — no code changes made._
 - Cron errors: none (optimizer lastRunStatus=ok)
 - Current day: 106 (lastSentDate 2026-08-01)
 - Last review day: 105
+
+## 2026-08-05 Optimization Run
+
+### Issues Found
+- **P0 (CRITICAL): Delivery stopped after 2026-08-02.** No emails sent 08-03, 08-04, 08-05 (3 consecutive missed days). Last daily content git commit is "Day 106 (2026-08-02)" — no daily generation commits for 08-03/04/05 either. The daily pipeline appears to have silently stopped ~3 days ago.
+- **P0 (STATE/LOG DIVERGENCE): state.json is lying.** state.json reports `lastSentDate: 2026-08-05` and `currentDay: 108`, but email-send-log.json has NO entries after 2026-08-02 (last real send 08-02T08:08). State was advanced without a corresponding send being logged — masks the outage from any state-only monitor. Needs manual investigation: either sends failed after state bump, or state is being written before send confirmation.
+- **P1 (Monitoring gap): cron jobs report status=ok with empty lastRun.** `openclaw cron list` shows all 8 byte-by-byte jobs enabled=True, lastRunStatus=ok, but `lastRunAt` is empty and no lastError — so "ok" here is not trustworthy as a delivery signal. review-and-send / backup-send / late-send did not produce logged sends for 3 days despite showing ok.
+- **P2: `openclaw cron` requires Node 24/25 in PATH.** Default shell node was v25.6.1 (unsupported); had to `nvm use` to run the CLI. The optimizer/health scripts should source nvm or pin the node version, otherwise data-gathering step 0 silently fails the cron-list parse.
+
+### Metrics
+- Delivery rate (7d): 4/7 (OK: 07-30, 07-31, 08-01, 08-02 | MISSED: 08-03, 08-04, 08-05)
+- Recipients per send: 1 (primary recipient only) — consistent, expected
+- Cron errors: none reported by CLI (but see P1 — status=ok is unreliable here)
+- Git: tree behind on daily commits; last daily = Day 106 (2026-08-02)
+
+### Recommended manual fixes (not applied — report-only run)
+1. Check why review-and-send/backup-send/late-send stopped writing to email-send-log after 08-02 (check send-script logs / SMTP auth / recipient list).
+2. Reconcile state.json vs email-send-log — ensure state advances only AFTER a confirmed logged send.
+3. Add a real delivery-gap alert (if no email-send-log entry for today by late-send window, notify).
