@@ -788,3 +788,22 @@ _Report-only run — no code changes made._
 1. Check why review-and-send/backup-send/late-send stopped writing to email-send-log after 08-02 (check send-script logs / SMTP auth / recipient list).
 2. Reconcile state.json vs email-send-log — ensure state advances only AFTER a confirmed logged send.
 3. Add a real delivery-gap alert (if no email-send-log entry for today by late-send window, notify).
+
+## 2026-08-07 Optimization Run
+
+### Issues Found
+- **P0 CRITICAL — Delivery collapsed**: 4/7 days missed in last week (2026-08-03, 08-04, 08-05, 08-07). Only 08-01, 08-02, 08-06 delivered. State shows `lastSentDate=2026-08-06` and `currentDay=109`, but git log jumps from Day 106 (2026-08-02) → Day 109 (2026-08-06), skipping Days 107 & 108 entirely (no commits, no email). Something is preventing the daily cron from running / advancing on most days.
+- **P0 — Cron introspection broken**: `openclaw cron list --json` fails with `Node.js >=22.22.3 <23, >=24.15.0 <25, or >=25.9.0 is required (current: v25.6.1)`. Optimizer cannot see cron `lastError` / `lastRunStatus` for the byte-by-byte jobs — root-cause diagnosis is blocked until node is bumped (`nvm use 24` or 25.9+). This has been true across recent runs and needs a manual fix.
+- **P1 — Recipient shrinkage**: `recipients` has been stuck at 1 (only <primary-subscriber>) since 2026-07-06. Prior baseline was 2–3. If other subscribers were intentionally removed this is fine; otherwise the recipient list may have been silently truncated.
+- **P2 — Repeat finding**: same node-version blocker was noted in prior optimizer runs (2026-08-05, 2026-08-01, 2026-07-31, 2026-07-28). Not being acted on between runs.
+
+### Metrics
+- Delivery rate (7d): **3/7** (down from 5/7 last run on 2026-08-05, and 7/7 the run before)
+- Missed dates: 2026-08-03, 2026-08-04, 2026-08-05, 2026-08-07
+- Cron errors: unknown — `openclaw cron list` blocked by Node.js version mismatch (current v25.6.1)
+- State: currentDay=109, lastSentDate=2026-08-06, systemDesignIndex=60, leetcodeIndex=86
+
+### Recommended manual actions
+1. `nvm use 24` (or install 25.9+) so cron diagnostics work again.
+2. Inspect the daily generator cron's last runs for 08-03/04/05/07 — likely the cron itself is failing to fire or the runner is erroring silently.
+3. Confirm subscriber list is intentionally 1 recipient; otherwise restore Yusheng/other addresses.
