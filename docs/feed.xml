@@ -5,8 +5,463 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 06 Aug 2026 15:17:03 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 08 Aug 2026 15:11:38 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-08-08</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-08-08</guid>
+      <pubDate>Sat, 08 Aug 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: 拓扑排序 — Course Schedule I &amp; II (17 min read)</strong></p>
+<p>📊 NeetCode: 86/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 109-day streak!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>拓扑排序是处理有向无环图（DAG）中依赖关系的核心算法。你学课程 A 之前必须先学课程 B——这类问题天生就是拓扑排序。它在 npm、pip、Maven 等包管理器，CI/CD 流水线，以及数据库迁移顺序中无处不在。</p>
+
+<p>关键洞察：<strong>如果图中存在环</strong>（A 依赖 B，B 又依赖 A），则不可能完成所有任务——检测环就是这道题的另一半。</p>
+
+<p>🔗 LeetCode 207 — Course Schedule: https://leetcode.com/problems/course-schedule/</p>
+<p>🔗 LeetCode 210 — Course Schedule II: https://leetcode.com/problems/course-schedule-ii/</p>
+<p>📹 NeetCode 207: https://www.youtube.com/watch?v=EgI5nU9etnU</p>
+<p>📹 NeetCode 210: https://www.youtube.com/watch?v=Akt3glAwyfY</p>
+
+<p><strong>English:</strong></p>
+
+<p>Topological sort produces a linear ordering of a DAG&#x27;s nodes such that every dependency appears before the node depending on it. It is the backbone of package managers, build systems, task schedulers, and database migration tools.</p>
+
+<p>If a cycle exists — A depends on B depends on A — no valid ordering exists. Detecting that is half the problem and where most interview candidates trip.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>中文：核心概念</h3>
+
+<p><strong>有向无环图（DAG）</strong></p>
+
+<p>图中的边有方向性，且不存在环。</p>
+<p><code>prerequisites = [[1,0]]</code> 表示&quot;要学课程 1，必须先学课程 0&quot;，边是 <code>0 → 1</code>（0 是前置）。</p>
+
+<p><strong>入度（In-degree）</strong></p>
+
+<p>一个节点的入度 = 有多少个节点指向它。</p>
+<p>入度为 0 的节点 = 没有前置依赖，可以立即处理。</p>
+
+<p><strong>两种经典方法</strong></p>
+
+<p>1. <strong>Kahn&#x27;s 算法（BFS 风格）</strong></p>
+<p>- 找到所有入度为 0 的节点，加入队列</p>
+<p>- 每次取出一个节点，将其邻居的入度减 1</p>
+<p>- 邻居入度变为 0 → 加入队列</p>
+<p>- 若最终处理了所有节点 → 无环；否则 → 有环</p>
+
+<p>2. <strong>DFS 三色标记法</strong></p>
+<p>- 白色 = 未访问；灰色 = 正在访问（在当前 DFS 路径上）；黑色 = 完成</p>
+<p>- 遇到灰色节点 → 检测到环</p>
+<p>- 后序（post-order）收集节点，结果即拓扑序</p>
+
+<p><strong>心智模型：</strong></p>
+
+<pre><code>
+Kahn&#x27;s = 反复&quot;剥离&quot;没有依赖的节点（像剥洋葱）
+DFS    = 深入到叶子节点，最先完成的最靠后，反转即是正确顺序
+</code></pre>
+
+<h3>English: Core Concepts</h3>
+
+<p>A <strong>DAG</strong> (Directed Acyclic Graph) has directed edges and no cycles.</p>
+<p>Topological sort gives a linear ordering where for every directed edge <code>u → v</code>, <code>u</code> appears before <code>v</code>.</p>
+
+<p><strong>In-degree</strong> = number of incoming edges to a node. Zero in-degree means &quot;no prerequisites.&quot;</p>
+
+<p><strong>Two canonical approaches:</strong></p>
+
+<p>| | Kahn&#x27;s (BFS) | DFS (3-color) |</p>
+<p>|---|---|---|</p>
+<p>| Intuition | Peel off dependency-free nodes | Go deep; finish-order reversed = topo-order |</p>
+<p>| Cycle detection | <code>processed &lt; n</code> at the end | Back edge to VISITING node |</p>
+<p>| Returns order? | Yes, directly | Yes, via post-order collection |</p>
+<p>| Preferred for? | Interviews (transparent) | When DFS is already required |</p>
+
+<p><strong>Time &amp; Space:</strong> O(V + E) for both.</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Approach 1: Kahn&#x27;s Algorithm (BFS) — Recommended</h3>
+
+<p><strong>中文：</strong> Kahn&#x27;s 算法直观、易调试，还能直接检测环路。面试时优先使用。</p>
+
+<pre><code>
+from collections import deque
+from typing import List
+
+
+def canFinish(numCourses: int, prerequisites: List[List[int]]) -&gt; bool:
+    &quot;&quot;&quot;
+    LeetCode 207: Can you finish all courses?
+    Return True if the prerequisite graph has no cycle.
+
+    Example:
+      numCourses=4, prerequisites=[[1,0],[2,0],[3,1],[3,2]]
+      Edges: 0-&gt;1, 0-&gt;2, 1-&gt;3, 2-&gt;3  (valid DAG)
+    &quot;&quot;&quot;
+    # Build adjacency list: adj[prereq] = [courses that need this prereq]
+    adj = [[] for _ in range(numCourses)]
+    in_degree = [0] * numCourses
+
+    for course, prereq in prerequisites:
+        adj[prereq].append(course)  # prereq must come BEFORE course
+        in_degree[course] += 1     # course has one more prerequisite
+
+    # Start with all courses that have zero prerequisites
+    queue = deque(c for c in range(numCourses) if in_degree[c] == 0)
+    processed = 0
+
+    while queue:
+        course = queue.popleft()
+        processed += 1
+
+        for next_course in adj[course]:
+            in_degree[next_course] -= 1      # one fewer prereq needed
+            if in_degree[next_course] == 0:
+                queue.append(next_course)    # now ready to take
+
+    # If all courses processed → no cycle → can finish
+    return processed == numCourses
+
+
+def findOrder(numCourses: int, prerequisites: List[List[int]]) -&gt; List[int]:
+    &quot;&quot;&quot;
+    LeetCode 210: Return the actual valid course order, or [] if impossible.
+    Identical to canFinish — just collect the processing order.
+    &quot;&quot;&quot;
+    adj = [[] for _ in range(numCourses)]
+    in_degree = [0] * numCourses
+
+    for course, prereq in prerequisites:
+        adj[prereq].append(course)
+        in_degree[course] += 1
+
+    queue = deque(c for c in range(numCourses) if in_degree[c] == 0)
+    order = []
+
+    while queue:
+        course = queue.popleft()
+        order.append(course)           # record the order — only new line vs canFinish
+
+        for next_course in adj[course]:
+            in_degree[next_course] -= 1
+            if in_degree[next_course] == 0:
+                queue.append(next_course)
+
+    # If we couldn&#x27;t process all courses, a cycle exists
+    return order if len(order) == numCourses else []
+</code></pre>
+
+<h3>Approach 2: DFS with 3-Color Cycle Detection</h3>
+
+<p><strong>中文：</strong> DFS 方法用三种状态标记每个节点。面试官要求 DFS 时用这套写法。</p>
+
+<pre><code>
+def findOrder_dfs(numCourses: int, prerequisites: List[List[int]]) -&gt; List[int]:
+    &quot;&quot;&quot;
+    DFS-based topological sort with 3-color marking.
+
+    State encoding:
+      0 = UNVISITED  (white)  — not yet explored
+      1 = VISITING   (gray)   — on the current DFS stack; back edge here = CYCLE
+      2 = VISITED    (black)  — fully processed, safe
+    &quot;&quot;&quot;
+    # Build: adj[course] = [prerequisites of this course]
+    # (Direction: course → what it needs)
+    adj = [[] for _ in range(numCourses)]
+    for course, prereq in prerequisites:
+        adj[course].append(prereq)
+
+    state = [0] * numCourses  # all start UNVISITED
+    result = []
+
+    def dfs(node: int) -&gt; bool:
+        &quot;&quot;&quot;Returns False if a cycle is detected.&quot;&quot;&quot;
+        if state[node] == 1:
+            return False   # Back edge to current stack → CYCLE
+        if state[node] == 2:
+            return True    # Already processed → skip safely
+
+        state[node] = 1    # Mark VISITING (on current stack)
+
+        for prereq in adj[node]:
+            if not dfs(prereq):
+                return False   # Propagate cycle detection up
+
+        state[node] = 2        # Mark VISITED (done)
+        result.append(node)    # Post-order: node added AFTER all its prerequisites
+        return True
+
+    # Handle disconnected components — try every node
+    for course in range(numCourses):
+        if state[course] == 0:
+            if not dfs(course):
+                return []  # Cycle found
+
+    # result is already in valid topological order
+    # (prereqs get added first because we go deep before adding current node)
+    return result
+</code></pre>
+
+<h3>Algorithm Trace / 算法追踪 🔍</h3>
+
+<p><strong>Input:</strong> <code>numCourses=3, prerequisites=[[1,0],[2,1]]</code></p>
+<p>Meaning: to take 1, first take 0; to take 2, first take 1.</p>
+<p>Graph: <code>0 → 1 → 2</code></p>
+
+<pre><code>
+Prerequisites: [[1,0], [2,1]]
+
+Adjacency list (prereq → course):
+  adj[0] = [1]
+  adj[1] = [2]
+  adj[2] = []
+
+In-degrees:
+  in_degree = [0, 1, 1]
+           course: 0  1  2
+
+─────────────────────────────────────────────────────
+KAHN&#x27;S ALGORITHM TRACE
+─────────────────────────────────────────────────────
+
+         ┌───────────────────────────────────┐
+         │  0 ──────────► 1 ──────────► 2    │
+         │  in=0          in=1          in=1  │
+         └───────────────────────────────────┘
+
+Round 1:              Round 2:              Round 3:
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│ queue = [0]  │     │ queue = [1]  │     │ queue = [2]  │
+│ pop: 0       │     │ pop: 1       │     │ pop: 2       │
+│ order = [0]  │ ──► │ order = [0,1]│ ──► │ order=[0,1,2]│
+│ in[1]: 1→0   │     │ in[2]: 1→0   │     │ no neighbors │
+│ enqueue 1    │     │ enqueue 2    │     │              │
+└──────────────┘     └──────────────┘     └──────────────┘
+
+Final: order = [0, 1, 2]
+len(order) == 3 == numCourses → return [0, 1, 2] ✓
+</code></pre>
+
+<h3>Code Trace (Kahn&#x27;s) — matching the diagram above</h3>
+
+<pre><code>
+adj = {0:[1], 1:[2], 2:[]}
+in_degree = [0, 1, 1]
+queue = deque([0])          # only course 0 has in_degree=0
+
+Iteration 1:
+  course = 0,  order = [0]
+  next_course = 1: in_degree[1] = 1-1 = 0 → queue.append(1)
+  queue = [1]
+
+Iteration 2:
+  course = 1,  order = [0, 1]
+  next_course = 2: in_degree[2] = 1-1 = 0 → queue.append(2)
+  queue = [2]
+
+Iteration 3:
+  course = 2,  order = [0, 1, 2]
+  adj[2] = [] → nothing enqueued
+  queue = []
+
+len([0,1,2]) == 3 == numCourses → return [0, 1, 2] ✓
+</code></pre>
+
+<p>Diagram and code produce identical results. ✅</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文：常见陷阱</strong></p>
+
+<p><strong>1. 边方向搞反了（最高频错误！）</strong></p>
+
+<p><code>prerequisites = [[1, 0]]</code> 表示&quot;学课程 1 之前先学课程 0&quot;。</p>
+<p>边是 <code>0 → 1</code>（0 是前置条件），而不是 <code>1 → 0</code>。</p>
+<p>正确写法：<code>adj[prereq].append(course)</code>，而非 <code>adj[course].append(prereq)</code>。</p>
+<p>错误方向会导致所有依赖颠倒，环检测也会失效。</p>
+
+<p><strong>2. 孤立节点</strong></p>
+
+<p>某些课程可能不出现在 prerequisites 里。</p>
+<p>必须遍历 <code>range(numCourses)</code> 而不是只遍历 prerequisites 中的节点。</p>
+<p>否则孤立课程的入度永远不被初始化，或在 DFS 中永远不被访问。</p>
+
+<p><strong>3. 自环</strong></p>
+
+<p><code>[[0, 0]]</code> — 课程 0 以自己为前置条件。</p>
+<p>Kahn&#x27;s：<code>in_degree[0]</code> 初始为 1 且永远不会到 0，自然无法处理。</p>
+<p>DFS：第一次 dfs(0) 就将 state[0] 设为 1，再次访问 0 时检测到环。</p>
+
+<p><strong>4. 多个合法顺序</strong></p>
+
+<p>当多个节点同时入度为 0 时，顺序不唯一。</p>
+<p>LeetCode 207/210 接受任意合法答案。</p>
+<p>如果题目要求字典序最小，改用 <code>heapq</code> 代替 <code>deque</code>（复杂度变 O((V+E)logV)）。</p>
+
+<p><strong>5. prerequisites 为空</strong></p>
+
+<p>完全合法——所有课程都可以任意顺序学习。</p>
+<p>不要漏掉这个基础情况：返回 <code>True</code>（207）或 <code>list(range(numCourses))</code>（210）。</p>
+
+<p><strong>English: Key Gotchas</strong></p>
+
+<p>1. <strong>Edge direction</strong> — <code>[course, prereq]</code> pair means <code>prereq → course</code>. Reversing this is the #1 interview bug.</p>
+
+<p>2. <strong>Disconnected nodes</strong> — always iterate all <code>n</code> courses, not just those in prerequisites.</p>
+
+<p>3. <strong>Self-loops</strong> — <code>[[0,0]]</code>. Both algorithms handle naturally but it&#x27;s worth calling out.</p>
+
+<p>4. <strong>Multiple valid orderings</strong> — all are correct unless the problem specifies tie-breaking (use a min-heap for lexicographically smallest).</p>
+
+<p>5. <strong>Empty prerequisites</strong> — don&#x27;t let an empty input cause an exception or wrong answer.</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：生产环境中的拓扑排序</strong></p>
+
+<p>拓扑排序无处不在，只是不一定叫这个名字：</p>
+
+<p><strong>包管理器（npm / pip / Maven）</strong></p>
+<p>安装包 A 之前先安装 A 的所有依赖。npm 用拓扑排序决定安装顺序，循环依赖时报错 &quot;circular dependency detected&quot;。</p>
+
+<p><strong>构建系统（Makefile / Bazel / Gradle）</strong></p>
+<p><code>make</code> 分析构建目标之间的依赖关系，只编译需要的文件，且按正确顺序编译。Bazel 的整个构建图就是一个被持续维护的 DAG。</p>
+
+<p><strong>数据库迁移</strong></p>
+<p>先创建被引用的表（父表），再创建带外键的表（子表）。Alembic / Flyway 在内部对迁移文件做拓扑排序，同时检测迁移图中的循环。</p>
+
+<p><strong>Kubernetes 资源部署</strong></p>
+<p>先部署 ConfigMap 和 Secret，再部署依赖它们的 Deployment。ArgoCD 的 sync-wave 正是拓扑排序在 K8s 中的应用。</p>
+
+<p><strong>Apache Airflow / Temporal / Prefect</strong></p>
+<p>工作流调度的核心——只有当所有上游任务完成，下游任务才能启动。Airflow DAG 的命名就来自拓扑排序的基础数据结构。</p>
+
+<p><strong>English:</strong></p>
+
+<p>- <strong>npm/pip install</strong> resolves a dependency graph via topological sort. Circular dependency → error. This is exactly LeetCode 207.</p>
+<p>- <strong>Make/Bazel/Gradle</strong> topologically order build targets so prerequisites compile first.</p>
+<p>- <strong>Alembic (SQLAlchemy migrations)</strong> sorts migration scripts by dependency to guarantee schema consistency.</p>
+<p>- <strong>Kubernetes operators</strong> apply resources in dependency order; ArgoCD&#x27;s sync-wave is topo-sort made visible.</p>
+<p>- <strong>Airflow/Temporal DAGs</strong> — &quot;DAG&quot; literally stands for the same data structure. Task execution follows topological order; parallel tasks are those at the same BFS level.</p>
+
+<p><strong>The universal pattern:</strong> Any &quot;X must happen before Y&quot; constraint set across tasks → build a graph, topologically sort it.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Scenario:</strong> &quot;You have <code>n</code> tasks and a list of <code>[task, dependency]</code> pairs. Return a valid execution order, or an empty list if impossible.&quot;</p>
+
+<hr/>
+
+<p><strong>Q1: Walk me through your approach before writing any code.</strong></p>
+
+<p>→ &quot;I&#x27;ll model it as a directed graph where <code>dependency → task</code>. Then I&#x27;ll use Kahn&#x27;s BFS: initialize a queue with all tasks that have no dependencies (in-degree 0), process them one by one decrementing neighbors&#x27; in-degrees, and enqueue any that hit zero. If I process all <code>n</code> tasks, no cycle exists and the processing order is my answer. If fewer — there&#x27;s a cycle, return empty.&quot;</p>
+
+<hr/>
+
+<p><strong>Q2: What if there&#x27;s a cycle?</strong></p>
+
+<p>→ &quot;Kahn&#x27;s handles it naturally. Nodes in a cycle always have at least one incoming edge from within the cycle, so their in-degree never reaches zero. They never get enqueued. After the BFS, <code>len(order) &lt; n</code> tells me a cycle exists. No extra cycle-detection code needed — it falls out of the algorithm for free.&quot;</p>
+
+<hr/>
+
+<p><strong>Q3: Which tasks can run in parallel?</strong></p>
+
+<p>→ &quot;All tasks enqueued in the same BFS &#x27;round&#x27; have no dependencies on each other — they can run concurrently. Process the queue level by level instead of node by node:&quot;</p>
+
+<pre><code>
+def parallel_order(n: int, deps: List[List[int]]) -&gt; List[List[int]]:
+    &quot;&quot;&quot;Returns execution waves; tasks in same wave run in parallel.&quot;&quot;&quot;
+    adj = [[] for _ in range(n)]
+    in_degree = [0] * n
+    for task, prereq in deps:
+        adj[prereq].append(task)
+        in_degree[task] += 1
+
+    queue = deque(t for t in range(n) if in_degree[t] == 0)
+    waves = []
+
+    while queue:
+        wave_size = len(queue)        # snapshot current level
+        wave = []
+        for _ in range(wave_size):
+            task = queue.popleft()
+            wave.append(task)
+            for nxt in adj[task]:
+                in_degree[nxt] -= 1
+                if in_degree[nxt] == 0:
+                    queue.append(nxt)
+        waves.append(wave)
+
+    return waves if sum(len(w) for w in waves) == n else []
+    # e.g. [[0,1], [2,3], [4]] — first two tasks run in parallel, etc.
+</code></pre>
+
+<hr/>
+
+<p><strong>Q4: How is this different from regular BFS/DFS on an undirected graph?</strong></p>
+
+<p>→ &quot;Direction is fundamental. Regular BFS on an undirected graph finds shortest paths — edges have no inherent ordering. Topological sort only applies to directed graphs with no cycles. The BFS here isn&#x27;t finding shortest paths; it&#x27;s finding a processing order that respects dependency direction. You can&#x27;t topologically sort a tree or undirected graph meaningfully.&quot;</p>
+
+<hr/>
+
+<p><strong>Q5: What&#x27;s the time/space complexity? Where does it break down in practice?</strong></p>
+
+<p>→ &quot;O(V+E) time — each node and edge visited exactly once. O(V+E) space for adjacency list + O(V) for in-degree and queue. The algorithm itself is never the bottleneck. In practice: (1) building the dependency graph from a database or config system can be slow — that&#x27;s the I/O bottleneck; (2) if the graph has millions of nodes, the adjacency list memory dominates; (3) for very wide DAGs (many parallel tasks), queue overhead matters. The algorithm is essentially optimal — you can&#x27;t do better than O(V+E) since you must read every edge at least once.&quot;</p>
+
+<hr/>
+
+<h2>Step 4 Cross-Check ✅</h2>
+
+<p><strong>Traced input:</strong> <code>[[1,0], [2,1]]</code> — chain <code>0 → 1 → 2</code></p>
+
+<p><strong>ASCII Diagram shows:</strong></p>
+<p>- Round 1: Pop 0, in[1]: 1→0, enqueue 1 → order=[0]</p>
+<p>- Round 2: Pop 1, in[2]: 1→0, enqueue 2 → order=[0,1]</p>
+<p>- Round 3: Pop 2, no neighbors → order=[0,1,2]</p>
+
+<p><strong>Code trace (findOrder Kahn&#x27;s):</strong></p>
+<p>- <code>adj={0:[1],1:[2],2:[]}</code>, <code>in_degree=[0,1,1]</code></p>
+<p>- <code>queue=deque([0])</code></p>
+<p>- Iter 1: course=0, order=[0], in_degree[1]=0 → queue=[1]</p>
+<p>- Iter 2: course=1, order=[0,1], in_degree[2]=0 → queue=[2]</p>
+<p>- Iter 3: course=2, order=[0,1,2], no neighbors → queue=[]</p>
+<p>- <code>len([0,1,2])==3==numCourses</code> → return <code>[0,1,2]</code> ✓</p>
+
+<p><strong>Diagram flow and code execution are identical.</strong> ✅</p>
+
+<hr/>
+<h1>Review</h1>
+<h2>Review Day 110 — Saturday Deep Dive Override</h2>
+
+<p>Today is a Saturday Deep Dive day. The scheduled review is superseded by the deep dive:</p>
+
+<p>📄 <strong>See:</strong> <code>2026-08-08-deepdive.md</code> — 拓扑排序 / Topological Sort (Course Schedule I &amp; II)</p>
+
+<p>The deep dive covers LeetCode 207 &amp; 210 in full depth with Kahn&#x27;s BFS, DFS 3-color marking, edge cases, real-world applications (npm, Airflow, Kubernetes), and interview simulation.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-08-06</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
