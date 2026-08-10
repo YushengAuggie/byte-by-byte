@@ -807,3 +807,23 @@ _Report-only run — no code changes made._
 1. `nvm use 24` (or install 25.9+) so cron diagnostics work again.
 2. Inspect the daily generator cron's last runs for 08-03/04/05/07 — likely the cron itself is failing to fire or the runner is erroring silently.
 3. Confirm subscriber list is intentionally 1 recipient; otherwise restore Yusheng/other addresses.
+
+## 2026-08-10 Optimization Run
+
+### Issues Found
+- **P0 (recovering) — Delivery still below target**: 4/7 days in the last week (missed 2026-08-04, 08-05, 08-07). BUT last 3 consecutive days delivered cleanly (08-08, 08-09, 08-10), and 08-10 sent 5 sections vs the degraded 1-section sends on 08-08/08-09. Trend is up — the collapse noted on 08-07 appears to be resolving. Keep watching; if it stays 3/3 next run, downgrade to healthy.
+- **P0 (resolved) — Cron introspection Node blocker fixed**: default `openclaw` now runs on Node v25.9.0 (was v25.6.1 causing hard failure). `openclaw cron list --json` works when PATH points at the v25.9.0 bin. Note: bare `openclaw` in a fresh shell may still resolve to the old v25.6.1 shim — the parsing error in Step 0 was because the JSON came back empty under the old node. Recommend making v25.9.0 the nvm default so the optimizer's Step 0 python parse stops erroring.
+- **P1 — Only 1 cron job visible**: `cron list` shows a single job total (the optimizer itself). The daily content generator is NOT visible as a cron job to this agent, yet daily commits are landing — so generation runs via another mechanism/owner. Not a delivery problem right now, but it means this optimizer cannot inspect the generator's lastError/lastRunStatus directly. Diagnosis of missed days remains indirect (git log + email-send-log only).
+- **P1 — Section-count instability**: 08-08 and 08-09 emails sent only 1 section each; 08-10 sent 5. Worth confirming 1-section days were intended (e.g., review/light days) and not truncated generation.
+- **P1 — Recipient still 1**: `recipients` stuck at 1 (Auggie1024.d@gmail.com) since 2026-07-06. Repeat finding — confirm this is intentional or restore other subscribers.
+
+### Metrics
+- Delivery rate (7d): **4/7** (08-04, 08-05, 08-07 missed) — up from 3/7 last run; last 3 days 3/3.
+- Cron errors: none surfaced. Optimizer cron `lastRunStatus=ok`, `lastRunError=null`. Only 1 job visible to this agent.
+- State: currentDay=111, lastSentDate=2026-08-10, systemDesignIndex=60, leetcodeIndex=87, frontendIndex=37, aiTopicIndex=30, pythonCraftIndex=48.
+
+### Recommended manual actions
+1. Set nvm default to v25.9.0 so Step 0 cron diagnostics never fall back to the broken v25.6.1 shim.
+2. Confirm 08-08/08-09 single-section sends were intended; if truncated, investigate the generator.
+3. Confirm subscriber list of 1 is intentional; otherwise restore additional addresses.
+4. If next run shows 3/3 recent delivery, mark delivery healthy — the early-August collapse looks resolved.
