@@ -5,8 +5,482 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 09 Aug 2026 15:10:18 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 10 Aug 2026 15:18:01 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-08-10</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-08-10</guid>
+      <pubDate>Mon, 10 Aug 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计综合 / System Design Synthesis — Day 111</h2>
+
+<h2>分布式一致性协议全景对比</h2>
+<h2>Distributed Consensus: Raft vs ZAB vs Paxos — When to Pick What</h2>
+
+<p>你已经学了 Raft (etcd)、ZooKeeper (ZAB)、以及多个依赖一致性的系统。今天来综合对比。</p>
+<p>You&#x27;ve studied Raft (etcd), ZooKeeper (ZAB), and systems built on them. Today: a synthesis.</p>
+
+<hr/>
+
+<h3>问题的本质 / The Core Problem</h3>
+
+<p><strong>多节点如何就一个值达成一致，即使有节点宕机？</strong></p>
+<p>How do multiple nodes agree on a single value even when some crash?</p>
+
+<p>所有共识算法都解决这个问题，但设计权衡各不相同。</p>
+<p>All consensus algorithms solve this — with very different tradeoffs.</p>
+
+<hr/>
+
+<h3>三协议对比 / Protocol Comparison</h3>
+
+<pre><code>
+                Raft             ZAB (ZooKeeper)    Paxos
+Leader?         Strong leader    Primary            Varies
+Reads on        Leader only      Any follower       Any
+  followers?    (linearizable)   (may be stale)     
+Writes          Leader only      Primary only       Leader only
+Use case        etcd, Consul     ZooKeeper          Spanner, Chubby
+Complexity      Simpler ✅       Moderate           Very complex ❌
+</code></pre>
+
+<hr/>
+
+<h3>关键洞察 / Key Insights</h3>
+
+<p><strong>Raft vs ZAB 最大区别：</strong></p>
+<p>- <strong>Raft:</strong> follower 不直接服务读取 → 强一致性，每次读都走 leader</p>
+<p>- <strong>ZAB:</strong> follower 可服务读取，但可能读到旧数据（eventual reads）→ 高吞吐</p>
+
+<p><strong>何时选哪个？</strong></p>
+<p>| 需求 | 选择 |</p>
+<p>|------|------|</p>
+<p>| 强一致元数据存储 (Kubernetes) | Raft → etcd |</p>
+<p>| 配置管理 + 分布式协调 (Kafka) | ZAB → ZooKeeper |</p>
+<p>| 超大规模全球分布 (Google) | Paxos → Spanner |</p>
+
+<hr/>
+
+<h3>你学过的系统用了什么共识？ / Systems You&#x27;ve Studied</h3>
+
+<p>| 系统 | 共识层 |</p>
+<p>|------|--------|</p>
+<p>| Kubernetes | etcd (Raft) |</p>
+<p>| Kafka (旧) | ZooKeeper; 新版迁移至 KRaft |</p>
+<p>| Google Spanner | Multi-Paxos |</p>
+<p>| TiDB | Raft (multi-region) |</p>
+<p>| Consul | Raft |</p>
+
+<hr/>
+
+<h3>别踩这个坑 / Common Pitfalls</h3>
+
+<p>❌ 把 etcd 当数据库用 → etcd 只存小 key-value 元数据，建议总数据 &lt; 8 GB</p>
+<p>❌ ZooKeeper 节点数设偶数 → 必须奇数（需要 majority quorum = N/2+1）</p>
+<p>❌ 忽略 leader 切换窗口的 stale read → 用 linearizable reads 或 watch 机制解决</p>
+<p>❌ 把共识协议当成性能优化 → 共识本质是牺牲性能换安全性</p>
+
+<hr/>
+
+<h3>📚 参考 / References</h3>
+<p>- https://raft.github.io/</p>
+<p>- https://zookeeper.apache.org/doc/current/zookeeperInternals.html</p>
+<p>- https://www.cs.cornell.edu/courses/cs6452/2012sp/papers/paxos-simple-web.pdf</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象班级选班长：Raft 要求每次投票全班 &gt;50% 同意才算数（严格但慢）；ZAB 让班长先宣布决定然后大家记下来（快但可能同学还没更新）；Paxos 是数学最严格的版本，但最难理解，Google 才用得起。</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 87: #207 Course Schedule (Medium) — Graphs</h2>
+
+<p>🧩 <strong>图遍历模式 (8/13)</strong> — building on the template from Day 101 (Number of Islands)</p>
+
+<p>今天是图遍历第 8 题，这是一个<strong>拓扑排序</strong>的经典应用。</p>
+<p>Today is Graph block problem 8/13 — classic <strong>topological sort</strong> application.</p>
+
+<hr/>
+
+<h2>问题 / Problem</h2>
+
+<p>🔗 [LeetCode #207](https://leetcode.com/problems/course-schedule/) 🟡 Medium</p>
+<p>📹 [NeetCode Solution](https://neetcode.io/problems/course-schedule)</p>
+
+<p><strong>给你 n 门课程，prerequisites[i] = [a, b] 表示学 a 前必须先学 b。问能否完成所有课程？</strong></p>
+<p>Given n courses and prerequisites[i] = [a, b] meaning you must take b before a. Can you finish all courses?</p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象你在设计一个 CI/CD pipeline：</p>
+<p>Imagine designing a CI/CD pipeline:</p>
+
+<p>- <code>deploy</code> 依赖 <code>test</code>，<code>test</code> 依赖 <code>build</code></p>
+<p>- 如果 <code>build</code> 又依赖 <code>deploy</code> → <strong>循环依赖！pipeline 无法执行</strong></p>
+<p>- 同理，课程的循环依赖（课程 A 需要 B，B 需要 A）= 无法完成</p>
+
+<p><strong>本质：检测有向图中是否有环 / Detect cycle in directed graph</strong></p>
+
+<hr/>
+
+<h2>这道题如何套用模板 / Mapping to Pattern</h2>
+
+<p>标准 BFS 模板处理的是&quot;找到什么&quot;，这道题用 <strong>BFS + 入度（Kahn&#x27;s Algorithm）</strong>：</p>
+
+<pre><code>
+核心变化 (vs. 标准 BFS):
+- 不从随机节点出发，从入度为 0 的节点出发（没有先决条件的课）
+- 每处理一个节点，把邻居入度 -1
+- 如果邻居入度变 0，加入队列
+- 最后：如果处理了所有节点 → 无环 ✅；否则有环 ❌
+</code></pre>
+
+<hr/>
+
+<h2>Python 解法 / Solution</h2>
+
+<pre><code>
+from collections import deque, defaultdict
+
+def canFinish(numCourses: int, prerequisites: list[list[int]]) -&gt; bool:
+    # Build adjacency list + in-degree count
+    graph = defaultdict(list)
+    in_degree = [0] * numCourses
+    
+    for course, prereq in prerequisites:
+        graph[prereq].append(course)  # prereq → course
+        in_degree[course] += 1
+    
+    # Start with all courses that have no prerequisites
+    queue = deque([i for i in range(numCourses) if in_degree[i] == 0])
+    completed = 0
+    
+    while queue:
+        node = queue.popleft()
+        completed += 1                  # &quot;取完&quot;这门课
+        
+        for neighbor in graph[node]:
+            in_degree[neighbor] -= 1   # 先决条件满足，入度 -1
+            if in_degree[neighbor] == 0:
+                queue.append(neighbor)
+    
+    return completed == numCourses      # 全部完成 = 无环
+</code></pre>
+
+<p><strong>执行轨迹 / Trace (3 courses: [[1,0],[2,1]]):</strong></p>
+<pre><code>
+prereqs: 0→1→2 (linear chain)
+in_degree: [0, 1, 1]
+queue: [0]  (only 0 has no prereq)
+
+Step 1: pop 0, completed=1, neighbor 1: in_degree[1]=0 → add to queue
+Step 2: pop 1, completed=2, neighbor 2: in_degree[2]=0 → add to queue  
+Step 3: pop 2, completed=3
+
+completed(3) == numCourses(3) → True ✅
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong> Time O(V+E), Space O(V+E)</p>
+
+<hr/>
+
+<h2>举一反三 / Connect to Pattern Block</h2>
+
+<p>| 题目 | 图类型 | 核心变化 |</p>
+<p>|------|--------|---------|</p>
+<p>| #200 Number of Islands | 网格图 | BFS 标记连通区域 |</p>
+<p>| #994 Rotting Oranges | 网格图 | 多源 BFS 计层数 |</p>
+<p>| <strong>#207 Course Schedule</strong> | <strong>有向图</strong> | <strong>BFS + 入度（拓扑排序）</strong> |</p>
+<p>| #210 Course Schedule II | 有向图 | 拓扑排序返回顺序 |</p>
+<p>| #127 Word Ladder | 隐式图 | BFS 找最短转换路径 |</p>
+
+<p><strong>关键区别：</strong></p>
+<p>- 无向图 BFS → 用 <code>visited</code> 防重复</p>
+<p>- 有向图拓扑 → 用 <code>in_degree</code> 决定入队顺序</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;Course Schedule 中，如果最终 completed &lt; numCourses，说明什么？&quot;,&quot;options&quot;:[&quot;所有课程都可以完成&quot;,&quot;图中存在环（循环依赖）&quot;,&quot;图的边数不够&quot;,&quot;起始节点选错了&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://leetcode.com/problems/course-schedule/</p>
+<p>- https://neetcode.io/problems/course-schedule</p>
+<p>- https://cp-algorithms.com/graph/topological-sort.html</p>
+
+<h2>🧒 ELI5</h2>
+<p>像玩积木：先找没有放在其他积木上面的（入度 0），把它拿走，再找下一个自由的。如果最后还有积木拿不到（因为相互压着），就说明有循环，游戏无法完成。</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能综合 / Soft Skills Synthesis — Day 111</h2>
+
+<h2>场景：你的团队刚完成一次重大架构迁移，但上线后发现性能比预期差 30%。CEO 问你怎么回事。</h2>
+<h2>Scenario: Your team just completed a major architecture migration, but post-launch performance is 30% worse than expected. The CEO asks what happened.</h2>
+
+<hr/>
+
+<h2>为什么这个场景难 / Why This Is Hard</h2>
+
+<p>这不是普通的&quot;tell me about a failure&quot;——这需要你同时展示：</p>
+<p>This isn&#x27;t a standard &quot;tell me about a failure&quot; — you need to demonstrate:</p>
+<p>1. 技术判断力 (technical judgment)</p>
+<p>2. 透明度 + 不甩锅 (transparency without blame-shifting)</p>
+<p>3. 向上沟通的能力 (executive communication under pressure)</p>
+<p>4. 从数据出发的问题定位 (data-driven diagnosis)</p>
+
+<hr/>
+
+<h2>STAR 分解 / STAR Framework</h2>
+
+<p><strong>Situation (情境)</strong></p>
+<p>&gt; 我们迁移了核心订单服务从单体到微服务架构，上线后 P99 延迟从 200ms 升到 320ms。</p>
+
+<p><strong>Task (任务)</strong></p>
+<p>&gt; 需要立刻向 CEO 解释，同时启动诊断并给出恢复计划。</p>
+
+<p><strong>Action (行动)</strong></p>
+<p>&gt; 1. <strong>先承认，不辩解：</strong> &quot;我们发现了一个预期外的性能问题，这是我们的责任。&quot;</p>
+<p>&gt; 2. <strong>提供数据，不猜测：</strong> &quot;我们看到的具体指标是...原因初步定位为网络跳数增加和 serialization overhead。&quot;</p>
+<p>&gt; 3. <strong>给出时间表：</strong> &quot;48小时内我们会有根因分析，72小时内会有修复方案。&quot;</p>
+<p>&gt; 4. <strong>回溯决策链：</strong> 复盘我们的 load testing 在哪个阶段漏了这个场景</p>
+
+<p><strong>Result (结果)</strong></p>
+<p>&gt; 3天内通过连接池复用和 gRPC 替换 REST 将延迟降至 190ms，比迁移前还快 5%。</p>
+
+<hr/>
+
+<h2>❌ 别这样说 / What NOT to Say</h2>
+<p>- ❌ &quot;这是因为 DevOps 没有配置好 k8s 参数&quot; → 甩锅</p>
+<p>- ❌ &quot;当时我们时间不够，没法做更好的测试&quot; → 找借口</p>
+<p>- ❌ &quot;这个性能问题不是很严重&quot; → 淡化问题</p>
+
+<h2>✅ 这样更好 / What Works</h2>
+<p>- ✅ 用具体数字说话：&quot;P99 从 200ms 涨到 320ms，QPS 高峰期影响约 8% 的用户&quot;</p>
+<p>- ✅ 区分&quot;已知/已做&quot;和&quot;漏掉了什么&quot;：&quot;我们做了单服务压测，但漏了跨服务串联场景&quot;</p>
+<p>- ✅ 展示后续改进：&quot;我们在 post-mortem 中新增了跨服务集成压测环节&quot;</p>
+
+<hr/>
+
+<h2>Staff+ 视角 / Senior/Staff Level Tips</h2>
+
+<p><strong>向上沟通的艺术：</strong></p>
+<p>- CEO 不需要技术细节，需要：影响面 + 恢复时间 + 根因 + 你是否掌控了局面</p>
+<p>- 永远先给结论，再给细节（Pyramid Principle）</p>
+<p>- 承认不确定性，但承诺什么时候会有更多信息</p>
+
+<p><strong>技术上的教训：</strong></p>
+<p>- 微服务迁移必须做 <strong>chaos engineering</strong> 和 <strong>end-to-end load test</strong>，不只是单元/单服务压测</p>
+<p>- 建立迁移 checklist：network hops、serialization format、connection pooling</p>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+<p>1. 危机时刻：先控制局面，给时间表，不找借口</p>
+<p>2. 数据说话：永远有具体指标，不说&quot;有点慢&quot;</p>
+<p>3. 后续提升比当时完美更重要：展示系统性改进，不是补丁式修复</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://sre.google/sre-book/postmortem-culture/</p>
+<p>- https://www.kitchensoap.com/2012/10/25/on-being-a-senior-engineer/</p>
+
+<h2>🧒 ELI5</h2>
+<p>就像你打破了妈妈的花瓶：好的做法是马上说&quot;我打破了，是我不小心，我来扫地，下次我会更注意&quot;，而不是说&quot;是风吹倒的&quot;或者&quot;花瓶本来就很脆&quot;。</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🎨 Python Craft — Day 48: Secrets Management — env vars, Vault, keyring</h2>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个后端服务，需要连接 PostgreSQL + Redis + 第三方 API。</p>
+<p>You&#x27;re building a backend service that connects to PostgreSQL + Redis + third-party APIs.</p>
+
+<p><strong>问题：密钥放哪里？</strong> / Where do secrets go?</p>
+<p>- 硬编码在代码里 → 推上 GitHub → 黑客 / Hardcode → push to GitHub → hacker</p>
+<p>- 只用环境变量 → 容器里如何注入？如何轮换？ / Env vars only → how to inject in containers? how to rotate?</p>
+<p>- 正确答案：按安全等级分层 / Right answer: layered by security level</p>
+
+<hr/>
+
+<h2>三层密钥管理 / Three-Tier Secrets Management</h2>
+
+<pre><code>
+Level 1: Dev — .env file (gitignored)
+Level 2: Staging/Prod — Environment variables injected by platform (K8s Secrets, ECS TaskDef)
+Level 3: High-security/dynamic — Vault / AWS Secrets Manager (rotation, audit log)
+</code></pre>
+
+<hr/>
+
+<h2>代码示例 / Code Examples</h2>
+
+<h3>Level 1: python-dotenv + pydantic-settings</h3>
+
+<pre><code>
+# pip install python-dotenv pydantic-settings
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    database_url: str
+    redis_url: str
+    api_key: str
+    debug: bool = False
+
+    class Config:
+        env_file = &quot;.env&quot;           # loads from .env in dev
+        env_file_encoding = &quot;utf-8&quot;
+
+settings = Settings()               # reads from env or .env
+print(settings.database_url)       # never print in prod!
+</code></pre>
+
+<pre><code>
+# .env (NEVER commit this)
+DATABASE_URL=postgresql://user:pass@localhost/mydb
+REDIS_URL=redis://localhost:6379
+API_KEY=sk-abc123
+</code></pre>
+
+<h3>Level 2: keyring — OS Keychain for local dev</h3>
+
+<pre><code>
+# pip install keyring
+import keyring
+
+# Store (run once, stores in macOS Keychain / Windows Credential Store)
+keyring.set_password(&quot;my-app&quot;, &quot;api_key&quot;, &quot;sk-abc123&quot;)
+
+# Retrieve
+secret = keyring.get_password(&quot;my-app&quot;, &quot;api_key&quot;)
+# Returns None if not found — always handle!
+if not secret:
+    raise RuntimeError(&quot;API key not found in keychain&quot;)
+</code></pre>
+
+<h3>Level 3: HashiCorp Vault via hvac</h3>
+
+<pre><code>
+# pip install hvac
+import hvac
+
+client = hvac.Client(url=&quot;http://vault:8200&quot;, token=os.environ[&quot;VAULT_TOKEN&quot;])
+
+# Read secret
+secret = client.secrets.kv.read_secret_version(path=&quot;myapp/prod&quot;)
+db_password = secret[&quot;data&quot;][&quot;data&quot;][&quot;DB_PASSWORD&quot;]
+
+# Dynamic credentials — Vault generates a new DB user each time!
+creds = client.secrets.database.generate_credentials(&quot;my-role&quot;)
+# {&quot;username&quot;: &quot;v-token-abc123&quot;, &quot;password&quot;: &quot;A1B2-...&quot;}  &lt;- rotates automatically
+</code></pre>
+
+<hr/>
+
+<h2>❌ vs ✅ 对比 / Common Mistake</h2>
+
+<pre><code>
+# ❌ 永远不要这样做 / NEVER do this
+DATABASE_URL = &quot;postgresql://admin:supersecret@prod.db.internal/orders&quot;
+
+# ✅ 从环境变量读，有默认值处理
+import os
+DATABASE_URL = os.environ.get(&quot;DATABASE_URL&quot;)
+if not DATABASE_URL:
+    raise ValueError(&quot;DATABASE_URL environment variable is required&quot;)
+</code></pre>
+
+<hr/>
+
+<h2>何时用哪个 / When to Use What</h2>
+
+<p>| 场景 | 方案 |</p>
+<p>|------|------|</p>
+<p>| 本地开发 | <code>.env</code> + <code>python-dotenv</code> |</p>
+<p>| CI/CD | 平台 Secret Variables (GitHub Actions Secrets) |</p>
+<p>| Kubernetes | K8s Secrets (base64, 非加密 → 配合 Sealed Secrets 或 External Secrets Operator) |</p>
+<p>| 高安全需求 | HashiCorp Vault / AWS Secrets Manager (动态凭证、审计日志、自动轮换) |</p>
+<p>| 本地 CLI 工具 | <code>keyring</code> — 存入 OS keychain |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://docs.pydantic.dev/latest/concepts/pydantic_settings/</p>
+<p>- https://developer.hashicorp.com/vault/docs/secrets/databases</p>
+<p>- https://pypi.org/project/keyring/</p>
+
+<h2>🧒 ELI5</h2>
+<p>你的秘密日记：在家放在抽屉里（.env）；带去学校放在储物柜里（环境变量）；最重要的秘密交给学校的专门保险箱管理员（Vault），他还帮你定期换锁。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI 新闻 / AI News — Day 111 (August 10, 2026)</h2>
+
+<h2>本周 AI 大事 / This Week in AI</h2>
+
+<hr/>
+
+<h3>1. 🧮 OpenAI Astra 以 $2,000 解出 10 道未解数学难题</h3>
+
+<p>OpenAI 的 Astra 模型据报道以极低算力成本（仅约 $2,000）成功解决了 10 道此前未被解决的数学与计算机科学问题，并在 GitHub 上发布了完整的可验证证明。</p>
+
+<p>OpenAI&#x27;s Astra model reportedly solved ten previously unsolved mathematics and computer science problems at a remarkably low compute cost (~$2,000), publishing fully verified proofs on GitHub.</p>
+
+<p>&gt; 💡 <strong>为什么重要：</strong> 这是 AI 从&quot;辅助工具&quot;转向&quot;自主科研主体&quot;的关键信号——不只是加速人类研究，而是独立提出并验证新知识。</p>
+
+<p>📎 来源：https://medium.com/@davidakpovi/ai-news-week-of-august-3-9-2026-8dfa677ffca3</p>
+
+<hr/>
+
+<h3>2. 🇪🇺 EU AI Act 正式执法：透明度新规生效</h3>
+
+<p>从 8 月 2 日起，欧盟 AI Office 开始正式执法 AI Act，新规包括：</p>
+<p>- AI 系统必须向用户声明自己是 AI</p>
+<p>- Deepfake 和 AI 生成内容必须打标签</p>
+<p>- 通用 AI（GPAI）模型（如 GPT-5、Gemini）受到直接监管</p>
+
+<p>Starting August 2, the EU AI Office began enforcing the AI Act: AI systems must identify themselves, deepfakes must be labeled, and GPAI models face direct enforcement.</p>
+
+<p>&gt; 💡 <strong>对开发者的影响：</strong> 如果你的产品在欧洲运营，你的 AI chatbot、图像生成功能都需要合规改造。</p>
+
+<p>📎 来源：https://digital-strategy.ec.europa.eu/en/news/commission-starts-enforcing-ai-act-rules-and-new-transparency-requirements-2-august</p>
+
+<hr/>
+
+<h3>3. 🦠 AI 设计的噬菌体 — 突破 + 担忧并存</h3>
+
+<p>科学家首次创造了完全由 AI 设计的病毒（噬菌体），专门针对抗生素无效的细菌感染。</p>
+<p>But: 安全专家警告这也打开了 AI 辅助生物武器的大门，治理框架明显滞后。</p>
+
+<p>Scientists created the first AI-designed viruses (bacteriophages) to treat persistent infections resistant to natural phages. But biosecurity experts warn governance is lagging dangerously behind the capability.</p>
+
+<p>&gt; 💡 <strong>双刃剑：</strong> AI 能力越来越强，但监管框架还在追赶。AI 安全不只是模型对齐问题，也是物理世界的安全问题。</p>
+
+<p>📎 来源：https://www.theguardian.com/science/2026/aug/06/safety-fears-as-scientists-make-first-viruses-designed-by-ai</p>
+
+<hr/>
+
+<h3>📊 数字说话 / By the Numbers</h3>
+
+<p>- ChatGPT 活跃用户据报道已超 <strong>10 亿</strong></p>
+<p>- Gartner 预测 2026 年底 <strong>40% 的企业应用</strong>将内嵌 AI Agent</p>
+<p>- Stanford 2026 AI Index：生成式 AI 在 ChatGPT 发布后 3 年内实现了 <strong>53% 的人口级采用率</strong></p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>AI 这周：一个 AI 解了连数学家都解不开的题（很厉害）；欧洲说&quot;AI 要自报家门&quot;（新规定）；科学家用 AI 设计了能杀菌的病毒（有点让人担心）。</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-08-09</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
