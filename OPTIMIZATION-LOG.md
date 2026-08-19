@@ -827,3 +827,21 @@ _Report-only run — no code changes made._
 2. Confirm 08-08/08-09 single-section sends were intended; if truncated, investigate the generator.
 3. Confirm subscriber list of 1 is intentional; otherwise restore additional addresses.
 4. If next run shows 3/3 recent delivery, mark delivery healthy — the early-August collapse looks resolved.
+
+## 2026-08-19 Optimization Run
+
+### Issues Found
+- **P0 — 6-day delivery outage (2026-08-12 → 2026-08-17)**: email-send-log shows MISSED for 08-12, 08-13, 08-14, 08-15, 08-16, 08-17. Git confirms the same gap: last commit before the outage was Day 112 (08-11), and generation did not resume until Day 113 (08-18). So the daily generator stopped firing entirely for ~6 days, not just a delivery/email failure. Delivery has since recovered: 08-18 (Day 113) and 08-19 (Day 114) both OK. This is the largest gap observed to date and needs a manual root-cause on why the generator cron went silent from 08-12 through 08-17.
+- **P0 (recurring, still unresolved) — Cron introspection blocked by Node version**: Step 0's `openclaw cron list --json` failed again (empty output → JSON parse error). Bare `openclaw` in the optimizer shell resolves to Node **v25.6.1**, which is below the required `>=25.9.0`, so the CLI hard-exits with a version error before returning any JSON. This has been flagged in the last two runs. Until `nvm alias default` points at v25.9.0+ (or the PATH shim is fixed), this optimizer cannot inspect the generator cron's lastError/lastRunStatus and must diagnose delivery indirectly via git + email-send-log only.
+- **P1 — Generator cron not directly observable**: because of the Node blocker above, the daily generator's run history/errors remain invisible to this agent. Root-causing the 08-12→08-17 outage requires manual inspection of that cron's run logs on a shell with the correct Node.
+
+### Metrics
+- Delivery rate (7d): **2/7** (08-13 through 08-17 all missed; only 08-18 and 08-19 OK).
+- Delivery rate (14d): 6/14.
+- Cron errors: not retrievable this run (Node v25.6.1 blocks `openclaw cron list`).
+- State: currentDay=114, lastSentDate=2026-08-19, systemDesignIndex=60, leetcodeIndex=90, behavioralIndex=60, frontendIndex=37, aiTopicIndex=30, pythonCraftIndex=50, lastReviewDay=110.
+
+### Recommended manual actions
+1. **Root-cause the 08-12→08-17 outage**: inspect the daily generator cron's run history on a shell with Node >=25.9.0. Determine whether it was disabled, erroring, or the host was down for those 6 days.
+2. **Fix the Node default**: `nvm alias default 25.9.0` (or 24.x) so the optimizer's Step 0 cron diagnostics stop silently failing. This is now the 3rd consecutive run blocked by it.
+3. Confirm recovery holds: if next run shows continuous delivery from 08-18 onward, the outage is closed.
