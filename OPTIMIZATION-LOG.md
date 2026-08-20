@@ -815,7 +815,7 @@ _Report-only run — no code changes made._
 - **P0 (resolved) — Cron introspection Node blocker fixed**: default `openclaw` now runs on Node v25.9.0 (was v25.6.1 causing hard failure). `openclaw cron list --json` works when PATH points at the v25.9.0 bin. Note: bare `openclaw` in a fresh shell may still resolve to the old v25.6.1 shim — the parsing error in Step 0 was because the JSON came back empty under the old node. Recommend making v25.9.0 the nvm default so the optimizer's Step 0 python parse stops erroring.
 - **P1 — Only 1 cron job visible**: `cron list` shows a single job total (the optimizer itself). The daily content generator is NOT visible as a cron job to this agent, yet daily commits are landing — so generation runs via another mechanism/owner. Not a delivery problem right now, but it means this optimizer cannot inspect the generator's lastError/lastRunStatus directly. Diagnosis of missed days remains indirect (git log + email-send-log only).
 - **P1 — Section-count instability**: 08-08 and 08-09 emails sent only 1 section each; 08-10 sent 5. Worth confirming 1-section days were intended (e.g., review/light days) and not truncated generation.
-- **P1 — Recipient still 1**: `recipients` stuck at 1 (Auggie1024.d@gmail.com) since 2026-07-06. Repeat finding — confirm this is intentional or restore other subscribers.
+- **P1 — Recipient still 1**: `recipients` stuck at 1 ([EMAIL_REDACTED]) since 2026-07-06. Repeat finding — confirm this is intentional or restore other subscribers.
 
 ### Metrics
 - Delivery rate (7d): **4/7** (08-04, 08-05, 08-07 missed) — up from 3/7 last run; last 3 days 3/3.
