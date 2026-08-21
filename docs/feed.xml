@@ -5,8 +5,591 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 20 Aug 2026 15:09:18 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 21 Aug 2026 15:12:30 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-08-21</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-08-21</guid>
+      <pubDate>Fri, 21 Aug 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>📊 Day 116 — System Design Synthesis</h2>
+<p>&gt; 🔥 Expert Level | Synthesis: Distributed Transactions</p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design — 分布式事务大比拼</h2>
+
+<h2>分布式事务的真相 / Distributed Transactions: 2PC vs SAGA vs 最终一致性</h2>
+
+<hr/>
+
+<h3>场景引入 / The Problem</h3>
+
+<p>想象你在设计一个电商支付系统。用户点击&quot;购买&quot;时，需要同时：</p>
+<p>1. 扣减库存（Inventory Service）</p>
+<p>2. 扣款（Payment Service）</p>
+<p>3. 创建订单（Order Service）</p>
+
+<p>三个独立服务，如果支付成功但库存扣减失败怎么办？</p>
+
+<p><em>Imagine: user clicks &quot;Buy&quot; — inventory, payment, and order creation must all succeed or all fail. Three different databases, three different services.</em></p>
+
+<hr/>
+
+<h3>方案一：两阶段提交 / 2PC (Two-Phase Commit)</h3>
+
+<pre><code>
+协调者 Coordinator
+    │
+    ├─── Phase 1: PREPARE ──► Service A: &quot;Can you commit?&quot;
+    │                    ──► Service B: &quot;Can you commit?&quot;
+    │                    ──► Service C: &quot;Can you commit?&quot;
+    │
+    └─── Phase 2: COMMIT ───► All: &quot;Commit!&quot; (or ROLLBACK if any said no)
+</code></pre>
+
+<p><strong>优点：</strong> 强一致性，ACID 保证</p>
+<p><strong>缺点：</strong></p>
+<p>- 协调者宕机 → 所有参与者卡住（锁住资源）</p>
+<p>- 网络分区 → 脑裂 (split-brain)</p>
+<p>- 延迟高（两轮网络往返）</p>
+
+<p><strong>何时用：</strong> 数据库内部（MySQL InnoDB Cluster），不推荐跨微服务</p>
+
+<hr/>
+
+<h3>方案二：Saga 模式 / Saga Pattern</h3>
+
+<p>每步操作 + 对应的<strong>补偿事务 (compensating transaction)</strong>：</p>
+
+<pre><code>
+Order Created
+    → Payment Charged ✅
+        → Inventory Reserved ❌ FAIL
+            → COMPENSATE: Refund Payment
+                → COMPENSATE: Cancel Order
+</code></pre>
+
+<p>两种实现：</p>
+<p>- <strong>Choreography（编舞）</strong>：每个服务发事件触发下一步，去中心化</p>
+<p>- <strong>Orchestration（编排）</strong>：中央 Saga Orchestrator 控制流程</p>
+
+<p><strong>优点：</strong> 高可用，无分布式锁，适合微服务</p>
+<p><strong>缺点：</strong> 补偿逻辑复杂，无法保证隔离性（中间状态可见）</p>
+
+<hr/>
+
+<h3>方案三：最终一致性 / Eventual Consistency + Idempotency</h3>
+
+<pre><code>
+Write to local DB + Outbox table (same transaction)
+    → Outbox Poller reads and publishes to Kafka
+        → Consumers process with idempotency key
+</code></pre>
+
+<p><strong>Outbox Pattern</strong> 是关键：先写本地，再异步传播。</p>
+
+<p><strong>幂等性 (Idempotency)</strong> 是保障：同一请求重试多次结果相同。</p>
+
+<hr/>
+
+<h3>选型决策树 / Decision Framework</h3>
+
+<pre><code>
+需要强一致性？
+    ├── 是 → 单数据库能搞定吗？
+    │         ├── 是 → 用单DB事务 ✅
+    │         └── 否 → 考虑 2PC（仅内部系统，短事务）
+    └── 否 → 业务允许补偿？
+              ├── 是 → SAGA（推荐跨微服务）
+              └── 否 → 最终一致性 + Outbox Pattern
+</code></pre>
+
+<hr/>
+
+<h3>常见陷阱 / Common Mistakes</h3>
+
+<p>| 错误 | 正确做法 |</p>
+<p>|------|---------|</p>
+<p>| 用 2PC 跨公网服务 | 用 SAGA + 幂等补偿 |</p>
+<p>| Saga 没有幂等保证 | 每步加 idempotency key |</p>
+<p>| 补偿逻辑写得不完整 | 画出所有失败路径，逐一实现 |</p>
+<p>| 忽略中间状态的可见性 | 用&quot;待确认/pending&quot;状态隐藏中间态 |</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [Saga Pattern — microservices.io](https://microservices.io/patterns/data/saga.html)</p>
+<p>- [Transactional Outbox — microservices.io](https://microservices.io/patterns/data/transactional-outbox.html)</p>
+<p>- [Distributed Transactions, Not Microservices — InfoQ](https://www.infoq.com/articles/saga-orchestration-outbox/)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>你和朋友一起去餐厅，各自点菜。如果你的菜来了但朋友的没来，你们有三种选择：等大家都到了再吃（2PC）、先吃先到的、没到的退款（SAGA）、或者大家异步到了再吃不管顺序（最终一致性）。</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 Day 116 — Algorithms</h2>
+<p>&gt; #684 Redundant Connection — Medium — Graphs (12/13)</p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms — #684 Redundant Connection 🟡</h2>
+
+<p>🧩 <strong>图遍历模式 (12/13)</strong> — building on the BFS/DFS template from Day 101</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 [LeetCode #684](https://leetcode.com/problems/redundant-connection/) 🟡 Medium</p>
+<p>📹 [NeetCode Solution](https://neetcode.io/problems/redundant-connection)</p>
+
+<p>给定一个 n 个节点的<strong>无向图</strong>，最初是一棵树（无环）。有一条额外的边被加入，使得图中存在一个环。找出并返回这条<strong>多余的边</strong>。</p>
+
+<p><em>Given an undirected graph that was originally a tree, find the one extra edge that creates a cycle. Return it.</em></p>
+
+<hr/>
+
+<h2>真实类比 / Real-World Analogy</h2>
+
+<p>想象公司组织架构图（树结构）。某人同时汇报给两个老板 — 这就产生了一个&quot;环&quot;。你需要找出哪条汇报关系是多余的（后加入的）。</p>
+
+<p><em>Company org chart: normally a tree. Someone reports to two managers — that creates a cycle. Find the redundant reporting relationship.</em></p>
+
+<hr/>
+
+<h2>这道题 vs 模板的不同 / How It Differs from Base Template</h2>
+
+<p>普通 BFS/DFS 探索整个图；这道题需要<strong>增量检测环</strong>：</p>
+<p>- 每次加入一条边，检查两端节点是否已连通</p>
+<p>- 已连通 → 这条边就是多余的</p>
+<p>- 最优解：<strong>Union-Find（并查集）</strong>，不是纯 BFS/DFS</p>
+
+<hr/>
+
+<h2>Union-Find 解法 / Solution</h2>
+
+<pre><code>
+class Solution:
+    def findRedundantConnection(self, edges: list[list[int]]) -&gt; list[int]:
+        n = len(edges)
+        parent = list(range(n + 1))  # parent[i] = i initially
+        rank = [1] * (n + 1)
+
+        def find(x):
+            # Path compression: flatten the tree as we find root
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]  # halving
+                x = parent[x]
+            return x
+
+        def union(x, y):
+            rx, ry = find(x), find(y)
+            if rx == ry:
+                return False  # already connected → redundant edge!
+            # Union by rank: attach smaller tree under larger
+            if rank[rx] &lt; rank[ry]:
+                rx, ry = ry, rx
+            parent[ry] = rx
+            rank[rx] += rank[ry]
+            return True
+
+        for u, v in edges:
+            if not union(u, v):
+                return [u, v]
+        return []
+</code></pre>
+
+<hr/>
+
+<h2>执行追踪 / Trace</h2>
+
+<pre><code>
+edges = [[1,2],[1,3],[2,3]]
+
+初始: parent = [0,1,2,3]
+
+union(1,2): find(1)=1, find(2)=2 → different → merge → parent[2]=1
+union(1,3): find(1)=1, find(3)=3 → different → merge → parent[3]=1
+union(2,3): find(2)=find(1)=1, find(3)=find(1)=1 → SAME! → return [2,3]
+</code></pre>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+
+<p>- <strong>Time:</strong> O(n · α(n)) — α是反阿克曼函数，近似O(1)</p>
+<p>- <strong>Space:</strong> O(n)</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Block Connections</h2>
+
+<p>| 题目 | 用到的图技术 |</p>
+<p>|------|------------|</p>
+<p>| #200 Number of Islands | DFS/BFS flood fill |</p>
+<p>| #207 Course Schedule | DFS cycle detection (directed) |</p>
+<p>| #261 Graph Valid Tree | Union-Find / DFS |</p>
+<p>| <strong>#684 Redundant Connection</strong> | <strong>Union-Find 增量</strong> |</p>
+<p>| #127 Word Ladder (next!) | BFS shortest path |</p>
+
+<p>&gt; 关键洞察：Union-Find 擅长<strong>增量连通性检测</strong>；BFS/DFS 适合一次性探索</p>
+
+<hr/>
+
+<h2>Quiz</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;In Union-Find, what does &#x27;path compression&#x27; do?&quot;,&quot;options&quot;:[&quot;Removes edges from the graph&quot;,&quot;Makes every node point directly to root during find()&quot;,&quot;Compresses the graph into fewer nodes&quot;,&quot;Sorts nodes by their rank&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [Union-Find — CP-Algorithms](https://cp-algorithms.com/data_structures/disjoint_set_union.html)</p>
+<p>- [NeetCode Graphs Playlist](https://neetcode.io/roadmap)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象一群小朋友玩&quot;找朋友&quot;游戏。Union-Find 就像给每个小朋友一个队长。两人握手时，先检查他们是否已经是同一队的——是的话，这次握手就多余了！</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ Day 116 — Soft Skills Synthesis</h2>
+<p>&gt; Expert Level | Synthesis: Engineering Culture &amp; Influence at Scale</p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills — Staff Engineer 的影响力公式</h2>
+
+<h2>题目 / Fresh Scenario</h2>
+
+<p><strong>场景：</strong> 你是 Staff Engineer。公司决定将三个独立团队合并成一个平台团队，三个 EM 都有自己的技术栈偏好，一半工程师反对合并。你被要求在 6 周内完成统一架构设计并推动落地。你怎么做？</p>
+
+<p><em>You&#x27;re a Staff Engineer. Three teams are being merged. Each EM has different tech stack preferences. Half the engineers oppose the merger. You have 6 weeks to deliver a unified architecture.</em></p>
+
+<hr/>
+
+<h2>STAR 框架分析</h2>
+
+<p><strong>Situation:</strong> 技术意见分歧 + 组织变革阻力 + 硬性 deadline</p>
+
+<p><strong>Task:</strong> 不靠权威，靠影响力推动技术共识</p>
+
+<p><strong>Action — 分四步：</strong></p>
+
+<p>1. <strong>先倾听，再提案</strong> — 一对一与每个 EM 和 Senior Engineer 聊，了解核心诉求（不是表面立场）</p>
+<p>2. <strong>找共同敌人</strong> — 把讨论从&quot;我的技术栈 vs 你的&quot;转向&quot;共同面临的运维痛点&quot;</p>
+<p>3. <strong>RFC 流程</strong> — 写 RFC（Request for Comment），公开征集意见，让所有人都有发声机会</p>
+<p>4. <strong>小胜快赢</strong> — 第2周做一个小的 PoC，用数据说话，降低&quot;这是空想&quot;的疑虑</p>
+
+<p><strong>Result:</strong> 通过透明流程和数据驱动，6周内达成80%共识，剩余20%通过试点验证解决</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<p>| ❌ 常见错误 | ✅ 正确做法 |</p>
+<p>|-----------|-----------|</p>
+<p>| 直接发邮件宣布方案 | RFC + 异步讨论，给时间消化 |</p>
+<p>| 把分歧升级给 VP | 先在工程师层解决，VP 是最后手段 |</p>
+<p>| 只关注技术 | 同时关注人的诉求（职业发展、ownership） |</p>
+<p>| 追求100%共识 | 70%共识 + 清晰的决策机制更实际 |</p>
+
+<hr/>
+
+<h2>Senior → Staff 的跨越 / The Leap</h2>
+
+<p><strong>Senior:</strong> 影响本团队技术决策</p>
+<p><strong>Staff:</strong> 影响跨团队、跨组织的技术方向</p>
+
+<p>关键能力差异：<strong>写 &gt; 说</strong>（Staff 靠文档影响力），<strong>间接 &gt; 直接</strong>（通过他人落地）</p>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+
+<p>- 影响力 = 倾听 × 透明 × 数据，不是职位</p>
+<p>- RFC 是 Staff Engineer 的核心工具</p>
+<p>- 组织变革中，&quot;赢得人心&quot;比&quot;赢得技术辩论&quot;更重要</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<p>- [The Staff Engineer&#x27;s Path — Tanya Reilly](https://www.oreilly.com/library/view/the-staff-engineers/9781098118723/)</p>
+<p>- [RFC process at major tech companies — LeadDev](https://leaddev.com/technical-direction/getting-your-rfcs-read)</p>
+
+<h2>🧒 ELI5</h2>
+
+<p>当一群小朋友争论玩什么游戏时，最聪明的做法不是大声说&quot;听我的！&quot;，而是先问每个人最不想要什么，然后找到大家都能接受的方案。</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🎨 Day 116 — Python Craft Synthesis</h2>
+<p>&gt; Expert Level | Deep Dive: Python Memory Model &amp; Object Internals</p>
+
+<hr/>
+
+<h2>🎨 Python Craft — 对象内存模型深度解析</h2>
+
+<h2>你真的理解 Python 对象吗？</h2>
+
+<hr/>
+
+<h3>场景 / Scenario</h3>
+
+<p>你在做 code review，同事写了这段代码：</p>
+
+<pre><code>
+# 同事的代码
+def add_item(item, items=[]):
+    items.append(item)
+    return items
+
+print(add_item(1))  # [1]
+print(add_item(2))  # 你猜？
+</code></pre>
+
+<p><strong>猜猜输出什么？</strong></p>
+
+<p>答案：<code>[1, 2]</code> — 默认参数是<strong>对象</strong>，函数定义时创建一次，复用！</p>
+
+<hr/>
+
+<h3>Python 对象内存模型 / The PyObject Model</h3>
+
+<p>每个 Python 对象本质上是 C 结构体 <code>PyObject</code>：</p>
+
+<pre><code>
+// CPython internals (simplified)
+typedef struct _object {
+    Py_ssize_t ob_refcnt;   // 引用计数
+    PyTypeObject *ob_type;  // 类型指针
+} PyObject;
+</code></pre>
+
+<pre><code>
+import sys
+
+x = [1, 2, 3]
+print(sys.getrefcount(x))   # 引用计数（含临时引用）
+print(id(x))                # 内存地址
+
+# 小整数缓存 (-5 to 256)
+a = 256; b = 256
+print(a is b)   # True — same object!
+
+a = 257; b = 257
+print(a is b)   # False — different objects
+</code></pre>
+
+<hr/>
+
+<h3>可变 vs 不可变的内存影响 / Mutable vs Immutable</h3>
+
+<pre><code>
+# 不可变：每次&quot;修改&quot;都创建新对象
+s = &quot;hello&quot;
+print(id(s))
+s += &quot; world&quot;
+print(id(s))   # Different! New string object
+
+# 可变：原地修改，id 不变
+lst = [1, 2, 3]
+print(id(lst))
+lst.append(4)
+print(id(lst))  # Same! Same object
+
+# 陷阱：tuple 中含可变对象
+t = ([1, 2], [3, 4])
+t[0].append(99)  # Works! tuple is immutable, but its list element isn&#x27;t
+print(t)  # ([1, 2, 99], [3, 4])
+</code></pre>
+
+<hr/>
+
+<h3>__slots__ — 内存优化利器 / Memory Optimization</h3>
+
+<pre><code>
+import sys
+
+class WithDict:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+class WithSlots:
+    __slots__ = [&#x27;x&#x27;, &#x27;y&#x27;]
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+a = WithDict(1, 2)
+b = WithSlots(1, 2)
+
+print(sys.getsizeof(a.__dict__))  # ~232 bytes (dict overhead)
+print(sys.getsizeof(b))           # ~56 bytes (no __dict__)
+# ~4x memory reduction with __slots__!
+</code></pre>
+
+<p><strong>何时用 <code>__slots__</code>：</strong> 百万级实例、数据类、性能关键路径</p>
+<p><strong>何时不用：</strong> 需要动态属性、继承复杂时</p>
+
+<hr/>
+
+<h3>深拷贝 vs 浅拷贝 vs 引用 / Copy Semantics</h3>
+
+<pre><code>
+import copy
+
+original = [[1, 2], [3, 4]]
+
+# 引用：完全共享
+ref = original
+ref[0].append(99)
+print(original)  # [[1, 2, 99], [3, 4]] — mutated!
+
+# 浅拷贝：顶层新建，内部共享
+shallow = copy.copy(original)
+shallow[0].append(88)
+print(original)  # [[1, 2, 99, 88], [3, 4]] — inner list still shared!
+
+# 深拷贝：完全独立
+original = [[1, 2], [3, 4]]
+deep = copy.deepcopy(original)
+deep[0].append(77)
+print(original)  # [[1, 2], [3, 4]] — unchanged ✅
+</code></pre>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [Python Memory Management — Real Python](https://realpython.com/python-memory-management/)</p>
+<p>- [CPython Internals Book — Anthony Shaw](https://realpython.com/products/cpython-internals-book/)</p>
+<p>- [__slots__ Magic — Python Docs](https://docs.python.org/3/reference/datamodel.html#slots)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>Python 里每个变量都是便利贴（引用），贴在真正的盒子（对象）上。不可变对象像冰块 — 要&quot;修改&quot;就造新冰块。可变对象像黏土 — 可以直接捏。<code>__slots__</code> 是给对象换个更小的收纳盒。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 Day 116 — AI Synthesis</h2>
+<p>&gt; Expert Level | Deep Dive: The Inference Paradox &amp; Agentic Cost Reality</p>
+
+<hr/>
+
+<h2>🤖 AI — 推理悖论：Token 越便宜，账单越贵？</h2>
+
+<h2>&quot;Inference Paradox&quot; — 2026 年 AI 成本的反直觉现实</h2>
+
+<hr/>
+
+<h3>新闻背景 / News Context</h3>
+
+<p>据 Gartner 分析师报告（来源：[Computerworld](https://www.computerworld.com/article/4210786/ai-inference-is-getting-cheaper-but-your-agents-are-getting-more-expensive.html)）：</p>
+
+<p>&gt; Token 成本到2030年将下降95%，但<strong>智能体工作流的推理成本将在2028年前上涨5倍以上</strong>。</p>
+
+<p>这就是&quot;推理悖论&quot;：单价越低，但你用得越多，总账反而更贵。</p>
+
+<p><em>Per Gartner analysts: token costs will drop 95% by 2030, but inference costs for agentic workflows will rise more than 5x through 2028. The &quot;inference paradox.&quot;</em></p>
+
+<hr/>
+
+<h3>为什么会这样？/ Why?</h3>
+
+<pre><code>
+1990年代: 打印机墨盒模式
+    价格↓ → 打印量↑ → 总成本↑
+
+2026年 AI 版本:
+    Token 价格↓
+    → Agent 做更多步骤（multi-hop reasoning）
+    → 更多工具调用（search, code exec, memory）
+    → 更长上下文窗口（1M tokens）
+    → 总 token 消耗量 &gt;&gt;&gt; 价格降幅
+    → 月账单 ↑
+</code></pre>
+
+<hr/>
+
+<h3>连接已学概念 / Synthesis Across Topics</h3>
+
+<p>| 之前学过的概念 | 在推理成本中的体现 |</p>
+<p>|--------------|-----------------|</p>
+<p>| KV Cache (Day 46) | 长上下文 = 大 KV Cache = 显存瓶颈 |</p>
+<p>| RAG (Day 16) | 每次查询 = embedding + retrieval + generation |</p>
+<p>| Agents/ReAct (Day 26) | 每个 tool call = 额外 LLM 调用 |</p>
+<p>| Quantization (Day 44) | 降低单次推理成本的关键杠杆 |</p>
+<p>| Context Windows (Day 34) | 1M token 窗口 ≠ 免费 |</p>
+
+<hr/>
+
+<h3>实战：计算 Agent 真实成本 / Real Cost Calculation</h3>
+
+<pre><code>
+# Agent cost estimator
+def estimate_agent_cost(
+    steps: int,
+    avg_input_tokens: int,
+    avg_output_tokens: int,
+    input_price_per_1m: float,   # e.g., 3.0 for claude-sonnet
+    output_price_per_1m: float,  # e.g., 15.0
+) -&gt; dict:
+    input_cost = (steps * avg_input_tokens / 1_000_000) * input_price_per_1m
+    output_cost = (steps * avg_output_tokens / 1_000_000) * output_price_per_1m
+    total = input_cost + output_cost
+    
+    return {
+        &quot;total_tokens&quot;: steps * (avg_input_tokens + avg_output_tokens),
+        &quot;input_cost_usd&quot;: round(input_cost, 4),
+        &quot;output_cost_usd&quot;: round(output_cost, 4),
+        &quot;total_cost_usd&quot;: round(total, 4),
+    }
+
+# Typical research agent: 10 steps, 8K input, 1K output each
+result = estimate_agent_cost(
+    steps=10,
+    avg_input_tokens=8_000,
+    avg_output_tokens=1_000,
+    input_price_per_1m=3.0,
+    output_price_per_1m=15.0,
+)
+print(result)
+# {&#x27;total_tokens&#x27;: 90000, &#x27;input_cost_usd&#x27;: 0.24,
+#  &#x27;output_cost_usd&#x27;: 0.15, &#x27;total_cost_usd&#x27;: 0.39}
+# ~$0.39 per agent run × 1000 runs/day = $390/day 💸
+</code></pre>
+
+<hr/>
+
+<h3>降本策略 / Cost Reduction Strategies</h3>
+
+<p>1. <strong>模型路由</strong> — 简单步骤用小模型，复杂推理用大模型</p>
+<p>2. <strong>Prompt 缓存</strong> — 系统提示缓存（Claude/OpenAI 均支持，最高90%折扣）</p>
+<p>3. <strong>早停</strong> — 检测到足够答案时立即停止 agent 循环</p>
+<p>4. <strong>批处理</strong> — 非实时任务走 Batch API（通常50%折扣）</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- [Inference costs rising despite cheaper tokens — Computerworld](https://www.computerworld.com/article/4210786/ai-inference-is-getting-cheaper-but-your-agents-are-getting-more-expensive.html)</p>
+<p>- [Anthropic Prompt Caching docs](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)</p>
+<p>- [OpenAI Batch API](https://platform.openai.com/docs/guides/batch)</p>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像自助餐越来越便宜，但你越来越能吃，结果总花费反而更多。AI token 价格下降，但 AI agent 做的事越来越多，账单还是涨了。</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-08-20</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

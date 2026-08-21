@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-08-21</title>
+  <meta name="description" content="byte-by-byte daily lessons for Friday, August 21, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Friday, August 21, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-08-21.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-08-20.html" style="color:var(--text2)">← 2026-08-20</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-08-21</span>
+    <h1>Friday, August 21, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-08-20.html" class="day-nav-btn">← 2026-08-20</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">📊 Day 116 — System Design Synthesis</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>📊 Day 116 — System Design Synthesis</h1>
+<blockquote>🔥 Expert Level | Synthesis: Distributed Transactions</blockquote>
+
+<hr/>
+
+<h1>🏗️ 系统设计 / System Design — 分布式事务大比拼</h1>
+
+<h2>分布式事务的真相 / Distributed Transactions: 2PC vs SAGA vs 最终一致性</h2>
+
+<hr/>
+
+<h3>场景引入 / The Problem</h3>
+
+<p>想象你在设计一个电商支付系统。用户点击"购买"时，需要同时：</p>
+<ol><li>扣减库存（Inventory Service）</li><li>扣款（Payment Service）</li><li>创建订单（Order Service）</li></ol>
+
+<p>三个独立服务，如果支付成功但库存扣减失败怎么办？</p>
+
+<p><em>Imagine: user clicks "Buy" — inventory, payment, and order creation must all succeed or all fail. Three different databases, three different services.</em></p>
+
+<hr/>
+
+<h3>方案一：两阶段提交 / 2PC (Two-Phase Commit)</h3>
+
+<div class="diagram-block">协调者 Coordinator
+    │
+    ├─── Phase 1: PREPARE ──► Service A: "Can you commit?"
+    │                    ──► Service B: "Can you commit?"
+    │                    ──► Service C: "Can you commit?"
+    │
+    └─── Phase 2: COMMIT ───► All: "Commit!" (or ROLLBACK if any said no)</div>
+
+<p><strong>优点：</strong> 强一致性，ACID 保证</p>
+<p><strong>缺点：</strong></p>
+<ul><li>协调者宕机 → 所有参与者卡住（锁住资源）</li><li>网络分区 → 脑裂 (split-brain)</li><li>延迟高（两轮网络往返）</li></ul>
+
+<p><strong>何时用：</strong> 数据库内部（MySQL InnoDB Cluster），不推荐跨微服务</p>
+
+<hr/>
+
+<h3>方案二：Saga 模式 / Saga Pattern</h3>
+
+<p>每步操作 + 对应的<strong>补偿事务 (compensating transaction)</strong>：</p>
+
+<div class="diagram-block">Order Created
+    → Payment Charged ✅
+        → Inventory Reserved ❌ FAIL
+            → COMPENSATE: Refund Payment
+                → COMPENSATE: Cancel Order</div>
+
+<p>两种实现：</p>
+<ul><li><strong>Choreography（编舞）</strong>：每个服务发事件触发下一步，去中心化</li><li><strong>Orchestration（编排）</strong>：中央 Saga Orchestrator 控制流程</li></ul>
+
+<p><strong>优点：</strong> 高可用，无分布式锁，适合微服务</p>
+<p><strong>缺点：</strong> 补偿逻辑复杂，无法保证隔离性（中间状态可见）</p>
+
+<hr/>
+
+<h3>方案三：最终一致性 / Eventual Consistency + Idempotency</h3>
+
+<div class="diagram-block">Write to local DB + Outbox table (same transaction)
+    → Outbox Poller reads and publishes to Kafka
+        → Consumers process with idempotency key</div>
+
+<p><strong>Outbox Pattern</strong> 是关键：先写本地，再异步传播。</p>
+
+<p><strong>幂等性 (Idempotency)</strong> 是保障：同一请求重试多次结果相同。</p>
+
+<hr/>
+
+<h3>选型决策树 / Decision Framework</h3>
+
+<div class="diagram-block">需要强一致性？
+    ├── 是 → 单数据库能搞定吗？
+    │         ├── 是 → 用单DB事务 ✅
+    │         └── 否 → 考虑 2PC（仅内部系统，短事务）
+    └── 否 → 业务允许补偿？
+              ├── 是 → SAGA（推荐跨微服务）
+              └── 否 → 最终一致性 + Outbox Pattern</div>
+
+<hr/>
+
+<h3>常见陷阱 / Common Mistakes</h3>
+
+<table><thead><tr><th>错误</th><th>正确做法</th></tr></thead><tbody><tr><td>用 2PC 跨公网服务</td><td>用 SAGA + 幂等补偿</td></tr><tr><td>Saga 没有幂等保证</td><td>每步加 idempotency key</td></tr><tr><td>补偿逻辑写得不完整</td><td>画出所有失败路径，逐一实现</td></tr><tr><td>忽略中间状态的可见性</td><td>用"待确认/pending"状态隐藏中间态</td></tr></tbody></table>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li><a href="https://microservices.io/patterns/data/saga.html">Saga Pattern — microservices.io</a></li><li><a href="https://microservices.io/patterns/data/transactional-outbox.html">Transactional Outbox — microservices.io</a></li><li><a href="https://www.infoq.com/articles/saga-orchestration-outbox/">Distributed Transactions, Not Microservices — InfoQ</a></li></ul>
+
+<h3>🧒 ELI5</h3>
+
+<p>你和朋友一起去餐厅，各自点菜。如果你的菜来了但朋友的没来，你们有三种选择：等大家都到了再吃（2PC）、先吃先到的、没到的退款（SAGA）、或者大家异步到了再吃不管顺序（最终一致性）。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 Day 116 — Algorithms</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>💻 Day 116 — Algorithms</h1>
+<blockquote>#684 Redundant Connection — Medium — Graphs (12/13)</blockquote>
+
+<hr/>
+
+<h1>💻 算法 / Algorithms — #684 Redundant Connection 🟡</h1>
+
+<p>🧩 <strong>图遍历模式 (12/13)</strong> — building on the BFS/DFS template from Day 101</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 <a href="https://leetcode.com/problems/redundant-connection/">LeetCode #684</a> 🟡 Medium</p>
+<p>📹 <a href="https://neetcode.io/problems/redundant-connection">NeetCode Solution</a></p>
+
+<p>给定一个 n 个节点的<strong>无向图</strong>，最初是一棵树（无环）。有一条额外的边被加入，使得图中存在一个环。找出并返回这条<strong>多余的边</strong>。</p>
+
+<p><em>Given an undirected graph that was originally a tree, find the one extra edge that creates a cycle. Return it.</em></p>
+
+<hr/>
+
+<h2>真实类比 / Real-World Analogy</h2>
+
+<p>想象公司组织架构图（树结构）。某人同时汇报给两个老板 — 这就产生了一个"环"。你需要找出哪条汇报关系是多余的（后加入的）。</p>
+
+<p><em>Company org chart: normally a tree. Someone reports to two managers — that creates a cycle. Find the redundant reporting relationship.</em></p>
+
+<hr/>
+
+<h2>这道题 vs 模板的不同 / How It Differs from Base Template</h2>
+
+<p>普通 BFS/DFS 探索整个图；这道题需要<strong>增量检测环</strong>：</p>
+<ul><li>每次加入一条边，检查两端节点是否已连通</li><li>已连通 → 这条边就是多余的</li><li>最优解：<strong>Union-Find（并查集）</strong>，不是纯 BFS/DFS</li></ul>
+
+<hr/>
+
+<h2>Union-Find 解法 / Solution</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="class Solution:&#10;    def findRedundantConnection(self, edges: list[list[int]]) -&gt; list[int]:&#10;        n = len(edges)&#10;        parent = list(range(n + 1))  # parent[i] = i initially&#10;        rank = [1] * (n + 1)&#10;&#10;        def find(x):&#10;            # Path compression: flatten the tree as we find root&#10;            while parent[x] != x:&#10;                parent[x] = parent[parent[x]]  # halving&#10;                x = parent[x]&#10;            return x&#10;&#10;        def union(x, y):&#10;            rx, ry = find(x), find(y)&#10;            if rx == ry:&#10;                return False  # already connected → redundant edge!&#10;            # Union by rank: attach smaller tree under larger&#10;            if rank[rx] &lt; rank[ry]:&#10;                rx, ry = ry, rx&#10;            parent[ry] = rx&#10;            rank[rx] += rank[ry]&#10;            return True&#10;&#10;        for u, v in edges:&#10;            if not union(u, v):&#10;                return [u, v]&#10;        return []">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">class</span> Solution:
+    <span style="color:#c678dd;">def</span> findRedundantConnection(self, edges: list[list[int]]) -&gt; list[int]:
+        n = len(edges)
+        parent = list(range(n + <span style="color:#56b6c2;">1</span>))  <span style="color:#5c6370;"># parent[i] = i initially</span>
+        rank = [<span style="color:#56b6c2;">1</span>] * (n + <span style="color:#56b6c2;">1</span>)
+
+        <span style="color:#c678dd;">def</span> find(x):
+            <span style="color:#5c6370;"># Path compression: flatten the tree as we find root</span>
+            <span style="color:#c678dd;">while</span> parent[x] != x:
+                parent[x] = parent[parent[x]]  <span style="color:#5c6370;"># halving</span>
+                x = parent[x]
+            <span style="color:#c678dd;">return</span> x
+
+        <span style="color:#c678dd;">def</span> union(x, y):
+            rx, ry = find(x), find(y)
+            <span style="color:#c678dd;">if</span> rx == ry:
+                <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">False</span>  <span style="color:#5c6370;"># already connected → redundant edge!</span>
+            <span style="color:#5c6370;"># Union by rank: attach smaller tree under larger</span>
+            <span style="color:#c678dd;">if</span> rank[rx] &lt; rank[ry]:
+                rx, ry = ry, rx
+            parent[ry] = rx
+            rank[rx] += rank[ry]
+            <span style="color:#c678dd;">return</span> <span style="color:#c678dd;">True</span>
+
+        <span style="color:#c678dd;">for</span> u, v <span style="color:#c678dd;">in</span> edges:
+            <span style="color:#c678dd;">if</span> <span style="color:#c678dd;">not</span> union(u, v):
+                <span style="color:#c678dd;">return</span> [u, v]
+        <span style="color:#c678dd;">return</span> []</code></pre>
+</div>
+
+<hr/>
+
+<h2>执行追踪 / Trace</h2>
+
+<div class="diagram-block">edges = [[1,2],[1,3],[2,3]]
+
+初始: parent = [0,1,2,3]
+
+union(1,2): find(1)=1, find(2)=2 → different → merge → parent[2]=1
+union(1,3): find(1)=1, find(3)=3 → different → merge → parent[3]=1
+union(2,3): find(2)=find(1)=1, find(3)=find(1)=1 → SAME! → return [2,3]</div>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+
+<ul><li><strong>Time:</strong> O(n · α(n)) — α是反阿克曼函数，近似O(1)</li><li><strong>Space:</strong> O(n)</li></ul>
+
+<hr/>
+
+<h2>举一反三 / Pattern Block Connections</h2>
+
+<table><thead><tr><th>题目</th><th>用到的图技术</th></tr></thead><tbody><tr><td>#200 Number of Islands</td><td>DFS/BFS flood fill</td></tr><tr><td>#207 Course Schedule</td><td>DFS cycle detection (directed)</td></tr><tr><td>#261 Graph Valid Tree</td><td>Union-Find / DFS</td></tr><tr><td><strong>#684 Redundant Connection</strong></td><td><strong>Union-Find 增量</strong></td></tr><tr><td>#127 Word Ladder (next!)</td><td>BFS shortest path</td></tr></tbody></table>
+
+<blockquote>关键洞察：Union-Find 擅长<strong>增量连通性检测</strong>；BFS/DFS 适合一次性探索</blockquote>
+
+<hr/>
+
+<h2>Quiz</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="{&quot;question&quot;:&quot;In Union-Find, what does 'path compression' do?&quot;,&quot;options&quot;:[&quot;Removes edges from the graph&quot;,&quot;Makes every node point directly to root during find()&quot;,&quot;Compresses the graph into fewer nodes&quot;,&quot;Sorts nodes by their rank&quot;],&quot;correct_index&quot;:1}">Copy</button>
+  <pre><code class="language-json">{<span style="color:#56b6c2;">"question"</span>:"In Union-Find, what does 'path compression' do?",<span style="color:#56b6c2;">"options"</span>:["Removes edges from the graph","Makes every node point directly to root during find()","Compresses the graph into fewer nodes","Sorts nodes by their rank"],<span style="color:#56b6c2;">"correct_index"</span>:<span style="color:#56b6c2;">1</span>}</code></pre>
+</div>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li><a href="https://cp-algorithms.com/data_structures/disjoint_set_union.html">Union-Find — CP-Algorithms</a></li><li><a href="https://neetcode.io/roadmap">NeetCode Graphs Playlist</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象一群小朋友玩"找朋友"游戏。Union-Find 就像给每个小朋友一个队长。两人握手时，先检查他们是否已经是同一队的——是的话，这次握手就多余了！</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ Day 116 — Soft Skills Synthesis</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>🗣️ Day 116 — Soft Skills Synthesis</h1>
+<blockquote>Expert Level | Synthesis: Engineering Culture &amp; Influence at Scale</blockquote>
+
+<hr/>
+
+<h1>🗣️ 软技能 / Soft Skills — Staff Engineer 的影响力公式</h1>
+
+<h2>题目 / Fresh Scenario</h2>
+
+<p><strong>场景：</strong> 你是 Staff Engineer。公司决定将三个独立团队合并成一个平台团队，三个 EM 都有自己的技术栈偏好，一半工程师反对合并。你被要求在 6 周内完成统一架构设计并推动落地。你怎么做？</p>
+
+<p><em>You're a Staff Engineer. Three teams are being merged. Each EM has different tech stack preferences. Half the engineers oppose the merger. You have 6 weeks to deliver a unified architecture.</em></p>
+
+<hr/>
+
+<h2>STAR 框架分析</h2>
+
+<p><strong>Situation:</strong> 技术意见分歧 + 组织变革阻力 + 硬性 deadline</p>
+
+<p><strong>Task:</strong> 不靠权威，靠影响力推动技术共识</p>
+
+<p><strong>Action — 分四步：</strong></p>
+
+<ol><li><strong>先倾听，再提案</strong> — 一对一与每个 EM 和 Senior Engineer 聊，了解核心诉求（不是表面立场）</li><li><strong>找共同敌人</strong> — 把讨论从"我的技术栈 vs 你的"转向"共同面临的运维痛点"</li><li><strong>RFC 流程</strong> — 写 RFC（Request for Comment），公开征集意见，让所有人都有发声机会</li><li><strong>小胜快赢</strong> — 第2周做一个小的 PoC，用数据说话，降低"这是空想"的疑虑</li></ol>
+
+<p><strong>Result:</strong> 通过透明流程和数据驱动，6周内达成80%共识，剩余20%通过试点验证解决</p>
+
+<hr/>
+
+<h2>❌ Bad vs ✅ Good</h2>
+
+<table><thead><tr><th>❌ 常见错误</th><th>✅ 正确做法</th></tr></thead><tbody><tr><td>直接发邮件宣布方案</td><td>RFC + 异步讨论，给时间消化</td></tr><tr><td>把分歧升级给 VP</td><td>先在工程师层解决，VP 是最后手段</td></tr><tr><td>只关注技术</td><td>同时关注人的诉求（职业发展、ownership）</td></tr><tr><td>追求100%共识</td><td>70%共识 + 清晰的决策机制更实际</td></tr></tbody></table>
+
+<hr/>
+
+<h2>Senior → Staff 的跨越 / The Leap</h2>
+
+<p><strong>Senior:</strong> 影响本团队技术决策</p>
+<p><strong>Staff:</strong> 影响跨团队、跨组织的技术方向</p>
+
+<p>关键能力差异：<strong>写 &gt; 说</strong>（Staff 靠文档影响力），<strong>间接 &gt; 直接</strong>（通过他人落地）</p>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+
+<ul><li>影响力 = 倾听 × 透明 × 数据，不是职位</li><li>RFC 是 Staff Engineer 的核心工具</li><li>组织变革中，"赢得人心"比"赢得技术辩论"更重要</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ul><li><a href="https://www.oreilly.com/library/view/the-staff-engineers/9781098118723/">The Staff Engineer's Path — Tanya Reilly</a></li><li><a href="https://leaddev.com/technical-direction/getting-your-rfcs-read">RFC process at major tech companies — LeadDev</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+
+<p>当一群小朋友争论玩什么游戏时，最聪明的做法不是大声说"听我的！"，而是先问每个人最不想要什么，然后找到大家都能接受的方案。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 Day 116 — AI Synthesis</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>🤖 Day 116 — AI Synthesis</h1>
+<blockquote>Expert Level | Deep Dive: The Inference Paradox &amp; Agentic Cost Reality</blockquote>
+
+<hr/>
+
+<h1>🤖 AI — 推理悖论：Token 越便宜，账单越贵？</h1>
+
+<h2>"Inference Paradox" — 2026 年 AI 成本的反直觉现实</h2>
+
+<hr/>
+
+<h3>新闻背景 / News Context</h3>
+
+<p>据 Gartner 分析师报告（来源：<a href="https://www.computerworld.com/article/4210786/ai-inference-is-getting-cheaper-but-your-agents-are-getting-more-expensive.html">Computerworld</a>）：</p>
+
+<blockquote>Token 成本到2030年将下降95%，但<strong>智能体工作流的推理成本将在2028年前上涨5倍以上</strong>。</blockquote>
+
+<p>这就是"推理悖论"：单价越低，但你用得越多，总账反而更贵。</p>
+
+<p><em>Per Gartner analysts: token costs will drop 95% by 2030, but inference costs for agentic workflows will rise more than 5x through 2028. The "inference paradox."</em></p>
+
+<hr/>
+
+<h3>为什么会这样？/ Why?</h3>
+
+<div class="diagram-block">1990年代: 打印机墨盒模式
+    价格↓ → 打印量↑ → 总成本↑
+
+2026年 AI 版本:
+    Token 价格↓
+    → Agent 做更多步骤（multi-hop reasoning）
+    → 更多工具调用（search, code exec, memory）
+    → 更长上下文窗口（1M tokens）
+    → 总 token 消耗量 &gt;&gt;&gt; 价格降幅
+    → 月账单 ↑</div>
+
+<hr/>
+
+<h3>连接已学概念 / Synthesis Across Topics</h3>
+
+<table><thead><tr><th>之前学过的概念</th><th>在推理成本中的体现</th></tr></thead><tbody><tr><td>KV Cache (Day 46)</td><td>长上下文 = 大 KV Cache = 显存瓶颈</td></tr><tr><td>RAG (Day 16)</td><td>每次查询 = embedding + retrieval + generation</td></tr><tr><td>Agents/ReAct (Day 26)</td><td>每个 tool call = 额外 LLM 调用</td></tr><tr><td>Quantization (Day 44)</td><td>降低单次推理成本的关键杠杆</td></tr><tr><td>Context Windows (Day 34)</td><td>1M token 窗口 ≠ 免费</td></tr></tbody></table>
+
+<hr/>
+
+<h3>实战：计算 Agent 真实成本 / Real Cost Calculation</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Agent cost estimator&#10;def estimate_agent_cost(&#10;    steps: int,&#10;    avg_input_tokens: int,&#10;    avg_output_tokens: int,&#10;    input_price_per_1m: float,   # e.g., 3.0 for claude-sonnet&#10;    output_price_per_1m: float,  # e.g., 15.0&#10;) -&gt; dict:&#10;    input_cost = (steps * avg_input_tokens / 1_000_000) * input_price_per_1m&#10;    output_cost = (steps * avg_output_tokens / 1_000_000) * output_price_per_1m&#10;    total = input_cost + output_cost&#10;    &#10;    return {&#10;        &quot;total_tokens&quot;: steps * (avg_input_tokens + avg_output_tokens),&#10;        &quot;input_cost_usd&quot;: round(input_cost, 4),&#10;        &quot;output_cost_usd&quot;: round(output_cost, 4),&#10;        &quot;total_cost_usd&quot;: round(total, 4),&#10;    }&#10;&#10;# Typical research agent: 10 steps, 8K input, 1K output each&#10;result = estimate_agent_cost(&#10;    steps=10,&#10;    avg_input_tokens=8_000,&#10;    avg_output_tokens=1_000,&#10;    input_price_per_1m=3.0,&#10;    output_price_per_1m=15.0,&#10;)&#10;print(result)&#10;# {'total_tokens': 90000, 'input_cost_usd': 0.24,&#10;#  'output_cost_usd': 0.15, 'total_cost_usd': 0.39}&#10;# ~$0.39 per agent run × 1000 runs/day = $390/day 💸">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Agent cost estimator</span>
+<span style="color:#c678dd;">def</span> estimate_agent_cost(
+    steps: int,
+    avg_input_tokens: int,
+    avg_output_tokens: int,
+    input_price_per_1m: float,   <span style="color:#5c6370;"># e.g., 3.0 for claude-sonnet</span>
+    output_price_per_1m: float,  <span style="color:#5c6370;"># e.g., 15.0</span>
+) -&gt; dict:
+    input_cost = (steps * avg_input_tokens / 1_000_000) * input_price_per_1m
+    output_cost = (steps * avg_output_tokens / 1_000_000) * output_price_per_1m
+    total = input_cost + output_cost
+    
+    <span style="color:#c678dd;">return</span> {
+        <span style="color:#e5c07b;">"total_tokens"</span>: steps * (avg_input_tokens + avg_output_tokens),
+        <span style="color:#e5c07b;">"input_cost_usd"</span>: round(input_cost, <span style="color:#56b6c2;">4</span>),
+        <span style="color:#e5c07b;">"output_cost_usd"</span>: round(output_cost, <span style="color:#56b6c2;">4</span>),
+        <span style="color:#e5c07b;">"total_cost_usd"</span>: round(total, <span style="color:#56b6c2;">4</span>),
+    }
+
+<span style="color:#5c6370;"># Typical research agent: 10 steps, 8K input, 1K output each</span>
+result = estimate_agent_cost(
+    steps=<span style="color:#56b6c2;">10</span>,
+    avg_input_tokens=8_000,
+    avg_output_tokens=1_000,
+    input_price_per_1m=<span style="color:#56b6c2;">3.0</span>,
+    output_price_per_1m=<span style="color:#56b6c2;">15.0</span>,
+)
+print(result)
+<span style="color:#5c6370;"># {'total_tokens': 90000, 'input_cost_usd': 0.24,</span>
+<span style="color:#5c6370;">#  'output_cost_usd': 0.15, 'total_cost_usd': 0.39}</span>
+<span style="color:#5c6370;"># ~$0.39 per agent run × 1000 runs/day = $390/day 💸</span></code></pre>
+</div>
+
+<hr/>
+
+<h3>降本策略 / Cost Reduction Strategies</h3>
+
+<ol><li><strong>模型路由</strong> — 简单步骤用小模型，复杂推理用大模型</li><li><strong>Prompt 缓存</strong> — 系统提示缓存（Claude/OpenAI 均支持，最高90%折扣）</li><li><strong>早停</strong> — 检测到足够答案时立即停止 agent 循环</li><li><strong>批处理</strong> — 非实时任务走 Batch API（通常50%折扣）</li></ol>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li><a href="https://www.computerworld.com/article/4210786/ai-inference-is-getting-cheaper-but-your-agents-are-getting-more-expensive.html">Inference costs rising despite cheaper tokens — Computerworld</a></li><li><a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching">Anthropic Prompt Caching docs</a></li><li><a href="https://platform.openai.com/docs/guides/batch">OpenAI Batch API</a></li></ul>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像自助餐越来越便宜，但你越来越能吃，结果总花费反而更多。AI token 价格下降，但 AI agent 做的事越来越多，账单还是涨了。</p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
