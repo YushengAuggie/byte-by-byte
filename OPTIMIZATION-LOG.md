@@ -845,3 +845,17 @@ _Report-only run — no code changes made._
 1. **Root-cause the 08-12→08-17 outage**: inspect the daily generator cron's run history on a shell with Node >=25.9.0. Determine whether it was disabled, erroring, or the host was down for those 6 days.
 2. **Fix the Node default**: `nvm alias default 25.9.0` (or 24.x) so the optimizer's Step 0 cron diagnostics stop silently failing. This is now the 3rd consecutive run blocked by it.
 3. Confirm recovery holds: if next run shows continuous delivery from 08-18 onward, the outage is closed.
+
+## 2026-08-22 Optimization Run
+
+### Issues Found
+- P0: None. All 8 byte-by-byte cron jobs report status=ok with no errors. Last 5 days delivered cleanly (2026-08-18 → 2026-08-22).
+- P1: None observed in state/logs.
+- P2: Two gaps 2026-08-16 & 2026-08-17 in email-send-log (>5 days old, pre-existing; likely weekend/backup coverage — not recurring). Minor: reviewDaysCompleted skips day 100 (present are ...95,105,110,115) — cosmetic tracking gap, no delivery impact.
+
+### Metrics
+- Delivery rate (7d): 5/7 (misses on 08-16, 08-17; both outside the active 5-day window and stale)
+- Delivery rate (active 5d): 5/5
+- Cron errors: none
+- State: day 117, lastSentDate 2026-08-22, lastReviewDay 115
+- Note: `openclaw cron list` requires Node >=25.9.0; run under nvm (v25.6.1 default fails the CLI).
