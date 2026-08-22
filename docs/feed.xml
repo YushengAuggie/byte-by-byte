@@ -5,8 +5,434 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 21 Aug 2026 15:12:30 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 22 Aug 2026 15:17:55 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-08-22</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-08-22</guid>
+      <pubDate>Sat, 22 Aug 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Word Ladder — 双向 BFS 最短变换路径 (15 min read)</strong></p>
+<p>📊 NeetCode: 91/150 · SysDesign: 60/60 · Behavioral: 60/60 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 117-day streak!</p>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/word-ladder/</p>
+<p>📹 NeetCode: https://neetcode.io/problems/word-ladder</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong> Word Ladder 是图遍历大章节的 Boss 关卡。给定起始词、目标词和词典，每次只能改变一个字母，且每个中间状态必须在词典中，问从起始词变换到目标词的最短步数。</p>
+
+<p>表面上看是字符串题，但本质是一道<strong>最短路径题</strong>。每个单词是图中的节点，两个仅差一个字母的单词之间存在一条无向边。目标：从 <code>beginWord</code> 到 <code>endWord</code> 的最短边数。</p>
+
+<p>这道题是 BFS 思维的终极考题，也是面试中<strong>双向 BFS</strong>（bidirectional BFS）最经典的应用场景。面试官出这道题，考的不只是&quot;会 BFS&quot;，而是你能不能<strong>主动提出优化</strong>并实现它。</p>
+
+<p><strong>English:</strong> Word Ladder is the Boss fight of the graph traversal chapter. Given a start word, end word, and dictionary, you can change exactly one letter per step — each intermediate word must be in the dictionary. Find the shortest transformation sequence length.</p>
+
+<p>It looks like a string problem, but it&#x27;s fundamentally a <strong>shortest path problem</strong>. Each word is a graph node; two words that differ by one letter share an undirected edge. Goal: shortest edge count from <code>beginWord</code> to <code>endWord</code>.</p>
+
+<p>This is the ultimate BFS thinking test. The interview question isn&#x27;t just &quot;can you BFS?&quot; — it&#x27;s &quot;can you <strong>proactively optimize</strong> to bidirectional BFS and implement it cleanly?&quot;</p>
+
+<p><strong>Problem:</strong> Given <code>beginWord = &quot;hit&quot;</code>, <code>endWord = &quot;cog&quot;</code>, <code>wordList = [&quot;hot&quot;,&quot;dot&quot;,&quot;dog&quot;,&quot;lot&quot;,&quot;log&quot;,&quot;cog&quot;]</code>, return <code>5</code>.</p>
+<p>Path: <code>hit → hot → dot → dog → cog</code> (5 words = 4 transformations, return length = 5)</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>为什么是 BFS？/ Why BFS?</h3>
+
+<p><strong>中文：</strong> BFS 天然计算<strong>无权图的最短路径</strong>。它按层展开——第 1 层是所有距离为 1 的节点，第 2 层是所有距离为 2 的节点……一旦第一次到达终点，当前层数就是最短路径长度。DFS 不行：DFS 会探索更长的路径，无法保证第一次到达即最短。</p>
+
+<p><strong>English:</strong> BFS naturally computes <strong>shortest paths in unweighted graphs</strong>. It expands level by level — layer 1 = all nodes at distance 1, layer 2 = distance 2 … The moment you first reach the destination, the current layer is the shortest path. DFS won&#x27;t work: it explores longer paths and can&#x27;t guarantee first-arrival = shortest.</p>
+
+<h3>图建模 / Graph Model</h3>
+
+<pre><code>
+每个单词 = 节点 (node)
+两词差一字母 = 无向边 (undirected edge)
+边权 = 1 (unweighted)
+
+&quot;hit&quot; ——— &quot;hot&quot; ——— &quot;dot&quot; ——— &quot;dog&quot; ——— &quot;cog&quot;
+                     |                    |
+                    &quot;lot&quot; ——— &quot;log&quot; ———
+</code></pre>
+
+<p>朴素做法：每个单词对之间判断是否差一字母，构建邻接表。<strong>O(N² × L)</strong>，N 是词典大小，L 是单词长度。</p>
+
+<h3>双向 BFS 的直觉 / Bidirectional BFS Intuition</h3>
+
+<p><strong>中文：</strong> 普通 BFS 从 <code>beginWord</code> 向外扩展。如果图的&quot;分支因子&quot;（branching factor）是 B，深度是 d，则搜索空间是 O(B^d)。</p>
+
+<p>双向 BFS 的思路：同时从 <code>beginWord</code> 和 <code>endWord</code> 出发向中间扩展，两边相遇即停止。每边只搜索深度 d/2，总搜索空间 = O(2 × B^(d/2)) = <strong>O(B^(d/2))</strong>。</p>
+
+<p>当 d 较大时，这是指数级的加速。</p>
+
+<p><strong>English:</strong> Regular BFS from <code>beginWord</code> explores O(B^d) nodes where B = branching factor, d = depth. Bidirectional BFS meets in the middle — each side explores depth d/2, giving O(2 × B^(d/2)) = <strong>O(B^(d/2))</strong> nodes. Exponential speedup as d grows.</p>
+
+<pre><code>
+普通 BFS:          双向 BFS:
+beginWord          beginWord       endWord
+    ↓                  ↓               ↓
+  layer 1           layer 1       layer 1
+    ↓                  ↓               ↓
+  layer 2           layer 2       layer 2
+    ↓                  ↓               ↓
+  layer 3           layer 3 ←→ layer 3 (相遇!)
+    ↓
+  layer 4 (endWord)
+
+搜索 B^4 个节点    搜索 2×B^2 个节点 (B=2时: 16 vs 8)
+</code></pre>
+
+<h3>虚拟节点技巧 / Virtual Node Trick</h3>
+
+<p><strong>中文：</strong> 判断两单词是否差一字母是 O(L²) 的操作（N 个词两两比较）。更快的方法：用<strong>通配符模式</strong>作为虚拟节点。</p>
+
+<p><code>&quot;hit&quot;</code> 对应三个虚拟节点：<code>&quot;<em>it&quot;</code>, <code>&quot;h</em>t&quot;</code>, <code>&quot;hi<em>&quot;</code>。所有匹配同一模式的单词（如 <code>&quot;hit&quot;</code> 和 <code>&quot;hot&quot;</code> 都匹配 <code>&quot;h</em>t&quot;</code>）通过该虚拟节点相连。这将邻接表构建从 O(N²L) 降至 <strong>O(NL)</strong>。</p>
+
+<p><strong>English:</strong> Checking every word pair for one-letter difference is O(N²L). The virtual node trick: use <strong>wildcard patterns</strong> as intermediate nodes. <code>&quot;hit&quot;</code> maps to patterns <code>&quot;<em>it&quot;</code>, <code>&quot;h</em>t&quot;</code>, <code>&quot;hi<em>&quot;</code>. All words matching the same pattern (e.g., <code>&quot;hit&quot;</code> and <code>&quot;hot&quot;</code> both match <code>&quot;h</em>t&quot;</code>) are connected through that virtual node. Reduces adjacency construction from O(N²L) to <strong>O(NL)</strong>.</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>方法一：朴素 BFS / Approach 1: Basic BFS</h3>
+
+<p><strong>时间复杂度 Time:</strong> O(N × L × 26) ≈ O(NL)</p>
+<p><strong>空间复杂度 Space:</strong> O(N × L)</p>
+
+<pre><code>
+from collections import deque
+
+def ladderLength_basic(beginWord: str, endWord: str, wordList: list[str]) -&gt; int:
+    # Convert to set for O(1) lookup
+    word_set = set(wordList)
+
+    # endWord must be in dictionary
+    if endWord not in word_set:
+        return 0
+
+    # BFS queue: (current_word, current_steps)
+    # Start with beginWord, step count = 1 (beginWord itself counts)
+    queue = deque([(beginWord, 1)])
+
+    # Visited set: don&#x27;t revisit words (avoids cycles)
+    visited = {beginWord}
+
+    while queue:
+        word, steps = queue.popleft()
+
+        # Try changing each position
+        for i in range(len(word)):
+            # Try all 26 possible letters
+            for c in &#x27;abcdefghijklmnopqrstuvwxyz&#x27;:
+                # Build the candidate by replacing position i
+                candidate = word[:i] + c + word[i+1:]
+
+                # Skip if same word or already visited
+                if candidate == word or candidate in visited:
+                    continue
+
+                # Found endWord — this is the shortest path
+                if candidate == endWord:
+                    return steps + 1
+
+                # Add to queue if in dictionary
+                if candidate in word_set:
+                    visited.add(candidate)
+                    queue.append((candidate, steps + 1))
+
+    # No path found
+    return 0
+</code></pre>
+
+<p><strong>关键洞察 / Key insight:</strong> We don&#x27;t need to pre-build a graph. Generate neighbors on-the-fly by trying all 26-letter substitutions at each position. The word_set gives O(1) validity check.</p>
+
+<hr/>
+
+<h3>方法二：双向 BFS / Approach 2: Bidirectional BFS ⭐ (面试亮点)</h3>
+
+<p><strong>时间复杂度 Time:</strong> O(NL × 26) but with ~√ factor speedup in practice</p>
+<p><strong>空间复杂度 Space:</strong> O(N × L)</p>
+
+<pre><code>
+from collections import deque
+
+def ladderLength(beginWord: str, endWord: str, wordList: list[str]) -&gt; int:
+    word_set = set(wordList)
+
+    if endWord not in word_set:
+        return 0
+
+    # Two frontiers: one starting from beginWord, one from endWord
+    # Each frontier is a SET (not queue) — we expand the SMALLER one each step
+    front = {beginWord}   # frontier expanding from begin
+    back  = {endWord}     # frontier expanding from end
+
+    # Total steps taken (each iteration = 1 step from ONE side)
+    steps = 1
+
+    while front and back:
+        # ALWAYS expand the smaller frontier — this is the key optimization
+        # If we always pick the smaller side, we keep both sides balanced
+        if len(front) &gt; len(back):
+            front, back = back, front
+
+        # Generate next layer for the current frontier
+        next_front = set()
+
+        for word in front:
+            for i in range(len(word)):
+                for c in &#x27;abcdefghijklmnopqrstuvwxyz&#x27;:
+                    candidate = word[:i] + c + word[i+1:]
+
+                    # If this candidate appears in the OTHER frontier → MEET!
+                    # We found a path: steps from front side + steps from back side
+                    if candidate in back:
+                        return steps + 1
+
+                    # Only expand through valid dictionary words
+                    if candidate in word_set:
+                        next_front.add(candidate)
+
+        # Move to next layer; remove visited words from word_set
+        # (prevents re-visiting from the same side or infinite loops)
+        word_set -= next_front
+        front = next_front
+        steps += 1
+
+    # No path
+    return 0
+</code></pre>
+
+<p><strong>架构图 / Architecture Diagram:</strong></p>
+
+<pre><code>
+Step 1:  front={hit}          back={cog}         steps=1
+         ↓ expand front (size 1)
+         next={hot}
+         hot ∈ back? No
+
+Step 2:  front={hot}          back={cog}         steps=2
+         ↓ expand front (size 1)
+         next={dot, lot}
+         dot ∈ back? No; lot ∈ back? No
+
+Step 3:  front={dot,lot}      back={cog}         steps=3
+         back is smaller (size 1) → expand back!
+         ↓ expand back
+         next_back={dog, log}
+         dog ∈ front? No; log ∈ front? No
+
+Step 4:  front={dot,lot}      back={dog,log}     steps=4
+         fronts are equal size, expand front
+         next_front from dot: {dog,lot,...}
+         dog ∈ back? YES → return steps+1 = 5 ✅
+</code></pre>
+
+<p><strong>Cross-check (Step 4 verification):</strong></p>
+
+<p>Input: <code>beginWord=&quot;hit&quot;</code>, <code>endWord=&quot;cog&quot;</code>, <code>wordList=[&quot;hot&quot;,&quot;dot&quot;,&quot;dog&quot;,&quot;lot&quot;,&quot;log&quot;,&quot;cog&quot;]</code></p>
+
+<p>Tracing through the diagram vs code:</p>
+<p>- Step 1: <code>front={&quot;hit&quot;}</code>, try all substitutions of &quot;hit&quot;: <code>h→a-z</code> at pos 0 = &quot;ait&quot;,&quot;bit&quot;... none in dict; pos 1 = &quot;hat&quot;,&quot;hbt&quot;... none in dict; pos 2 = &quot;hia&quot;,&quot;hib&quot;... &quot;hot&quot; is in word_set ✓. <code>next_front={&quot;hot&quot;}</code>. &quot;hot&quot; in <code>back={&quot;cog&quot;}</code>? No. <code>front={&quot;hot&quot;}</code>, steps=2.</p>
+<p>- Step 2: expand <code>front={&quot;hot&quot;}</code> (size 1 ≤ <code>back</code> size 1, same): from &quot;hot&quot;: &quot;dot&quot;,&quot;lot&quot; in word_set. Neither in <code>back</code>. <code>front={&quot;dot&quot;,&quot;lot&quot;}</code>, steps=3.</p>
+<p>- Step 3: <code>len(front)=2 &gt; len(back)=1</code> → swap! Now expanding <code>back={&quot;cog&quot;}</code>: &quot;aog&quot;...&quot;log&quot;,&quot;dog&quot; in word_set. Neither in swapped <code>front={&quot;dot&quot;,&quot;lot&quot;}</code>. <code>back={&quot;dog&quot;,&quot;log&quot;}</code>, steps=4.</p>
+<p>- Step 4: <code>len(front)=2 == len(back)=2</code> → expand front. From &quot;dot&quot;: pos 2 change → &quot;dog&quot; in word_set → &quot;dog&quot; in <code>back={&quot;dog&quot;,&quot;log&quot;}</code>? <strong>YES!</strong> Return <code>steps+1 = 5</code>. ✅</p>
+
+<p>Diagram matches code exactly.</p>
+
+<hr/>
+
+<h3>方法三：虚拟节点 BFS / Approach 3: Virtual Node BFS</h3>
+
+<p><strong>适合在面试中提及，理解其思路 / Good to mention in interviews as an insight:</strong></p>
+
+<pre><code>
+from collections import defaultdict, deque
+
+def ladderLength_virtual(beginWord: str, endWord: str, wordList: list[str]) -&gt; int:
+    # Build adjacency: pattern → list of words matching that pattern
+    # &quot;hit&quot; → {&quot;*it&quot;: [&quot;hit&quot;,...], &quot;h*t&quot;: [&quot;hit&quot;,&quot;hot&quot;,...], &quot;hi*&quot;: [&quot;hit&quot;,...]}
+    graph = defaultdict(list)
+
+    for word in wordList + [beginWord]:
+        for i in range(len(word)):
+            # Wildcard pattern for position i
+            pattern = word[:i] + &#x27;*&#x27; + word[i+1:]
+            graph[pattern].append(word)
+
+    # BFS on virtual graph: real words AND patterns as nodes
+    queue = deque([(beginWord, 1)])
+    visited = {beginWord}
+
+    while queue:
+        node, steps = queue.popleft()
+
+        # Generate all patterns this word matches
+        for i in range(len(node)):
+            pattern = node[:i] + &#x27;*&#x27; + node[i+1:]
+
+            # All words sharing this pattern are neighbors
+            for neighbor in graph[pattern]:
+                if neighbor == endWord:
+                    return steps + 1
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append((neighbor, steps + 1))
+
+    return 0
+</code></pre>
+
+<hr/>
+
+<h3>复杂度对比 / Complexity Comparison</h3>
+
+<p>| 方法 / Method | 时间 Time | 空间 Space | 面试推荐 |</p>
+<p>|---|---|---|---|</p>
+<p>| 朴素 BFS | O(N × L × 26) | O(N × L) | 起点，先写这个 |</p>
+<p>| 双向 BFS | O(N × L × 26 / √) | O(N × L) | ⭐ 主动提出 |</p>
+<p>| 虚拟节点 BFS | O(N × L) | O(N × L²) | 作为补充提及 |</p>
+
+<p>N = 词典大小, L = 单词长度</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文常见坑 / Common pitfalls:</strong></p>
+
+<p><strong>1. <code>endWord</code> 不在词典中 / <code>endWord</code> not in wordList</strong></p>
+<pre><code>
+if endWord not in word_set:
+    return 0  # 别忘了这个检查！
+</code></pre>
+<p>这是最常见的 bug。<code>beginWord</code> 可以不在词典中（题目说明），但 <code>endWord</code> 必须在。</p>
+
+<p><strong>2. <code>beginWord == endWord</code></strong></p>
+<pre><code>
+# 题目保证 beginWord != endWord，但防御性编程：
+if beginWord == endWord:
+    return 1
+</code></pre>
+
+<p><strong>3. 双向 BFS 中忘记交换 / Forgetting to swap in bidirectional BFS</strong></p>
+<pre><code>
+# Wrong: always expand `front`
+# Right:
+if len(front) &gt; len(back):
+    front, back = back, front
+</code></pre>
+<p>如果忘记交换，退化成单向 BFS，失去所有优化优势。</p>
+
+<p><strong>4. 双向 BFS 的返回值 / Return value in bidirectional BFS</strong></p>
+<p>Meeting at step N means: we&#x27;ve taken N steps from the start side and are finding a match in the other frontier. The other frontier was already extended to cover those words. Return <code>steps + 1</code>.</p>
+
+<p>- <code>steps</code> = number of layers expanded so far (from whichever side expanded each round)</p>
+<p>- When we find a meeting point, we add 1 to account for the final step connecting the two frontiers.</p>
+
+<p><strong>5. 修改 <code>word_set</code> 防止重复访问 / Mutating <code>word_set</code> to prevent revisits</strong></p>
+<pre><code>
+word_set -= next_front  # Remove explored words from the global set
+</code></pre>
+<p>如果不这样做，已经访问过的词可能从另一侧再次入队，导致死循环或错误结果。</p>
+
+<p><strong>6. <code>beginWord</code> 可能也在 wordList 中</strong></p>
+<p>题目不保证。用 <code>word_set -= {beginWord}</code> 防止重复访问自身。</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong> Word Ladder 的算法思想在生产系统中无处不在：</p>
+
+<p><strong>1. 拼写纠错 (Spell Correction)</strong></p>
+<p>Google/iOS 键盘的拼写建议：给定一个错误单词，找到编辑距离最近的正确单词。BFS 按编辑距离层次扩展，等价于 Word Ladder 的变体。</p>
+
+<p><strong>2. 知识图谱推理 (Knowledge Graph Reasoning)</strong></p>
+<p>从实体 A 到实体 B 的最短关系路径。例如 WikiData：&quot;北京&quot; → ??? → &quot;苹果公司&quot;。每条边是一种关系类型，问题等价于最短 hop 路径。</p>
+
+<p><strong>3. 配置迁移 (Configuration Migration)</strong></p>
+<p>系统配置从版本 v1 迁移到 v5，每步只能应用一个合法的 migration 脚本，问最少几步？等价于图最短路径。</p>
+
+<p><strong>4. DNA 序列变异分析</strong></p>
+<p>生物信息学：从基因序列 A 到序列 B，每步只能改变一个碱基对（且中间序列必须是有意义的序列）。</p>
+
+<p><strong>English:</strong> Real production uses of this pattern:</p>
+
+<p>- <strong>Autocorrect / fuzzy matching</strong> — find shortest edit distance to valid word; BFS on &quot;word space&quot; graph</p>
+<p>- <strong>Knowledge graph shortest path</strong> — &quot;6 degrees of separation&quot; style queries in Neo4j / WikiData</p>
+<p>- <strong>Network routing</strong> — each hop changes one attribute (VLAN, subnet) of a packet&#x27;s path</p>
+<p>- <strong>Code refactoring chains</strong> — automated refactoring where each intermediate state must compile</p>
+
+<p>The <strong>bidirectional BFS</strong> pattern specifically appears in:</p>
+<p>- LinkedIn&#x27;s &quot;degrees of connection&quot; (bidi BFS between two users&#x27; connection graphs)</p>
+<p>- Route planning (meet-in-the-middle optimization in GPS routing, e.g. A* bidirectional)</p>
+<p>- Password cracking chains (rainbow tables = precomputed hash chain meet-in-the-middle)</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Q1: 为什么用 BFS 而不是 DFS？Why BFS over DFS?</strong></p>
+
+<p><strong>A:</strong> BFS guarantees shortest path in unweighted graphs by expanding layer by layer — the first time we reach a node, we&#x27;ve found the minimum distance. DFS might find a valid path but not the shortest one. Since the problem asks for minimum transformation length, BFS is the correct choice.</p>
+
+<hr/>
+
+<p><strong>Q2: 你能优化你的初始 BFS 解法吗？Can you optimize your basic BFS?</strong></p>
+
+<p><strong>A:</strong> Yes — bidirectional BFS. Instead of expanding from just one end, we simultaneously expand from both <code>beginWord</code> and <code>endWord</code>. We always expand the smaller frontier to keep both sides balanced. This reduces the search space from O(B^d) to O(B^(d/2)), an exponential improvement. In the worst case with branching factor 26 and depth 10, that&#x27;s 26^10 vs 2×26^5 — roughly 11 billion nodes vs 22 million.</p>
+
+<hr/>
+
+<p><strong>Q3: 双向 BFS 怎么知道两侧相遇了？How do you detect meeting in bidirectional BFS?</strong></p>
+
+<p><strong>A:</strong> When expanding one frontier, check if any generated candidate appears in the OTHER frontier&#x27;s set. If yes, the two sides have met — return <code>steps + 1</code>. Using sets (not queues) for frontiers enables O(1) lookup for this check.</p>
+
+<hr/>
+
+<p><strong>Q4: 如果 <code>beginWord</code> 也需要在词典中怎么办？What if <code>beginWord</code> must also be in wordList?</strong></p>
+
+<p><strong>A:</strong> The current LeetCode problem says <code>beginWord</code> doesn&#x27;t need to be in <code>wordList</code> — it&#x27;s the given start. If the constraint changed, we&#x27;d simply check <code>if beginWord not in word_set: return 0</code> at the top, similar to the <code>endWord</code> check. The rest of the algorithm stays identical.</p>
+
+<hr/>
+
+<p><strong>Q5: 这道题的 Follow-up：输出完整路径怎么做？Print the actual path?</strong></p>
+
+<p><strong>A:</strong> That&#x27;s LeetCode 126 (Word Ladder II — Hard). For a single shortest path, augment BFS to track <code>parent</code> pointers: <code>parent[candidate] = word</code>. After reaching <code>endWord</code>, backtrack from <code>endWord</code> to <code>beginWord</code> using the parent map. For ALL shortest paths (LC 126), we must be careful: allow multiple parents per node at the same BFS layer, and backtrack through all of them — this is significantly more complex and requires careful same-level handling.</p>
+
+<hr/>
+
+<h2>总结 / Summary</h2>
+
+<pre><code>
+Word Ladder 解题模板:
+1. 特判: endWord 不在词典 → return 0
+2. 初始化: front={beginWord}, back={endWord}, steps=1
+3. 循环:
+   a. 选小的前沿扩展 (if len(front) &gt; len(back): swap)
+   b. 枚举每个词的所有26字母替换
+   c. 如果 candidate ∈ 对面前沿 → return steps+1
+   d. 如果 candidate ∈ word_set → 加入 next_front
+   e. word_set -= next_front; front = next_front; steps++
+4. 循环结束无相遇 → return 0
+
+关键提示:
+- BFS = 无权图最短路径
+- 双向 BFS = √ 级别加速
+- 永远扩展较小的前沿
+- word_set -= next_front 防止重复访问
+</code></pre>
+
+<p><strong>时间复杂度 / Time:</strong> O(N × L × 26) where N = wordList size, L = word length</p>
+<p><strong>空间复杂度 / Space:</strong> O(N × L)</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-08-21</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
