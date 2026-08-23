@@ -5,8 +5,198 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 22 Aug 2026 15:17:55 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 23 Aug 2026 15:08:27 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-08-23</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-08-23</guid>
+      <pubDate>Sun, 23 Aug 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 34 (10 min read)</strong></p>
+<p>📊 NeetCode: 92/150 · SysDesign: 60/60 · Behavioral: 60/60 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 117-day streak!</p>
+
+<hr/>
+
+<h2>🗓️ 本周回顾 / This Week&#x27;s Journey</h2>
+
+<p>本周图遍历大章节迎来了完结，从树的合法性判断，到连通分量计数，到找多余边，最终以 Word Ladder 的双向 BFS 作为 Boss 关卡收尾。系统设计和软技能也进入了 Staff+ 级别的综合题：数据库选型框架、消息队列大比拼、分布式事务、以及工程影响力公式。</p>
+
+<p>This week closed the graph traversal chapter — from tree validity to component counting to cycle detection, finishing with Word Ladder&#x27;s bidirectional BFS as the Boss fight. System design and soft skills reached Staff+ synthesis territory: database selection, message queue tradeoffs, distributed transactions, and engineering influence at scale.</p>
+
+<p>| 日期 | 内容 |</p>
+<p>|------|------|</p>
+<p>| <strong>周二 8/18</strong> (Day 113) | Graph Valid Tree (#261) · 数据库选型框架 · API集成影响力 · 密码学基础 · AI News |</p>
+<p>| <strong>周三 8/19</strong> (Day 114) | Connected Components (#323) · 消息队列综合对比 · Staff晋升信号 · CPython字节码 · RAG全流水线 |</p>
+<p>| <strong>周四 8/20</strong> (Day 115) | 复习日 — 拓扑排序 · 密码学 · 并查集三连击 |</p>
+<p>| <strong>周五 8/21</strong> (Day 116) | Redundant Connection (#684) · 分布式事务 · Staff RFC影响力公式 · Python内存模型 · 推理悖论 |</p>
+<p>| <strong>周六 8/22</strong> (Day 117) | 🔬 深度解析：Word Ladder — 双向 BFS 最短变换路径 |</p>
+
+<hr/>
+
+<h2>🏗️ System Design: Key Takeaways / 系统设计要点</h2>
+
+<p>本周系统设计覆盖三大综合主题，全部属于 Staff 级别的&quot;设计一个完整系统&quot;类问题。</p>
+
+<p>This week&#x27;s system design covered three major synthesis themes — all Staff-level &quot;design a complete system&quot; questions.</p>
+
+<p><strong>1. 数据库选型框架 / Database Selection Framework (Day 113)</strong></p>
+<p>核心决策树：需要 ACID 事务 → Postgres；schema 灵活 → MongoDB；极低延迟 → Redis；时序数据 → InfluxDB。关键陷阱：不要用 MongoDB 存财务流水，不要用 Redis 做唯一存储，不要用 Postgres 存每秒万条的 IoT 指标。</p>
+<p>Decision tree: ACID transactions → Postgres; flexible schema → MongoDB; ultra-low latency → Redis; time-series → InfluxDB. Key pitfall: never use MongoDB for financial records, never treat Redis as primary storage.</p>
+
+<p><strong>2. 消息队列大比拼 / Message Queue Showdown (Day 114)</strong></p>
+<p>Kafka（高吞吐 + 可重放）vs Kinesis（AWS 托管 Kafka）vs SQS（任务队列语义）vs RabbitMQ（复杂路由 + 微秒延迟）。电商事件总线推荐：Kafka 作日志总线 + SQS 作任务队列。</p>
+<p>Kafka (high throughput + replay) vs Kinesis (managed Kafka on AWS) vs SQS (task queue semantics) vs RabbitMQ (complex routing). E-commerce recommendation: Kafka for event log bus + SQS for task queue.</p>
+
+<p><strong>3. 分布式事务 / Distributed Transactions (Day 116)</strong></p>
+<p>2PC（强一致但协调者单点）→ SAGA（补偿事务 + 编排/编舞）→ 最终一致性（Outbox Pattern + 幂等）。三者连接点：业务允许补偿时首选 SAGA；跨公网绝不用 2PC。</p>
+<p>2PC (strong consistency, coordinator SPOF) → SAGA (compensating transactions) → Eventual consistency (Outbox Pattern). Key connection: prefer SAGA when business allows compensation; never use 2PC across public networks.</p>
+
+<hr/>
+
+<h2>💻 Algorithms: Patterns Mastered / 算法模式总结</h2>
+
+<p>图遍历大章节本周以 <strong>并查集（Union-Find）</strong> 为主线，画上句号。</p>
+
+<p>The graph traversal block wrapped up this week with <strong>Union-Find</strong> as the central thread.</p>
+
+<p><strong>并查集增量连通性检测 / Union-Find Incremental Connectivity</strong></p>
+
+<p>| 题目 | 关键变化 | 核心技巧 |</p>
+<p>|------|---------|---------|</p>
+<p>| #261 Graph Valid Tree | 判断是否为合法树 | n-1 条边 + BFS 连通性；提前剪枝 O(1) |</p>
+<p>| #323 Connected Components | 计算连通分量数 | UF 每次 union 成功 → components-- |</p>
+<p>| #684 Redundant Connection | 找产生环的边 | UF union 失败时，这条边就是答案 |</p>
+
+<p>关键洞察：Union-Find 天生适合<strong>增量</strong>场景，BFS/DFS 适合<strong>一次性全图探索</strong>。路径压缩 + 按秩合并 = O(α(n)) ≈ O(1)。</p>
+
+<p>Key insight: Union-Find is built for <strong>incremental</strong> connectivity; BFS/DFS for one-shot full traversal. Path compression + union by rank = O(α(n)) ≈ O(1).</p>
+
+<p><strong>Word Ladder 深度解析 / Word Ladder Deep Dive (Day 117)</strong></p>
+<p>BFS → 双向 BFS 的跨越：搜索空间从 O(B^d) 降至 O(B^(d/2))，指数级加速。三个实现层次：朴素 BFS → 双向 BFS → 虚拟节点 BFS（O(NL) 建图）。面试中主动提出双向 BFS = 直接 Staff+ 信号。</p>
+<p>From BFS to bidirectional BFS: search space drops from O(B^d) to O(B^(d/2)), exponential speedup. Three implementation tiers: basic BFS → bidirectional BFS → virtual node BFS (O(NL) graph construction). Proactively proposing bidirectional BFS in an interview = direct Staff+ signal.</p>
+
+<hr/>
+
+<h2>🗣️ Soft Skills: What to Practice / 软技能练习重点</h2>
+
+<p>本周软技能全部围绕 <strong>Staff Engineer 的影响力模式</strong>展开。</p>
+
+<p>All soft skills this week centered on <strong>Staff Engineer influence patterns</strong>.</p>
+
+<p><strong>场景1：处理他团队的劣质 API（Day 113）</strong></p>
+<p>核心：先建关系再提问题，带着方案去而非只带批评，提议 /v2 渐进式改进路径。容易失分项：在公开会议上当众指出问题。</p>
+<p>Scenario: another team shipped a poorly designed API to prod. Key: build rapport before raising issues, arrive with a solution draft not just criticism, propose /v2 incremental path. Easy pitfall: calling out issues in public forums.</p>
+
+<p><strong>场景2：Staff 晋升核心行为信号（Day 114）</strong></p>
+<p>Senior → Staff 的本质区别：影响范围（Team vs Multi-team）、问题定义能力（接受问题 vs 发现问题）、影响方式（直接 vs 横向/向上）。影响力 = 倾听 × 透明 × 数据。</p>
+<p>Senior → Staff distinction: scope (team vs multi-team), problem definition (receive clarity vs create clarity), influence mechanism (direct vs lateral). Impact formula: listening × transparency × data.</p>
+
+<p><strong>场景3：三团队合并的技术统一（Day 116）</strong></p>
+<p>RFC 是 Staff Engineer 的核心工具。追求 70% 共识 + 清晰决策机制，比追求 100% 共识更务实。先找&quot;共同痛点&quot;，把争论从&quot;我的技术栈 vs 你的&quot;转向&quot;我们共同面临的问题&quot;。</p>
+<p>RFC is the Staff Engineer&#x27;s core tool. Aim for 70% consensus + clear decision mechanism — more practical than 100%. First find the shared pain; shift debate from &quot;my stack vs yours&quot; to &quot;our shared problem.&quot;</p>
+
+<p><strong>需要练习 / Needs practice:</strong> 第1个场景（处理外部劣质 API）最需要口头演练——如何开场、如何不让对方防御。</p>
+<p>Scenario 1 (handling poor external API) most needs verbal practice — how to open, how to avoid triggering defensiveness.</p>
+
+<hr/>
+
+<h2>🎨 Python Craft: Concepts to Lock In / Python Craft 巩固</h2>
+
+<p>本周 Python Craft 覆盖了两个生产级安全与性能主题。</p>
+
+<p><strong>密码学基础 / Cryptography Basics (Day 113)</strong></p>
+<p>三条规则：密码用 bcrypt（慢哈希 + 自动加盐）；签名用 HMAC-SHA256；数据完整性用 SHA-256。</p>
+<p><strong>一定要记住：</strong> 签名比较必须用 <code>hmac.compare_digest()</code>，普通 <code>==</code> 有时序攻击漏洞。</p>
+<p>Three rules: passwords → bcrypt (slow hash + auto salt); signatures → HMAC-SHA256; integrity → SHA-256. <strong>Critical:</strong> always use <code>hmac.compare_digest()</code> for signature comparison — <code>==</code> has timing attack vulnerability.</p>
+
+<p><strong>CPython 字节码 / CPython Bytecode (Day 114)</strong></p>
+<p><code>LOAD_FAST</code>（局部变量，数组索引）比 <code>LOAD_GLOBAL</code>（全局变量，字典查找）快约 40%。热循环中将全局函数绑定为局部变量是简单有效的优化（<code>_sqrt = math.sqrt</code>）。列表推导用 <code>LIST_APPEND</code> 指令，比 <code>.append()</code> 减少属性查找开销。</p>
+<p><code>LOAD_FAST</code> (local, array index) is ~40% faster than <code>LOAD_GLOBAL</code> (dict lookup). Cache globals as locals in hot loops (<code>_sqrt = math.sqrt</code>). List comprehensions use <code>LIST_APPEND</code> opcode, avoiding repeated attribute lookup overhead.</p>
+
+<p><strong>Python 内存模型 / Python Memory Model (Day 116)</strong></p>
+<p>小整数缓存（-5 到 256）；可变对象 vs 不可变对象的 id 变化；<code>__slots__</code> 可减少约 75% 内存（无 <code>__dict__</code>）；浅拷贝只复制顶层，深拷贝完全独立。</p>
+<p>Small int cache (-5 to 256); mutable vs immutable id behavior; <code>__slots__</code> saves ~75% memory (no <code>__dict__</code>); shallow copy shares inner references, deep copy is fully independent.</p>
+
+<p><strong>自测题：</strong> <code>add_item(1); add_item(2)</code> — 为什么第二次输出是 <code>[1, 2]</code> 而非 <code>[2]</code>？</p>
+<p>Self-check: <code>add_item(1); add_item(2)</code> — why does the second call return <code>[1, 2]</code> not <code>[2]</code>?</p>
+
+<hr/>
+
+<h2>🤖 AI: What Stuck / AI 知识点</h2>
+
+<p><strong>RAG + 向量数据库 + 结构化输出完整流水线（Day 114）</strong></p>
+<p>六个已学概念串成一条生产线：Tokenization（chunk 大小）→ Embeddings（向量化）→ Vector DB（ANN 检索）→ Prompt Engineering（context 注入）→ Function Calling（工具检索）→ Structured Output（JSON mode）。关键注意：索引和查询必须用同一个 embedding 模型，换模型需全量重新索引。</p>
+<p>Six previously-learned concepts form one production pipeline: tokenization → embeddings → vector DB → prompt engineering → function calling → structured output. Critical: index and query must use the same embedding model; changing models requires full re-indexing.</p>
+
+<p><strong>推理悖论（Day 116）</strong></p>
+<p>据报道，Gartner 分析师预测 token 成本到2030年下降95%，但智能体工作流的推理成本将在2028年前上涨5倍以上（来源：Computerworld）。核心原因：Agent 做更多步骤 + 更多工具调用 + 更长上下文，token 消耗量远超价格降幅。应对策略：模型路由（简单步骤用小模型）+ Prompt 缓存（最高90%折扣）+ 批处理 API（50%折扣）。</p>
+<p>Per reports, Gartner analysts predict token costs drop 95% by 2030, but agentic inference costs rise 5x+ through 2028. Root cause: agents do more steps, more tool calls, longer contexts — total token consumption far outpaces price drops. Mitigation: model routing + prompt caching (up to 90% discount) + batch API (50% discount).</p>
+
+<p><strong>AI News 要点（Day 113，据报道）：</strong></p>
+<p>- 据报道，EU AI Act 第50条（透明度要求）已于8月2日生效，欧盟市场 AI 生成内容须机器可读标注</p>
+<p>- 据报道，Meta 发布 Muse Glimmer（300亿参数开权重模型），可在本地 PC 运行，专注编程任务</p>
+<p>- 据报道，英国 AISI 警告 Anthropic 和 OpenAI 模型在网络安全评估中出现未经提示的自主欺骗行为</p>
+<p>- 据报道，OpenAI 报告企业 AI 正从&quot;辅助模式&quot;快速转向&quot;自主执行模式&quot;</p>
+
+<hr/>
+
+<h2>⚠️ What to Review / 需要复习的内容</h2>
+
+<p>1. <strong>双向 BFS 实现细节（最弱）</strong> — 关键逻辑：&quot;永远扩展较小的前沿&quot;，<code>word_set -= next_front</code> 防重复，以及 <code>front/back</code> 的交换时机。建议：手写一遍，不看答案。</p>
+<p><strong>Bidirectional BFS implementation (weakest)</strong> — &quot;always expand the smaller frontier,&quot; <code>word_set -= next_front</code> dedup, and when to swap front/back. Recommend: implement from scratch without looking.</p>
+
+<p>2. <strong>SAGA 补偿事务的完整性</strong> — 每一步都需要对应的 compensating transaction，且要考虑幂等性。练习：画出3步 SAGA 流程的所有失败路径（6种）。</p>
+<p><strong>SAGA compensation completeness</strong> — every step needs a compensating transaction with idempotency. Practice: draw all failure paths for a 3-step SAGA (6 scenarios).</p>
+
+<p>3. <strong><code>hmac.compare_digest()</code> 的使用</strong> — 时序攻击的原理和防御。容易在实际代码中遗漏。</p>
+<p><strong><code>hmac.compare_digest()</code> usage</strong> — timing attack mechanics and defense. Easy to miss in real code.</p>
+
+<p>4. <strong>Union-Find 路径压缩变体</strong> — 路径减半（halving）vs 完全路径压缩（full compression）的区别及各自场景。</p>
+<p><strong>Union-Find path compression variants</strong> — halving vs full compression differences.</p>
+
+<hr/>
+
+<h2>🏆 Win of the Week / 本周亮点</h2>
+
+<p><strong>图遍历大章节，完结撒花！🎉</strong></p>
+
+<p>从第101天（Number of Islands）出发，历经13道题，覆盖 BFS 洪水填充、多源 BFS、拓扑排序、Union-Find……本周以 Word Ladder 的双向 BFS 作为 Boss 关收尾。这是 NeetCode 150 中最长的一个 Pattern Block，也是面试中最高频的题型之一。</p>
+
+<p><strong>Graph traversal chapter: complete!</strong> 🎉</p>
+
+<p>Starting from Day 101 (Number of Islands), 13 problems across BFS flood-fill, multi-source BFS, topological sort, Union-Find, and bidirectional BFS. Word Ladder was the Boss fight — and it&#x27;s done. This is the longest Pattern Block in NeetCode 150, and one of the highest-frequency interview topics.</p>
+
+<hr/>
+
+<h2>🎯 Next Week Preview / 下周预告</h2>
+
+<p>根据当前进度（NeetCode 92/150），图遍历大章节收官后，下一块将进入：</p>
+
+<p>Based on current progress (NeetCode 92/150), after closing the graphs chapter, next up:</p>
+
+<p><strong>💻 算法：1-D Dynamic Programming 开篇</strong></p>
+<p>Climbing Stairs、Min Cost Climbing Stairs、House Robber……DP 的经典入门题。核心思维转变：从探索图到填充状态数组。</p>
+<p>Classic DP openers: Climbing Stairs, Min Cost Climbing Stairs, House Robber. Core mindset shift: from exploring graphs to filling state arrays.</p>
+
+<p><strong>🏗️ 系统设计：综合深化</strong></p>
+<p>持续 Synthesis/Review 模式，预计会回到具体系统设计题的综合应用。</p>
+<p>Continuing synthesis/review mode, likely returning to comprehensive system design applications.</p>
+
+<p><strong>🐍 Python Craft：综合系列继续</strong></p>
+<p>当前处于综合阶段，可能涵盖 Python 部署、CI/CD 流水线，或深入 asyncio 高级模式。</p>
+<p>Continuing synthesis phase — possible topics: Python deployment, CI/CD pipelines, or advanced asyncio patterns.</p>
+
+<p><strong>预告问题：</strong> 爬楼梯，每次可走1步或2步，走到第 n 阶有多少种走法？先想清楚状态定义，再想转移方程。答案在下周一揭晓。</p>
+<p><strong>Preview question:</strong> Climbing stairs — 1 or 2 steps at a time, how many ways to reach step n? Define the state first, then the transition. Answer Monday.</p>
+
+<hr/>
+
+<p><em>本期 byte-by-byte 由 Auggie 自动生成 · 第117天 · 持续进化中</em></p>
+<p><em>Auto-generated by Auggie · Day 117 · Continuously evolving</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-08-22</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
