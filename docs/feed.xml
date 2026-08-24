@@ -5,8 +5,655 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 23 Aug 2026 15:08:27 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 24 Aug 2026 15:15:37 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-08-24</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-08-24</guid>
+      <pubDate>Mon, 24 Aug 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>📊 Day 118 — System Design Synthesis</h2>
+<p>&gt; 🔥 Expert Level | Synthesis: 存储选型决策框架</p>
+
+<hr/>
+
+<p>🏗️ <strong>系统设计 / System Design</strong></p>
+<p><strong>存储选型全景图 — 何时用哪种数据库？</strong></p>
+<p><strong>Storage Selection Guide — Picking the Right Database for Every Job</strong></p>
+
+<hr/>
+
+<h2>🎯 核心问题 / The Core Question</h2>
+
+<p>面试官最爱问：「你会用什么数据库？为什么？」</p>
+<p>Interviewers love asking: &quot;What database would you use? Why?&quot;</p>
+
+<p>❌ 错误答案：「用 PostgreSQL，它很可靠。」</p>
+<p>❌ Wrong answer: &quot;PostgreSQL, it&#x27;s reliable.&quot;</p>
+
+<p>✅ 正确答案：取决于数据模式、访问模式、一致性要求和规模。</p>
+<p>✅ Right answer: Depends on data shape, access pattern, consistency requirements, and scale.</p>
+
+<hr/>
+
+<h2>📊 存储类型速查 / Storage Cheatsheet</h2>
+
+<pre><code>
+场景 / Scenario              → 推荐存储 / Use This
+──────────────────────────────────────────────────────────
+ACID 事务 / ACID transact.   → PostgreSQL / MySQL
+灵活 Schema / Flexible schema → MongoDB (document DB)
+低延迟热数据 / Hot cache      → Redis / Memcached
+时序数据 / Time-series        → InfluxDB / TimescaleDB
+全文搜索 / Full-text search   → Elasticsearch / OpenSearch
+文件/对象 / Blobs             → S3 / GCS
+事件流 / Event stream         → Kafka / Kinesis
+图关系 / Graph queries        → Neo4j / Amazon Neptune
+全球低延迟 KV                 → DynamoDB / Cassandra
+OLAP 分析 / Analytics         → BigQuery / Snowflake
+</code></pre>
+
+<hr/>
+
+<h2>🔑 关键决策轴 / Key Decision Axes</h2>
+
+<h3>1. 一致性 vs 可用性 (CAP 回顾)</h3>
+<p>- <strong>强一致性</strong>：PostgreSQL, MySQL, etcd, Zookeeper — 用于金融、支付</p>
+<p>- <strong>最终一致性</strong>：DynamoDB, Cassandra, Redis Cluster — 用于社交、推荐</p>
+<p>- 口诀：钱要强一致，点赞可最终。</p>
+
+<h3>2. 读写比例</h3>
+<p>- <strong>读多写少</strong> (&gt;10:1)：PostgreSQL + Read Replica + Redis 缓存层</p>
+<p>- <strong>写多读少</strong>：Cassandra（LSM-Tree 写路径极快），ClickHouse（列存批写）</p>
+<p>- <strong>均等</strong>：单 PostgreSQL + 合理索引往往撑到 10K QPS</p>
+
+<h3>3. 数据结构</h3>
+<p>- 结构化关系 → SQL（JOIN 是第一公民）</p>
+<p>- 嵌套文档（用户配置、JSON） → MongoDB / DynamoDB</p>
+<p>- 纯 Key-Value 点查 → Redis / DynamoDB</p>
+<p>- 宽列（时序、日志行） → Cassandra / HBase</p>
+
+<h3>4. 规模边界（经验值）</h3>
+<pre><code>
+&lt; 1TB,  &lt; 10K QPS    → 单 PostgreSQL 实例
+&lt; 10TB, &lt; 100K QPS   → PostgreSQL + Read Replica + Redis
+&gt; 10TB  or 全球分布  → DynamoDB Global / Cassandra / Vitess
+PB 级分析            → BigQuery / Snowflake (OLAP, 不是 OLTP!)
+</code></pre>
+
+<hr/>
+
+<h2>🏗️ 典型生产架构 / Typical Polyglot Stack</h2>
+
+<pre><code>
+用户请求 / User Request
+    │
+    ├── CDN (S3 + CloudFront) ── 静态资源 / Static assets
+    │
+    └── API Server
+            ├── Redis ────────────── 缓存、Session、分布式锁
+            ├── PostgreSQL ──────── 用户/订单/核心业务 (ACID)
+            ├── Elasticsearch ────── 搜索、日志分析
+            ├── S3 ──────────────── 文件、图片、备份
+            └── Kafka ──────────── 事件流、服务解耦
+</code></pre>
+
+<p>为什么这样设计？</p>
+<p>Why this design?</p>
+<p>- 每个存储做它最擅长的事。PostgreSQL 不擅长 TB 级搜索，Elasticsearch 不擅长 ACID。</p>
+<p>- Each storage does what it&#x27;s best at. PostgreSQL is bad at TB-scale search; Elasticsearch is bad at ACID.</p>
+
+<hr/>
+
+<h2>⚠️ 常见误区 / Common Mistakes</h2>
+
+<p>❌ <strong>过早引入 NoSQL</strong></p>
+<p>很多初创公司数据量很小时就用 MongoDB，反而失去了 JOIN 和 ACID，后来痛苦迁回 PostgreSQL。</p>
+<p>Many startups adopt MongoDB prematurely, lose JOINs + ACID, then migrate back to Postgres in pain.</p>
+
+<p>❌ <strong>把 Redis 当主数据库</strong></p>
+<p>Redis 是缓存/会话存储，数据有丢失风险（AOF+RDB 需要配置，且 Redis 重启有延迟）。</p>
+<p>Redis is a cache/session store. Data loss risk unless persistence is carefully configured.</p>
+
+<p>❌ <strong>一库解决所有问题</strong>（Mono-DB Fallacy）</p>
+<p>认为 PostgreSQL 或 MongoDB 能搞定一切。生产系统几乎都是多存储架构。</p>
+<p>Production systems are almost always polyglot. No single DB wins everything.</p>
+
+<p>❌ <strong>混淆 OLTP 和 OLAP</strong></p>
+<p>在 PostgreSQL 上跑大量分析查询会锁表、拖慢在线业务。复杂分析要走数仓（BigQuery/Snowflake）。</p>
+<p>Running heavy analytics on your OLTP database slows production traffic. Separate your data warehouse.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://architecturenotes.co/things-you-should-know-about-databases/</p>
+<p>- https://use-the-index-luke.com/</p>
+<p>- https://www.postgresql.org/docs/current/indexes.html</p>
+<p>- https://cassandra.apache.org/doc/latest/cassandra/architecture/overview.html</p>
+
+<h2>🧒 ELI5</h2>
+<p>不同存储就像厨房工具：冰箱存食材（PostgreSQL），微波炉快速加热（Redis），归档柜存食谱（S3），留言板传消息（Kafka），搜索引擎找食谱（Elasticsearch）。</p>
+<p>Different databases are like kitchen tools: fridge for ingredients (Postgres), microwave for quick reheating (Redis), filing cabinet for recipes (S3), message board for communication (Kafka), index for finding recipes (Elasticsearch). Use the right tool for the job.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 Day 118 — Algorithms</h2>
+<p>&gt; 🔥 Expert Level | Advanced Graphs — Pattern Block Start</p>
+
+<hr/>
+
+<p>💻 <strong>算法 / Algorithms</strong> — #1584 Min Cost to Connect All Points (Medium)</p>
+
+<p>🧩 <strong>新模式 / New Pattern: 高级图算法 — Advanced Graphs</strong></p>
+<p>📍 This block: 6 problems</p>
+
+<p><strong>什么时候用 / When to use:</strong> 有权图最短路径（Dijkstra）、最小生成树（Prim/Kruskal）、Union-Find 动态连通性</p>
+
+<p><strong>识别信号 / Signals:</strong> weighted shortest path, minimum spanning tree, union find, disjoint sets, network connectivity, cost to connect</p>
+
+<p><strong>通用模版 / Template:</strong></p>
+<pre><code>
+# Dijkstra&#x27;s — Shortest Path
+import heapq
+
+def dijkstra(graph, start):
+    dist = {node: float(&#x27;inf&#x27;) for node in graph}
+    dist[start] = 0
+    heap = [(0, start)]  # (cost, node)
+    while heap:
+        d, u = heapq.heappop(heap)
+        if d &gt; dist[u]: continue  # stale entry, skip
+        for v, w in graph[u]:
+            if dist[u] + w &lt; dist[v]:
+                dist[v] = dist[u] + w
+                heapq.heappush(heap, (dist[v], v))
+    return dist
+
+# Prim&#x27;s MST — For dense graphs (n^2 edges)
+def prim_mst(points):
+    n = len(points)
+    in_mst = [False] * n
+    min_cost = [float(&#x27;inf&#x27;)] * n
+    min_cost[0] = 0
+    heap = [(0, 0)]  # (cost, node)
+    total = 0
+    while heap:
+        cost, u = heapq.heappop(heap)
+        if in_mst[u]: continue
+        in_mst[u] = True
+        total += cost
+        for v in range(n):
+            if not in_mst[v]:
+                w = your_edge_weight(u, v)
+                if w &lt; min_cost[v]:
+                    min_cost[v] = w
+                    heapq.heappush(heap, (w, v))
+    return total
+</code></pre>
+
+<p><strong>核心洞察 / Key Insight:</strong> Dijkstra = BFS + 优先队列（贪心选最短边）。Prim = Dijkstra 的变体，用于最小生成树。两者都用堆 + 懒删除（stale entry check）。</p>
+
+<hr/>
+
+<h2>📍 今日题目 / Today&#x27;s Problem</h2>
+
+<p>🔗 [LeetCode #1584](https://leetcode.com/problems/min-cost-to-connect-all-points/) 🟡 Medium</p>
+<p>📹 [NeetCode Video](https://neetcode.io/problems/min-cost-to-connect-points)</p>
+
+<hr/>
+
+<h2>🌍 真实场景类比 / Real-World Analogy</h2>
+
+<p>想象你是城市规划师，要在 n 个村庄之间修路，使所有村庄都能互相到达。修路的费用 = 曼哈顿距离（|x1-x2| + |y1-y2|）。目标：花最少的钱把所有村庄连通。</p>
+
+<p>You&#x27;re a city planner connecting n villages with roads. Road cost = Manhattan distance. Goal: minimum cost to connect all villages (classic Minimum Spanning Tree).</p>
+
+<hr/>
+
+<h2>🧩 映射到模式 / Map to Pattern</h2>
+
+<p>这是一道<strong>最小生成树 (MST)</strong> 问题 — 经典 Prim 算法场景：</p>
+<p>- 所有节点两两之间都有边（完全图，n² 条边）</p>
+<p>- 求连通所有节点的最小总代价</p>
+
+<p>This is MST, not Dijkstra. Key difference:</p>
+<p>- <strong>Dijkstra</strong>: shortest path from one source to all others</p>
+<p>- <strong>Prim/Kruskal</strong>: minimum weight to connect ALL nodes</p>
+
+<hr/>
+
+<h2>💡 解法 / Solution</h2>
+
+<pre><code>
+import heapq
+
+def minCostConnectPoints(points: list[list[int]]) -&gt; int:
+    n = len(points)
+    in_mst = [False] * n
+    # min_cost[i] = cheapest edge to add node i to MST
+    min_cost = [float(&#x27;inf&#x27;)] * n
+    min_cost[0] = 0
+    heap = [(0, 0)]  # (cost, node_index)
+    total = 0
+    edges_used = 0
+
+    while edges_used &lt; n:
+        cost, u = heapq.heappop(heap)
+
+        # Lazy deletion: skip stale entries
+        if in_mst[u]:
+            continue
+
+        in_mst[u] = True
+        total += cost
+        edges_used += 1
+
+        # Update neighbors (all unvisited nodes)
+        for v in range(n):
+            if not in_mst[v]:
+                manhattan = (abs(points[u][0] - points[v][0]) +
+                             abs(points[u][1] - points[v][1]))
+                if manhattan &lt; min_cost[v]:
+                    min_cost[v] = manhattan
+                    heapq.heappush(heap, (manhattan, v))
+
+    return total
+</code></pre>
+
+<p><strong>追踪 Trace</strong> (3 points: [0,0], [2,2], [3,10]):</p>
+<pre><code>
+Start: heap=[(0,0)], min_cost=[0, inf, inf]
+Pick (0, node=0): total=0, update neighbors
+  → node1: manhattan=4, node2: manhattan=13
+  heap=[(4,1),(13,2)]
+
+Pick (4, node=1): total=4, update neighbors  
+  → node2: manhattan=|3-2|+|10-2|=9 &lt; 13 → update
+  heap=[(9,2),(13,2_stale)]
+
+Pick (9, node=2): total=13, done (3 nodes)
+Answer: 13
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(n² log n) — n² edges, each pushed to heap once</p>
+<p>- Space: O(n²) — heap can hold all edges</p>
+
+<p>&gt; 💡 Alternative: Kruskal&#x27;s with Union-Find is cleaner for sparse graphs. Prim&#x27;s wins for dense graphs (complete graph = n² edges).</p>
+
+<hr/>
+
+<h2>🔄 举一反三 / Pattern Connections</h2>
+
+<p>| 问题 | 核心变化 | 关键差异 |</p>
+<p>|------|---------|---------|</p>
+<p>| #743 Network Delay Time (下一题) | Dijkstra 单源最短路 | 不是 MST，是 shortest path |</p>
+<p>| #787 Cheapest Flights K Stops | Dijkstra + 约束 (k stops) | Bellman-Ford 变体更直接 |</p>
+<p>| #778 Swim in Rising Water | 二分 + BFS 或 Prim 变体 | 最小化最大边权 |</p>
+<p>| #332 Reconstruct Itinerary | Eulerian path (DFS) | 完全不同，不是 Dijkstra |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://neetcode.io/problems/min-cost-to-connect-points</p>
+<p>- https://leetcode.com/problems/min-cost-to-connect-all-points/</p>
+<p>- https://cp-algorithms.com/graph/mst_prim.html</p>
+<p>- https://en.wikipedia.org/wiki/Prim%27s_algorithm</p>
+
+<h2>🧒 ELI5</h2>
+<p>把所有点用绳子连起来，每条绳子的费用是两点的曼哈顿距离。你每次选最便宜的绳子，把一个还没连上的点拉进来，直到所有点都连上。这就是 Prim 算法！</p>
+<p>Imagine connecting dots with rope. Each rope costs Manhattan distance. Always grab the cheapest rope that pulls a new dot into your connected group. That&#x27;s Prim&#x27;s algorithm for MST!</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ Day 118 — Soft Skills Synthesis</h2>
+<p>&gt; 🔥 Expert Level | Staff+ 场景综合</p>
+
+<hr/>
+
+<p>🗣️ <strong>软技能 / Soft Skills</strong></p>
+<p><strong>Staff 工程师的「影响力杠杆」— 如何在没有汇报关系的情况下推动变革</strong></p>
+<p><strong>Staff Engineer&#x27;s Leverage — Driving Change Without Direct Authority</strong></p>
+
+<hr/>
+
+<h2>🎯 场景 / Scenario</h2>
+
+<p>&gt; 你是一名 Staff Engineer，发现公司三个不同业务线的团队分别在重复造轮子——各自开发了内部的 feature flag 系统，代码重复且不一致。你没有任何权力要求他们停下来用你的方案，但你认为统一是正确的决策。你会怎么做？</p>
+
+<p>&gt; You&#x27;re a Staff Engineer who discovers three separate teams have each built their own internal feature flag system—redundant, inconsistent, and all solving the same problem. You have no authority over any of them, but you believe consolidation is the right call. What do you do?</p>
+
+<hr/>
+
+<h2>💡 为什么这道题重要 / Why This Matters</h2>
+
+<p>这是 Staff+ 工程师最典型的挑战：<strong>技术影响力 ≠ 行政权力</strong>。面试官想看你能不能在没有职位权威的情况下撬动系统性变化。</p>
+
+<p>This is the defining Staff+ challenge: technical influence ≠ management authority. Interviewers want to see whether you can drive systemic change without positional power.</p>
+
+<hr/>
+
+<h2>⭐ STAR Framework</h2>
+
+<p><strong>Situation:</strong> 三支团队，三套 feature flag 实现，维护成本高，功能参差不齐。</p>
+<p>Three teams, three implementations, high maintenance overhead, inconsistent capabilities.</p>
+
+<p><strong>Task:</strong> 在没有直接汇报关系的情况下，推动统一，同时不破坏已有团队的自主性。</p>
+<p>Drive consolidation without direct reports, without breaking team autonomy.</p>
+
+<p><strong>Action — 四步杠杆模型 / Four-Lever Model:</strong></p>
+
+<p>1. <strong>先倾听，再提案 (Listen before proposing)</strong></p>
+<p>逐一与三个团队做 1:1，了解他们各自的痛点、差异化需求和历史决策。避免第一步就说「你们该用我的方案」。</p>
+<p>Do 1:1s with each team first. Understand their pain, unique needs, and history. Never open with &quot;you should use mine.&quot;</p>
+
+<p>2. <strong>数据化问题 (Quantify the problem)</strong></p>
+<p>制作一页纸的对比分析：每套系统的功能差距、维护人时、过去 6 个月的 bug 数。让问题自己说话。</p>
+<p>Make a one-pager: feature gaps, maintenance hours, 6-month bug counts per system. Let the data advocate for you.</p>
+
+<p>3. <strong>共建，不是推销 (Co-create, don&#x27;t sell)</strong></p>
+<p>邀请三个团队各出一人，组成「Feature Flag Working Group」。目标是找到大家都能接受的方案，而不是推销你自己的。</p>
+<p>Form a &quot;Feature Flag Working Group&quot; with a delegate from each team. Goal: find a solution everyone buys into—not your pre-built solution.</p>
+
+<p>4. <strong>降低迁移成本 (Lower switching cost)</strong></p>
+<p>提供迁移指南、自动化兼容层、可选迁移时间表。让采用新方案比继续维护旧方案更容易。</p>
+<p>Provide migration guides, compatibility shims, flexible timelines. Make adopting easier than maintaining.</p>
+
+<p><strong>Result:</strong></p>
+<p>3个月内，两个团队自愿迁移，第三个团队在季度末跟进。运维成本下降 40%，feature flag 成为公司级共享平台。</p>
+<p>Within 3 months, two teams voluntarily migrated; the third followed by quarter end. 40% reduction in maintenance cost. Feature flags became a company-wide platform.</p>
+
+<hr/>
+
+<h2>❌ vs ✅ 对比 / Bad vs Good</h2>
+
+<p>| ❌ 常见失误 | ✅ 正确做法 |</p>
+<p>|-----------|-----------|</p>
+<p>| 直接给 VP 发邮件要求强制统一 | 先让团队自己看到问题的成本 |</p>
+<p>| 在 Slack 公开说「你们的实现很烂」 | 私下 1:1，建立信任再讨论改进 |</p>
+<p>| 只提问题，不提解决方案 | 带着「我们可以一起做什么」来 |</p>
+<p>| 要求全量迁移、立即生效 | 渐进迁移，给出充足过渡期 |</p>
+
+<hr/>
+
+<h2>🌟 Senior/Staff 加分点 / Senior/Staff Signals</h2>
+
+<p>- 能说清楚「为什么现在做比以后做成本更低」（技术债的时间价值）</p>
+<p>- 能量化技术债务对业务的影响（不只是工程视角）</p>
+<p>- 能区分「我的技术判断」和「最适合公司的方案」</p>
+<p>- 理解政治阻力（团队 ownership 意识）并有针对性地化解</p>
+
+<hr/>
+
+<h2>🔑 Key Takeaways</h2>
+
+<p>1. <strong>影响力来自信任，信任来自倾听。</strong> Influence comes from trust; trust comes from listening first.</p>
+<p>2. <strong>数据比意见更有说服力。</strong> Data beats opinions in technical debates.</p>
+<p>3. <strong>共建比推销更持久。</strong> Co-creation produces more durable outcomes than selling your solution.</p>
+<p>4. <strong>降低他人的切换成本就是降低阻力。</strong> Reducing switching cost = reducing resistance.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://staffeng.com/guides/engineering-strategy</p>
+<p>- https://lethain.com/staff-engineer-archetypes/</p>
+<p>- https://increment.com/teams/the-power-of-the-staff-engineer/</p>
+
+<h2>🧒 ELI5</h2>
+<p>你想让同学们用同一款画笔，但你不是老师。你先去问每个人喜欢自己画笔的哪里，然后一起设计一款大家都喜欢的新画笔，最后大家自己决定换不换。结果大家都换了！</p>
+<p>You want classmates to use the same paintbrush, but you&#x27;re not the teacher. You ask what they love about their own brushes, design a new one together that everyone likes, and let them choose. Everyone switches! That&#x27;s influence without authority.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Day 118 — Python Craft Synthesis</h2>
+<p>&gt; 🔥 Expert Level | Synthesis: Python 性能调优全景</p>
+
+<hr/>
+
+<p>🐍 <strong>Python 工程 / Python Craft</strong></p>
+<p><strong>性能调优决策树 — 从「慢」到「快」的系统化方法</strong></p>
+<p><strong>Performance Tuning Decision Tree — From Slow to Fast, Systematically</strong></p>
+
+<hr/>
+
+<h2>🎯 核心原则 / Core Principle</h2>
+
+<p>&gt; &quot;过早优化是万恶之源，但完全不优化是另一种罪。&quot;</p>
+<p>&gt; &quot;Premature optimization is the root of all evil—but zero optimization is a different sin.&quot;</p>
+
+<p>系统化调优的步骤：<strong>测量 → 定位 → 优化 → 验证</strong>（循环）</p>
+<p>The loop: <strong>Measure → Locate → Optimize → Verify</strong> (repeat)</p>
+
+<hr/>
+
+<h2>🔍 第一步：测量，不猜测 / Step 1: Measure, Don&#x27;t Guess</h2>
+
+<pre><code>
+# 1. cProfile — 函数级 CPU 热点
+import cProfile
+cProfile.run(&#x27;your_function()&#x27;, sort=&#x27;cumulative&#x27;)
+
+# 2. line_profiler — 行级细粒度
+# pip install line-profiler
+# @profile 装饰器 + kernprof -l -v script.py
+
+# 3. memory_profiler — 内存泄漏
+# pip install memory-profiler
+# @profile 装饰器 + python -m memory_profiler script.py
+
+# 4. timeit — 快速微基准
+import timeit
+timeit.timeit(&#x27;&quot;-&quot;.join(str(n) for n in range(100))&#x27;, number=10000)
+
+# 5. tracemalloc — 内存分配追踪（内置！）
+import tracemalloc
+tracemalloc.start()
+# ... your code ...
+snapshot = tracemalloc.take_snapshot()
+top_stats = snapshot.statistics(&#x27;lineno&#x27;)
+for stat in top_stats[:5]:
+    print(stat)
+</code></pre>
+
+<hr/>
+
+<h2>🗺️ 决策树 / Decision Tree</h2>
+
+<pre><code>
+发现慢 / It&#x27;s slow
+│
+├── CPU 密集？(profile 显示计算时间高)
+│   ├── 纯 Python 循环 → 用 NumPy 向量化 / Cython / 换算法
+│   ├── 可并行？→ multiprocessing.Pool (绕过 GIL)
+│   └── 需要极致 → Rust 扩展 (PyO3)
+│
+├── IO 密集？(等网络/文件/DB)
+│   ├── 单线程阻塞 → asyncio + aiohttp/aiomysql
+│   ├── 多个 IO 任务 → asyncio.gather() 并发
+│   └── 线程已够用 → ThreadPoolExecutor (IO 不受 GIL 限制)
+│
+├── 内存太高？
+│   ├── 大列表 → 改用 generator (yield)
+│   ├── 重复对象 → __slots__ 减少 per-object overhead
+│   └── 大 DataFrame → 分块读取 (pd.read_csv chunksize=)
+│
+└── DB/缓存层慢？
+    ├── N+1 查询 → eager loading / JOIN
+    ├── 缺索引 → EXPLAIN ANALYZE
+    └── 热数据 → Redis 缓存层
+</code></pre>
+
+<hr/>
+
+<h2>💡 Python 专属优化技巧 / Python-Specific Tricks</h2>
+
+<pre><code>
+# ❌ 慢：字符串拼接 (O(n²))
+result = &quot;&quot;
+for s in strings:
+    result += s
+
+# ✅ 快：join (O(n))
+result = &quot;&quot;.join(strings)
+
+# ❌ 慢：列表 membership test (O(n))
+if item in large_list:
+
+# ✅ 快：set lookup (O(1))
+large_set = set(large_list)
+if item in large_set:
+
+# ❌ 慢：重复 dict.get / 捕异常
+try:
+    value = d[key]
+except KeyError:
+    value = default
+
+# ✅ 快：dict.get
+value = d.get(key, default)
+
+# ✅ __slots__ — 减少 30-50% 内存（大量实例时）
+class Point:
+    __slots__ = (&#x27;x&#x27;, &#x27;y&#x27;)  # 禁止动态属性，换来更少内存
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+
+# ✅ lru_cache — 函数级缓存（纯函数必备）
+from functools import lru_cache
+
+@lru_cache(maxsize=128)
+def fib(n):
+    return n if n &lt; 2 else fib(n-1) + fib(n-2)
+</code></pre>
+
+<hr/>
+
+<h2>🔥 GIL 的实际影响 / GIL in Practice</h2>
+
+<pre><code>
+任务类型            线程 Thread    进程 Process   asyncio
+─────────────────────────────────────────────────────
+CPU 密集（纯 Python）  ❌ GIL 串行   ✅ 真并行     ❌ 单线程
+IO 密集（网络/文件）   ✅ GIL 释放   ✅ 可用       ✅ 最高效
+混合                  看比例        看比例         看 IO 占比
+</code></pre>
+
+<p><strong>实战口诀：</strong></p>
+<p>- IO 密集 → asyncio（现代首选）或 ThreadPool</p>
+<p>- CPU 密集 → multiprocessing 或 Rust/C 扩展</p>
+<p>- 简单并发 + IO → concurrent.futures.ThreadPoolExecutor</p>
+
+<hr/>
+
+<h2>📊 真实数字参考 / Real Numbers</h2>
+
+<p>| 操作 | 典型延迟 |</p>
+<p>|------|---------|</p>
+<p>| Python 函数调用 | ~100ns |</p>
+<p>| dict lookup | ~50ns |</p>
+<p>| list append | ~50ns |</p>
+<p>| Redis GET (本地) | ~200µs |</p>
+<p>| PostgreSQL query | ~1-10ms |</p>
+<p>| HTTP request (本地) | ~1ms |</p>
+
+<p>记住这些量级，当你看到 profiler 输出时才能判断「这是正常的还是异常的」。</p>
+<p>Know these orders of magnitude—that&#x27;s how you read profiler output intelligently.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://docs.python.org/3/library/profile.html</p>
+<p>- https://pythonspeed.com/articles/faster-python/</p>
+<p>- https://realpython.com/python-concurrency/</p>
+<p>- https://github.com/joerick/pyinstrument</p>
+
+<h2>🧒 ELI5</h2>
+<p>调优就像查病因：先用体温计（profiler）找到哪里发烧（热点），再根据是什么病（CPU 慢/IO 等/内存大）选药（向量化/异步/生成器）。不能一上来就吃所有药。</p>
+<p>Performance tuning is like diagnosing illness: use a thermometer (profiler) to find where it&#x27;s hot (bottleneck), then pick the right medicine (vectorize/async/generator) based on the disease type. Never prescribe all medicines at once.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 Day 118 — AI News</h2>
+<p>&gt; 🔥 Expert Level | AI 新闻速递 — August 2026</p>
+
+<hr/>
+
+<p>🤖 <strong>AI 本周要闻 / AI News Roundup</strong></p>
+<p><strong>August 2026 — 模型大爆发时代的三个关键信号</strong></p>
+
+<hr/>
+
+<h2>📰 Story 1: EU AI Act 开始执行 — 通用 AI 模型面临新规</h2>
+<p><strong>EU AI Act Enforcement Begins — GPAI Models Face New Obligations</strong></p>
+
+<p>&gt; 来源 / Source: https://www.stephensonharwood.com/insights/neural-network-august-2026/</p>
+
+<p>2026年8月2日，欧盟 AI 法案（EU AI Act）开始对具有「系统性风险」的通用 AI 模型（GPAI）执行义务。欧盟委员会获得权力，可要求提供信息、评估模型、并对不合规的公司处以罚款。</p>
+
+<p>On August 2, 2026, the EU AI Act began enforcing obligations for general-purpose AI (GPAI) models with systemic risk. The European Commission gained powers to request information, evaluate models, and impose fines on non-compliant companies.</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>这是全球第一个对前沿 AI 模型具有法律约束力的监管框架正式落地。OpenAI、Anthropic、Google 等公司在欧洲的部署策略将受到直接影响。工程师需要开始理解 AI 合规工程（AI compliance engineering）这个新领域。</p>
+
+<p>This is the first legally binding AI regulatory framework for frontier models to take effect globally. Engineers now need to understand AI compliance engineering as a real discipline.</p>
+
+<hr/>
+
+<h2>📰 Story 2: Alibaba 发布 Qwen3.8-Max — 2.4万亿参数开源模型</h2>
+<p><strong>Alibaba Releases Qwen3.8-Max — Reportedly 2.4T Parameter Open-Weight Model</strong></p>
+
+<p>&gt; 来源 / Source: https://augusto.digital/insights/blogs/monthly-llm-news-august-2026/</p>
+
+<p>阿里巴巴发布了 Qwen3.8-Max，据报道是迄今为止最大的开源权重模型，参数量达2.4万亿（混合专家架构 MoE）。同时发布了 Qwen3.8-27B 的更小版本，适合消费级 GPU 运行。</p>
+
+<p>Alibaba released Qwen3.8-Max, reportedly the largest open-weight release ever at 2.4 trillion parameters (MoE architecture), alongside the smaller Qwen3.8-27B for consumer GPU deployment.</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>开源模型正在快速追上闭源前沿模型。对工程师来说，这意味着「在自己的基础设施上运行 frontier-class 模型」正变得可能。MoE 架构（少量参数实际激活）是关键——2.4T 参数中同时激活的只是一个子集，实际计算成本远低于密集模型。</p>
+
+<p>Open-weight models are rapidly catching closed-source frontier models. MoE architecture is key: only a subset of 2.4T params activate per token, making compute cost much lower than a dense model.</p>
+
+<hr/>
+
+<h2>📰 Story 3: Claude Code Auto Mode + GPT-5.6 推动「自主 AI 工作流」时代</h2>
+<p><strong>Claude Code Auto Mode + GPT-5.6 Push Autonomous AI Workflows</strong></p>
+
+<p>&gt; 来源 / Source: https://local-ai-zone.github.io/blog/ai-updates-august-2026.html</p>
+
+<p>据报道，Anthropic 在8月推出 Claude Opus 5 并启用 Claude Code Auto Mode，主打「无需逐步确认」的自主编码工作流。同期，据报道 OpenAI 发布 GPT-5.6，内置 ChatGPT Work agent，以及收购了演示文稿初创公司 NextSlide。</p>
+
+<p>Anthropic reportedly shipped Claude Opus 5 and enabled Claude Code Auto Mode for autonomous coding workflows. Simultaneously, OpenAI reportedly launched GPT-5.6 with ChatGPT Work agent, and acquired presentation startup NextSlide.</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>AI agent 不再是「帮你写代码片段」，而是「自主执行多步骤工程任务」。对面试来说，这意味着：理解 AI agent 架构（ReAct、工具调用、记忆管理）已经是 senior 工程师的必备知识，不再是加分项。</p>
+
+<p>AI agents are no longer &quot;help you write snippets&quot;—they autonomously execute multi-step engineering tasks. For interviews: understanding agent architecture (ReAct, tool use, memory) is now table stakes for senior engineers, not a bonus.</p>
+
+<hr/>
+
+<h2>💡 工程师视角总结 / Engineer&#x27;s Takeaway</h2>
+
+<pre><code>
+2026年8月 AI 格局变化 / August 2026 Landscape Shift:
+
+监管 → EU AI Act 落地，合规成本上升
+开源 → Qwen3.8-Max 追平闭源前沿，推理成本下降  
+产品 → 自主 agent 工作流成主流，单次调用 API 时代结束
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://www.stephensonharwood.com/insights/neural-network-august-2026/</p>
+<p>- https://augusto.digital/insights/blogs/monthly-llm-news-august-2026/</p>
+<p>- https://local-ai-zone.github.io/blog/ai-updates-august-2026.html</p>
+
+<h2>🧒 ELI5</h2>
+<p>本周 AI 三件事：政府开始管 AI（欧盟），阿里开源了超大模型（像把核电站的设计图公开），AI 助手开始能自己完成一整个任务而不需要你步步确认。</p>
+<p>Three things this week in AI: governments started regulating AI (EU), Alibaba open-sourced a mega-model (like publishing nuclear plant blueprints), and AI assistants can now complete entire tasks autonomously without step-by-step approval.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-08-23</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
