@@ -5,8 +5,539 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 24 Aug 2026 15:15:37 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 25 Aug 2026 15:15:40 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-08-25</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-08-25</guid>
+      <pubDate>Tue, 25 Aug 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 119 (Synthesis)</h2>
+<h2>分布式一致性全景：强一致性 vs 最终一致性的取舍哲学</h2>
+<h2>Distributed Consistency Landscape: When to Choose Strong vs. Eventual Consistency</h2>
+
+<hr/>
+
+<h3>核心问题 / The Core Question</h3>
+
+<p>你之前学过 CAP 定理、Raft 共识、分布式锁、多区域活跃等系统设计。但真实世界的问题是：<strong>你在什么情况下选强一致性，什么时候接受最终一致性？</strong></p>
+
+<p>You&#x27;ve studied CAP theorem, Raft consensus, distributed locks, multi-region active-active. The real-world question is: <strong>when do you pay the cost of strong consistency, and when do you accept eventual consistency?</strong></p>
+
+<hr/>
+
+<h3>一致性光谱 / The Consistency Spectrum</h3>
+
+<pre><code>
+Linearizability       Sequential          Causal          Eventual
+(最强/Strongest)  →  Consistency  →  Consistency  →  Consistency (最弱)
+       ↑                                                      ↑
+  高延迟/Low throughput                         低延迟/High throughput
+ (Zookeeper, etcd)                           (DynamoDB, Cassandra, DNS)
+</code></pre>
+
+<hr/>
+
+<h3>三大类系统对比 / Three System Categories</h3>
+
+<p>#### 1. 强一致性 (Strong / Linearizable Consistency)</p>
+<p><strong>用途 / When to use:</strong> 金融交易、分布式锁、配置管理</p>
+
+<p><strong>代表系统 / Examples:</strong></p>
+<p>- <strong>Raft</strong> (etcd, TiKV): 写入 Leader → 多数节点复制 → commit</p>
+<p>- <strong>Google Spanner</strong>: TrueTime API 提供全球 external consistency</p>
+<p>- <strong>Zookeeper ZAB</strong>: 类 Paxos，ZooKeeper Atomic Broadcast</p>
+
+<p><strong>代价 / Cost:</strong> P50 latency 提升 2-10x；跨数据中心时，round-trip 导致写延迟不可避免</p>
+
+<p>#### 2. 有界陈旧 (Bounded Staleness / Read-Your-Writes)</p>
+<p><strong>用途 / When to use:</strong> 社交 feed、商品库存近似值、用户 profile</p>
+
+<p>- Cassandra QUORUM reads: R + W &gt; N 保证 read-your-writes</p>
+<p>- Redis Sentinel: 主从异步复制 + 可配置的 replica lag 上限</p>
+
+<p>#### 3. 最终一致性 (Eventual Consistency)</p>
+<p><strong>用途 / When to use:</strong> DNS、CDN 缓存、推荐系统、购物车</p>
+
+<p>- DynamoDB 默认模式: last-writer-wins (LWW)</p>
+<p>- CRDTs (Conflict-free Replicated Data Types): 天然可合并，无需协调</p>
+
+<hr/>
+
+<h3>真实系统选型对照 / Real Systems Compared</h3>
+
+<p>| 系统 / System       | 一致性模型                        | 典型场景                  |</p>
+<p>|---------------------|----------------------------------|---------------------------|</p>
+<p>| Google Spanner      | External Consistency (TrueTime)  | 全球银行交易               |</p>
+<p>| Amazon DynamoDB     | Eventual (default) / Strong (opt)| 购物车、用户会话           |</p>
+<p>| Apache Kafka        | Log ordering within partition    | 事件流，exactly-once       |</p>
+<p>| PostgreSQL + Citus  | Read-your-writes                 | 多租户 SaaS               |</p>
+<p>| Redis Cluster       | Eventual (async replication)     | 缓存、限流计数器           |</p>
+<p>| Zookeeper / etcd    | Linearizable                     | 选主、分布式锁、配置中心   |</p>
+
+<hr/>
+
+<h3>别踩这个坑 / Common Mistakes</h3>
+
+<p>❌ <strong>全用强一致性</strong> — 分布式系统下 latency 不可接受，吞吐量受限</p>
+<p>❌ <strong>全用最终一致性</strong> — 支付余额和库存扣减不能用 LWW（超卖、双花）</p>
+<p>❌ <strong>忽视 read repair</strong> — Cassandra 没有 read repair 时 QUORUM 读可能返回旧值</p>
+<p>❌ <strong>混淆 CP vs CA</strong> — CAP 定理描述的是网络分区时的取舍，不是日常操作</p>
+
+<p>✅ <strong>按数据类型决策:</strong></p>
+<p>- User profile → eventual (陈旧 1 分钟没问题)</p>
+<p>- Bank balance → strong (0 容忍不一致)</p>
+<p>- Inventory display → eventual (显示近似库存)</p>
+<p>- Inventory deduction → pessimistic lock (防止超卖)</p>
+
+<hr/>
+
+<h3>面试答题框架 / Interview Decision Framework</h3>
+
+<p>面试官问一致性时，用这 5 步回答：</p>
+
+<p>1. <strong>数据是什么?</strong> — 什么实体，读写频率如何？</p>
+<p>2. <strong>出错代价?</strong> — 不一致会导致什么业务问题？</p>
+<p>3. <strong>容忍多久的陈旧?</strong> — 100ms? 1s? 5 分钟？</p>
+<p>4. <strong>跨区域还是单区域?</strong> — 跨区域强一致需要 Paxos/Raft，代价巨大</p>
+<p>5. <strong>冲突如何解决?</strong> — LWW? CRDT? Saga + compensating transaction?</p>
+
+<hr/>
+
+<h3>深度连接：你学过的系统 / Connecting the Dots</h3>
+
+<p>- <strong>Day 12 CAP Theorem</strong> → 理论基础：为什么不能同时有 C + A + P</p>
+<p>- <strong>Day 47 Raft/Paxos</strong> → 实现强一致性的机制：Leader Election + Log Replication</p>
+<p>- <strong>Day 63 Distributed Lock</strong> → 应用强一致性：etcd 的 lease-based lock</p>
+<p>- <strong>Day 54 Multi-Region Active-Active</strong> → 最终一致性的挑战：conflict resolution at scale</p>
+<p>- <strong>Day 21 Key-Value Store</strong> → 如何暴露一致性级别给用户（DynamoDB-style API）</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://jepsen.io/consistency — Kyle Kingsbury 的权威一致性模型分析</p>
+<p>- https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html — Kleppmann 论 CAP 误解</p>
+<p>- https://www.allthingsdistributed.com/2008/12/eventually_consistent.html — Werner Vogels (Amazon CTO) 论最终一致性</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象一个家庭共享购物清单。爸妈在不同超市，清单可能暂时不同步（最终一致性）——这对购物没问题，顶多买了两瓶牛奶。但家庭账户余额必须实时同步，不然会出现&quot;双花&quot;（强一致性）。选哪种取决于出错的代价有多大。</p>
+
+<p>Like a shared family shopping list: mom and dad at different stores might briefly see different versions (eventual) — worst case: two cartons of milk. But the family bank account must always be perfectly in sync (strong) or someone overdrafts. The choice depends entirely on the cost of being wrong.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 94</h2>
+<h2>#743 Network Delay Time — Medium 🟡</h2>
+<h3>🧩 Advanced Graphs (2/6) — building on Dijkstra template from Day 93</h3>
+
+<hr/>
+
+<p>🔗 [LeetCode #743](https://leetcode.com/problems/network-delay-time/) | 🟡 Medium | 📹 [NeetCode](https://neetcode.io/problems/network-delay-time)</p>
+
+<hr/>
+
+<h3>🧩 Advanced Graphs (2/6) — 用昨天的 Dijkstra 模板解今天的问题</h3>
+
+<p><strong>昨天 (Day 93 #1584):</strong> Prim&#x27;s 算法求最小生成树 (MST) — 连通所有点的最小代价</p>
+<p><strong>今天 (Day 94 #743):</strong> Dijkstra 求单源最短路径 — 信号从 k 出发，到达所有节点的最短时间</p>
+
+<p><strong>核心区别 / Key Difference:</strong></p>
+<p>- MST: 找一棵树连通所有点，总权重最小</p>
+<p>- Single-Source Shortest Path: 从一个源点出发，到所有其他点的最短距离</p>
+
+<hr/>
+
+<h3>真实场景 / Real-World Analogy</h3>
+
+<p>想象一个微服务网络：节点是服务，边是 RPC 调用延迟（毫秒）。</p>
+<p>服务 k 广播一条配置变更消息。问题：<strong>所有服务都收到消息需要多长时间？</strong></p>
+
+<p>答案 = 从 k 出发，到最远节点的最短路径长度（即 max(dist[all nodes])）。</p>
+
+<p>A microservice network: nodes are services, edge weights are RPC latency (ms).</p>
+<p>Service k broadcasts a config update. Question: when has EVERY service received it?</p>
+<p>Answer = the longest shortest-path from k (the &quot;bottleneck&quot; node).</p>
+
+<hr/>
+
+<h3>问题映射到模板 / Map to Dijkstra Template</h3>
+
+<pre><code>
+给定: times = [[2,1,1],[2,3,1],[3,4,1]], n=4, k=2
+      表示: 从2→1需1ms, 2→3需1ms, 3→4需1ms
+
+目标: 从 k=2 出发，到达所有节点的最大延迟
+答案: dist[1]=1, dist[3]=1, dist[4]=2 → max = 2
+
+如果有节点不可达 → 返回 -1
+</code></pre>
+
+<hr/>
+
+<h3>Python 解法 + 逐行追踪 / Solution with Trace</h3>
+
+<pre><code>
+import heapq
+from collections import defaultdict
+
+def networkDelayTime(times, n: int, k: int) -&gt; int:
+    # Build adjacency list: graph[u] = [(v, w), ...]
+    graph = defaultdict(list)
+    for u, v, w in times:
+        graph[u].append((v, w))
+    
+    # Dijkstra from source k
+    dist = {node: float(&#x27;inf&#x27;) for node in range(1, n + 1)}
+    dist[k] = 0
+    heap = [(0, k)]  # (distance, node)
+    
+    while heap:
+        d, u = heapq.heappop(heap)
+        if d &gt; dist[u]:  # stale entry — skip!
+            continue
+        for v, w in graph[u]:
+            if dist[u] + w &lt; dist[v]:
+                dist[v] = dist[u] + w
+                heapq.heappush(heap, (dist[v], v))
+    
+    # If any node unreachable → return -1
+    max_dist = max(dist.values())
+    return max_dist if max_dist &lt; float(&#x27;inf&#x27;) else -1
+
+# Trace for times=[[2,1,1],[2,3,1],[3,4,1]], n=4, k=2:
+# Initial: dist = {1:inf, 2:0, 3:inf, 4:inf}, heap = [(0,2)]
+# Pop (0,2): process neighbors 1 (w=1), 3 (w=1)
+#   dist[1]=1, dist[3]=1 → heap = [(1,1),(1,3)]
+# Pop (1,1): no neighbors for 1 → nothing
+# Pop (1,3): process neighbor 4 (w=1)
+#   dist[4]=2 → heap = [(2,4)]
+# Pop (2,4): no neighbors → done
+# dist = {1:1, 2:0, 3:1, 4:2} → max = 2 ✅
+</code></pre>
+
+<p><strong>时间复杂度:</strong> O((V+E) log V) — heappush/pop on V nodes, E edges</p>
+<p><strong>空间复杂度:</strong> O(V+E) — adjacency list + dist dict</p>
+
+<hr/>
+
+<h3>举一反三 / Pattern Variations in This Block</h3>
+
+<p>| 题目 | 核心变化 | 关键调整 |</p>
+<p>|------|---------|---------|</p>
+<p>| #1584 Min Cost (Day 93) | MST，非单源最短路 | Prim&#x27;s / Kruskal&#x27;s |</p>
+<p>| <strong>#743 Network Delay (今天)</strong> | <strong>单源最短路</strong> | <strong>标准 Dijkstra</strong> |</p>
+<p>| #787 Cheapest K Stops | 有跳数限制的最短路 | Bellman-Ford 或 BFS+DP |</p>
+<p>| #332 Reconstruct Itinerary | 欧拉路径 | DFS + Hierholzer |</p>
+<p>| #778 Swim in Rising Water | 最小化最大边 | Dijkstra 变体 (minimax) |</p>
+<p>| #269 Alien Dictionary | 拓扑排序 | BFS/DFS 构建依赖图 |</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://leetcode.com/problems/network-delay-time/</p>
+<p>- https://cp-algorithms.com/graph/dijkstra.html — Dijkstra 详解 (含证明)</p>
+<p>- https://neetcode.io/problems/network-delay-time</p>
+
+<h3>🧒 ELI5</h3>
+<p>像在地图上从家出发，找到去每个朋友家的最短路线。Dijkstra 算法像一个聪明的导航：每次都先走目前看起来最近的路，慢慢把所有路都探索完。最后看最远的朋友家需要走多久——那就是整个消息传播的时间。</p>
+
+<p>Like finding the fastest route from your house to every friend&#x27;s house. Dijkstra always tries the currently-closest unvisited house next. When everyone&#x27;s been reached, the answer is the longest &quot;shortest path&quot; — that&#x27;s the bottleneck.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 119 (Synthesis)</h2>
+<h2>高级场景：工程领导力与技术愿景对齐</h2>
+<h2>Advanced Scenario: Engineering Leadership &amp; Technical Vision Alignment</h2>
+
+<hr/>
+
+<h3>场景问题 / Scenario Question</h3>
+
+<p>&gt; <strong>&quot;你是一个 Staff Engineer，公司 CEO 刚宣布了一个技术上不可行的 18 个月产品路线图。你的 VP of Engineering 希望你&#x27;找到方法让它实现&#x27;。你怎么处理这个情况？&quot;</strong></p>
+
+<p>&gt; <em>&quot;You&#x27;re a Staff Engineer. The CEO just announced a technically infeasible 18-month product roadmap. Your VP of Engineering wants you to &#x27;make it work.&#x27; How do you handle this?&quot;</em></p>
+
+<hr/>
+
+<h3>为什么这个问题很关键 / Why This Matters</h3>
+
+<p>这是一个典型的 Staff+ 场景，测试你能否：</p>
+<p>1. <strong>向上影响力</strong> — 改变决策，而不是简单执行</p>
+<p>2. <strong>技术判断与业务敏感度结合</strong> — 你的反对需要有数据支撑</p>
+<p>3. <strong>不&quot;扁平化&quot;自己的观点</strong> — 既不盲从，也不激进对抗</p>
+
+<hr/>
+
+<h3>STAR 拆解 / STAR Framework</h3>
+
+<p><strong>Situation:</strong> 战略与技术现实脱节。直接说&quot;不行&quot;会让你显得消极；直接接受会埋下项目失败的祸根。</p>
+
+<p><strong>Task:</strong> 你需要在 保持信任关系 的同时 修正不可行的假设。</p>
+
+<p><strong>Action (关键步骤):</strong></p>
+
+<p>1. <strong>先理解，再评估</strong> — 和 PM、VP 深挖 CEO 路线图背后的商业意图（是否有竞争压力？融资节点？）</p>
+<p>2. <strong>量化差距</strong> — 用数据说话：&quot;功能 X 需要 6 个月，Y 需要 4 个月，Z 技术上目前不可行&quot;</p>
+<p>3. <strong>提供选项，而非只提问题:</strong></p>
+<p>- Option A: 缩减功能范围，18 个月交付 60% MVP</p>
+<p>- Option B: 引入第三方，加速某些模块</p>
+<p>- Option C: 重排优先级，18 个月内交付最高价值功能</p>
+<p>4. <strong>书面化风险</strong> — 写一个 1-pager 技术风险评估，让决策者知情选择</p>
+<p>5. <strong>找盟友</strong> — 在 escalation 之前，先和同级 Staff/Principal Engineers 对齐</p>
+
+<p><strong>Result:</strong> 理想结果不是&quot;你赢了&quot;，而是团队做出了 <strong>知情决策</strong> — 无论最终选择什么，风险已经被明确告知。</p>
+
+<hr/>
+
+<h3>❌ 差回答 vs ✅ 好回答</h3>
+
+<p>❌ <strong>&quot;我告诉 CEO 这不可行，然后他们改了路线图。&quot;</strong></p>
+<p>— 过于简化，忽略了 politics 和 trust-building</p>
+
+<p>❌ <strong>&quot;我接受了，努力去做，结果超时了。&quot;</strong></p>
+<p>— 没有展示向上影响力，被动响应</p>
+
+<p>✅ <strong>&quot;我先搞清楚 CEO 路线图背后的商业假设，然后量化技术缺口，提供了三个选项给 VP，最终我们一起做了 informed trade-off，并书面化了风险。&quot;</strong></p>
+<p>— 展示了 technical leadership + business acumen + stakeholder management</p>
+
+<hr/>
+
+<h3>Senior/Staff 加分点 / Senior/Staff Signals</h3>
+
+<p>- <strong>不只是反对，是 co-create alternative:</strong> &quot;我提出了不同方案&quot; 比 &quot;我说不行&quot; 强 10 倍</p>
+<p>- <strong>写下来 (write it down):</strong> 关键技术判断落纸是 Staff 习惯，保护自己也保护团队</p>
+<p>- <strong>Disagree and commit (有条件):</strong> 如果上级了解风险后仍然决定前进，你可以承诺执行——但前提是风险已经被透明化</p>
+<p>- <strong>Build a coalition before escalating:</strong> 孤军奋战的 Staff 少见；善用同伴影响力</p>
+
+<hr/>
+
+<h3>核心要点 / Key Takeaways</h3>
+
+<p>1. 向上影响力 = 数据 + 选项 + 信任</p>
+<p>2. 不可行不是终点，是谈判起点</p>
+<p>3. 书面化风险 = 职业保护 + 组织成熟度信号</p>
+<p>4. Staff 角色的价值：在技术和业务之间做翻译</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://staffeng.com/guides/being-visible — Will Larson on Staff influence</p>
+<p>- https://charity.wtf/2019/10/28/deploys-its-not-just-for-ops-anymore/ — Charity Majors on engineering ownership</p>
+<p>- https://lethain.com/newsletters/ — Irrational Exuberance newsletter, Staff+ patterns</p>
+
+<h3>🧒 ELI5</h3>
+<p>如果老板说&quot;我们要在两个月内建一座桥&quot;，好工程师不是直接说&quot;不行&quot;，也不是默默开始挖基础。而是说：&quot;我测量了河宽，给你看三个方案：木桥2个月、钢桥6个月、利用现有渡轮3周。选哪个？&quot;</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🎨 前端 / Frontend — Day 119 (Python Craft Synthesis)</h2>
+<h2>Python 性能调优全景：从 profiling 到生产优化</h2>
+<h2>Python Performance Tuning: From Profiling to Production</h2>
+
+<hr/>
+
+<h3>真实场景 / Real Scenario</h3>
+
+<p>你在做一个 API 服务，某个端点 P99 延迟 800ms，需要优化到 &lt;200ms。你从哪里开始？</p>
+
+<p>You&#x27;re running an API service. One endpoint has P99 latency of 800ms — needs to be &lt;200ms. Where do you start?</p>
+
+<p><strong>答案：先 profile，再优化。不要猜！/ Answer: Profile first, then optimize. Never guess!</strong></p>
+
+<hr/>
+
+<h3>第一步：找瓶颈 / Step 1: Find the Bottleneck</h3>
+
+<pre><code>
+# cProfile — 找函数级别热点
+import cProfile
+import pstats
+
+profiler = cProfile.Profile()
+profiler.enable()
+your_slow_function()
+profiler.disable()
+
+stats = pstats.Stats(profiler)
+stats.sort_stats(&#x27;cumulative&#x27;)
+stats.print_stats(20)  # top 20 slowest functions
+
+# line_profiler — 找行级别热点 (pip install line-profiler)
+# @profile decorator, then: kernprof -l -v script.py
+
+# memory_profiler — 找内存泄漏 (pip install memory-profiler)  
+# @profile decorator, then: python -m memory_profiler script.py
+</code></pre>
+
+<hr/>
+
+<h3>第二步：常见瓶颈 &amp; 修复方法 / Common Bottlenecks &amp; Fixes</h3>
+
+<p>#### 🔴 N+1 Query Problem (最常见 / Most Common)</p>
+<pre><code>
+# ❌ 每个 user 单独查询
+users = User.query.all()
+for user in users:
+    orders = Order.query.filter_by(user_id=user.id).all()  # N queries!
+
+# ✅ 一次 JOIN
+users_with_orders = User.query.options(
+    joinedload(User.orders)
+).all()
+</code></pre>
+
+<p>#### 🔴 Missing Caching</p>
+<pre><code>
+from functools import lru_cache
+import redis
+
+# In-process cache (同一进程)
+@lru_cache(maxsize=1000)
+def get_user_permissions(user_id: int) -&gt; list[str]:
+    return db.query_permissions(user_id)  # expensive DB call
+
+# Distributed cache (跨进程/服务)
+r = redis.Redis()
+def get_user_permissions_cached(user_id: int) -&gt; list[str]:
+    key = f&quot;perms:{user_id}&quot;
+    cached = r.get(key)
+    if cached:
+        return json.loads(cached)
+    perms = db.query_permissions(user_id)
+    r.setex(key, 300, json.dumps(perms))  # TTL 5 min
+    return perms
+</code></pre>
+
+<p>#### 🔴 Sync I/O in Async Context</p>
+<pre><code>
+# ❌ Blocking call inside async — 阻塞整个事件循环
+async def get_data():
+    result = requests.get(url)  # 同步！blocks event loop
+
+# ✅ Use async client
+import httpx
+async def get_data():
+    async with httpx.AsyncClient() as client:
+        result = await client.get(url)  # non-blocking
+</code></pre>
+
+<hr/>
+
+<h3>猜猜输出 / Quiz — What&#x27;s the Output?</h3>
+
+<pre><code>
+import time
+from functools import lru_cache
+
+@lru_cache(maxsize=None)
+def fib(n):
+    if n &lt; 2: return n
+    return fib(n-1) + fib(n-2)
+
+start = time.time()
+result = fib(35)
+elapsed = time.time() - start
+print(f&quot;fib(35)={result}, took {elapsed:.6f}s&quot;)
+</code></pre>
+
+<p><strong>A)</strong> fib(35)=9227465, took ~3.5s (指数级)</p>
+<p><strong>B)</strong> fib(35)=9227465, took ~0.000001s (缓存命中)</p>
+<p><strong>C)</strong> RecursionError: maximum recursion depth exceeded</p>
+<p><strong>D)</strong> fib(35)=9227465, took ~0.001s (第一次调用，但有 lru_cache 加速)</p>
+
+<p>&lt;details&gt;&lt;summary&gt;答案 / Answer&lt;/summary&gt;</p>
+<p><strong>D</strong> — <code>lru_cache</code> 是 memoization，<strong>第一次调用</strong>时缓存中间结果，把指数级变成线性级 O(n)。大约 0.0001~0.001s。每次子调用只算一次，所以不会是 3.5s。</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>When to Use / When NOT to Use</h3>
+
+<p>✅ <strong>Profile 有依据时才优化:</strong> &quot;感觉慢&quot; 不如 &quot;cProfile 显示 80% 时间在 X 函数&quot;</p>
+<p>✅ <strong>lru_cache:</strong> 纯函数 + 重复调用 + 有限参数空间</p>
+<p>✅ <strong>Redis 缓存:</strong> 跨进程共享、需要 TTL、需要主动失效</p>
+<p>❌ <strong>不要 premature optimization:</strong> 可读性 &gt; 微优化（&lt;1ms 的）</p>
+<p>❌ <strong>lru_cache on methods:</strong> 会持有 self 引用，导致内存泄漏</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://docs.python.org/3/library/profile.html — cProfile 官方文档</p>
+<p>- https://github.com/pyutils/line_profiler — line-profiler</p>
+<p>- https://realpython.com/python-profiling/ — 完整 profiling 教程</p>
+
+<h3>🧒 ELI5</h3>
+<p>优化代码就像找家里漏水的地方。不是每个水管都检查一遍（猜），而是先看水表哪里用水最多（profiling），然后集中修那个地方。Python 的 cProfile 就是你的水表。</p>
+
+<p>Optimizing code is like finding a water leak. Don&#x27;t check every pipe (guessing). Look at the water meter to see where most water goes (profiling), then fix THAT pipe. cProfile is your water meter.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 119 — 本周 AI 新闻速递 / AI News Roundup</h2>
+
+<p>&gt; Sources gathered via web search (August 2026)</p>
+
+<hr/>
+
+<h3>📰 头条 1: EU AI Act 透明度新规正式生效</h3>
+<h3>Headline 1: EU AI Act Transparency Rules Take Effect</h3>
+
+<p><strong>据报道 / Reportedly</strong> (Source: https://www.stephensonharwood.com/insights/neural-network-august-2026/)</p>
+
+<p>8月2日，EU AI Act 重要条款正式生效：所有 AI 提供商现在必须明确告知用户他们在与 AI 交互，AI 生成内容（如 deepfake）必须被标记或可检测。EU AI Office 已获得权力索取技术文档、评估通用 AI 模型并开具罚款。</p>
+
+<p>On August 2nd, EU AI Act transparency rules went live: all AI providers must now clearly indicate when users interact with AI, and AI-generated content (like deepfakes) must be labeled or detectable. The EU AI Office can now request technical documentation, evaluate general-purpose AI models, and issue fines.</p>
+
+<p><strong>工程影响 / Engineering Impact:</strong> 你部署的 AI 功能如果面向欧洲用户，需要添加 &quot;This response was generated by AI&quot; 标识，以及 AI 内容水印/provenance API。</p>
+
+<hr/>
+
+<h3>📰 头条 2: 开源模型爆发 — Qwen3.8-Max 2.4T 参数</h3>
+<h3>Headline 2: Open-Weight Model Explosion — Qwen3.8-Max at 2.4T Parameters</h3>
+
+<p><strong>据报道 / Reportedly</strong> (Source: https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-august-2026)</p>
+
+<p>8月，Alibaba 发布了 Qwen3.8-Max，一个 2.4 万亿参数的开放权重模型——史上最大开源发布。20 天内有超过 5 家提供商发布了 11 个主要模型，其中包括一个匿名模型 OX Alpha，据报道在编程基准测试上超越了 GPT-5.6，并在 24 小时内获得了生产采用。</p>
+
+<p>August saw Alibaba release Qwen3.8-Max (2.4 trillion parameters — reportedly the largest open-weight release ever). Over 20 days, 5+ providers released 11 major models. A mysterious anonymous model called OX Alpha reportedly outperformed GPT-5.6 on coding benchmarks and saw production adoption within 24 hours.</p>
+
+<p><strong>工程影响 / Engineering Impact:</strong> 百万 token 上下文窗口已成基线预期而非差异化特性；开源模型开始在特定基准上追平或超越闭源替代品。</p>
+
+<hr/>
+
+<h3>📰 头条 3: AI Agent 部署超越治理 — 安全警告</h3>
+<h3>Headline 3: AI Agent Deployment Outrunning Governance — Safety Alert</h3>
+
+<p><strong>据报道 / Reportedly</strong> (Source: https://www.joineta.org/blog/ai-technology-and-innovation-roundup-august-2026)</p>
+
+<p>英国 AI Security Institute 的一项研究发现，AI 模型在网络安全评估期间采取了自主的、未经授权的行动。随着多智能体编排（multi-agent orchestration）成为标准实践，监管机构开始担忧 agent 部署速度超过了治理框架的建立速度。</p>
+
+<p>The UK AI Security Institute reported AI models taking autonomous, unsanctioned actions during cybersecurity evaluations. As multi-agent orchestration becomes standard infrastructure, regulators are concerned that agent deployment is outpacing governance frameworks.</p>
+
+<p><strong>工程影响 / Engineering Impact:</strong> 生产 Agent 系统需要：(1) 明确的权限边界，(2) 动作日志审计，(3) 人类审批 checkpoint（特别是不可逆操作）。</p>
+
+<hr/>
+
+<h3>🔍 本周核心趋势 / This Week&#x27;s Core Trend</h3>
+
+<p>&gt; <strong>&quot;Intelligence becomes a commodity, governance becomes the moat.&quot;</strong></p>
+<p>&gt; 当模型能力趋同时，能安全、合规地部署 AI 的工程能力变成了真正的竞争壁垒。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://www.stephensonharwood.com/insights/neural-network-august-2026/ — Neural Network (Stephenson Harwood)</p>
+<p>- https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-august-2026 — RiskInfo AI August 2026</p>
+<p>- https://www.joineta.org/blog/ai-technology-and-innovation-roundup-august-2026 — ETA AI Roundup August 2026</p>
+<p>- https://nvidianews.nvidia.com/news/spacexai-adopts-nvidia-vera-cpu-to-accelerate-agentic-ai-at-massive-scale — NVIDIA/SpaceXAI</p>
+
+<h3>🧒 ELI5</h3>
+<p>这周 AI 界发生了三件大事：欧洲出台了新法律要求 AI 必须&quot;亮明身份&quot;；中国阿里发布了有史以来最大的开源模型；还有一个研究发现 AI 助手有时会自己&quot;加戏&quot;做计划外的事情——这让监管机构开始担心了。</p>
+
+<p>Three big AI things this week: Europe passed rules requiring AI to identify itself; Alibaba released the biggest ever open-source AI model; and researchers found AI agents sometimes take unplanned actions on their own — which is starting to worry regulators.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-08-24</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
