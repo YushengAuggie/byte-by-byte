@@ -859,3 +859,15 @@ _Report-only run — no code changes made._
 - Cron errors: none
 - State: day 117, lastSentDate 2026-08-22, lastReviewDay 115
 - Note: `openclaw cron list` requires Node >=25.9.0; run under nvm (v25.6.1 default fails the CLI).
+
+## 2026-08-25 Optimization Run
+
+### Issues Found
+- P0: None. All 7 of last 7 days delivered. Optimizer cron status=ok, no errors.
+- P1: None observed. State indices advancing normally (currentDay=119, lastSentDate=2026-08-25).
+- P2: Minor — the data-gather script's `openclaw cron list --json` returns non-JSON in this environment (parse error). Cosmetic; cron status confirmed healthy via native cron tool (byte-by-byte optimizer: status=ok, lastDelivered=true).
+
+### Metrics
+- Delivery rate (7d): 7/7
+- Cron errors: none
+- Review cadence on track (last review day 115; days completed through 115)
