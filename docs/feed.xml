@@ -5,8 +5,109 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 25 Aug 2026 15:15:40 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 26 Aug 2026 15:08:36 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-08-26</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-08-26</guid>
+      <pubDate>Wed, 26 Aug 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 / Review Day 120 — 2026-08-26</h2>
+
+<p>📊 NeetCode: 94/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 2-day streak!</p>
+
+<hr/>
+
+<p>🔄 <strong>复习日 / Review Day</strong></p>
+<p>今天是复习日！回顾过去4天的内容。</p>
+
+<p>过去4天全是图算法精华 — Union-Find、双向BFS、最小生成树、Dijkstra。全部融会贯通了吗？</p>
+
+<hr/>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+
+<hr/>
+
+<p><strong>Q1: [💻 Algorithms — Union-Find]</strong> Day 116: Redundant Connection</p>
+
+<p>在一棵有 <code>n</code> 个节点的树上多加了一条边，构成了一个图。你的 Union-Find 解法需要找到这条&quot;冗余边&quot;。</p>
+
+<p><strong>问题：</strong> <code>union(u, v)</code> 时，你发现 <code>find(u) == find(v)</code>，这意味着什么？为什么这条边就是答案？</p>
+
+<p><em>When running Union-Find on edges in order, what does it mean when <code>find(u) == find(v)</code> before calling <code>union(u, v)</code>? Why is this edge the answer?</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><code>find(u) == find(v)</code> 意味着 <strong>u 和 v 已经在同一个连通分量中</strong>，即加这条边之前它们已经连通。所以这条边是&quot;多余的&quot;——它创造了环。</p>
+
+<p>在遍历所有边并依次 union 的过程中，第一条导致 <code>find(u) == find(v)</code> 的边，就是形成环的那条边，也就是题目要返回的冗余连接。</p>
+
+<p><strong>关键洞察：</strong> Union-Find 天然适合检测环——每次 union 前先 find，相同则有环。时间复杂度近似 O(n·α(n))，α 是反阿克曼函数，实际上接近 O(1)。</p>
+
+<p>It means u and v are already in the same connected component — they were connected before this edge was added. So this edge creates a cycle and is therefore &quot;redundant.&quot; The first edge where <code>find(u) == find(v)</code> is the answer. Key insight: Union-Find is the perfect cycle-detection tool for undirected graphs.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [🔍 Graph Search — BFS]</strong> Day 117: Word Ladder (双向 BFS Deep Dive)</p>
+
+<p>单向 BFS 从 <code>beginWord</code> 出发，搜索整个词图。双向 BFS 则从两端同时出发。</p>
+
+<p><strong>问题：</strong> 为什么双向 BFS 在最坏情况下比单向 BFS 快？用 branching factor <code>b</code> 和最短路径长度 <code>d</code> 来量化说明。</p>
+
+<p><em>Why is bidirectional BFS faster than unidirectional BFS in the worst case? Quantify using branching factor <code>b</code> and shortest path length <code>d</code>.</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>单向 BFS 在深度 <code>d</code> 处最多扩展 <strong>O(b^d)</strong> 个节点。</p>
+
+<p>双向 BFS 从两端同时搜索，每端只需搜到深度 <code>d/2</code>，两端各扩展 <strong>O(b^(d/2))</strong> 个节点，总共 <strong>O(2 · b^(d/2))</strong> = <strong>O(b^(d/2))</strong>。</p>
+
+<p>当 <code>b=26</code>（26个字母替换）、<code>d=10</code> 时：</p>
+<p>- 单向：26^10 ≈ 141万亿个节点</p>
+<p>- 双向：2 × 26^5 ≈ 2376万个节点 — <strong>快了约594万倍！</strong></p>
+
+<p><strong>实现技巧：</strong> 每轮选择<strong>较小的那一端</strong>来扩展，保证两端平衡增长，效果最佳。终止条件：扩展出的邻居出现在对面的 visited set 中。</p>
+
+<p>Unidirectional BFS explores O(b^d) nodes. Bidirectional only goes to depth d/2 from each end: O(b^(d/2)) each, total O(b^(d/2)) — exponentially faster. With b=26, d=10: unidirectional ~1.4 trillion vs bidirectional ~24 million nodes.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [📡 Graph Algorithms — Shortest Path]</strong> Days 118–119: MST vs Dijkstra</p>
+
+<p>Day 118 用 Prim&#x27;s/Kruskal&#x27;s 求&quot;最小生成树&quot;（Min Cost to Connect All Points）；Day 119 用 Dijkstra 求&quot;最短路径&quot;（Network Delay Time）。</p>
+
+<p><strong>问题：</strong> 这两类问题看起来很像，但目标完全不同。请解释：在&quot;连接所有点的最小总费用&quot;中为什么<strong>不能</strong>直接用 Dijkstra？MST 和最短路径的核心区别是什么？</p>
+
+<p><em>Why can&#x27;t you directly use Dijkstra to find the minimum cost to connect all points? What&#x27;s the fundamental difference between MST and shortest path?</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>Dijkstra</strong> 找的是：从源点到每个节点的<strong>最短路径</strong>（路径上的边权之和最小）。它关心的是&quot;我怎么从A走到B最省力&quot;。</p>
+
+<p><strong>MST（最小生成树）</strong> 找的是：用最少的总边权<strong>连接所有节点</strong>，形成一棵树（无环连通图）。它关心的是&quot;用最少的总花费把所有点串联起来&quot;。</p>
+
+<p>如果用 Dijkstra：它可能选一条很长的路连接某个点（因为那是从源点最短的路），但这条路的边对 MST 来说是冗余的。Dijkstra 不会尝试通过其他中间节点来构建生成树。</p>
+
+<p><strong>一句话区别：</strong> Dijkstra 优化单源到所有点的距离；Prim&#x27;s/Kruskal&#x27;s 优化所有边的总权重，使图联通。</p>
+
+<p>Dijkstra minimizes the path cost from one source to all nodes. MST minimizes the total edge weight to connect ALL nodes as a tree. They optimize different objectives — Dijkstra doesn&#x27;t guarantee a spanning tree, and Prim&#x27;s doesn&#x27;t guarantee shortest paths. Use Dijkstra for &quot;cheapest route,&quot; use Prim&#x27;s/Kruskal&#x27;s for &quot;cheapest wiring.&quot;</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。图算法三剑客：Union-Find、BFS/双向BFS、Dijkstra/Prim&#x27;s — 各司其职，掌握边界条件。</em></p>
+
+<p>📅 明天继续新内容！Day 121 coming up.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-08-25</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
