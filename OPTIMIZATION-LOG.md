@@ -871,3 +871,19 @@ _Report-only run — no code changes made._
 - Delivery rate (7d): 7/7
 - Cron errors: none
 - Review cadence on track (last review day 115; days completed through 115)
+
+## 2026-08-28 Optimization Run
+
+### Issues Found
+- **P0 CRITICAL — Delivery pipeline down since 2026-08-26.** No email/content for 08-27 and 08-28. Root cause: **Node.js version mismatch**. Default `node` at `/usr/local/bin/node` is `v25.6.1`, but the `openclaw` CLI now requires `>=25.9.0` (or 22.22.3+/24.15.0+). Every delivery attempt in `logs/delivery.log` fails 3/3 with:
+  `openclaw: Node.js >=22.22.3 <23, >=24.15.0 <25, or >=25.9.0 is required (current: v25.6.1)`.
+  nvm has `v25.9.0` installed but it is not the active/default node for the cron-driven delivery script.
+  **Fix (manual):** point the pipeline (and default node) at v25.9.0 — e.g. `nvm alias default 25.9.0` and/or update the delivery/generation scripts to invoke openclaw via the nvm v25.9.0 path (`~/.nvm/versions/node/v25.9.0/bin/node` / that node's `openclaw`). Note: the optimizer cron itself runs fine (it uses the compliant node), which is why its status=ok masked the outage.
+- P1: None in delivered content (last good send 08-26). Content generation also halted 08-26 (no Day 121/122 git commits) — same Node root cause blocking the generator's openclaw calls.
+- P2: Data-gather script's `openclaw cron list --json` fails under the outer shell for the same Node reason; cron health confirmed via native cron tool (status=ok, lastDelivered=true).
+
+### Metrics
+- Delivery rate (7d): 5/7 — MISSED 08-27, 08-28 (both P0, ongoing outage)
+- Delivery rate (active window): broken as of 08-27
+- Cron errors: optimizer cron status=ok; delivery script errors = "Node.js version required" (all attempts, 08-28 logs)
+- State: currentDay=120, lastSentDate=2026-08-26, lastReviewDay=120
