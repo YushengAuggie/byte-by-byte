@@ -5,8 +5,497 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 26 Aug 2026 15:08:36 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 29 Aug 2026 15:10:10 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-08-29</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-08-29</guid>
+      <pubDate>Sat, 29 Aug 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Cheapest Flights Within K Stops — 三种解法全解析 (15 min read)</strong></p>
+<p>📊 NeetCode: 94/150 · SysDesign: 60✅ · Behavioral: 60✅ · Frontend: 37/50 · AI: 30/30✅</p>
+<p>🔥 Day 121 — Expert Phase!</p>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/cheapest-flights-within-k-stops/</p>
+<p>📹 NeetCode: https://www.youtube.com/watch?v=5eIK3zUdYmE</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>你有 <code>n</code> 个城市，<code>m</code> 条有向航班（带价格）。给定出发地 <code>src</code>、目的地 <code>dst</code>、以及最多允许中转 <code>k</code> 次，求最便宜的方案。找不到就返回 -1。</p>
+
+<p>这道题之所以经典，是因为它打破了标准 Dijkstra 的假设：<strong>最便宜的路径不一定是中转次数最少的路径</strong>。当你加入&quot;最多 K 次中转&quot;这个约束时，标准的贪心策略会失效。你必须在「花费最小」和「步数受限」之间做权衡。</p>
+
+<p>这是 Advanced Graphs 模式中最能考察候选人是否真正理解最短路径算法本质的题目。</p>
+
+<p><strong>English：</strong></p>
+<p>You have <code>n</code> cities, <code>m</code> directed flights with prices. Given <code>src</code>, <code>dst</code>, and at most <code>k</code> stops (not flights — <code>k+1</code> flights total), find the cheapest price. Return -1 if impossible.</p>
+
+<p>Why this matters: standard Dijkstra assumes &quot;if I reach a node via the cheapest path, I never need to revisit it.&quot; That breaks here. A slightly more expensive early path might save stops, keeping you within the K limit. This forces you to either track stops in your state, or use a fundamentally different algorithm.</p>
+
+<p><strong>The Core Insight / 核心洞察:</strong></p>
+<p>&gt; &quot;最多 K 次中转&quot; = &quot;最多 K+1 次航班&quot; = &quot;Bellman-Ford 只跑 K+1 轮&quot;</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>为什么标准 Dijkstra 在这里失效？/ Why Standard Dijkstra Fails Here</h3>
+
+<p><strong>中文：</strong></p>
+
+<p>Dijkstra 的核心假设是：一旦某节点被弹出优先队列（达到最低代价），它的最短路径就确定了，不需要再更新。</p>
+
+<p>但这道题里，路径有两个维度：<strong>代价</strong> 和 <strong>已用步数</strong>。</p>
+
+<pre><code>
+示例：
+n=4, flights=[[0,1,100],[1,3,100],[0,2,500],[2,3,100]], src=0, dst=3, k=1
+
+路径A: 0→1→3, 代价=200, 步数=2次航班(1次中转) ✅
+路径B: 0→2→3, 代价=600, 步数=2次航班(1次中转) ❌ 更贵
+
+如果 k=0（不允许中转）:
+路径A: 需要2次航班 ❌ 超出限制
+路径B: 需要2次航班 ❌ 超出限制
+答案: -1
+</code></pre>
+
+<p>如果 k=1 但我们把一个&quot;代价200但需要1次中转&quot;的路径和&quot;代价200但不需要中转&quot;的路径混在一起，就会误判。</p>
+
+<p><strong>English：</strong></p>
+
+<p>Standard Dijkstra only tracks <code>(cost, node)</code>. But here we need <code>(cost, node, stops_used)</code>. Two paths to the same node might have the same cost but different stops used — and the one with fewer stops remaining might be better for reaching the destination.</p>
+
+<p>The key insight: <strong>stops are a resource, and we need to track resource consumption alongside cost</strong>.</p>
+
+<h3>三种算法的本质 / Three Algorithmic Approaches</h3>
+
+<p>| 算法 | 思路 | 时间复杂度 | 适用场景 |</p>
+<p>|------|------|-----------|---------|</p>
+<p>| Bellman-Ford | 外层循环K+1次，每次松弛所有边 | O(K·E) | 面试首选，代码简洁 |</p>
+<p>| Modified Dijkstra | 状态 = (cost, node, stops)，visited 带 stops | O(E·log(V·K)) | 稀疏图效率高 |</p>
+<p>| BFS/DP | dp[i][node] = 用恰好 i 次航班到达node的最小代价 | O(K·E) | 最直观，易理解 |</p>
+
+<p><strong>为什么 Bellman-Ford 是面试首选？</strong></p>
+
+<p>Bellman-Ford 的核心思想：每跑一轮，意味着&quot;多用一次航班&quot;。跑 K+1 轮，意味着&quot;最多用了 K+1 次航班 = K 次中转&quot;。</p>
+
+<p>这个映射关系极其直觉：<strong>外层 for 循环的迭代次数 = 航班数量</strong>。</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>解法一：Bellman-Ford（面试推荐）</h3>
+
+<p><strong>中文算法步骤：</strong></p>
+<p>1. <code>dist[]</code> 初始化：<code>dist[src]=0</code>，其他为无穷大</p>
+<p>2. 外层循环跑 <code>K+1</code> 次（最多用 K+1 次航班）</p>
+<p>3. 每次循环：遍历所有边，但<strong>用上一轮的 dist 来更新</strong>（防止同一轮内链式更新）</p>
+<p>4. 返回 <code>dist[dst]</code>，如果仍为无穷大则返回 -1</p>
+
+<p><strong>关键：用临时数组 <code>temp_dist</code> 防止&quot;串联更新&quot;问题</strong></p>
+
+<pre><code>
+import math
+from typing import List
+
+def findCheapestPrice_bellman(n: int, flights: List[List[int]], 
+                               src: int, dst: int, k: int) -&gt; int:
+    # Initialize: infinite cost to all nodes except source
+    # 初始化：除出发点外全部为无穷大
+    dist = [math.inf] * n
+    dist[src] = 0
+    
+    # Run K+1 iterations = at most K+1 flights = at most K stops
+    # 跑 K+1 轮 = 最多 K+1 次航班 = 最多 K 次中转
+    for i in range(k + 1):
+        # CRITICAL: snapshot the current state before this round of relaxation
+        # 关键：必须用上一轮的快照，防止在本轮内链式更新
+        temp_dist = dist.copy()
+        
+        for u, v, price in flights:
+            # Relax edge: can we reach v cheaper via u?
+            # 松弛：能否通过 u 更便宜地到达 v？
+            if dist[u] != math.inf and dist[u] + price &lt; temp_dist[v]:
+                temp_dist[v] = dist[u] + price
+        
+        dist = temp_dist  # commit this round&#x27;s results
+    
+    return -1 if dist[dst] == math.inf else dist[dst]
+</code></pre>
+
+<p><strong>Trace Example / 执行追踪：</strong></p>
+<pre><code>
+Input: n=3, flights=[[0,1,100],[1,2,100],[0,2,500]], src=0, dst=2, k=1
+
+Initial:  dist = [0, inf, inf]
+
+--- Round 1 (i=0, flight 1 allowed) ---
+  temp_dist = [0, inf, inf]  (copy)
+  Edge 0→1 (100): dist[0]=0, 0+100=100 &lt; inf → temp_dist[1] = 100
+  Edge 1→2 (100): dist[1]=inf → skip (can&#x27;t use chain in same round!)
+  Edge 0→2 (500): dist[0]=0, 0+500=500 &lt; inf → temp_dist[2] = 500
+  dist = [0, 100, 500]
+
+--- Round 2 (i=1, flight 2 allowed = 1 stop) ---
+  temp_dist = [0, 100, 500]  (copy)
+  Edge 0→1 (100): 0+100=100, not &lt; 100 → no change
+  Edge 1→2 (100): dist[1]=100, 100+100=200 &lt; 500 → temp_dist[2] = 200
+  Edge 0→2 (500): 0+500=500, not &lt; 200 → no change
+  dist = [0, 100, 200]
+
+Result: dist[2] = 200 ✅
+</code></pre>
+
+<hr/>
+
+<h3>解法二：Modified Dijkstra（状态包含 stops）</h3>
+
+<p><strong>中文：</strong></p>
+<p>把 <code>(cost, node)</code> 扩展为 <code>(cost, node, stops_used)</code>。visited 条件变为：若同一 node 以相同或更少的 stops 被访问过且代价更低，才跳过。</p>
+
+<pre><code>
+import heapq
+import collections
+
+def findCheapestPrice_dijkstra(n: int, flights: List[List[int]], 
+                                src: int, dst: int, k: int) -&gt; int:
+    # Build adjacency list: graph[u] = [(v, price), ...]
+    # 构建邻接表
+    graph = collections.defaultdict(list)
+    for u, v, price in flights:
+        graph[u].append((v, price))
+    
+    # Min-heap: (cost, node, stops_used)
+    # 优先队列：（花费，节点，已用停站数）
+    heap = [(0, src, 0)]
+    
+    # visited[node] = min stops used when we reached this node with some cost
+    # We can revisit a node if we have fewer stops used
+    # 已访问：记录到达该节点时用的最少停站数
+    visited = {}
+    
+    while heap:
+        cost, node, stops = heapq.heappop(heap)
+        
+        # If we&#x27;ve reached the destination, return immediately
+        # (Dijkstra guarantee: first time we pop dst is cheapest)
+        # 第一次弹出目的地即为最优解
+        if node == dst:
+            return cost
+        
+        # Pruning: if we&#x27;ve seen this node with fewer/equal stops, skip
+        # 剪枝：如果曾以更少中转数到达此节点，跳过
+        if node in visited and visited[node] &lt;= stops:
+            continue
+        visited[node] = stops
+        
+        # Can&#x27;t take more flights if we&#x27;ve used K+1 already
+        # 已用 K 次中转（K+1 次航班），不能继续飞了
+        if stops == k + 1:
+            continue
+        
+        for neighbor, price in graph[node]:
+            new_cost = cost + price
+            heapq.heappush(heap, (new_cost, neighbor, stops + 1))
+    
+    return -1
+</code></pre>
+
+<p><strong>为什么 visited 的判断是 <code>visited[node] &lt;= stops</code> 而不是简单地 <code>node in visited</code>？</strong></p>
+
+<pre><code>
+反例说明：
+假设我们有两条路径都到达节点2：
+  路径A: cost=100, stops=0（但没有更多廉价边继续走）
+  路径B: cost=150, stops=2（但从这里出发还剩K-2次中转可用）
+
+如果仅靠 cost 决定 visited，路径A会阻止路径B被处理。
+但路径B 可能因为&quot;剩余中转次数更多&quot;而到达目的地，路径A 却不行。
+</code></pre>
+
+<hr/>
+
+<h3>解法三：BFS/DP（最直观）</h3>
+
+<pre><code>
+def findCheapestPrice_dp(n: int, flights: List[List[int]], 
+                          src: int, dst: int, k: int) -&gt; int:
+    # dp[node] = cheapest cost to reach node using at most i flights so far
+    # dp[节点] = 用恰好 i 次航班到达该节点的最小花费
+    dp = [math.inf] * n
+    dp[src] = 0
+    
+    # K stops = K+1 flights total
+    for _ in range(k + 1):
+        temp = dp.copy()  # snapshot: same &quot;no chain update&quot; rule
+        for u, v, price in flights:
+            if dp[u] != math.inf:
+                temp[v] = min(temp[v], dp[u] + price)
+        dp = temp
+    
+    return -1 if dp[dst] == math.inf else dp[dst]
+
+# Note: BFS/DP and Bellman-Ford are mathematically identical here.
+# The difference is purely in how you think about it:
+# Bellman-Ford: &quot;relax all edges K+1 times&quot;
+# BFS/DP: &quot;compute optimal cost for exactly i flights, for i = 1..K+1&quot;
+</code></pre>
+
+<hr/>
+
+<h3>完整可运行代码 + 测试 / Complete Runnable Code</h3>
+
+<pre><code>
+import math
+import heapq
+import collections
+from typing import List
+
+def findCheapestPrice(n: int, flights: List[List[int]], 
+                       src: int, dst: int, k: int) -&gt; int:
+    &quot;&quot;&quot;
+    Bellman-Ford approach — recommended for interviews.
+    Time:  O(K * E) where E = number of flights
+    Space: O(N) for distance array
+    &quot;&quot;&quot;
+    dist = [math.inf] * n
+    dist[src] = 0
+    
+    for _ in range(k + 1):
+        temp = dist.copy()          # snapshot before this round
+        for u, v, price in flights:
+            if dist[u] != math.inf:
+                temp[v] = min(temp[v], dist[u] + price)
+        dist = temp
+    
+    return -1 if dist[dst] == math.inf else dist[dst]
+
+
+# Test cases
+def run_tests():
+    test_cases = [
+        # (n, flights, src, dst, k, expected)
+        (3, [[0,1,100],[1,2,100],[0,2,500]], 0, 2, 1, 200),
+        (3, [[0,1,100],[1,2,100],[0,2,500]], 0, 2, 0, 500),
+        (4, [[0,1,100],[1,2,100],[2,3,100],[0,3,1000]], 0, 3, 1, 1000),
+        (4, [[0,1,100],[1,2,100],[2,3,100],[0,3,1000]], 0, 3, 2, 300),
+        (2, [[1,0,5]], 0, 1, 1, -1),  # no path from src to dst
+        (1, [], 0, 0, 0, 0),          # src == dst, cost = 0
+    ]
+    
+    for i, (n, flights, src, dst, k, expected) in enumerate(test_cases):
+        result = findCheapestPrice(n, flights, src, dst, k)
+        status = &quot;✅&quot; if result == expected else &quot;❌&quot;
+        print(f&quot;Test {i+1}: {status} got={result}, expected={expected}&quot;)
+
+run_tests()
+</code></pre>
+
+<p><strong>Expected output:</strong></p>
+<pre><code>
+Test 1: ✅ got=200, expected=200
+Test 2: ✅ got=500, expected=500
+Test 3: ✅ got=1000, expected=1000
+Test 4: ✅ got=300, expected=300
+Test 5: ✅ got=-1, expected=-1
+Test 6: ✅ got=0, expected=0
+</code></pre>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<h3>⚠️ Gotcha 1: 链式更新（Chain Update Bug）</h3>
+
+<p><strong>这是本题最常见的 bug。</strong></p>
+
+<pre><code>
+# ❌ WRONG: single dist array — chain update within same round
+dist = [0, inf, inf]
+for u, v, price in flights:
+    if dist[u] != inf:
+        dist[v] = min(dist[v], dist[u] + price)
+# In round 1: 0→1 updates dist[1]=100, then 1→2 IMMEDIATELY uses dist[1]=100
+# This effectively uses 2 flights in 1 round — violates K constraint!
+
+# ✅ CORRECT: use temp array (snapshot)
+temp = dist.copy()
+for u, v, price in flights:
+    if dist[u] != inf:      # read from OLD dist
+        temp[v] = min(temp[v], dist[u] + price)  # write to NEW temp
+dist = temp
+</code></pre>
+
+<h3>⚠️ Gotcha 2: src == dst</h3>
+
+<pre><code>
+# If src == dst, cost is 0 — but the initial dist[src]=0 handles this.
+# Your code should return 0 without any flights. ✅
+</code></pre>
+
+<h3>⚠️ Gotcha 3: K=0 意味着只能直飞 / K=0 means direct flight only</h3>
+
+<pre><code>
+# k=0: no stops allowed → only direct flights src→dst count
+# Bellman-Ford handles this naturally: loop runs exactly once (k+1=1)
+</code></pre>
+
+<h3>⚠️ Gotcha 4: Modified Dijkstra 的 visited 条件</h3>
+
+<pre><code>
+# Wrong: if node in visited: continue  (blocks valid paths with more stops remaining)
+# Right: if node in visited and visited[node] &lt;= stops: continue
+</code></pre>
+
+<h3>⚠️ Gotcha 5: 无效路径 / Disconnected Graph</h3>
+
+<pre><code>
+# If dst is unreachable within K stops, dist[dst] stays inf → return -1
+return -1 if dist[dst] == math.inf else dist[dst]
+</code></pre>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>&quot;最多 K 次中转的最便宜航班&quot;这个模式在工程中无处不在：</p>
+
+<p><strong>1. 网络路由（Network Routing）</strong></p>
+<p>路由器使用 Bellman-Ford 的变体（RIP 协议）来计算最短路径。&quot;最多 K 跳&quot;的约束对应 TTL（Time To Live）——IP 包每经过一个路由器，TTL 减一，防止无限循环。</p>
+
+<p><strong>2. 供应链优化（Supply Chain）</strong></p>
+<p>从仓库 A 到客户 B，中间经过最多 K 个转运中心，求最便宜的运输方案。每条边权重是运费，K 是允许的最大中转数。</p>
+
+<p><strong>3. 金融套利检测（Arbitrage Detection）</strong></p>
+<p>货币兑换图：节点是货币，边权是汇率（取对数后变成加法）。Bellman-Ford 的负环检测可以找到套利机会。这里的 K 约束限制了套利链的长度。</p>
+
+<p><strong>4. 服务网格跳数限制（Service Mesh）</strong></p>
+<p>微服务 A 调用 B，B 调用 C...允许最多 K 跳，超过则断路。Kubernetes 的流量控制 (Istio) 就有类似的最大跳数配置。</p>
+
+<p><strong>English:</strong></p>
+
+<p>The &quot;shortest path with a hop constraint&quot; pattern appears everywhere:</p>
+
+<p>- <strong>BGP Routing</strong>: Routers exchange path vectors; AS-PATH length limits prevent routing loops</p>
+<p>- <strong>CDN Edge Selection</strong>: Choose the cheapest edge node within K network hops from the user</p>
+<p>- <strong>Database Query Planning</strong>: Joins are edges; query optimizer finds cheapest plan within cost bounds</p>
+<p>- <strong>Microservice Timeouts</strong>: Distributed tracing depth limits map directly to this K-stops model</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Q1: 为什么不能直接用标准 Dijkstra？</strong></p>
+
+<p><em>Answer:</em> Standard Dijkstra marks a node &quot;done&quot; when it&#x27;s first popped from the heap. But here, two paths to the same node with the same cost might have different stops used. The one with more stops used should be discarded (fewer remaining stops), but if it was popped first, we&#x27;d incorrectly block better paths. Solution: track stops in the heap state, or use Bellman-Ford which naturally handles this via iteration count.</p>
+
+<p><strong>Q2: Bellman-Ford 和 BFS/DP 的关系是什么？</strong></p>
+
+<p><em>Answer:</em> They&#x27;re mathematically identical. Bellman-Ford: &quot;relax all edges K+1 times.&quot; BFS/DP: &quot;dp[i][v] = min cost using exactly i flights.&quot; Both iterate K+1 times over all edges with a snapshot. The only difference is framing — Bellman-Ford is graph-centric, BFS/DP is table-centric.</p>
+
+<p><strong>Q3: Modified Dijkstra 什么时候比 Bellman-Ford 更快？</strong></p>
+
+<p><em>Answer:</em> When E &gt;&gt; K*V (dense graph, small K). Dijkstra&#x27;s heap prunes paths early via the priority queue. Bellman-Ford always processes all E edges in every round. For sparse graphs with large K (e.g., k=n-1), they&#x27;re similar. In interviews, Bellman-Ford is usually preferred for clarity.</p>
+
+<p><strong>Q4: 如果改成&quot;恰好 K 次中转&quot;而不是&quot;最多 K 次中转&quot;怎么做？</strong></p>
+
+<p><em>Answer:</em> Change the DP: <code>dp[k][v] = cost using EXACTLY k+1 flights</code>. Initialize only <code>dp[0][src]=0</code> and don&#x27;t carry forward intermediate minima. At the end, return <code>dp[K][dst]</code> only (not <code>min(dp[0..K][dst])</code>). Bellman-Ford as written gives &quot;at most K+1 flights&quot; because it carries forward previous-round values via <code>temp = dist.copy()</code>.</p>
+
+<p><strong>Q5: 这道题和 Bellman-Ford 检测负环有什么关系？</strong></p>
+
+<p><em>Answer:</em> Classic Bellman-Ford detects negative cycles by running V-1 rounds and checking if a V-th round still relaxes any edge. Here, we run exactly K+1 rounds (not V-1). The K constraint prevents negative cycle exploitation. If K were unlimited and there were negative-weight edges, Bellman-Ford would detect it — but this problem guarantees positive prices, so that&#x27;s not a concern.</p>
+
+<hr/>
+
+<h2>Architecture Diagram / 架构图 (For Bellman-Ford)</h2>
+
+<pre><code>
+Input: n=3, flights=[[0,1,100],[1,2,100],[0,2,500]], src=0, dst=2, k=1
+
+INITIALIZATION
+┌─────────────────────┐
+│  dist = [0, ∞, ∞]   │  ← dist[src=0] = 0
+│  k+1 = 2 rounds     │
+└────────┬────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────┐
+│  ROUND 1 (i=0): snapshot temp = [0, ∞, ∞]              │
+│                                                         │
+│  Edge 0→1 (100): dist[0]=0 → temp[1] = min(∞,100) = 100│
+│  Edge 1→2 (100): dist[1]=∞ → SKIP (no chain update!)   │
+│  Edge 0→2 (500): dist[0]=0 → temp[2] = min(∞,500) = 500│
+│                                                         │
+│  dist = [0, 100, 500]  (commit)                        │
+└────────┬────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────┐
+│  ROUND 2 (i=1): snapshot temp = [0, 100, 500]           │
+│                                                         │
+│  Edge 0→1 (100): 0+100=100, not &lt; 100 → no change      │
+│  Edge 1→2 (100): dist[1]=100 → temp[2]=min(500,200)=200 │
+│  Edge 0→2 (500): 0+500=500, not &lt; 200 → no change       │
+│                                                         │
+│  dist = [0, 100, 200]  (commit)                        │
+└────────┬────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│  Return dist[dst=2] │ = 200 ✅
+└─────────────────────┘
+</code></pre>
+
+<p><strong>Step 4 Cross-Check / 图代码一致性验证:</strong></p>
+
+<p>Tracing the code with this exact input:</p>
+<p>- <code>dist = [0, inf, inf]</code></p>
+<p>- Round i=0: <code>temp = dist.copy()</code> → <code>[0, inf, inf]</code></p>
+<p>- Edge <code>[0,1,100]</code>: <code>dist[0]=0 != inf</code>, <code>0+100=100 &lt; inf</code> → <code>temp[1]=100</code> ✅ (matches diagram)</p>
+<p>- Edge <code>[1,2,100]</code>: <code>dist[1]=inf</code> → skip ✅ (matches &quot;SKIP chain update&quot; in diagram)</p>
+<p>- Edge <code>[0,2,500]</code>: <code>dist[0]=0</code>, <code>0+500=500 &lt; inf</code> → <code>temp[2]=500</code> ✅</p>
+<p>- <code>dist = [0, 100, 500]</code> ✅</p>
+<p>- Round i=1: <code>temp = [0, 100, 500]</code></p>
+<p>- Edge <code>[1,2,100]</code>: <code>dist[1]=100</code>, <code>100+100=200 &lt; 500</code> → <code>temp[2]=200</code> ✅ (matches diagram)</p>
+<p>- <code>dist = [0, 100, 200]</code> ✅</p>
+<p>- Return <code>dist[2] = 200</code> ✅</p>
+
+<p>Diagram and code are fully consistent. ✅</p>
+
+<hr/>
+
+<h2>Quick Reference / 速查</h2>
+
+<pre><code>
+# Template: Cheapest Flights Within K Stops (Bellman-Ford)
+def findCheapestPrice(n, flights, src, dst, k):
+    dist = [float(&#x27;inf&#x27;)] * n
+    dist[src] = 0
+    for _ in range(k + 1):          # K+1 flights = K stops
+        temp = dist.copy()           # snapshot! no chain updates
+        for u, v, p in flights:
+            if dist[u] != float(&#x27;inf&#x27;):
+                temp[v] = min(temp[v], dist[u] + p)
+        dist = temp
+    return -1 if dist[dst] == float(&#x27;inf&#x27;) else dist[dst]
+# Time: O(K·E) | Space: O(N)
+</code></pre>
+
+<p><strong>When you see these signals in an interview:</strong></p>
+<p>- &quot;Shortest path&quot; + &quot;at most K edges/hops/stops&quot; → Bellman-Ford with K iterations</p>
+<p>- &quot;Weighted graph&quot; + &quot;constraint on path length&quot; → Modified Dijkstra with (cost, node, constraint) state</p>
+<p>- &quot;Negative weights&quot; → Bellman-Ford (Dijkstra breaks with negatives)</p>
+<p>- &quot;Detect arbitrage/negative cycle&quot; → Bellman-Ford V-1 rounds + check</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-08-26</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

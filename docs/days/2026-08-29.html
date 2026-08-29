@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-08-29</title>
+  <meta name="description" content="byte-by-byte daily lessons for Saturday, August 29, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Saturday, August 29, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-08-29.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-08-26.html" style="color:var(--text2)">← 2026-08-26</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-08-29</span>
+    <h1>Saturday, August 29, 2026</h1>
+    <div class="page-header-meta">
+      <span>1 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-deepdive" class="nav-day-btn">🔬 Deep Dive</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-08-26.html" class="day-nav-btn">← 2026-08-26</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-deepdive">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-deepdive" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🔬</span>
+        <div>
+          <div class="section-header-title">🔬 Deep Dive</div>
+          <div class="section-header-sub">🔬</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-deepdive">
+        <p>🔬 <strong>Saturday Deep Dive: Cheapest Flights Within K Stops — 三种解法全解析 (15 min read)</strong></p>
+<p>📊 NeetCode: 94/150 · SysDesign: 60✅ · Behavioral: 60✅ · Frontend: 37/50 · AI: 30/30✅</p>
+<p>🔥 Day 121 — Expert Phase!</p>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/cheapest-flights-within-k-stops/</p>
+<p>📹 NeetCode: https://www.youtube.com/watch?v=5eIK3zUdYmE</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>你有 <code>n</code> 个城市，<code>m</code> 条有向航班（带价格）。给定出发地 <code>src</code>、目的地 <code>dst</code>、以及最多允许中转 <code>k</code> 次，求最便宜的方案。找不到就返回 -1。</p>
+
+<p>这道题之所以经典，是因为它打破了标准 Dijkstra 的假设：<strong>最便宜的路径不一定是中转次数最少的路径</strong>。当你加入"最多 K 次中转"这个约束时，标准的贪心策略会失效。你必须在「花费最小」和「步数受限」之间做权衡。</p>
+
+<p>这是 Advanced Graphs 模式中最能考察候选人是否真正理解最短路径算法本质的题目。</p>
+
+<p><strong>English：</strong></p>
+<p>You have <code>n</code> cities, <code>m</code> directed flights with prices. Given <code>src</code>, <code>dst</code>, and at most <code>k</code> stops (not flights — <code>k+1</code> flights total), find the cheapest price. Return -1 if impossible.</p>
+
+<p>Why this matters: standard Dijkstra assumes "if I reach a node via the cheapest path, I never need to revisit it." That breaks here. A slightly more expensive early path might save stops, keeping you within the K limit. This forces you to either track stops in your state, or use a fundamentally different algorithm.</p>
+
+<p><strong>The Core Insight / 核心洞察:</strong></p>
+<blockquote>"最多 K 次中转" = "最多 K+1 次航班" = "Bellman-Ford 只跑 K+1 轮"</blockquote>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>为什么标准 Dijkstra 在这里失效？/ Why Standard Dijkstra Fails Here</h3>
+
+<p><strong>中文：</strong></p>
+
+<p>Dijkstra 的核心假设是：一旦某节点被弹出优先队列（达到最低代价），它的最短路径就确定了，不需要再更新。</p>
+
+<p>但这道题里，路径有两个维度：<strong>代价</strong> 和 <strong>已用步数</strong>。</p>
+
+<div class="diagram-block">示例：
+n=4, flights=[[0,1,100],[1,3,100],[0,2,500],[2,3,100]], src=0, dst=3, k=1
+
+路径A: 0→1→3, 代价=200, 步数=2次航班(1次中转) ✅
+路径B: 0→2→3, 代价=600, 步数=2次航班(1次中转) ❌ 更贵
+
+如果 k=0（不允许中转）:
+路径A: 需要2次航班 ❌ 超出限制
+路径B: 需要2次航班 ❌ 超出限制
+答案: -1</div>
+
+<p>如果 k=1 但我们把一个"代价200但需要1次中转"的路径和"代价200但不需要中转"的路径混在一起，就会误判。</p>
+
+<p><strong>English：</strong></p>
+
+<p>Standard Dijkstra only tracks <code>(cost, node)</code>. But here we need <code>(cost, node, stops_used)</code>. Two paths to the same node might have the same cost but different stops used — and the one with fewer stops remaining might be better for reaching the destination.</p>
+
+<p>The key insight: <strong>stops are a resource, and we need to track resource consumption alongside cost</strong>.</p>
+
+<h3>三种算法的本质 / Three Algorithmic Approaches</h3>
+
+<table><thead><tr><th>算法</th><th>思路</th><th>时间复杂度</th><th>适用场景</th></tr></thead><tbody><tr><td>Bellman-Ford</td><td>外层循环K+1次，每次松弛所有边</td><td>O(K·E)</td><td>面试首选，代码简洁</td></tr><tr><td>Modified Dijkstra</td><td>状态 = (cost, node, stops)，visited 带 stops</td><td>O(E·log(V·K))</td><td>稀疏图效率高</td></tr><tr><td>BFS/DP</td><td>dp[i][node] = 用恰好 i 次航班到达node的最小代价</td><td>O(K·E)</td><td>最直观，易理解</td></tr></tbody></table>
+
+<p><strong>为什么 Bellman-Ford 是面试首选？</strong></p>
+
+<p>Bellman-Ford 的核心思想：每跑一轮，意味着"多用一次航班"。跑 K+1 轮，意味着"最多用了 K+1 次航班 = K 次中转"。</p>
+
+<p>这个映射关系极其直觉：<strong>外层 for 循环的迭代次数 = 航班数量</strong>。</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>解法一：Bellman-Ford（面试推荐）</h3>
+
+<p><strong>中文算法步骤：</strong></p>
+<ol><li><code>dist[]</code> 初始化：<code>dist[src]=0</code>，其他为无穷大</li><li>外层循环跑 <code>K+1</code> 次（最多用 K+1 次航班）</li><li>每次循环：遍历所有边，但<strong>用上一轮的 dist 来更新</strong>（防止同一轮内链式更新）</li><li>返回 <code>dist[dst]</code>，如果仍为无穷大则返回 -1</li></ol>
+
+<p><strong>关键：用临时数组 <code>temp_dist</code> 防止"串联更新"问题</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import math&#10;from typing import List&#10;&#10;def findCheapestPrice_bellman(n: int, flights: List[List[int]], &#10;                               src: int, dst: int, k: int) -&gt; int:&#10;    # Initialize: infinite cost to all nodes except source&#10;    # 初始化：除出发点外全部为无穷大&#10;    dist = [math.inf] * n&#10;    dist[src] = 0&#10;    &#10;    # Run K+1 iterations = at most K+1 flights = at most K stops&#10;    # 跑 K+1 轮 = 最多 K+1 次航班 = 最多 K 次中转&#10;    for i in range(k + 1):&#10;        # CRITICAL: snapshot the current state before this round of relaxation&#10;        # 关键：必须用上一轮的快照，防止在本轮内链式更新&#10;        temp_dist = dist.copy()&#10;        &#10;        for u, v, price in flights:&#10;            # Relax edge: can we reach v cheaper via u?&#10;            # 松弛：能否通过 u 更便宜地到达 v？&#10;            if dist[u] != math.inf and dist[u] + price &lt; temp_dist[v]:&#10;                temp_dist[v] = dist[u] + price&#10;        &#10;        dist = temp_dist  # commit this round's results&#10;    &#10;    return -1 if dist[dst] == math.inf else dist[dst]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> math
+<span style="color:#c678dd;">from</span> typing <span style="color:#c678dd;">import</span> List
+
+<span style="color:#c678dd;">def</span> findCheapestPrice_bellman(n: int, flights: List[List[int]], 
+                               src: int, dst: int, k: int) -&gt; int:
+    <span style="color:#5c6370;"># Initialize: infinite cost to all nodes except source</span>
+    <span style="color:#5c6370;"># 初始化：除出发点外全部为无穷大</span>
+    dist = [math.inf] * n
+    dist[src] = <span style="color:#56b6c2;">0</span>
+    
+    <span style="color:#5c6370;"># Run K+1 iterations = at most K+1 flights = at most K stops</span>
+    <span style="color:#5c6370;"># 跑 K+1 轮 = 最多 K+1 次航班 = 最多 K 次中转</span>
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(k + <span style="color:#56b6c2;">1</span>):
+        <span style="color:#5c6370;"># CRITICAL: snapshot the current state before this round of relaxation</span>
+        <span style="color:#5c6370;"># 关键：必须用上一轮的快照，防止在本轮内链式更新</span>
+        temp_dist = dist.copy()
+        
+        <span style="color:#c678dd;">for</span> u, v, price <span style="color:#c678dd;">in</span> flights:
+            <span style="color:#5c6370;"># Relax edge: can we reach v cheaper via u?</span>
+            <span style="color:#5c6370;"># 松弛：能否通过 u 更便宜地到达 v？</span>
+            <span style="color:#c678dd;">if</span> dist[u] != math.inf <span style="color:#c678dd;">and</span> dist[u] + price &lt; temp_dist[v]:
+                temp_dist[v] = dist[u] + price
+        
+        dist = temp_dist  <span style="color:#5c6370;"># commit this round's results</span>
+    
+    <span style="color:#c678dd;">return</span> -<span style="color:#56b6c2;">1</span> <span style="color:#c678dd;">if</span> dist[dst] == math.inf <span style="color:#c678dd;">else</span> dist[dst]</code></pre>
+</div>
+
+<p><strong>Trace Example / 执行追踪：</strong></p>
+<div class="diagram-block">Input: n=3, flights=[[0,1,100],[1,2,100],[0,2,500]], src=0, dst=2, k=1
+
+Initial:  dist = [0, inf, inf]
+
+--- Round 1 (i=0, flight 1 allowed) ---
+  temp_dist = [0, inf, inf]  (copy)
+  Edge 0→1 (100): dist[0]=0, 0+100=100 &lt; inf → temp_dist[1] = 100
+  Edge 1→2 (100): dist[1]=inf → skip (can't use chain in same round!)
+  Edge 0→2 (500): dist[0]=0, 0+500=500 &lt; inf → temp_dist[2] = 500
+  dist = [0, 100, 500]
+
+--- Round 2 (i=1, flight 2 allowed = 1 stop) ---
+  temp_dist = [0, 100, 500]  (copy)
+  Edge 0→1 (100): 0+100=100, not &lt; 100 → no change
+  Edge 1→2 (100): dist[1]=100, 100+100=200 &lt; 500 → temp_dist[2] = 200
+  Edge 0→2 (500): 0+500=500, not &lt; 200 → no change
+  dist = [0, 100, 200]
+
+Result: dist[2] = 200 ✅</div>
+
+<hr/>
+
+<h3>解法二：Modified Dijkstra（状态包含 stops）</h3>
+
+<p><strong>中文：</strong></p>
+<p>把 <code>(cost, node)</code> 扩展为 <code>(cost, node, stops_used)</code>。visited 条件变为：若同一 node 以相同或更少的 stops 被访问过且代价更低，才跳过。</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import heapq&#10;import collections&#10;&#10;def findCheapestPrice_dijkstra(n: int, flights: List[List[int]], &#10;                                src: int, dst: int, k: int) -&gt; int:&#10;    # Build adjacency list: graph[u] = [(v, price), ...]&#10;    # 构建邻接表&#10;    graph = collections.defaultdict(list)&#10;    for u, v, price in flights:&#10;        graph[u].append((v, price))&#10;    &#10;    # Min-heap: (cost, node, stops_used)&#10;    # 优先队列：（花费，节点，已用停站数）&#10;    heap = [(0, src, 0)]&#10;    &#10;    # visited[node] = min stops used when we reached this node with some cost&#10;    # We can revisit a node if we have fewer stops used&#10;    # 已访问：记录到达该节点时用的最少停站数&#10;    visited = {}&#10;    &#10;    while heap:&#10;        cost, node, stops = heapq.heappop(heap)&#10;        &#10;        # If we've reached the destination, return immediately&#10;        # (Dijkstra guarantee: first time we pop dst is cheapest)&#10;        # 第一次弹出目的地即为最优解&#10;        if node == dst:&#10;            return cost&#10;        &#10;        # Pruning: if we've seen this node with fewer/equal stops, skip&#10;        # 剪枝：如果曾以更少中转数到达此节点，跳过&#10;        if node in visited and visited[node] &lt;= stops:&#10;            continue&#10;        visited[node] = stops&#10;        &#10;        # Can't take more flights if we've used K+1 already&#10;        # 已用 K 次中转（K+1 次航班），不能继续飞了&#10;        if stops == k + 1:&#10;            continue&#10;        &#10;        for neighbor, price in graph[node]:&#10;            new_cost = cost + price&#10;            heapq.heappush(heap, (new_cost, neighbor, stops + 1))&#10;    &#10;    return -1">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> heapq
+<span style="color:#c678dd;">import</span> collections
+
+<span style="color:#c678dd;">def</span> findCheapestPrice_dijkstra(n: int, flights: List[List[int]], 
+                                src: int, dst: int, k: int) -&gt; int:
+    <span style="color:#5c6370;"># Build adjacency list: graph[u] = [(v, price), ...]</span>
+    <span style="color:#5c6370;"># 构建邻接表</span>
+    graph = collections.defaultdict(list)
+    <span style="color:#c678dd;">for</span> u, v, price <span style="color:#c678dd;">in</span> flights:
+        graph[u].append((v, price))
+    
+    <span style="color:#5c6370;"># Min-heap: (cost, node, stops_used)</span>
+    <span style="color:#5c6370;"># 优先队列：（花费，节点，已用停站数）</span>
+    heap = [(<span style="color:#56b6c2;">0</span>, src, <span style="color:#56b6c2;">0</span>)]
+    
+    <span style="color:#5c6370;"># visited[node] = min stops used when we reached this node with some cost</span>
+    <span style="color:#5c6370;"># We can revisit a node if we have fewer stops used</span>
+    <span style="color:#5c6370;"># 已访问：记录到达该节点时用的最少停站数</span>
+    visited = {}
+    
+    <span style="color:#c678dd;">while</span> heap:
+        cost, node, stops = heapq.heappop(heap)
+        
+        <span style="color:#5c6370;"># If we've reached the destination, return immediately</span>
+        <span style="color:#5c6370;"># (Dijkstra guarantee: first time we pop dst is cheapest)</span>
+        <span style="color:#5c6370;"># 第一次弹出目的地即为最优解</span>
+        <span style="color:#c678dd;">if</span> node == dst:
+            <span style="color:#c678dd;">return</span> cost
+        
+        <span style="color:#5c6370;"># Pruning: if we've seen this node with fewer/equal stops, skip</span>
+        <span style="color:#5c6370;"># 剪枝：如果曾以更少中转数到达此节点，跳过</span>
+        <span style="color:#c678dd;">if</span> node <span style="color:#c678dd;">in</span> visited <span style="color:#c678dd;">and</span> visited[node] &lt;= stops:
+            <span style="color:#c678dd;">continue</span>
+        visited[node] = stops
+        
+        <span style="color:#5c6370;"># Can't take more flights if we've used K+1 already</span>
+        <span style="color:#5c6370;"># 已用 K 次中转（K+1 次航班），不能继续飞了</span>
+        <span style="color:#c678dd;">if</span> stops == k + <span style="color:#56b6c2;">1</span>:
+            <span style="color:#c678dd;">continue</span>
+        
+        <span style="color:#c678dd;">for</span> neighbor, price <span style="color:#c678dd;">in</span> graph[node]:
+            new_cost = cost + price
+            heapq.heappush(heap, (new_cost, neighbor, stops + <span style="color:#56b6c2;">1</span>))
+    
+    <span style="color:#c678dd;">return</span> -<span style="color:#56b6c2;">1</span></code></pre>
+</div>
+
+<p><strong>为什么 visited 的判断是 <code>visited[node] &lt;= stops</code> 而不是简单地 <code>node in visited</code>？</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="反例说明：&#10;假设我们有两条路径都到达节点2：&#10;  路径A: cost=100, stops=0（但没有更多廉价边继续走）&#10;  路径B: cost=150, stops=2（但从这里出发还剩K-2次中转可用）&#10;&#10;如果仅靠 cost 决定 visited，路径A会阻止路径B被处理。&#10;但路径B 可能因为&quot;剩余中转次数更多&quot;而到达目的地，路径A 却不行。">Copy</button>
+  <pre><code class="language-text">反例说明：
+假设我们有两条路径都到达节点2：
+  路径A: cost=100, stops=0（但没有更多廉价边继续走）
+  路径B: cost=150, stops=2（但从这里出发还剩K-2次中转可用）
+
+如果仅靠 cost 决定 visited，路径A会阻止路径B被处理。
+但路径B 可能因为"剩余中转次数更多"而到达目的地，路径A 却不行。</code></pre>
+</div>
+
+<hr/>
+
+<h3>解法三：BFS/DP（最直观）</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def findCheapestPrice_dp(n: int, flights: List[List[int]], &#10;                          src: int, dst: int, k: int) -&gt; int:&#10;    # dp[node] = cheapest cost to reach node using at most i flights so far&#10;    # dp[节点] = 用恰好 i 次航班到达该节点的最小花费&#10;    dp = [math.inf] * n&#10;    dp[src] = 0&#10;    &#10;    # K stops = K+1 flights total&#10;    for _ in range(k + 1):&#10;        temp = dp.copy()  # snapshot: same &quot;no chain update&quot; rule&#10;        for u, v, price in flights:&#10;            if dp[u] != math.inf:&#10;                temp[v] = min(temp[v], dp[u] + price)&#10;        dp = temp&#10;    &#10;    return -1 if dp[dst] == math.inf else dp[dst]&#10;&#10;# Note: BFS/DP and Bellman-Ford are mathematically identical here.&#10;# The difference is purely in how you think about it:&#10;# Bellman-Ford: &quot;relax all edges K+1 times&quot;&#10;# BFS/DP: &quot;compute optimal cost for exactly i flights, for i = 1..K+1&quot;">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> findCheapestPrice_dp(n: int, flights: List[List[int]], 
+                          src: int, dst: int, k: int) -&gt; int:
+    <span style="color:#5c6370;"># dp[node] = cheapest cost to reach node using at most i flights so far</span>
+    <span style="color:#5c6370;"># dp[节点] = 用恰好 i 次航班到达该节点的最小花费</span>
+    dp = [math.inf] * n
+    dp[src] = <span style="color:#56b6c2;">0</span>
+    
+    <span style="color:#5c6370;"># K stops = K+1 flights total</span>
+    <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(k + <span style="color:#56b6c2;">1</span>):
+        temp = dp.copy()  <span style="color:#5c6370;"># snapshot: same "no chain update" rule</span>
+        <span style="color:#c678dd;">for</span> u, v, price <span style="color:#c678dd;">in</span> flights:
+            <span style="color:#c678dd;">if</span> dp[u] != math.inf:
+                temp[v] = min(temp[v], dp[u] + price)
+        dp = temp
+    
+    <span style="color:#c678dd;">return</span> -<span style="color:#56b6c2;">1</span> <span style="color:#c678dd;">if</span> dp[dst] == math.inf <span style="color:#c678dd;">else</span> dp[dst]
+
+<span style="color:#5c6370;"># Note: BFS/DP and Bellman-Ford are mathematically identical here.</span>
+<span style="color:#5c6370;"># The difference is purely in how you think about it:</span>
+<span style="color:#5c6370;"># Bellman-Ford: "relax all edges K+1 times"</span>
+<span style="color:#5c6370;"># BFS/DP: "compute optimal cost for exactly i flights, for i = 1..K+1"</span></code></pre>
+</div>
+
+<hr/>
+
+<h3>完整可运行代码 + 测试 / Complete Runnable Code</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import math&#10;import heapq&#10;import collections&#10;from typing import List&#10;&#10;def findCheapestPrice(n: int, flights: List[List[int]], &#10;                       src: int, dst: int, k: int) -&gt; int:&#10;    &quot;&quot;&quot;&#10;    Bellman-Ford approach — recommended for interviews.&#10;    Time:  O(K * E) where E = number of flights&#10;    Space: O(N) for distance array&#10;    &quot;&quot;&quot;&#10;    dist = [math.inf] * n&#10;    dist[src] = 0&#10;    &#10;    for _ in range(k + 1):&#10;        temp = dist.copy()          # snapshot before this round&#10;        for u, v, price in flights:&#10;            if dist[u] != math.inf:&#10;                temp[v] = min(temp[v], dist[u] + price)&#10;        dist = temp&#10;    &#10;    return -1 if dist[dst] == math.inf else dist[dst]&#10;&#10;&#10;# Test cases&#10;def run_tests():&#10;    test_cases = [&#10;        # (n, flights, src, dst, k, expected)&#10;        (3, [[0,1,100],[1,2,100],[0,2,500]], 0, 2, 1, 200),&#10;        (3, [[0,1,100],[1,2,100],[0,2,500]], 0, 2, 0, 500),&#10;        (4, [[0,1,100],[1,2,100],[2,3,100],[0,3,1000]], 0, 3, 1, 1000),&#10;        (4, [[0,1,100],[1,2,100],[2,3,100],[0,3,1000]], 0, 3, 2, 300),&#10;        (2, [[1,0,5]], 0, 1, 1, -1),  # no path from src to dst&#10;        (1, [], 0, 0, 0, 0),          # src == dst, cost = 0&#10;    ]&#10;    &#10;    for i, (n, flights, src, dst, k, expected) in enumerate(test_cases):&#10;        result = findCheapestPrice(n, flights, src, dst, k)&#10;        status = &quot;✅&quot; if result == expected else &quot;❌&quot;&#10;        print(f&quot;Test {i+1}: {status} got={result}, expected={expected}&quot;)&#10;&#10;run_tests()">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">import</span> math
+<span style="color:#c678dd;">import</span> heapq
+<span style="color:#c678dd;">import</span> collections
+<span style="color:#c678dd;">from</span> typing <span style="color:#c678dd;">import</span> List
+
+<span style="color:#c678dd;">def</span> findCheapestPrice(n: int, flights: List[List[int]], 
+                       src: int, dst: int, k: int) -&gt; int:
+    <span style="color:#e5c07b;">"""
+    Bellman-Ford approach — recommended for interviews.
+    Time:  O(K * E) where E = number of flights
+    Space: O(N) for distance array
+    """</span>
+    dist = [math.inf] * n
+    dist[src] = <span style="color:#56b6c2;">0</span>
+    
+    <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(k + <span style="color:#56b6c2;">1</span>):
+        temp = dist.copy()          <span style="color:#5c6370;"># snapshot before this round</span>
+        <span style="color:#c678dd;">for</span> u, v, price <span style="color:#c678dd;">in</span> flights:
+            <span style="color:#c678dd;">if</span> dist[u] != math.inf:
+                temp[v] = min(temp[v], dist[u] + price)
+        dist = temp
+    
+    <span style="color:#c678dd;">return</span> -<span style="color:#56b6c2;">1</span> <span style="color:#c678dd;">if</span> dist[dst] == math.inf <span style="color:#c678dd;">else</span> dist[dst]
+
+
+<span style="color:#5c6370;"># Test cases</span>
+<span style="color:#c678dd;">def</span> run_tests():
+    test_cases = [
+        <span style="color:#5c6370;"># (n, flights, src, dst, k, expected)</span>
+        (<span style="color:#56b6c2;">3</span>, [[<span style="color:#56b6c2;">0</span>,<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">100</span>],[<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">2</span>,<span style="color:#56b6c2;">100</span>],[<span style="color:#56b6c2;">0</span>,<span style="color:#56b6c2;">2</span>,<span style="color:#56b6c2;">500</span>]], <span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">2</span>, <span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">200</span>),
+        (<span style="color:#56b6c2;">3</span>, [[<span style="color:#56b6c2;">0</span>,<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">100</span>],[<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">2</span>,<span style="color:#56b6c2;">100</span>],[<span style="color:#56b6c2;">0</span>,<span style="color:#56b6c2;">2</span>,<span style="color:#56b6c2;">500</span>]], <span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">2</span>, <span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">500</span>),
+        (<span style="color:#56b6c2;">4</span>, [[<span style="color:#56b6c2;">0</span>,<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">100</span>],[<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">2</span>,<span style="color:#56b6c2;">100</span>],[<span style="color:#56b6c2;">2</span>,<span style="color:#56b6c2;">3</span>,<span style="color:#56b6c2;">100</span>],[<span style="color:#56b6c2;">0</span>,<span style="color:#56b6c2;">3</span>,<span style="color:#56b6c2;">1000</span>]], <span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">1000</span>),
+        (<span style="color:#56b6c2;">4</span>, [[<span style="color:#56b6c2;">0</span>,<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">100</span>],[<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">2</span>,<span style="color:#56b6c2;">100</span>],[<span style="color:#56b6c2;">2</span>,<span style="color:#56b6c2;">3</span>,<span style="color:#56b6c2;">100</span>],[<span style="color:#56b6c2;">0</span>,<span style="color:#56b6c2;">3</span>,<span style="color:#56b6c2;">1000</span>]], <span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">3</span>, <span style="color:#56b6c2;">2</span>, <span style="color:#56b6c2;">300</span>),
+        (<span style="color:#56b6c2;">2</span>, [[<span style="color:#56b6c2;">1</span>,<span style="color:#56b6c2;">0</span>,<span style="color:#56b6c2;">5</span>]], <span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">1</span>, -<span style="color:#56b6c2;">1</span>),  <span style="color:#5c6370;"># no path from src to dst</span>
+        (<span style="color:#56b6c2;">1</span>, [], <span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">0</span>),          <span style="color:#5c6370;"># src == dst, cost = 0</span>
+    ]
+    
+    <span style="color:#c678dd;">for</span> i, (n, flights, src, dst, k, expected) <span style="color:#c678dd;">in</span> enumerate(test_cases):
+        result = findCheapestPrice(n, flights, src, dst, k)
+        status = <span style="color:#e5c07b;">"✅"</span> <span style="color:#c678dd;">if</span> result == expected <span style="color:#c678dd;">else</span> <span style="color:#e5c07b;">"❌"</span>
+        print(f<span style="color:#e5c07b;">"Test {i+1}: {status} got={result}, expected={expected}"</span>)
+
+run_tests()</code></pre>
+</div>
+
+<p><strong>Expected output:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Test 1: ✅ got=200, expected=200&#10;Test 2: ✅ got=500, expected=500&#10;Test 3: ✅ got=1000, expected=1000&#10;Test 4: ✅ got=300, expected=300&#10;Test 5: ✅ got=-1, expected=-1&#10;Test 6: ✅ got=0, expected=0">Copy</button>
+  <pre><code class="language-text">Test 1: ✅ got=200, expected=200
+Test 2: ✅ got=500, expected=500
+Test 3: ✅ got=1000, expected=1000
+Test 4: ✅ got=300, expected=300
+Test 5: ✅ got=-1, expected=-1
+Test 6: ✅ got=0, expected=0</code></pre>
+</div>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<h3>⚠️ Gotcha 1: 链式更新（Chain Update Bug）</h3>
+
+<p><strong>这是本题最常见的 bug。</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# ❌ WRONG: single dist array — chain update within same round&#10;dist = [0, inf, inf]&#10;for u, v, price in flights:&#10;    if dist[u] != inf:&#10;        dist[v] = min(dist[v], dist[u] + price)&#10;# In round 1: 0→1 updates dist[1]=100, then 1→2 IMMEDIATELY uses dist[1]=100&#10;# This effectively uses 2 flights in 1 round — violates K constraint!&#10;&#10;# ✅ CORRECT: use temp array (snapshot)&#10;temp = dist.copy()&#10;for u, v, price in flights:&#10;    if dist[u] != inf:      # read from OLD dist&#10;        temp[v] = min(temp[v], dist[u] + price)  # write to NEW temp&#10;dist = temp">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># ❌ WRONG: single dist array — chain update within same round</span>
+dist = [<span style="color:#56b6c2;">0</span>, inf, inf]
+<span style="color:#c678dd;">for</span> u, v, price <span style="color:#c678dd;">in</span> flights:
+    <span style="color:#c678dd;">if</span> dist[u] != inf:
+        dist[v] = min(dist[v], dist[u] + price)
+<span style="color:#5c6370;"># In round 1: 0→1 updates dist[1]=100, then 1→2 IMMEDIATELY uses dist[1]=100</span>
+<span style="color:#5c6370;"># This effectively uses 2 flights in 1 round — violates K constraint!</span>
+
+<span style="color:#5c6370;"># ✅ CORRECT: use temp array (snapshot)</span>
+temp = dist.copy()
+<span style="color:#c678dd;">for</span> u, v, price <span style="color:#c678dd;">in</span> flights:
+    <span style="color:#c678dd;">if</span> dist[u] != inf:      <span style="color:#5c6370;"># read from OLD dist</span>
+        temp[v] = min(temp[v], dist[u] + price)  <span style="color:#5c6370;"># write to NEW temp</span>
+dist = temp</code></pre>
+</div>
+
+<h3>⚠️ Gotcha 2: src == dst</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# If src == dst, cost is 0 — but the initial dist[src]=0 handles this.&#10;# Your code should return 0 without any flights. ✅">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># If src == dst, cost is 0 — but the initial dist[src]=0 handles this.</span>
+<span style="color:#5c6370;"># Your code should return 0 without any flights. ✅</span></code></pre>
+</div>
+
+<h3>⚠️ Gotcha 3: K=0 意味着只能直飞 / K=0 means direct flight only</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# k=0: no stops allowed → only direct flights src→dst count&#10;# Bellman-Ford handles this naturally: loop runs exactly once (k+1=1)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># k=0: no stops allowed → only direct flights src→dst count</span>
+<span style="color:#5c6370;"># Bellman-Ford handles this naturally: loop runs exactly once (k+1=1)</span></code></pre>
+</div>
+
+<h3>⚠️ Gotcha 4: Modified Dijkstra 的 visited 条件</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Wrong: if node in visited: continue  (blocks valid paths with more stops remaining)&#10;# Right: if node in visited and visited[node] &lt;= stops: continue">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Wrong: if node in visited: continue  (blocks valid paths with more stops remaining)</span>
+<span style="color:#5c6370;"># Right: if node in visited and visited[node] &lt;= stops: continue</span></code></pre>
+</div>
+
+<h3>⚠️ Gotcha 5: 无效路径 / Disconnected Graph</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# If dst is unreachable within K stops, dist[dst] stays inf → return -1&#10;return -1 if dist[dst] == math.inf else dist[dst]">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># If dst is unreachable within K stops, dist[dst] stays inf → return -1</span>
+<span style="color:#c678dd;">return</span> -<span style="color:#56b6c2;">1</span> <span style="color:#c678dd;">if</span> dist[dst] == math.inf <span style="color:#c678dd;">else</span> dist[dst]</code></pre>
+</div>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>"最多 K 次中转的最便宜航班"这个模式在工程中无处不在：</p>
+
+<p><strong>1. 网络路由（Network Routing）</strong></p>
+<p>路由器使用 Bellman-Ford 的变体（RIP 协议）来计算最短路径。"最多 K 跳"的约束对应 TTL（Time To Live）——IP 包每经过一个路由器，TTL 减一，防止无限循环。</p>
+
+<p><strong>2. 供应链优化（Supply Chain）</strong></p>
+<p>从仓库 A 到客户 B，中间经过最多 K 个转运中心，求最便宜的运输方案。每条边权重是运费，K 是允许的最大中转数。</p>
+
+<p><strong>3. 金融套利检测（Arbitrage Detection）</strong></p>
+<p>货币兑换图：节点是货币，边权是汇率（取对数后变成加法）。Bellman-Ford 的负环检测可以找到套利机会。这里的 K 约束限制了套利链的长度。</p>
+
+<p><strong>4. 服务网格跳数限制（Service Mesh）</strong></p>
+<p>微服务 A 调用 B，B 调用 C...允许最多 K 跳，超过则断路。Kubernetes 的流量控制 (Istio) 就有类似的最大跳数配置。</p>
+
+<p><strong>English:</strong></p>
+
+<p>The "shortest path with a hop constraint" pattern appears everywhere:</p>
+
+<ul><li><strong>BGP Routing</strong>: Routers exchange path vectors; AS-PATH length limits prevent routing loops</li><li><strong>CDN Edge Selection</strong>: Choose the cheapest edge node within K network hops from the user</li><li><strong>Database Query Planning</strong>: Joins are edges; query optimizer finds cheapest plan within cost bounds</li><li><strong>Microservice Timeouts</strong>: Distributed tracing depth limits map directly to this K-stops model</li></ul>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Q1: 为什么不能直接用标准 Dijkstra？</strong></p>
+
+<p><em>Answer:</em> Standard Dijkstra marks a node "done" when it's first popped from the heap. But here, two paths to the same node with the same cost might have different stops used. The one with more stops used should be discarded (fewer remaining stops), but if it was popped first, we'd incorrectly block better paths. Solution: track stops in the heap state, or use Bellman-Ford which naturally handles this via iteration count.</p>
+
+<p><strong>Q2: Bellman-Ford 和 BFS/DP 的关系是什么？</strong></p>
+
+<p><em>Answer:</em> They're mathematically identical. Bellman-Ford: "relax all edges K+1 times." BFS/DP: "dp[i][v] = min cost using exactly i flights." Both iterate K+1 times over all edges with a snapshot. The only difference is framing — Bellman-Ford is graph-centric, BFS/DP is table-centric.</p>
+
+<p><strong>Q3: Modified Dijkstra 什么时候比 Bellman-Ford 更快？</strong></p>
+
+<p><em>Answer:</em> When E &gt;&gt; K*V (dense graph, small K). Dijkstra's heap prunes paths early via the priority queue. Bellman-Ford always processes all E edges in every round. For sparse graphs with large K (e.g., k=n-1), they're similar. In interviews, Bellman-Ford is usually preferred for clarity.</p>
+
+<p><strong>Q4: 如果改成"恰好 K 次中转"而不是"最多 K 次中转"怎么做？</strong></p>
+
+<p><em>Answer:</em> Change the DP: <code>dp[k][v] = cost using EXACTLY k+1 flights</code>. Initialize only <code>dp[0][src]=0</code> and don't carry forward intermediate minima. At the end, return <code>dp[K][dst]</code> only (not <code>min(dp[0..K][dst])</code>). Bellman-Ford as written gives "at most K+1 flights" because it carries forward previous-round values via <code>temp = dist.copy()</code>.</p>
+
+<p><strong>Q5: 这道题和 Bellman-Ford 检测负环有什么关系？</strong></p>
+
+<p><em>Answer:</em> Classic Bellman-Ford detects negative cycles by running V-1 rounds and checking if a V-th round still relaxes any edge. Here, we run exactly K+1 rounds (not V-1). The K constraint prevents negative cycle exploitation. If K were unlimited and there were negative-weight edges, Bellman-Ford would detect it — but this problem guarantees positive prices, so that's not a concern.</p>
+
+<hr/>
+
+<h2>Architecture Diagram / 架构图 (For Bellman-Ford)</h2>
+
+<div class="diagram-block">Input: n=3, flights=[[0,1,100],[1,2,100],[0,2,500]], src=0, dst=2, k=1
+
+INITIALIZATION
+┌─────────────────────┐
+│  dist = [0, ∞, ∞]   │  ← dist[src=0] = 0
+│  k+1 = 2 rounds     │
+└────────┬────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────┐
+│  ROUND 1 (i=0): snapshot temp = [0, ∞, ∞]              │
+│                                                         │
+│  Edge 0→1 (100): dist[0]=0 → temp[1] = min(∞,100) = 100│
+│  Edge 1→2 (100): dist[1]=∞ → SKIP (no chain update!)   │
+│  Edge 0→2 (500): dist[0]=0 → temp[2] = min(∞,500) = 500│
+│                                                         │
+│  dist = [0, 100, 500]  (commit)                        │
+└────────┬────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────┐
+│  ROUND 2 (i=1): snapshot temp = [0, 100, 500]           │
+│                                                         │
+│  Edge 0→1 (100): 0+100=100, not &lt; 100 → no change      │
+│  Edge 1→2 (100): dist[1]=100 → temp[2]=min(500,200)=200 │
+│  Edge 0→2 (500): 0+500=500, not &lt; 200 → no change       │
+│                                                         │
+│  dist = [0, 100, 200]  (commit)                        │
+└────────┬────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│  Return dist[dst=2] │ = 200 ✅
+└─────────────────────┘</div>
+
+<p><strong>Step 4 Cross-Check / 图代码一致性验证:</strong></p>
+
+<p>Tracing the code with this exact input:</p>
+<ul><li><code>dist = [0, inf, inf]</code></li><li>Round i=0: <code>temp = dist.copy()</code> → <code>[0, inf, inf]</code></li></ul>
+<p>  - Edge <code>[0,1,100]</code>: <code>dist[0]=0 != inf</code>, <code>0+100=100 &lt; inf</code> → <code>temp[1]=100</code> ✅ (matches diagram)</p>
+<p>  - Edge <code>[1,2,100]</code>: <code>dist[1]=inf</code> → skip ✅ (matches "SKIP chain update" in diagram)</p>
+<p>  - Edge <code>[0,2,500]</code>: <code>dist[0]=0</code>, <code>0+500=500 &lt; inf</code> → <code>temp[2]=500</code> ✅</p>
+<p>  - <code>dist = [0, 100, 500]</code> ✅</p>
+<ul><li>Round i=1: <code>temp = [0, 100, 500]</code></li></ul>
+<p>  - Edge <code>[1,2,100]</code>: <code>dist[1]=100</code>, <code>100+100=200 &lt; 500</code> → <code>temp[2]=200</code> ✅ (matches diagram)</p>
+<p>  - <code>dist = [0, 100, 200]</code> ✅</p>
+<ul><li>Return <code>dist[2] = 200</code> ✅</li></ul>
+
+<p>Diagram and code are fully consistent. ✅</p>
+
+<hr/>
+
+<h2>Quick Reference / 速查</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Template: Cheapest Flights Within K Stops (Bellman-Ford)&#10;def findCheapestPrice(n, flights, src, dst, k):&#10;    dist = [float('inf')] * n&#10;    dist[src] = 0&#10;    for _ in range(k + 1):          # K+1 flights = K stops&#10;        temp = dist.copy()           # snapshot! no chain updates&#10;        for u, v, p in flights:&#10;            if dist[u] != float('inf'):&#10;                temp[v] = min(temp[v], dist[u] + p)&#10;        dist = temp&#10;    return -1 if dist[dst] == float('inf') else dist[dst]&#10;# Time: O(K·E) | Space: O(N)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Template: Cheapest Flights Within K Stops (Bellman-Ford)</span>
+<span style="color:#c678dd;">def</span> findCheapestPrice(n, flights, src, dst, k):
+    dist = [float(<span style="color:#e5c07b;">'inf'</span>)] * n
+    dist[src] = <span style="color:#56b6c2;">0</span>
+    <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(k + <span style="color:#56b6c2;">1</span>):          <span style="color:#5c6370;"># K+1 flights = K stops</span>
+        temp = dist.copy()           <span style="color:#5c6370;"># snapshot! no chain updates</span>
+        <span style="color:#c678dd;">for</span> u, v, p <span style="color:#c678dd;">in</span> flights:
+            <span style="color:#c678dd;">if</span> dist[u] != float(<span style="color:#e5c07b;">'inf'</span>):
+                temp[v] = min(temp[v], dist[u] + p)
+        dist = temp
+    <span style="color:#c678dd;">return</span> -<span style="color:#56b6c2;">1</span> <span style="color:#c678dd;">if</span> dist[dst] == float(<span style="color:#e5c07b;">'inf'</span>) <span style="color:#c678dd;">else</span> dist[dst]
+<span style="color:#5c6370;"># Time: O(K·E) | Space: O(N)</span></code></pre>
+</div>
+
+<p><strong>When you see these signals in an interview:</strong></p>
+<ul><li>"Shortest path" + "at most K edges/hops/stops" → Bellman-Ford with K iterations</li><li>"Weighted graph" + "constraint on path length" → Modified Dijkstra with (cost, node, constraint) state</li><li>"Negative weights" → Bellman-Ford (Dijkstra breaks with negatives)</li><li>"Detect arbitrage/negative cycle" → Bellman-Ford V-1 rounds + check</li></ul>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
