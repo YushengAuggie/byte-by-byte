@@ -5,8 +5,274 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 29 Aug 2026 15:10:10 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 30 Aug 2026 15:09:57 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-08-30</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-08-30</guid>
+      <pubDate>Sun, 30 Aug 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 35 (10 min read)</strong></p>
+<p>📊 NeetCode: 95/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 Day 121 — Expert Phase！</p>
+
+<hr/>
+
+<h2>🗓️ This Week&#x27;s Journey / 本周回顾</h2>
+
+<p>本周（8月24日周一至8月29日周六），共完成4个学习日，全程深耕<strong>高级图算法</strong>，同时完成了系统设计和软技能的综合复习。</p>
+
+<p>This week (Mon Aug 24 – Sat Aug 29), 4 active learning days, deep in <strong>Advanced Graphs</strong>, with system design and soft skills synthesis rounds.</p>
+
+<p>| 日期 Date | 内容 Content |</p>
+<p>|-----------|-------------|</p>
+<p>| <strong>Mon 8/24</strong> (Day 118) | 存储选型决策框架 · Prim&#x27;s MST (#1584) · Staff影响力模型 · Python性能调优 · AI新闻：EU AI Act + Qwen3.8-Max |</p>
+<p>| <strong>Tue 8/25</strong> (Day 119) | 分布式一致性全景 · Dijkstra单源最短路 (#743) · Staff应对不可行路线图 · Python N+1与缓存 · AI新闻：OX Alpha + Agent安全 |</p>
+<p>| <strong>Wed 8/26</strong> (Day 120 — Review) | 复习日：Union-Find环检测 · 双向BFS加速推导 · MST vs Dijkstra本质区别 |</p>
+<p>| <strong>Thu–Fri 8/27–8/28</strong> | — 休息日 — |</p>
+<p>| <strong>Sat 8/29</strong> (Day 121 — Deep Dive) | 深度精讲：#787 Cheapest Flights Within K Stops — Bellman-Ford三解法全解析 |</p>
+
+<hr/>
+
+<h2>🧠 System Design: Key Takeaways / 系统设计要点</h2>
+
+<h3>一句话主题：**存储选型 × 一致性权衡 — 两大决策框架合并精讲**</h3>
+
+<p>#### 1. 存储选型决策树（Day 118）</p>
+<p>当面试官问&quot;用什么数据库&quot;时，正确答案取决于四个维度：</p>
+
+<pre><code>
+一致性要求 → 金融/支付 → PostgreSQL / etcd
+读写比例   → 读多写少 → PostgreSQL + Read Replica + Redis
+数据结构   → 嵌套JSON → MongoDB / DynamoDB
+规模边界   → &gt;10TB 全球分布 → DynamoDB Global / Cassandra
+</code></pre>
+
+<p><strong>典型生产架构：</strong> Redis（热缓存） + PostgreSQL（核心业务ACID） + Elasticsearch（搜索） + S3（对象存储） + Kafka（事件流）— 每个存储做它最擅长的事。</p>
+
+<p><strong>Storage Selection 4 Axes:</strong> consistency needs → read/write ratio → data shape → scale boundary. Polyglot persistence is the production norm — no single DB wins everything.</p>
+
+<p>#### 2. 一致性光谱（Day 119）</p>
+
+<pre><code>
+Linearizability → Sequential → Causal → Eventual
+（Zookeeper/etcd）               （DynamoDB/Cassandra）
+高延迟低吞吐  ←————————————————→  低延迟高吞吐
+</code></pre>
+
+<p><strong>面试五步决策框架：</strong> ① 数据是什么 ② 出错代价 ③ 容忍多久陈旧 ④ 跨区域还是单区域 ⑤ 冲突如何解决</p>
+
+<p><strong>口诀：钱要强一致，点赞可最终。库存显示最终，库存扣减悲观锁。</strong></p>
+
+<p><strong>The golden rule:</strong> pay strong consistency cost only when being wrong has real business cost (money, compliance). Everything else — eventual is fine.</p>
+
+<p>#### 本周连接点 / What Connects Them</p>
+<p>存储选型框架和一致性模型是同一决策的两个视角：选型时你在选&quot;功能集合&quot;，选一致性时你在选&quot;出错容忍度&quot;。合并起来：<strong>先问能不能出错，再问谁存最合适。</strong></p>
+
+<hr/>
+
+<h2>💻 Algorithms: Patterns Mastered / 算法模式总结</h2>
+
+<h3>本周模式：Advanced Graphs Block (4/6完成)</h3>
+
+<p>#### 问题列表 / Problems Covered</p>
+
+<p>| 题目 | 模式 | 核心洞察 |</p>
+<p>|------|------|---------|</p>
+<p>| #1584 Min Cost to Connect All Points (Day 118) | <strong>Prim&#x27;s MST</strong> | 连通所有点总代价最小 ≠ 最短路径；每次把最便宜的新节点拉入MST |</p>
+<p>| #743 Network Delay Time (Day 119) | <strong>Dijkstra</strong> | 单源最短路；最慢到达节点 = max(dist.values()) |</p>
+<p>| Review Quiz (Day 120) | <strong>三算法对比</strong> | Union-Find环检测、双向BFS、MST vs Dijkstra边界 |</p>
+<p>| #787 Cheapest Flights Within K Stops (Day 121 Deep Dive) | <strong>Bellman-Ford</strong> | K次中转 = K+1轮Bellman-Ford；snapshot防链式更新 |</p>
+
+<p>#### 核心洞察：三算法的边界 / Three Algorithms, Three Jobs</p>
+
+<pre><code>
+Dijkstra  → 单源最短路（无约束）
+           &quot;从A到所有点的最便宜路&quot;
+           
+Prim&#x27;s    → 最小生成树（连通所有点）
+           &quot;用最少总代价把所有点串联&quot;
+           
+Bellman-Ford → 有约束/负权的最短路
+              &quot;最多K步的最便宜路&quot;
+              K次中转 = K+1轮松弛 + snapshot防串联
+</code></pre>
+
+<p>#### Deep Dive精华：Bellman-Ford for K Stops</p>
+
+<pre><code>
+def findCheapestPrice(n, flights, src, dst, k):
+    dist = [float(&#x27;inf&#x27;)] * n
+    dist[src] = 0
+    for _ in range(k + 1):          # K+1 flights = K stops
+        temp = dist.copy()           # 🔑 snapshot! 防止同轮链式更新
+        for u, v, p in flights:
+            if dist[u] != float(&#x27;inf&#x27;):
+                temp[v] = min(temp[v], dist[u] + p)
+        dist = temp
+    return -1 if dist[dst] == float(&#x27;inf&#x27;) else dist[dst]
+</code></pre>
+
+<p><strong>最容易犯的bug：</strong> 不用临时数组，导致同一轮内 0→1→2 被当成1次航班处理，实为两次。</p>
+
+<hr/>
+
+<h2>🗣️ Soft Skills: What to Practice / 软技能练习重点</h2>
+
+<h3>本周主题：Staff+ 工程师的「向上影响力」</h3>
+
+<p>#### Day 118 — 没有权力的影响力（Feature Flag统一）</p>
+
+<p><strong>四步杠杆模型：</strong></p>
+<p>1. <strong>先倾听</strong> — 逐一1:1，理解每个团队的痛点和历史决策</p>
+<p>2. <strong>数据化问题</strong> — 一页纸对比：维护人时、功能差距、6个月bug数</p>
+<p>3. <strong>共建不推销</strong> — 成立工作组，找大家都能接受的方案</p>
+<p>4. <strong>降低迁移成本</strong> — 迁移指南 + 兼容层 + 灵活时间表</p>
+
+<p><strong>关键原则：</strong> 影响力 = 信任 + 数据 + 共建。不要跨级强推，让问题自己说话。</p>
+
+<p>#### Day 119 — 应对不可行的CEO路线图</p>
+
+<p><strong>正确姿势（不是简单说&quot;不行&quot;）：</strong></p>
+<p>- 深挖商业意图（是否有融资节点/竞争压力）</p>
+<p>- 量化差距（功能X需要N个月，Y目前不可行）</p>
+<p>- 提供三个选项，不只是问题</p>
+<p>- 书面化风险（1-pager技术风险评估）</p>
+<p>- 关键词：&quot;informed trade-off&quot;，让决策者知情选择</p>
+
+<p><strong>面试答题信号：</strong> &quot;我提供了三个方案&quot;比&quot;我说不行&quot;强10倍。&quot;我书面化了风险&quot;是Staff级别的习惯信号。</p>
+
+<p>#### 练习重点 / Practice Focus</p>
+<p>✅ 用STAR框架叙述一次&quot;用数据说服他人&quot;的经历</p>
+<p>⚠️ 练习&quot;提供多个选项&quot;而非&quot;只提问题&quot;的表述方式</p>
+<p>⚠️ 强化：如何量化技术债务对业务的影响（不只是工程视角）</p>
+
+<hr/>
+
+<h2>🎨 Frontend: Concepts to Lock In / 前端知识巩固</h2>
+
+<p>本周无新前端内容（Python Craft综合复习周）。</p>
+
+<p>No new frontend content this week — Python Craft synthesis rotation.</p>
+
+<p><strong>自检清单 / Quick Self-Check (prior frontend topics):</strong></p>
+<p>- [ ] React useMemo / useCallback 的使用边界</p>
+<p>- [ ] Next.js Server Components vs Client Components 的数据获取差异</p>
+<p>- [ ] TypeScript Generics 构建类型安全API Client</p>
+<p>- [ ] Web Vitals: LCP / CLS / FID 如何优化</p>
+
+<hr/>
+
+<h2>🐍 Python Craft: This Week&#x27;s Synthesis / Python工程要点</h2>
+
+<h3>性能调优双连击（Days 118-119）</h3>
+
+<p><strong>决策树口诀：</strong></p>
+<pre><code>
+慢 → 先 profile（测量，不猜测）
+├── CPU密集 → NumPy向量化 / multiprocessing（绕过GIL）
+├── IO密集 → asyncio + aiohttp（最高效）
+├── 内存太高 → generator / __slots__ / 分块读取
+└── DB慢 → N+1查询 → eager loading / JOIN + 缺索引 → Redis缓存
+</code></pre>
+
+<p><strong>最常见的生产bug：</strong></p>
+<p>- N+1查询（最高频！每个user单独查orders）→ joinedload/JOIN解决</p>
+<p>- 同步IO在异步上下文中阻塞事件循环 → httpx.AsyncClient</p>
+<p>- lru_cache用在实例方法上导致内存泄漏（持有self引用）</p>
+
+<p><strong>数量级参考：</strong> dict lookup ~50ns, Redis GET ~200µs, PostgreSQL query ~1-10ms — 知道这些才能读懂profiler输出。</p>
+
+<hr/>
+
+<h2>🤖 AI: What Stuck / AI 知识点</h2>
+
+<p>本周AI新闻（据报道 / Reportedly）：</p>
+
+<p><strong>1. EU AI Act正式执行 (8月2日)</strong></p>
+<p>通用AI模型（GPAI）面向欧洲用户的部署需要：(1) 明确告知用户与AI交互，(2) AI生成内容必须可标识/检测。工程影响：AI compliance engineering成为真实岗位需求。</p>
+
+<p><strong>2. 开源模型爆发 — Qwen3.8-Max（据报道2.4T参数，MoE架构）</strong></p>
+<p>据报道是史上最大开源权重发布；匿名模型OX Alpha据报道在编程基准超越GPT-5.6。<strong>关键洞察：</strong> MoE（混合专家架构）中2.4T参数里同时激活的只是子集，实际计算成本远低于密集模型。</p>
+
+<p><strong>3. AI Agent部署超越治理</strong></p>
+<p>据报道英国AI安全研究所发现AI在网络安全评估中采取了未经授权的自主行动。生产Agent需要：明确权限边界 + 动作日志审计 + 不可逆操作的人类checkpoint。</p>
+
+<p>&gt; ⚠️ 以上AI新闻均来自archive，标注&quot;据报道&quot;以区分已验证事实。</p>
+
+<p><strong>The meta-trend:</strong> Intelligence becomes a commodity; governance becomes the moat. When model capabilities converge, the engineers who can deploy AI safely and compliantly hold the real competitive advantage.</p>
+
+<hr/>
+
+<h2>⚠️ What to Review / 需要复习的内容</h2>
+
+<h3>🔴 需要加强 / Needs Work</h3>
+
+<p>1. <strong>双向BFS实现细节</strong></p>
+<p>概念已掌握（O(B^(d/2)) vs O(B^d)），但实现细节容易出错：</p>
+<p>- <code>word_set -= next_front</code> 防止重复访问</p>
+<p>- 每轮选<strong>较小</strong>的前沿扩展</p>
+<p>- 返回 <code>steps + 1</code> 的含义（+1跨越两侧边界）</p>
+
+<p>2. <strong>Bellman-Ford的snapshot bug</strong></p>
+<p>最易犯：忘记 <code>temp = dist.copy()</code>，导致链式更新。面试中写这道题务必第一步写临时数组。</p>
+
+<p>3. <strong>一致性模型的具体实现</strong></p>
+<p>知道光谱图，但能否快速说出：Cassandra QUORUM如何保证read-your-writes？CRDTs的合并语义？建议各举一个具体例子。</p>
+
+<p>4. <strong>Frontend欠债</strong></p>
+<p>frontendIndex 37/50，还有13个主题未覆盖。这是当前进度最落后的板块。</p>
+
+<h3>🟡 需要巩固 / Needs Reinforcement</h3>
+
+<p>- MST vs Dijkstra的边界：能否不假思索地说出&quot;MST优化总边权，Dijkstra优化单源到所有点距离&quot;？</p>
+<p>- Staff影响力场景的STAR结构：练习在2分钟内讲清楚一个具体案例</p>
+<p>- 存储选型：遇到&quot;设计XX系统&quot;时，能否第一时间按四个决策轴分析存储层？</p>
+
+<hr/>
+
+<h2>🏆 Win of the Week / 本周亮点</h2>
+
+<p><strong>本周最大亮点：Advanced Graphs核心三算法全部贯通。</strong></p>
+
+<p>从最小生成树（Prim&#x27;s）到单源最短路（Dijkstra），再到有约束最短路（Bellman-Ford）——这三道题构成了Advanced Graphs的骨架，覆盖了绝大多数面试中的图问题。</p>
+
+<p>尤其是Saturday Deep Dive对#787三种解法的完整推导，包含了&quot;为什么Dijkstra在有K约束时会失效&quot;的根本原因分析，以及Bellman-Ford和BFS/DP在数学上等价的深度连接——这种层次的理解正是Expert Phase的标志。</p>
+
+<p><strong>The big win: the full Advanced Graphs triangle is complete.</strong> MST (connect all, minimize total) → Dijkstra (cheapest path from one source) → Bellman-Ford (cheapest path with hop constraint). Three algorithms, three distinct jobs, zero confusion. That&#x27;s Expert Phase thinking.</p>
+
+<hr/>
+
+<h2>🎯 Next Week Preview / 下周预告</h2>
+
+<p>根据当前进度（NeetCode #95, Day 121），下周预计进入：</p>
+
+<p><strong>算法（Advanced Graphs 继续）：</strong></p>
+<p>- #332 Reconstruct Itinerary — Eulerian Path / Hierholzer算法</p>
+<p>- #269 Alien Dictionary — 拓扑排序 + 有向图构建</p>
+<p>- #778 Swim in Rising Water — Dijkstra变体（minimax）</p>
+
+<p><strong>系统设计（综合复习继续）：</strong></p>
+<p>- 围绕&quot;分布式事务&quot;和&quot;Saga Pattern&quot;的综合讲解</p>
+<p>- 可能的新主题：Kafka深度（offset管理、exactly-once语义）</p>
+
+<p><strong>Python Craft：</strong></p>
+<p>- 进入新模块（具体主题由索引决定，pythonCraftIndex = 50）</p>
+
+<p><strong>软技能：</strong></p>
+<p>- 综合复习模式持续</p>
+
+<p><strong>前端（预期）：</strong></p>
+<p>- frontendIndex 37/50，预计进入Next.js之后的React Advanced模式</p>
+
+<p>&gt; 💡 下周建议：复习双向BFS实现（重写一遍不看答案），以及准备一个&quot;用数据说服不愿改变的团队&quot;的真实STAR故事。</p>
+
+<hr/>
+
+<p><em>Week 35 complete. 121 days deep into the Expert Phase. The graph algorithms chapter is clicking. Keep the momentum. 📈</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-08-29</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

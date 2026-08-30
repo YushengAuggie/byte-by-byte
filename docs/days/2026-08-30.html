@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-08-30</title>
+  <meta name="description" content="byte-by-byte daily lessons for Sunday, August 30, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Sunday, August 30, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-08-30.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-08-29.html" style="color:var(--text2)">← 2026-08-29</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-08-30</span>
+    <h1>Sunday, August 30, 2026</h1>
+    <div class="page-header-meta">
+      <span>1 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-week-review" class="nav-day-btn">📅 Week in Review</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-08-29.html" class="day-nav-btn">← 2026-08-29</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-week-review">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-week-review" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">📅</span>
+        <div>
+          <div class="section-header-title">📅 Week in Review</div>
+          <div class="section-header-sub">📅</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-week-review">
+        <p>📅 <strong>Week in Review — Week 35 (10 min read)</strong></p>
+<p>📊 NeetCode: 95/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 Day 121 — Expert Phase！</p>
+
+<hr/>
+
+<h2>🗓️ This Week's Journey / 本周回顾</h2>
+
+<p>本周（8月24日周一至8月29日周六），共完成4个学习日，全程深耕<strong>高级图算法</strong>，同时完成了系统设计和软技能的综合复习。</p>
+
+<p>This week (Mon Aug 24 – Sat Aug 29), 4 active learning days, deep in <strong>Advanced Graphs</strong>, with system design and soft skills synthesis rounds.</p>
+
+<table><thead><tr><th>日期 Date</th><th>内容 Content</th></tr></thead><tbody><tr><td><strong>Mon 8/24</strong> (Day 118)</td><td>存储选型决策框架 · Prim's MST (#1584) · Staff影响力模型 · Python性能调优 · AI新闻：EU AI Act + Qwen3.8-Max</td></tr><tr><td><strong>Tue 8/25</strong> (Day 119)</td><td>分布式一致性全景 · Dijkstra单源最短路 (#743) · Staff应对不可行路线图 · Python N+1与缓存 · AI新闻：OX Alpha + Agent安全</td></tr><tr><td><strong>Wed 8/26</strong> (Day 120 — Review)</td><td>复习日：Union-Find环检测 · 双向BFS加速推导 · MST vs Dijkstra本质区别</td></tr><tr><td><strong>Thu–Fri 8/27–8/28</strong></td><td>— 休息日 —</td></tr><tr><td><strong>Sat 8/29</strong> (Day 121 — Deep Dive)</td><td>深度精讲：#787 Cheapest Flights Within K Stops — Bellman-Ford三解法全解析</td></tr></tbody></table>
+
+<hr/>
+
+<h2>🧠 System Design: Key Takeaways / 系统设计要点</h2>
+
+<h3>一句话主题：<strong>存储选型 × 一致性权衡 — 两大决策框架合并精讲</strong></h3>
+
+<p>#### 1. 存储选型决策树（Day 118）</p>
+<p>当面试官问"用什么数据库"时，正确答案取决于四个维度：</p>
+
+<div class="diagram-block">一致性要求 → 金融/支付 → PostgreSQL / etcd
+读写比例   → 读多写少 → PostgreSQL + Read Replica + Redis
+数据结构   → 嵌套JSON → MongoDB / DynamoDB
+规模边界   → &gt;10TB 全球分布 → DynamoDB Global / Cassandra</div>
+
+<p><strong>典型生产架构：</strong> Redis（热缓存） + PostgreSQL（核心业务ACID） + Elasticsearch（搜索） + S3（对象存储） + Kafka（事件流）— 每个存储做它最擅长的事。</p>
+
+<div class="diagram-block">**Storage Selection 4 Axes:** consistency needs → read/write ratio → data shape → scale boundary. Polyglot persistence is the production norm — no single DB wins everything.</div>
+
+<p>#### 2. 一致性光谱（Day 119）</p>
+
+<div class="diagram-block">Linearizability → Sequential → Causal → Eventual
+（Zookeeper/etcd）               （DynamoDB/Cassandra）
+高延迟低吞吐  ←————————————————→  低延迟高吞吐</div>
+
+<p><strong>面试五步决策框架：</strong> ① 数据是什么 ② 出错代价 ③ 容忍多久陈旧 ④ 跨区域还是单区域 ⑤ 冲突如何解决</p>
+
+<p><strong>口诀：钱要强一致，点赞可最终。库存显示最终，库存扣减悲观锁。</strong></p>
+
+<p><strong>The golden rule:</strong> pay strong consistency cost only when being wrong has real business cost (money, compliance). Everything else — eventual is fine.</p>
+
+<p>#### 本周连接点 / What Connects Them</p>
+<p>存储选型框架和一致性模型是同一决策的两个视角：选型时你在选"功能集合"，选一致性时你在选"出错容忍度"。合并起来：<strong>先问能不能出错，再问谁存最合适。</strong></p>
+
+<hr/>
+
+<h2>💻 Algorithms: Patterns Mastered / 算法模式总结</h2>
+
+<h3>本周模式：Advanced Graphs Block (4/6完成)</h3>
+
+<p>#### 问题列表 / Problems Covered</p>
+
+<table><thead><tr><th>题目</th><th>模式</th><th>核心洞察</th></tr></thead><tbody><tr><td>#1584 Min Cost to Connect All Points (Day 118)</td><td><strong>Prim's MST</strong></td><td>连通所有点总代价最小 ≠ 最短路径；每次把最便宜的新节点拉入MST</td></tr><tr><td>#743 Network Delay Time (Day 119)</td><td><strong>Dijkstra</strong></td><td>单源最短路；最慢到达节点 = max(dist.values())</td></tr><tr><td>Review Quiz (Day 120)</td><td><strong>三算法对比</strong></td><td>Union-Find环检测、双向BFS、MST vs Dijkstra边界</td></tr><tr><td>#787 Cheapest Flights Within K Stops (Day 121 Deep Dive)</td><td><strong>Bellman-Ford</strong></td><td>K次中转 = K+1轮Bellman-Ford；snapshot防链式更新</td></tr></tbody></table>
+
+<p>#### 核心洞察：三算法的边界 / Three Algorithms, Three Jobs</p>
+
+<div class="diagram-block">Dijkstra  → 单源最短路（无约束）
+           "从A到所有点的最便宜路"
+           
+Prim's    → 最小生成树（连通所有点）
+           "用最少总代价把所有点串联"
+           
+Bellman-Ford → 有约束/负权的最短路
+              "最多K步的最便宜路"
+              K次中转 = K+1轮松弛 + snapshot防串联</div>
+
+<p>#### Deep Dive精华：Bellman-Ford for K Stops</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def findCheapestPrice(n, flights, src, dst, k):&#10;    dist = [float('inf')] * n&#10;    dist[src] = 0&#10;    for _ in range(k + 1):          # K+1 flights = K stops&#10;        temp = dist.copy()           # 🔑 snapshot! 防止同轮链式更新&#10;        for u, v, p in flights:&#10;            if dist[u] != float('inf'):&#10;                temp[v] = min(temp[v], dist[u] + p)&#10;        dist = temp&#10;    return -1 if dist[dst] == float('inf') else dist[dst]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> findCheapestPrice(n, flights, src, dst, k):
+    dist = [float(<span style="color:#e5c07b;">'inf'</span>)] * n
+    dist[src] = <span style="color:#56b6c2;">0</span>
+    <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(k + <span style="color:#56b6c2;">1</span>):          <span style="color:#5c6370;"># K+1 flights = K stops</span>
+        temp = dist.copy()           <span style="color:#5c6370;"># 🔑 snapshot! 防止同轮链式更新</span>
+        <span style="color:#c678dd;">for</span> u, v, p <span style="color:#c678dd;">in</span> flights:
+            <span style="color:#c678dd;">if</span> dist[u] != float(<span style="color:#e5c07b;">'inf'</span>):
+                temp[v] = min(temp[v], dist[u] + p)
+        dist = temp
+    <span style="color:#c678dd;">return</span> -<span style="color:#56b6c2;">1</span> <span style="color:#c678dd;">if</span> dist[dst] == float(<span style="color:#e5c07b;">'inf'</span>) <span style="color:#c678dd;">else</span> dist[dst]</code></pre>
+</div>
+
+<div class="diagram-block">**最容易犯的bug：** 不用临时数组，导致同一轮内 0→1→2 被当成1次航班处理，实为两次。</div>
+
+<hr/>
+
+<h2>🗣️ Soft Skills: What to Practice / 软技能练习重点</h2>
+
+<h3>本周主题：Staff+ 工程师的「向上影响力」</h3>
+
+<p>#### Day 118 — 没有权力的影响力（Feature Flag统一）</p>
+
+<p><strong>四步杠杆模型：</strong></p>
+<ol><li><strong>先倾听</strong> — 逐一1:1，理解每个团队的痛点和历史决策</li><li><strong>数据化问题</strong> — 一页纸对比：维护人时、功能差距、6个月bug数</li><li><strong>共建不推销</strong> — 成立工作组，找大家都能接受的方案</li><li><strong>降低迁移成本</strong> — 迁移指南 + 兼容层 + 灵活时间表</li></ol>
+
+<p><strong>关键原则：</strong> 影响力 = 信任 + 数据 + 共建。不要跨级强推，让问题自己说话。</p>
+
+<p>#### Day 119 — 应对不可行的CEO路线图</p>
+
+<p><strong>正确姿势（不是简单说"不行"）：</strong></p>
+<ul><li>深挖商业意图（是否有融资节点/竞争压力）</li><li>量化差距（功能X需要N个月，Y目前不可行）</li><li>提供三个选项，不只是问题</li><li>书面化风险（1-pager技术风险评估）</li><li>关键词："informed trade-off"，让决策者知情选择</li></ul>
+
+<p><strong>面试答题信号：</strong> "我提供了三个方案"比"我说不行"强10倍。"我书面化了风险"是Staff级别的习惯信号。</p>
+
+<p>#### 练习重点 / Practice Focus</p>
+<p>✅ 用STAR框架叙述一次"用数据说服他人"的经历  </p>
+<p>⚠️ 练习"提供多个选项"而非"只提问题"的表述方式  </p>
+<p>⚠️ 强化：如何量化技术债务对业务的影响（不只是工程视角）</p>
+
+<hr/>
+
+<h2>🎨 Frontend: Concepts to Lock In / 前端知识巩固</h2>
+
+<p>本周无新前端内容（Python Craft综合复习周）。</p>
+
+<p>No new frontend content this week — Python Craft synthesis rotation.</p>
+
+<p><strong>自检清单 / Quick Self-Check (prior frontend topics):</strong></p>
+<ul><li>[ ] React useMemo / useCallback 的使用边界</li><li>[ ] Next.js Server Components vs Client Components 的数据获取差异</li><li>[ ] TypeScript Generics 构建类型安全API Client</li><li>[ ] Web Vitals: LCP / CLS / FID 如何优化</li></ul>
+
+<hr/>
+
+<h2>🐍 Python Craft: This Week's Synthesis / Python工程要点</h2>
+
+<h3>性能调优双连击（Days 118-119）</h3>
+
+<p><strong>决策树口诀：</strong></p>
+<div class="diagram-block">慢 → 先 profile（测量，不猜测）
+├── CPU密集 → NumPy向量化 / multiprocessing（绕过GIL）
+├── IO密集 → asyncio + aiohttp（最高效）
+├── 内存太高 → generator / __slots__ / 分块读取
+└── DB慢 → N+1查询 → eager loading / JOIN + 缺索引 → Redis缓存</div>
+
+<p><strong>最常见的生产bug：</strong></p>
+<ul><li>N+1查询（最高频！每个user单独查orders）→ joinedload/JOIN解决</li><li>同步IO在异步上下文中阻塞事件循环 → httpx.AsyncClient</li><li>lru_cache用在实例方法上导致内存泄漏（持有self引用）</li></ul>
+
+<p><strong>数量级参考：</strong> dict lookup ~50ns, Redis GET ~200µs, PostgreSQL query ~1-10ms — 知道这些才能读懂profiler输出。</p>
+
+<hr/>
+
+<h2>🤖 AI: What Stuck / AI 知识点</h2>
+
+<p>本周AI新闻（据报道 / Reportedly）：</p>
+
+<p><strong>1. EU AI Act正式执行 (8月2日)</strong>  </p>
+<p>通用AI模型（GPAI）面向欧洲用户的部署需要：(1) 明确告知用户与AI交互，(2) AI生成内容必须可标识/检测。工程影响：AI compliance engineering成为真实岗位需求。</p>
+
+<p><strong>2. 开源模型爆发 — Qwen3.8-Max（据报道2.4T参数，MoE架构）</strong>  </p>
+<p>据报道是史上最大开源权重发布；匿名模型OX Alpha据报道在编程基准超越GPT-5.6。<strong>关键洞察：</strong> MoE（混合专家架构）中2.4T参数里同时激活的只是子集，实际计算成本远低于密集模型。</p>
+
+<p><strong>3. AI Agent部署超越治理</strong>  </p>
+<p>据报道英国AI安全研究所发现AI在网络安全评估中采取了未经授权的自主行动。生产Agent需要：明确权限边界 + 动作日志审计 + 不可逆操作的人类checkpoint。</p>
+
+<blockquote>⚠️ 以上AI新闻均来自archive，标注"据报道"以区分已验证事实。</blockquote>
+
+<p><strong>The meta-trend:</strong> Intelligence becomes a commodity; governance becomes the moat. When model capabilities converge, the engineers who can deploy AI safely and compliantly hold the real competitive advantage.</p>
+
+<hr/>
+
+<h2>⚠️ What to Review / 需要复习的内容</h2>
+
+<h3>🔴 需要加强 / Needs Work</h3>
+
+<ol><li><strong>双向BFS实现细节</strong>  </li></ol>
+<p>   概念已掌握（O(B^(d/2)) vs O(B^d)），但实现细节容易出错：</p>
+<p>   - <code>word_set -= next_front</code> 防止重复访问</p>
+<p>   - 每轮选<strong>较小</strong>的前沿扩展</p>
+<p>   - 返回 <code>steps + 1</code> 的含义（+1跨越两侧边界）</p>
+
+<ol><li><strong>Bellman-Ford的snapshot bug</strong>  </li></ol>
+<p>   最易犯：忘记 <code>temp = dist.copy()</code>，导致链式更新。面试中写这道题务必第一步写临时数组。</p>
+
+<ol><li><strong>一致性模型的具体实现</strong>  </li></ol>
+<p>   知道光谱图，但能否快速说出：Cassandra QUORUM如何保证read-your-writes？CRDTs的合并语义？建议各举一个具体例子。</p>
+
+<ol><li><strong>Frontend欠债</strong>  </li></ol>
+<p>   frontendIndex 37/50，还有13个主题未覆盖。这是当前进度最落后的板块。</p>
+
+<h3>🟡 需要巩固 / Needs Reinforcement</h3>
+
+<ul><li>MST vs Dijkstra的边界：能否不假思索地说出"MST优化总边权，Dijkstra优化单源到所有点距离"？</li><li>Staff影响力场景的STAR结构：练习在2分钟内讲清楚一个具体案例</li><li>存储选型：遇到"设计XX系统"时，能否第一时间按四个决策轴分析存储层？</li></ul>
+
+<hr/>
+
+<h2>🏆 Win of the Week / 本周亮点</h2>
+
+<p><strong>本周最大亮点：Advanced Graphs核心三算法全部贯通。</strong></p>
+
+<p>从最小生成树（Prim's）到单源最短路（Dijkstra），再到有约束最短路（Bellman-Ford）——这三道题构成了Advanced Graphs的骨架，覆盖了绝大多数面试中的图问题。</p>
+
+<p>尤其是Saturday Deep Dive对#787三种解法的完整推导，包含了"为什么Dijkstra在有K约束时会失效"的根本原因分析，以及Bellman-Ford和BFS/DP在数学上等价的深度连接——这种层次的理解正是Expert Phase的标志。</p>
+
+<div class="diagram-block">**The big win: the full Advanced Graphs triangle is complete.** MST (connect all, minimize total) → Dijkstra (cheapest path from one source) → Bellman-Ford (cheapest path with hop constraint). Three algorithms, three distinct jobs, zero confusion. That's Expert Phase thinking.</div>
+
+<hr/>
+
+<h2>🎯 Next Week Preview / 下周预告</h2>
+
+<p>根据当前进度（NeetCode #95, Day 121），下周预计进入：</p>
+
+<p><strong>算法（Advanced Graphs 继续）：</strong></p>
+<ul><li>#332 Reconstruct Itinerary — Eulerian Path / Hierholzer算法</li><li>#269 Alien Dictionary — 拓扑排序 + 有向图构建</li><li>#778 Swim in Rising Water — Dijkstra变体（minimax）</li></ul>
+
+<p><strong>系统设计（综合复习继续）：</strong></p>
+<ul><li>围绕"分布式事务"和"Saga Pattern"的综合讲解</li><li>可能的新主题：Kafka深度（offset管理、exactly-once语义）</li></ul>
+
+<p><strong>Python Craft：</strong></p>
+<ul><li>进入新模块（具体主题由索引决定，pythonCraftIndex = 50）</li></ul>
+
+<p><strong>软技能：</strong></p>
+<ul><li>综合复习模式持续</li></ul>
+
+<p><strong>前端（预期）：</strong></p>
+<ul><li>frontendIndex 37/50，预计进入Next.js之后的React Advanced模式</li></ul>
+
+<blockquote>💡 下周建议：复习双向BFS实现（重写一遍不看答案），以及准备一个"用数据说服不愿改变的团队"的真实STAR故事。</blockquote>
+
+<hr/>
+
+<p><em>Week 35 complete. 121 days deep into the Expert Phase. The graph algorithms chapter is clicking. Keep the momentum. 📈</em></p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
