@@ -887,3 +887,18 @@ _Report-only run — no code changes made._
 - Delivery rate (active window): broken as of 08-27
 - Cron errors: optimizer cron status=ok; delivery script errors = "Node.js version required" (all attempts, 08-28 logs)
 - State: currentDay=120, lastSentDate=2026-08-26, lastReviewDay=120
+
+## 2026-08-31 Optimization Run
+
+### Issues Found
+- **P0 CRITICAL — Telegram delivery still DOWN (ongoing since 2026-08-26).** `logs/delivery.log` shows all 3 send attempts failing on 08-29, 08-30, AND 08-31 with the same Node error: `openclaw: Node.js >=22.22.3 <23, >=24.15.0 <25, or >=25.9.0 is required (current: v25.6.1)`. Default `node` at `/usr/local/bin/node` is still **v25.6.1**. The 08-28 root cause was never fixed for the Telegram path.
+  **Fix (manual, still required):** point the default node / delivery script at v25.9.0 — `nvm alias default 25.9.0`, or hardcode the delivery script to call `~/.nvm/versions/node/v25.9.0/bin/openclaw`.
+- **PARTIAL RECOVERY — Email pipeline is healthy.** `email-send-log.json` shows clean sends 08-29 (1 sec), 08-30 (1 sec), 08-31 (5 secs). Email uses Gmail (not the openclaw CLI) so it is unaffected by the Node version issue. Content generation also recovered — Day 121/122 git commits present.
+- P1: None in delivered content. Generation + email quality look normal (state indices advancing: currentDay=122, lastSentDate=2026-08-31).
+- P2: Data-gather script's `openclaw cron list --json` still fails under the outer shell (same Node reason); cron health confirmed via native cron tool (optimizer: status=ok, lastDelivered=true).
+
+### Metrics
+- Email delivery rate (7d): 5/7 — MISSED 08-27, 08-28 (during outage); recovered 08-29 onward
+- Telegram delivery rate (7d): 0/7 effectively — every attempt fails (Node version); channel fully down
+- Cron errors: optimizer cron status=ok; delivery script = "Node.js version required" (all attempts)
+- State: currentDay=122, lastSentDate=2026-08-31, lastReviewDay=120
