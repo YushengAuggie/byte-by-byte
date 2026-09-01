@@ -902,3 +902,17 @@ _Report-only run — no code changes made._
 - Telegram delivery rate (7d): 0/7 effectively — every attempt fails (Node version); channel fully down
 - Cron errors: optimizer cron status=ok; delivery script = "Node.js version required" (all attempts)
 - State: currentDay=122, lastSentDate=2026-08-31, lastReviewDay=120
+
+## 2026-09-01 Optimization Run
+
+### Issues Found
+- **P0 — Telegram delivery path unresolved + now silent.** Root cause from 08-28/08-31 (default `node` = **v25.6.1**, below openclaw's `>=25.9.0` requirement) is STILL not fixed: `/usr/local/bin/node --version` = v25.6.1, and `nvm alias default` = `25` (ambiguous — v25.6.1 and v25.9.0 both installed). Worse, `logs/delivery.log` has **no entries for 08-31 or 09-01** — last attempt logged was 08-30. So the Telegram send either stopped running or is failing before logging. **Fix (manual, still required):** set `nvm alias default 25.9.0` (not bare `25`) AND/OR replace `/usr/local/bin/node` (v25.6.1) so openclaw resolves to a compliant node; then confirm the delivery cron re-fires and logs.
+- **Email pipeline HEALTHY (primary subscriber path).** `email-send-log.json` 09-01 = delivered to Auggie1024.d@gmail.com, 5 sections, sent 08:13:52. Email uses Gmail (not openclaw CLI) so it's unaffected by the Node issue. Content generation healthy — Day 123 committed (b635bf4).
+- P1: None in delivered content. State indices advancing normally (currentDay=123, lastSentDate=2026-09-01, lastReviewDay=120).
+- P2: Data-gather script's `openclaw cron list --json` still returns non-JSON under the outer shell (same Node v25.6.1 reason) — cosmetic; cron health otherwise confirmed via git commits + email log.
+
+### Metrics
+- Email delivery rate (7d): 5/7 — MISSED 08-27, 08-28 (old outage window); OK 08-26, 08-29, 08-30, 08-31, 09-01
+- Telegram delivery rate (7d): 0/7 — Node version failure; no send attempts even logged 08-31/09-01
+- Cron errors: content generation + email = healthy; Telegram delivery = Node v25.6.1 incompatibility (unresolved 4th run in a row)
+- State: currentDay=123, lastSentDate=2026-09-01, lastReviewDay=120
