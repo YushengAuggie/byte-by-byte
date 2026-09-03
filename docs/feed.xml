@@ -5,8 +5,127 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 02 Sep 2026 15:14:06 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 03 Sep 2026 15:10:14 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-09-03</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-09-03</guid>
+      <pubDate>Thu, 03 Sep 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 / Review Day — Day 125 (2026-09-03)</h2>
+
+<p>📊 NeetCode: 98/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 3-day streak!</p>
+
+<hr/>
+
+<p>🔄 <strong>复习日 / Review Day</strong></p>
+<p>今天是复习日！回顾过去4天的内容。</p>
+<p>Days covered: 121 (Cheapest Flights deep dive), 122 (Reconstruct Itinerary), 123 (Swim in Rising Water), 124 (Alien Dictionary)</p>
+
+<hr/>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+
+<hr/>
+
+<p><strong>Q1: [💻 Algorithms — Alien Dictionary (Day 124)]</strong></p>
+
+<p>给你一个字典顺序排列的单词列表，其中字母顺序与英语不同。写一个函数推导出字母的拓扑顺序。如果遇到矛盾（比如 <code>[&quot;abc&quot;, &quot;ab&quot;]</code>），应该返回什么？为什么？</p>
+
+<p>You have a word list sorted by an alien alphabet&#x27;s order. If you encounter <code>[&quot;abc&quot;, &quot;ab&quot;]</code> in the list (a longer word before its prefix), what should you return and why?</p>
+
+
+<p>💡 <strong>答案 / Answer:</strong></p>
+
+<p>返回空字符串 <code>&quot;&quot;</code>，因为这代表无效输入。在拓扑排序中，这种情况等价于图中出现了<strong>环</strong>（cycle）。</p>
+
+<p>具体原因：<code>&quot;abc&quot;</code> 排在 <code>&quot;ab&quot;</code> 之前，意味着字符 <code>c</code>（位置3）应该先于&quot;不存在&quot;的字符——但 <code>&quot;ab&quot;</code> 是 <code>&quot;abc&quot;</code> 的前缀，即在相同前缀下较短的词出现在后面，这在任何有效字典中都是矛盾的。</p>
+
+<p><strong>Key insight:</strong> Return <code>&quot;&quot;</code> (empty string). When <code>&quot;abc&quot;</code> comes before its prefix <code>&quot;ab&quot;</code>, it&#x27;s an invalid ordering—no valid topological sort exists. In your cycle detection (DFS or Kahn&#x27;s BFS), this manifests as a cycle in the directed graph. Always check: if <code>word1</code> is a prefix of <code>word2</code> but <code>word1</code> appears <em>after</em> <code>word2</code>, return <code>&quot;&quot;</code> immediately before even building the graph.</p>
+
+<pre><code>
+# Early exit check before BFS/DFS:
+if len(w1) &gt; len(w2) and w1[:len(w2)] == w2:
+    return &quot;&quot;
+</code></pre>
+
+
+
+<hr/>
+
+<p><strong>Q2: [🧩 Deep Dive — Cheapest Flights Within K Stops (Day 121)]</strong></p>
+
+<p>在&quot;K次中转最便宜机票&quot;这道题中，为什么不能直接用标准 Dijkstra？Bellman-Ford 的哪个关键修改让它能处理&quot;最多K次中转&quot;的限制？</p>
+
+<p>In &quot;Cheapest Flights Within K Stops&quot;, why can&#x27;t standard Dijkstra be applied directly? What key modification to Bellman-Ford handles the &quot;at most K stops&quot; constraint?</p>
+
+
+<p>💡 <strong>答案 / Answer:</strong></p>
+
+<p><strong>为什么Dijkstra不行：</strong> 标准Dijkstra用贪心选取当前最短距离的节点，但这里的&quot;最短&quot;有两个维度——费用和中转次数。一条费用更低但中转数更多的路径可能使你超过K次限制，而Dijkstra已经把某些节点标记为&quot;已确定&quot;，无法回头。</p>
+
+<p><strong>Bellman-Ford的关键修改：</strong> 精确执行 <strong>K+1 轮松弛</strong>，每轮代表一次飞行。关键在于必须用<strong>上一轮的快照</strong>（copy of <code>prices</code>）来更新，而不是直接在原数组上修改——否则同一轮内的更新会串联，等于允许了超过1步的跳跃。</p>
+
+<p><strong>Why Dijkstra fails:</strong> It greedily finalizes nodes, but here cost and stops are two separate dimensions. A cheaper path might use more stops, and once Dijkstra &quot;settles&quot; a node, it won&#x27;t revisit it with a higher-stop cheaper variant.</p>
+
+<p><strong>The Bellman-Ford fix:</strong> Run exactly <code>K+1</code> relaxation rounds (one per flight leg). The critical trick: always relax using a <strong>copy of the previous round&#x27;s distances</strong>, not in-place. Without this snapshot, a single round could chain multiple hops, blowing past the K-stop limit.</p>
+
+<pre><code>
+# Key pattern:
+for i in range(k + 1):
+    tmp = prices.copy()  # snapshot!
+    for u, v, w in flights:
+        if prices[u] + w &lt; tmp[v]:
+            tmp[v] = prices[u] + w
+    prices = tmp
+</code></pre>
+
+
+
+<hr/>
+
+<p><strong>Q3: [💻 Algorithms — Swim in Rising Water (Day 123)]</strong></p>
+
+<p>&quot;Swim in Rising Water&quot;中，水位 <code>t</code> 表示你必须等待到时间 <code>t</code> 才能踩上值为 <code>t</code> 的格子。这道题为什么适合用 Dijkstra（最小堆），而不是标准BFS？它的&quot;代价&quot;函数是什么？</p>
+
+<p>In &quot;Swim in Rising Water&quot;, why is Dijkstra (min-heap) the right tool rather than BFS? What exactly is the &quot;cost&quot; being minimized?</p>
+
+
+<p>💡 <strong>答案 / Answer:</strong></p>
+
+<p><strong>为什么不用BFS：</strong> BFS假设每步代价相等（为1），但这里每个格子有不同的&quot;等待代价&quot;（格子的值）。BFS第一次到达终点不代表路径最优。</p>
+
+<p><strong>Dijkstra的&quot;代价&quot;函数：</strong> 最小化从起点到终点路径上<strong>所有格子值的最大值</strong>（max along the path），而不是总和。因为你的等待时间 = 路径上最大的格子值。</p>
+
+<p><strong>直觉：</strong> 想象你在找一条&quot;海拔最高点最低&quot;的登山路线。Dijkstra中，每个状态存储的不是累计费用，而是<code>max(当前路径上所有格子值)</code>。</p>
+
+<p><strong>Why not BFS:</strong> BFS treats all edges as equal cost, but here each cell has a different &quot;waiting cost&quot; (its value). The first path BFS finds isn&#x27;t guaranteed to minimize the bottleneck.</p>
+
+<p><strong>The &quot;cost&quot; being minimized:</strong> The <strong>maximum cell value along the path</strong> (not the sum). Your wait time equals the highest-valued cell you step on. So the min-heap key is <code>max(cost_so_far, grid[r][c])</code>.</p>
+
+<pre><code>
+heap = [(grid[0][0], 0, 0)]  # (max_so_far, row, col)
+while heap:
+    cost, r, c = heappop(heap)
+    if (r, c) == (n-1, n-1): return cost
+    for nr, nc in neighbors:
+        new_cost = max(cost, grid[nr][nc])
+        heappush(heap, (new_cost, nr, nc))
+</code></pre>
+
+<p>This is essentially Dijkstra on a &quot;minimax&quot; objective — a pattern that appears in many graph problems.</p>
+
+
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。图算法这周覆盖了拓扑排序、最短路径变体和最小瓶颈路径——三种完全不同的图问题范式！</em></p>
+
+<p>📅 明天继续新内容！</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-09-02</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
