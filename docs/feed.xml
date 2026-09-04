@@ -5,8 +5,605 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 03 Sep 2026 15:10:14 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 04 Sep 2026 15:12:47 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-09-04</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-09-04</guid>
+      <pubDate>Fri, 04 Sep 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>系统设计合成 / System Design Synthesis — Day 126</h2>
+
+<p>🏗️ <strong>系统设计合成 / System Design Synthesis</strong></p>
+<p><strong>第 126 天 · Expert 阶段 · 合成主题</strong></p>
+
+<hr/>
+
+<h2>一致性模型全谱——从强一致到最终一致的工程决策指南</h2>
+<h2>Consistency Models: A Field Guide from Linearizability to Eventual Consistency</h2>
+
+<p>想象你负责一个全球电商平台，横跨三个数据中心。用户在纽约下单，库存在上海。问题来了：库存数量需要强一致吗？购物车呢？用户评论呢？不同答案，代价天差地别。</p>
+
+<p><em>Imagine a global e-commerce platform across three data centers. User orders from New York, warehouse is in Shanghai. Does inventory need strong consistency? What about the cart? User reviews? Wrong choices cost you either money or users.</em></p>
+
+<hr/>
+
+<h3>一致性模型谱系 / The Consistency Spectrum</h3>
+
+<pre><code>
+强一致 (Linearizability) ──── 最安全，最慢，写入阻塞直到所有副本确认
+    │
+顺序一致 (Sequential)   ──── 全局顺序保证，但允许滞后
+    │
+因果一致 (Causal)       ──── 有因果关系的操作有序，无关操作可乱序
+    │
+读己所写 (Read-your-writes) ── 你写了立刻能读到，别人可能还没看到
+    │
+最终一致 (Eventual)     ──── 最终收敛，中间可能读到旧值
+    │
+弱一致 (Weak)           ──── 完全不保证，看心情
+</code></pre>
+
+<hr/>
+
+<h3>60 个系统设计题的一致性选择总结</h3>
+
+<p>| 系统 | 选择 | 理由 |</p>
+<p>|------|------|------|</p>
+<p>| 分布式锁 (etcd/Zookeeper) | 强一致 (Raft) | 防止双重持有，锁不能脏读 |</p>
+<p>| 股票撮合引擎 | 线性一致 | 订单状态必须全局有序 |</p>
+<p>| 分布式缓存 (Redis Cluster) | 最终一致 | 性能优先，短暂脏读可接受 |</p>
+<p>| 聊天系统 (WhatsApp) | 因果一致 | A→B 消息有序，全局顺序不必要 |</p>
+<p>| 协同编辑 (Google Docs) | CRDT / OT | 离线编辑合并，无需中央协调 |</p>
+<p>| URL 缩短 (TinyURL) | 读己所写 | 创建后立即可读即可 |</p>
+<p>| 推荐系统 | 弱一致 | 旧推荐影响极小，staleness 可接受 |</p>
+<p>| 支付系统 (Stripe) | 可串行化 | 幂等 + 唯一约束防重复扣款 |</p>
+
+<hr/>
+
+<h3>工程决策三问 / Decision Framework</h3>
+
+<p><strong>1. 两个节点看到不同值，最坏后果是什么？</strong></p>
+<p>- 用户多扣款 / 库存超卖 → 强一致</p>
+<p>- 点赞数暂时差 1 → 最终一致</p>
+
+<p><strong>2. 读多写少 or 写高吞吐？</strong></p>
+<p>- 读多：leader + sync follower 读，主从延迟 &lt; 1ms 可接受</p>
+<p>- 写高吞吐：最终一致 + 客户端 read-repair / 向量时钟解冲突</p>
+
+<p><strong>3. CAP 中你实际放弃了哪个？</strong></p>
+<p>- 放 P：单机 MySQL（但云时代你躲不了网络分区）</p>
+<p>- 放 A：Raft/Paxos，分区时拒绝写入（银行选这个）</p>
+<p>- 放 C：Dynamo/Cassandra，分区时接受脏读（购物车选这个）</p>
+
+<hr/>
+
+<h3>别踩这些坑 / Common Mistakes</h3>
+
+<p><strong>❌</strong> &quot;用了 Redis 就是最终一致&quot; → <strong>✅</strong> Redis Cluster 主从是异步复制，主节点宕机会丢数据。需要强一致请用 etcd 或 Redis + <code>WAIT</code> 命令。</p>
+
+<p><strong>❌</strong> &quot;分布式事务解决一致性&quot; → <strong>✅</strong> 2PC 解决原子性，不解决分区可用性。Saga 模式（补偿事务）+ 事件驱动才是微服务正解。</p>
+
+<p><strong>❌</strong> &quot;微服务同步调用链保证一致&quot; → <strong>✅</strong> 同步链 A→B→C 级联故障。Outbox Pattern + Kafka 才能在保证最终一致的同时解耦故障域。</p>
+
+<hr/>
+
+<h3>Staff 级洞察 / Staff-Level Insight</h3>
+
+<p>&gt; 最优答案不是&quot;用最强的一致性&quot;，而是<strong>针对每个数据域，选择满足业务不变量所需的最弱一致性模型</strong>。</p>
+
+<p>实战分层：</p>
+<p>- <strong>库存超卖允许补单</strong> → Redis 最终一致 + MySQL 异步核账</p>
+<p>- <strong>金融转账</strong> → CockroachDB Serializable 隔离（强一致）</p>
+<p>- <strong>社交 Feed</strong> → Cassandra eventual + 前端容忍乱序展示</p>
+
+<p><em>The best system designers don&#x27;t pick one consistency model for the whole system — they mix models per data domain.</em></p>
+
+<hr/>
+
+<p>📚 <strong>References:</strong></p>
+<p>- https://jepsen.io/consistency — 一致性模型权威可视化图谱</p>
+<p>- https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html — Kleppmann: CAP 的误解</p>
+<p>- https://www.allthingsdistributed.com/2008/12/eventually_consistent.html — Werner Vogels (Amazon CTO) on eventual consistency</p>
+
+<p>🧒 <strong>ELI5:</strong> 三个朋友共用一块黑板。强一致 = 每次擦写所有人都必须看到并点头才能继续；最终一致 = 各自先抄，事后对一遍，中间可能有差异。前者慢但准，后者快但会短暂不同。选哪个取决于&quot;暂时不同&quot;有多危险。</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>算法 / Algorithms — Day 126 — #70 Climbing Stairs</h2>
+
+<p>💻 <strong>算法 / Algorithms</strong> — #70 Climbing Stairs (Easy) — 1-D Dynamic Programming</p>
+
+<hr/>
+
+<p>🧩 <strong>新模式 / New Pattern: 一维动态规划模式 (1-D DP)</strong></p>
+<p>📍 This block: 12 problems (#70, #746, #198, #213, #5, #647, #91, #322, #152, #139, #300, #416)</p>
+
+<p><strong>什么时候用 / When to use:</strong></p>
+<p>最优子结构 + 重叠子问题、计数路径数、求最大/最小值、判断能否到达</p>
+
+<p><strong>识别信号 / Signals:</strong></p>
+<p><code>minimum cost</code>, <code>maximum profit</code>, <code>number of ways</code>, <code>can you reach</code>, <code>optimal</code>, <code>longest</code>, <code>fewest</code></p>
+
+<p><strong>通用模版 / Template:</strong></p>
+<pre><code>
+dp = [0] * (n + 1)
+dp[0] = BASE_CASE          # define carefully
+for i in range(1, n + 1):
+    dp[i] = TRANSITION(dp[i-1], dp[i-2], ...)  # the key step
+return dp[n]
+# Space optimization: often can reduce to O(1) with two variables
+</code></pre>
+
+<p><strong>核心洞察 / Key Insight:</strong></p>
+<p>定义 <code>dp[i]</code> 的含义 → 找状态转移方程 → 确定 base case。先写递归（top-down）再优化成迭代（bottom-up）。</p>
+
+<hr/>
+
+<h3>今日问题 / Today&#x27;s Problem</h3>
+
+<p>🔗 [LeetCode #70](https://leetcode.com/problems/climbing-stairs/) 🟢 Easy · 📹 [NeetCode](https://neetcode.io/problems/climbing-stairs)</p>
+
+<p><strong>现实类比：</strong> 你爬楼梯去面试，每次可以迈 1 级或 2 级台阶，共 n 级。有多少种走法？（焦虑程度不计 😅）</p>
+
+<p><em>Real-world analogy: Climbing stairs to your interview. You can take 1 or 2 steps at a time. n stairs total. How many distinct ways?</em></p>
+
+<hr/>
+
+<h3>套用模版 / Mapping to Template</h3>
+
+<p><strong>定义 <code>dp[i]</code>：</strong> 爬到第 i 级台阶的不同方法数</p>
+<p><em>Define <code>dp[i]</code> = number of distinct ways to reach stair i</em></p>
+
+<p><strong>状态转移 / Transition:</strong></p>
+<p>到达第 i 级，只能从 i-1（迈1步）或 i-2（迈2步）过来：</p>
+<pre><code>
+dp[i] = dp[i-1] + dp[i-2]
+</code></pre>
+<p>这正是 Fibonacci！DP 和 Fibonacci 本质相同。</p>
+
+<p><strong>Base cases:</strong></p>
+<pre><code>
+dp[1] = 1  (only one way: take 1 step)
+dp[2] = 2  (two ways: 1+1 or 2)
+</code></pre>
+
+<hr/>
+
+<h3>Python 解法 + 追踪 / Solution with Trace</h3>
+
+<pre><code>
+def climbStairs(n: int) -&gt; int:
+    if n &lt;= 2:
+        return n
+    
+    # Bottom-up DP, space-optimized to O(1)
+    prev2, prev1 = 1, 2  # dp[1], dp[2]
+    
+    for i in range(3, n + 1):
+        curr = prev1 + prev2  # dp[i] = dp[i-1] + dp[i-2]
+        prev2, prev1 = prev1, curr
+    
+    return prev1
+
+# Trace for n=5:
+# i=3: curr=1+2=3,  prev2=2, prev1=3
+# i=4: curr=2+3=5,  prev2=3, prev1=5
+# i=5: curr=3+5=8,  prev2=5, prev1=8
+# return 8
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(n) — one pass</p>
+<p>- Space: O(1) — only two variables (optimized from O(n) array)</p>
+
+<hr/>
+
+<h3>直观验证 / Quick Verification</h3>
+
+<pre><code>
+n=1 → 1 way:  [1]
+n=2 → 2 ways: [1,1], [2]
+n=3 → 3 ways: [1,1,1], [1,2], [2,1]
+n=4 → 5 ways: [1,1,1,1], [1,1,2], [1,2,1], [2,1,1], [2,2]
+</code></pre>
+<p>1, 2, 3, 5, 8... 这就是 Fibonacci 数列！ <em>That&#x27;s just Fibonacci!</em></p>
+
+<hr/>
+
+<h3>举一反三 / Pattern Connections</h3>
+
+<p>这个 12 题的 1-D DP 模块中，每题都是在问&quot;如何优化到达第 i 个状态？&quot;：</p>
+<p>- <strong>#746 Min Cost Climbing Stairs</strong> — 同结构，加了 cost，取 min 而非 sum</p>
+<p>- <strong>#198 House Robber</strong> — 不能选相邻元素，转移方程变成 <code>dp[i] = max(dp[i-1], dp[i-2] + nums[i])</code></p>
+<p>- <strong>#322 Coin Change</strong> — 从每个 coin 转移，取 min，完全背包变形</p>
+
+<p><em>Each problem in this block = &quot;find the optimal way to reach state i using previous states.&quot; Same skeleton, different transition logic.</em></p>
+
+<hr/>
+
+<p>📚 <strong>References:</strong></p>
+<p>- https://leetcode.com/problems/climbing-stairs/ — Problem statement</p>
+<p>- https://neetcode.io/problems/climbing-stairs — NeetCode video walkthrough</p>
+<p>- https://cp-algorithms.com/dynamic_programming/intro-to-dp.html — DP fundamentals</p>
+
+<p>🧒 <strong>ELI5:</strong> 你只能走1步或2步。到第5级，就等于从第4级走1步 + 从第3级走2步，所以方法数 = ways(4) + ways(3)。一层一层推上去，不用重复计算。</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>软技能合成 / Soft Skills Synthesis — Day 126</h2>
+
+<p>🗣️ <strong>软技能合成 / Soft Skills Synthesis</strong></p>
+<p><strong>第 126 天 · Expert 阶段 · Staff 级场景</strong></p>
+
+<hr/>
+
+<h2>场景：你被要求评估一个 AI-first 重写提案</h2>
+<h2>Scenario: Evaluating an AI-First Rewrite Proposal</h2>
+
+<p><strong>背景 / Context:</strong></p>
+<p>你是一个 200 人工程团队的 Staff Engineer。产品 VP 带着一个提案来找你：</p>
+<p>&gt; &quot;竞争对手都在用 LLM，我们要把核心搜索系统用 AI 重写，6 个月内上线。&quot;</p>
+
+<p>这个提案有业务压力支撑、CEO 关注、$2M 预算。你被要求给出技术可行性评估并领导执行。</p>
+
+<p><em>You&#x27;re a Staff Engineer. The VP of Product walks in with a proposal: rewrite the core search system with LLMs, 6 months, $2M. CEO is watching. How do you respond?</em></p>
+
+<hr/>
+
+<h3>为什么这个场景在 2026 年很重要</h3>
+
+<p>AI 重写是当前最常见的&quot;诱人陷阱&quot;之一：</p>
+<p>- 技术上有可能性（LLM 确实能做语义搜索）</p>
+<p>- 业务上有紧迫感（竞争压力真实存在）</p>
+<p>- 工程上充满不确定性（推理成本、延迟、幻觉、可解释性）</p>
+
+<p>Staff/Principal Engineer 的价值，就体现在能<strong>区分&quot;技术上可行&quot;和&quot;工程上合理&quot;</strong>。</p>
+
+<p><em>The AI rewrite trap: technically possible, business-urgency-justified, but engineeringly treacherous. Your value as Staff is separating &quot;can we&quot; from &quot;should we, and how.&quot;</em></p>
+
+<hr/>
+
+<h3>STAR 框架 / STAR Breakdown</h3>
+
+<p><strong>Situation:</strong></p>
+<p>&quot;我们的关键词搜索召回率不佳，竞品开始用语义搜索。VP 想要全面 LLM 重写。&quot;</p>
+
+<p><strong>Task:</strong></p>
+<p>作为 Staff，我需要在不被政治压力推着走的情况下，给出清醒的技术判断，并提出一个既有进展感又控制风险的执行方案。</p>
+
+<p><strong>Action — 我做了什么：</strong></p>
+
+<p>1. <strong>先做一周 spike，不是 6 个月项目</strong></p>
+<p>- 原型验证：同样的 query，关键词搜索 vs 向量搜索，召回率差多少？</p>
+<p>- 测量推理成本：每 1000 次搜索的 embedding 调用费用</p>
+<p>- 识别边界条件：LLM 在哪些 query 类型上比关键词差？</p>
+
+<p>2. <strong>提出渐进式路线，不是大爆炸重写</strong></p>
+<pre><code>
+   Phase 1 (4周): 混合搜索 — 关键词 + 向量并行，结果融合
+   Phase 2 (8周): 在流量中 A/B 测试，收集真实指标
+   Phase 3 (12周): 根据数据决定是否全面切换
+</code></pre>
+<p>不是&quot;重写&quot;，而是&quot;在现有系统上叠加 AI 层&quot;。</p>
+
+<p>3. <strong>量化 5 个风险并提出缓解方案</strong></p>
+<p>- 推理延迟 → 缓存 embedding，异步预热</p>
+<p>- 成本失控 → 设定每日 cost cap，降级到关键词搜索</p>
+<p>- 幻觉问题 → 搜索不生成内容，只用 embedding 相似度</p>
+<p>- 可解释性 → 保留关键词得分作为 fallback 和日志</p>
+<p>- 人员能力 → 引入一名 ML Infra 工程师，不需要整个团队转型</p>
+
+<p>4. <strong>用数据赢得对话，不是用权威</strong></p>
+<p>&quot;我不是在说 AI 不好——我在说这个方案让我们在 6 个月内有<strong>可度量的进展</strong>，而不是在交付日才发现延迟是 2 秒。&quot;</p>
+
+<p><strong>Result:</strong></p>
+<p>VP 接受了 Phase 1 方案。4 周后 spike 结果显示语义搜索在长尾 query 上 +23% 召回，但在精确商品 ID 查询上差 15%。我们做了混合方案，6 个月后整体指标提升，没有发生一次全量回滚。</p>
+
+<hr/>
+
+<h3>❌ 错误姿势 vs ✅ 正确姿势</h3>
+
+<p><strong>❌ Bad:</strong></p>
+<p>&gt; &quot;好，6 个月，AI 重写，干！&quot; — 政治正确，技术上在赌博。</p>
+
+<p><strong>❌ Bad:</strong></p>
+<p>&gt; &quot;这根本不可行，LLM 延迟太高。&quot; — 过度悲观，错失业务机会，显得守旧。</p>
+
+<p><strong>✅ Good:</strong></p>
+<p>&gt; &quot;这方向是对的。让我们先用 1 周 spike 量化收益和成本，然后我给你一个有检查点的方案——4 周有东西上线，12 周有数据决策。&quot;</p>
+
+<hr/>
+
+<h3>Senior/Staff 关键要点</h3>
+
+<p>- <strong>永远先 spike，再 commit</strong>：政治压力再大，不能绕过可行性验证</p>
+<p>- <strong>渐进式 &gt; 大爆炸</strong>：每个可以回滚的阶段都是风险控制</p>
+<p>- <strong>量化不确定性</strong>：把&quot;我觉得有风险&quot;变成&quot;P99 延迟预计 1.2s，超过我们 800ms SLA，这是缓解方案&quot;</p>
+<p>- <strong>做桥梁，不做堡垒</strong>：你的角色是让业务目标以可控方式实现，不是当守门人</p>
+
+<p><em>The Staff move: convert &quot;rewrite everything&quot; into &quot;Phase 1 ships in 4 weeks with measured outcomes.&quot; You&#x27;re not saying no — you&#x27;re saying yes, with engineering discipline.</em></p>
+
+<hr/>
+
+<p>📚 <strong>References:</strong></p>
+<p>- https://staffeng.com/guides/staff-projects — Will Larson on leading Staff-level projects</p>
+<p>- https://www.amazon.science/blog/how-amazon-incorporates-ai-into-its-search-experience — Amazon hybrid search</p>
+<p>- https://martinfowler.com/articles/patterns-of-distributed-systems/two-phase-commit.html — 渐进式迁移思想</p>
+
+<p>🧒 <strong>ELI5:</strong> 老板说&quot;把房子重建成玻璃的，6 个月&quot;。聪明工程师说：&quot;先换一个窗户，看看效果和成本，然后决定是否继续。&quot;</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Python Craft 合成 / Python Craft Synthesis — Day 126</h2>
+
+<p>🐍 <strong>Python Craft 合成 / Python Craft Synthesis</strong></p>
+<p><strong>第 126 天 · Expert 阶段 · 内存与对象系统深度合成</strong></p>
+
+<hr/>
+
+<h2>Python 对象内存全景——__slots__、weakref、对象布局</h2>
+<h2>Python Object Memory: __slots__, weakref, and Layout Deep Dive</h2>
+
+<p>你在做一个 dashboard，需要在内存中维持 100 万个 DataPoint 对象。Python 的默认对象有多重？怎么让它们变轻？</p>
+
+<p><em>You&#x27;re building a dashboard that holds 1 million DataPoint objects in memory. How heavy is a default Python object? How do you make it lighter?</em></p>
+
+<hr/>
+
+<h3>Python 对象的默认内存布局 / Default Object Layout</h3>
+
+<pre><code>
+import sys
+
+class DataPoint:
+    def __init__(self, x, y, value):
+        self.x = x
+        self.y = y
+        self.value = value
+
+p = DataPoint(1.0, 2.0, 3.14)
+print(sys.getsizeof(p))          # ~48 bytes (object shell)
+print(sys.getsizeof(p.__dict__)) # ~232 bytes (the real cost!)
+# Total: ~280 bytes per instance
+</code></pre>
+
+<p><strong>为什么 <code>__dict__</code> 这么重？</strong></p>
+<p>每个实例的 <code>__dict__</code> 是一个完整的 Python dict：初始分配 8 个槽位，每个槽位 24 bytes。即使你只存 3 个属性，也要为未来的动态属性预留空间。</p>
+
+<hr/>
+
+<h3>`__slots__` — 消除 `__dict__`</h3>
+
+<pre><code>
+class DataPointSlots:
+    __slots__ = (&#x27;x&#x27;, &#x27;y&#x27;, &#x27;value&#x27;)  # declare allowed attributes
+    
+    def __init__(self, x, y, value):
+        self.x = x
+        self.y = y
+        self.value = value
+
+p2 = DataPointSlots(1.0, 2.0, 3.14)
+print(sys.getsizeof(p2))  # ~72 bytes — no __dict__!
+# hasattr(p2, &#x27;__dict__&#x27;)  → False
+# p2.new_attr = 42         → AttributeError!
+</code></pre>
+
+<p><strong>内存对比 (1,000,000 个对象):</strong></p>
+<p>| 方式 | 单对象大小 | 100万对象总内存 |</p>
+<p>|------|-----------|---------------|</p>
+<p>| 普通 class | ~280 bytes | ~267 MB |</p>
+<p>| <code>__slots__</code> | ~72 bytes | ~69 MB |</p>
+<p>| <strong>节省</strong> | — | <strong>~74%</strong> |</p>
+
+<hr/>
+
+<h3>weakref — 引用不阻止垃圾回收</h3>
+
+<pre><code>
+import weakref
+import gc
+
+class Cache:
+    pass
+
+obj = Cache()
+weak = weakref.ref(obj)   # weak reference — doesn&#x27;t increment refcount
+
+print(weak())             # &lt;__main__.Cache object&gt;
+del obj
+gc.collect()
+print(weak())             # None — object was collected!
+</code></pre>
+
+<p><strong>适用场景：</strong></p>
+<p>- 观察者模式：listener 持有 weak ref，防止因订阅而泄漏对象</p>
+<p>- 缓存：<code>weakref.WeakValueDictionary</code> — 值被删除时 key 自动消失</p>
+<p>- 双向引用：父对象持强引用子对象，子对象用 weakref 指回父对象，打破循环</p>
+
+<pre><code>
+from weakref import WeakValueDictionary
+
+# Cache that doesn&#x27;t prevent GC
+cache: WeakValueDictionary[str, Cache] = WeakValueDictionary()
+obj = Cache()
+cache[&#x27;key&#x27;] = obj
+print(dict(cache))   # {&#x27;key&#x27;: &lt;Cache&gt;}
+del obj
+print(dict(cache))   # {} — auto-cleaned!
+</code></pre>
+
+<hr/>
+
+<h3>综合应用：高性能对象池</h3>
+
+<pre><code>
+import weakref
+from typing import Optional
+
+class PooledObject:
+    __slots__ = (&#x27;_id&#x27;, &#x27;_data&#x27;, &#x27;__weakref__&#x27;)  # __weakref__ needed for weakref support!
+    
+    def __init__(self, id: int):
+        self._id = id
+        self._data: dict = {}
+    
+    @property
+    def id(self) -&gt; int:
+        return self._id
+
+class ObjectPool:
+    def __init__(self, max_size: int = 1000):
+        self._pool: weakref.WeakValueDictionary[int, PooledObject] = weakref.WeakValueDictionary()
+        self._max = max_size
+    
+    def get(self, id: int) -&gt; Optional[PooledObject]:
+        return self._pool.get(id)
+    
+    def register(self, obj: PooledObject) -&gt; None:
+        self._pool[obj.id] = obj  # GC can reclaim when no strong refs remain
+</code></pre>
+
+<p>注意：<code>__slots__</code> + <code>weakref</code> 需要显式把 <code>&#x27;__weakref__&#x27;</code> 加入 <code>__slots__</code>，否则 <code>weakref.ref()</code> 会报错。</p>
+
+<hr/>
+
+<h3>猜猜输出什么？/ Quiz</h3>
+
+<pre><code>
+class A:
+    __slots__ = (&#x27;x&#x27;,)
+
+class B(A):
+    pass  # No __slots__ defined!
+
+b = B()
+b.x = 1
+b.y = 2   # What happens?
+print(hasattr(b, &#x27;__dict__&#x27;))
+</code></pre>
+
+<p><strong>A)</strong> AttributeError on <code>b.y</code></p>
+<p><strong>B)</strong> Works fine, b has both <code>__slots__</code> x and <code>__dict__</code></p>
+<p><strong>C)</strong> Works fine, but <code>__dict__</code> is empty</p>
+<p><strong>D)</strong> Works fine, but x is not accessible</p>
+
+<p><strong>答案 / Answer: B</strong> — 子类没定义 <code>__slots__</code> 时，继承会重新引入 <code>__dict__</code>。只有整个继承链都定义 <code>__slots__</code> 才能完全消除 <code>__dict__</code>。</p>
+
+<hr/>
+
+<h3>整合三个概念 / Synthesis</h3>
+
+<p>| 技术 | 核心用途 | 成本 |</p>
+<p>|------|---------|------|</p>
+<p>| <code>__slots__</code> | 减少每实例内存，固化 API | 失去动态属性，weakref 需要显式声明 |</p>
+<p>| <code>weakref</code> | 打破循环引用，实现 ephemeral cache | 不能用于内置类型（int, str 等） |</p>
+<p>| <code>__dict__</code> | 灵活性，动态属性 | 每实例 ~200+ bytes overhead |</p>
+
+<p><strong>黄金原则：</strong></p>
+<p>- 高频创建的值对象（DataPoint, Event, Record）→ 用 <code>__slots__</code></p>
+<p>- 观察者、缓存、双向关联 → 考虑 <code>weakref</code></p>
+<p>- 灵活配置对象、原型阶段 → 默认 <code>__dict__</code> 即可</p>
+
+<hr/>
+
+<p>📚 <strong>References:</strong></p>
+<p>- https://docs.python.org/3/reference/datamodel.html#slots — 官方 __slots__ 文档</p>
+<p>- https://docs.python.org/3/library/weakref.html — weakref 模块文档</p>
+<p>- https://realpython.com/python-slots/ — Real Python: __slots__ 详解</p>
+
+<p>🧒 <strong>ELI5:</strong> 默认 Python 对象像带很多抽屉的柜子（__dict__）。<code>__slots__</code> 说&quot;我只需要 3 个固定格子&quot;，省掉了柜子框架。<code>weakref</code> 是&quot;便利贴&quot;——别人看到对象，但你把便利贴扔掉后对象还是会消失。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>AI 新闻 / AI News — Day 126</h2>
+
+<p>🤖 <strong>AI 新闻 / AI News Roundup</strong></p>
+<p><strong>第 126 天 · 2026 年 9 月第一周</strong></p>
+
+<hr/>
+
+<h2>本周 AI 头条 / This Week in AI</h2>
+
+<p>搜索来源 / Sources searched: llmgateway.io, buttondown.com/agent-k, tlt.com, en.wikipedia.org</p>
+
+<hr/>
+
+<h3>🔥 Story 1: GPT-6 Astra 限量预览上线</h3>
+<h3>OpenAI GPT-6 Astra Enters Limited Preview</h3>
+
+<p><strong>据报道 (reportedly)，OpenAI 于 9 月 3 日向受信任合作伙伴开放了 GPT-6 Astra 的限量预览。</strong></p>
+
+<p>OpenAI 总裁 Greg Brockman 将其描述为&quot;代际飞跃&quot;，据报道在网络安全、软件工程和科学研究领域展现出显著能力提升。正式付费用户版本预计即将推出，此前已从 2026 年 7 月推迟发布以完善安全机制。</p>
+
+<p><em>OpenAI reportedly opened a limited preview of GPT-6 Astra to trusted partners on September 3. President Greg Brockman described it as a &quot;generational leap&quot; with potential applications across cybersecurity, professional tasks, and scientific research. A paid user version is expected soon after a delay from July 2026 to implement additional safeguards.</em></p>
+
+<p>📎 Source: https://en.wikipedia.org/wiki/GPT-6_Astra | https://buttondown.com/agent-k/archive/llm-daily-september-04-2026/</p>
+
+<hr/>
+
+<h3>🧬 Story 2: Stanford AI 从零设计 16 种功能性噬菌体基因组</h3>
+<h3>Stanford AI Designs 16 Functional Bacteriophage Genomes from Scratch</h3>
+
+<p><strong>Stanford 研究人员用生成式 AI 从零开始设计了 16 种完全功能性的噬菌体（感染细菌的病毒）。</strong></p>
+
+<p>这是 AI 首次成功创建完整基因组，不是优化现有序列，而是全新生成。潜在应用包括对抗耐药菌感染的新型噬菌体疗法。</p>
+
+<p><em>Stanford researchers used generative AI to design 16 fully functional bacteriophages from scratch — the first time AI has successfully created entire genomes. Potential therapeutic applications include combating antibiotic-resistant infections.</em></p>
+
+<p>📎 Source: https://www.tlt.com/insights-and-events/insight/tlts-ai-brief-september-2026</p>
+
+<hr/>
+
+<h3>⚖️ Story 3: 加州 AI 透明度法案 (CAITA) 正式生效</h3>
+<h3>California AI Transparency Act (CAITA) Now Operative</h3>
+
+<p><strong>加州 AI 透明度法案（CAITA）于 2026 年 8 月 2 日正式生效。</strong></p>
+
+<p>该法案要求每月在加州有超过 100 万用户的生成式 AI 服务强制披露 AI 生成内容，旨在应对 deepfake 和合成媒体问题。这是美国目前最严格的 AI 内容披露框架之一。</p>
+
+<p><em>California&#x27;s AI Transparency Act (CAITA) became operative on August 2, 2026. It requires mandatory disclosure of AI-generated content for generative AI services with over one million monthly users in California — one of the strictest AI disclosure frameworks in the US.</em></p>
+
+<p>📎 Source: https://www.tlt.com/insights-and-events/insight/tlts-ai-brief-september-2026</p>
+
+<hr/>
+
+<h3>💡 工程师视角 / Engineer&#x27;s Takeaway</h3>
+
+<p><strong>GPT-6 Astra 的意义：</strong> 限量预览策略本身就是信号——OpenAI 在大规模部署前做密集的 red-teaming。作为工程师，这也意味着 API 定价和能力边界尚不稳定，生产系统接入需要谨慎。</p>
+
+<p><strong>Stanford 噬菌体研究的意义：</strong> 生成式 AI 从&quot;优化&quot;迈向&quot;从零创造&quot;——这不只是生物领域的突破，它验证了 foundation model 在结构化序列生成（DNA、蛋白质、代码）上的通用能力。</p>
+
+<p><strong>CAITA 的工程影响：</strong> 如果你的产品在加州有 100 万+ 用户，需要为 AI 生成内容加水印/披露机制。这会推动 &quot;AI content provenance&quot; 相关基础设施需求增长（如 C2PA 标准的采用）。</p>
+
+<p><em>For engineers: CAITA is the leading edge of a global wave. Start thinking about content provenance infrastructure now — C2PA, watermarking, disclosure APIs.</em></p>
+
+<hr/>
+
+<h3>模型发布速览 / Model Release Snapshot (Week of Sep 1)</h3>
+
+<p>| 模型 | 发布方 | 日期 |</p>
+<p>|------|--------|------|</p>
+<p>| Claude Fable 5.1 | Anthropic | 2026-09-01 |</p>
+<p>| Gemini 3.8 Flash | Google | 2026-09-02 |</p>
+<p>| Qwen3.8 27B | Alibaba | 2026-09-02 |</p>
+<p>| GPT-6 Astra (limited) | OpenAI | 2026-09-03 |</p>
+
+<p><em>据报道 / reportedly — 来源: llmgateway.io/timeline</em></p>
+
+<hr/>
+
+<p>📚 <strong>References:</strong></p>
+<p>- https://en.wikipedia.org/wiki/GPT-6_Astra</p>
+<p>- https://buttondown.com/agent-k/archive/llm-daily-september-04-2026/</p>
+<p>- https://www.tlt.com/insights-and-events/insight/tlts-ai-brief-september-2026</p>
+<p>- https://llmgateway.io/timeline</p>
+
+<p>🧒 <strong>ELI5:</strong> 这周 AI 界：OpenAI 放出了他们最新最强的模型给少数人试用；斯坦福用 AI 发明了新病毒（好的那种，能消灭坏细菌）；加州规定 AI 生成的内容必须打标签。</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-09-03</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
