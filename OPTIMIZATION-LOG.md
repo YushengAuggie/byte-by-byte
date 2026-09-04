@@ -907,7 +907,7 @@ _Report-only run — no code changes made._
 
 ### Issues Found
 - **P0 — Telegram delivery path unresolved + now silent.** Root cause from 08-28/08-31 (default `node` = **v25.6.1**, below openclaw's `>=25.9.0` requirement) is STILL not fixed: `/usr/local/bin/node --version` = v25.6.1, and `nvm alias default` = `25` (ambiguous — v25.6.1 and v25.9.0 both installed). Worse, `logs/delivery.log` has **no entries for 08-31 or 09-01** — last attempt logged was 08-30. So the Telegram send either stopped running or is failing before logging. **Fix (manual, still required):** set `nvm alias default 25.9.0` (not bare `25`) AND/OR replace `/usr/local/bin/node` (v25.6.1) so openclaw resolves to a compliant node; then confirm the delivery cron re-fires and logs.
-- **Email pipeline HEALTHY (primary subscriber path).** `email-send-log.json` 09-01 = delivered to Auggie1024.d@gmail.com, 5 sections, sent 08:13:52. Email uses Gmail (not openclaw CLI) so it's unaffected by the Node issue. Content generation healthy — Day 123 committed (b635bf4).
+- **Email pipeline HEALTHY (primary subscriber path).** `email-send-log.json` 09-01 = delivered to <subscriber>, 5 sections, sent 08:13:52. Email uses Gmail (not openclaw CLI) so it's unaffected by the Node issue. Content generation healthy — Day 123 committed (b635bf4).
 - P1: None in delivered content. State indices advancing normally (currentDay=123, lastSentDate=2026-09-01, lastReviewDay=120).
 - P2: Data-gather script's `openclaw cron list --json` still returns non-JSON under the outer shell (same Node v25.6.1 reason) — cosmetic; cron health otherwise confirmed via git commits + email log.
 
@@ -916,3 +916,17 @@ _Report-only run — no code changes made._
 - Telegram delivery rate (7d): 0/7 — Node version failure; no send attempts even logged 08-31/09-01
 - Cron errors: content generation + email = healthy; Telegram delivery = Node v25.6.1 incompatibility (unresolved 4th run in a row)
 - State: currentDay=123, lastSentDate=2026-09-01, lastReviewDay=120
+
+## 2026-09-04 Optimization Run
+
+### Issues Found
+- **P0 — Telegram delivery STILL broken (Node version), 5th run in a row.** `/usr/local/bin/node` = **v25.6.1** and `~/.nvm/alias/default` = bare **`25`** (ambiguous; both v25.6.1 and v25.9.0 installed, nvm resolves to v25.6.1). Every delivery attempt fails: `openclaw: Node.js >=22.22.3 <23, >=24.15.0 <25, or >=25.9.0 is required (current: v25.6.1)`. Last failed batch logged 2026-09-03T10:00 (all 3 retries failed). **Manual fix required:** `nvm alias default 25.9.0` (pin exact, not bare `25`) AND/OR repoint `/usr/local/bin/node` to v25.9.0, then confirm delivery cron re-fires and logs OK.
+- **Email pipeline HEALTHY (primary subscriber path, unaffected by Node issue — uses Gmail).** `email-send-log.json`: 09-04 delivered to <subscriber> (5 sections, 08:12:42), 7/7 last 7 days. Content generation healthy — Day 126 committed (399f6cb). Note: 09-03 was a 1-section send (review day, expected).
+- P1: None in delivered content. State advancing normally (currentDay=126, lastSentDate=2026-09-04, lastReviewDay=125; review cadence on track).
+- P2: Data-gather `openclaw cron list --json` still returns non-JSON under outer shell (same Node v25.6.1 root cause) — cosmetic; cron health confirmed via cron tool (status=ok, lastRunError=null) + git commits + email log.
+
+### Metrics
+- Email delivery rate (7d): 7/7 (08-29 → 09-04, all OK)
+- Telegram delivery rate (7d): 0/7 — Node v25.6.1 incompatibility, unresolved 5th run in a row
+- Cron errors: optimizer cron status=ok, lastRunError=null; content gen + email = healthy; Telegram delivery = Node version failure
+- State: currentDay=126, lastSentDate=2026-09-04, lastReviewDay=125
