@@ -5,8 +5,418 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 04 Sep 2026 15:12:47 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 05 Sep 2026 15:15:24 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-09-05</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-09-05</guid>
+      <pubDate>Sat, 05 Sep 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: 背包问题两大模式 — Coin Change &amp; Partition Equal Subset Sum (17 min read)</strong></p>
+<p>📊 NeetCode: 99/150 · SysDesign: 60/40✅ · Behavioral: 60/40✅ · Frontend: 37/50 · AI: 30/30✅</p>
+<p>🔥 Day 127 — Expert Phase!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p>今天我们深入两种最重要的背包 DP 模式：<strong>无限背包（Unbounded Knapsack）</strong> 和 <strong>0/1 背包</strong>。</p>
+
+<p>这两个模式用一条规则就能区分：<strong>内层循环的方向</strong>。</p>
+<p>- 无限背包：内层 <code>for amount</code> 从小到大（可以重复用同一物品）</p>
+<p>- 0/1 背包：内层 <code>for j</code> 从大到小（每个物品只用一次）</p>
+
+<p>Two of the most critical DP patterns, separated by a single rule: <strong>the direction of the inner loop</strong>.</p>
+<p>- Unbounded knapsack: inner loop goes left → right (items are reusable)</p>
+<p>- 0/1 knapsack: inner loop goes right → left (each item used at most once)</p>
+
+<p>Master this and you unlock a whole family of interview problems cold.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>1.1 动态规划的本质 / The Essence of DP</h3>
+
+<p>DP 解决两类问题：</p>
+<p>1. <strong>计数</strong>：有多少种方法（Number of Ways）</p>
+<p>2. <strong>最优化</strong>：最小 / 最大值（Min / Max optimization）</p>
+
+<p>硬币找零属于最优化；分割等和子集属于可行性判断。两者都用背包框架。</p>
+
+<p>Both coin change and subset sum fit the knapsack framework. Coin change is optimization; partition is feasibility.</p>
+
+<p><strong>三要素 / Three Pillars:</strong></p>
+<p>| 要素 | 含义 |</p>
+<p>|------|------|</p>
+<p>| <strong>状态 State</strong> | <code>dp[i]</code> 代表什么？定义要精确 |</p>
+<p>| <strong>转移方程 Transition</strong> | <code>dp[i]</code> 怎么从更小的子问题得到？ |</p>
+<p>| <strong>Base Case</strong> | 边界条件，防止越界 |</p>
+
+<hr/>
+
+<h3>1.2 两个模板 / Two Knapsack Templates</h3>
+
+<p><strong>Template A — Unbounded Knapsack（完全背包）</strong></p>
+
+<p>每种物品可用无数次（硬币、台阶）。</p>
+
+<pre><code>
+dp = [float(&#x27;inf&#x27;)] * (target + 1)
+dp[0] = 0
+
+for coin in coins:
+    for i in range(coin, target + 1):   # ← left to right: allows reuse
+        dp[i] = min(dp[i], dp[i - coin] + 1)
+</code></pre>
+
+<p><strong>Template B — 0/1 Knapsack（01背包）</strong></p>
+
+<p>每个物品最多用一次（每个数字只属于一个分区）。</p>
+
+<pre><code>
+dp = [False] * (target + 1)
+dp[0] = True
+
+for num in nums:
+    for j in range(target, num - 1, -1):  # ← right to left: prevents reuse
+        dp[j] = dp[j] or dp[j - num]
+</code></pre>
+
+<p><strong>🔑 The Single Rule That Separates Them:</strong></p>
+
+<pre><code>
+Left  → Right   =  can reuse item   =  Unbounded knapsack
+Right → Left    =  use item once    =  0/1 knapsack
+</code></pre>
+
+<p><strong>为什么方向很重要？/ Why direction matters:</strong></p>
+
+<p>Left → right: when processing <code>dp[i]</code>, <code>dp[i - coin]</code> was already updated <strong>in this same pass</strong>, meaning the coin can be &quot;used again.&quot;</p>
+
+<p>Right → left: when processing <code>dp[j]</code>, <code>dp[j - num]</code> still holds its value from <strong>before this item was processed</strong>, so the item is never counted twice.</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Problem 1: Coin Change (#322) — Unbounded Knapsack</h3>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/coin-change/</p>
+<p>📹 NeetCode: https://www.youtube.com/watch?v=H9bfqozjoqs</p>
+
+<p><strong>Problem:</strong> Given coin denominations and a target amount, return the minimum number of coins to make the amount. Return -1 if impossible.</p>
+
+<p><strong>Input:</strong> <code>coins = [1, 5, 6, 9]</code>, <code>amount = 11</code></p>
+<p><strong>Expected:</strong> <code>2</code> (5 + 6 = 11)</p>
+
+<p>#### Naive Approach: Recursion — O(coins^amount), TLE</p>
+
+<pre><code>
+def coinChange_naive(coins, amount):
+    def dfs(remaining):
+        if remaining == 0:
+            return 0
+        if remaining &lt; 0:
+            return float(&#x27;inf&#x27;)
+        # Try every coin, pick the one giving the minimum
+        return 1 + min(dfs(remaining - c) for c in coins)
+
+    result = dfs(amount)
+    return result if result != float(&#x27;inf&#x27;) else -1
+</code></pre>
+
+<p>Exponential — re-computes overlapping subproblems. Add memoization → O(amount × coins). Bottom-up is cleaner.</p>
+
+<p>#### Optimal: Bottom-Up DP — O(amount × |coins|), O(amount)</p>
+
+<pre><code>
+def coinChange(coins: list[int], amount: int) -&gt; int:
+    # dp[i] = minimum coins needed to make amount i
+    # Initialize to inf (impossible) except dp[0]=0 (base case: 0 coins for 0)
+    dp = [float(&#x27;inf&#x27;)] * (amount + 1)
+    dp[0] = 0
+
+    for coin in coins:
+        # Left to right: we can use this coin multiple times
+        for i in range(coin, amount + 1):
+            # Option: use this coin + solve for (i - coin)
+            dp[i] = min(dp[i], 1 + dp[i - coin])
+
+    return dp[amount] if dp[amount] != float(&#x27;inf&#x27;) else -1
+</code></pre>
+
+<p>#### 🔍 Trace-Through with <code>coins = [1, 5, 6, 9]</code>, <code>amount = 11</code></p>
+
+<pre><code>
+Initial: dp = [0, ∞, ∞, ∞, ∞, ∞, ∞, ∞, ∞, ∞, ∞, ∞]
+indices:        0   1   2   3   4   5   6   7   8   9  10  11
+
+After coin=1:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11]
+After coin=5:  [0, 1, 2, 3, 4, 1, 2, 3, 4, 5, 2, 3]
+  (dp[5]=1+dp[0]=1; dp[10]=1+dp[5]=2; dp[11]=1+dp[6]=1+2=3... then coin=6 improves)
+After coin=6:  [0, 1, 2, 3, 4, 1, 1, 2, 3, 4, 2, 2]
+  dp[6]  = min(dp[6], 1+dp[0]) = min(2, 1) = 1
+  dp[11] = min(dp[11], 1+dp[5]) = min(3, 1+1) = 2  ← ANSWER
+After coin=9:  [0, 1, 2, 3, 4, 1, 1, 2, 3, 1, 2, 2]
+  (dp[9]=1+dp[0]=1, doesn&#x27;t improve dp[11])
+
+Final dp[11] = 2 ✅  (coins: 5 + 6)
+</code></pre>
+
+<p>Code trace matches expected output. ✅</p>
+
+<hr/>
+
+<h3>Problem 2: Partition Equal Subset Sum (#416) — 0/1 Knapsack</h3>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/partition-equal-subset-sum/</p>
+<p>📹 NeetCode: https://www.youtube.com/watch?v=IsvocB5BJhw</p>
+
+<p><strong>Problem:</strong> Can you partition the array into two subsets with equal sum?</p>
+
+<p><strong>Key Insight:</strong> Total must be even → find a subset summing to <code>total // 2</code>.</p>
+
+<p><strong>Input:</strong> <code>nums = [1, 5, 11, 5]</code></p>
+<p><strong>Expected:</strong> <code>True</code> (subsets: <code>[1, 5, 5]=11</code>, <code>[11]=11</code>)</p>
+
+<p>#### Why 0/1 Knapsack?</p>
+
+<p>Each number can appear in only <strong>one</strong> partition. It can&#x27;t be reused. → Inner loop must go right → left.</p>
+
+<pre><code>
+def canPartition(nums: list[int]) -&gt; bool:
+    total = sum(nums)
+
+    # If total is odd, impossible to split evenly
+    if total % 2 != 0:
+        return False
+
+    target = total // 2
+
+    # dp[j] = True if we can form sum j using elements seen so far
+    dp = [False] * (target + 1)
+    dp[0] = True  # Base case: empty subset sums to 0
+
+    for num in nums:
+        # CRITICAL: right to left — prevents using num more than once
+        for j in range(target, num - 1, -1):
+            # Can we form sum j?
+            # Without num: dp[j] stays as is
+            # With num:    need dp[j - num] to already be True
+            dp[j] = dp[j] or dp[j - num]
+
+        # Optional: early exit if target already reachable
+        if dp[target]:
+            return True
+
+    return dp[target]
+</code></pre>
+
+<p>#### 🔍 What Breaks If You Go Left → Right?</p>
+
+<pre><code>
+# BUG: left-to-right iteration for 0/1 knapsack
+nums = [3]
+target = 6
+
+# dp = [T, F, F, F, F, F, F]  (only dp[0]=True)
+
+# Left to right with num=3:
+# j=3: dp[3] = dp[3] or dp[0] = True   ← used num=3 once (correct so far)
+# j=6: dp[6] = dp[6] or dp[3] = True   ← used num=3 AGAIN (BUG!)
+# Returns True — but [3] cannot sum to 6!
+
+# Right to left with num=3 (correct):
+# j=6: dp[6] = dp[6] or dp[3] = False or False = False
+# j=3: dp[3] = dp[3] or dp[0] = False or True  = True
+# Returns False ✅
+</code></pre>
+
+<hr/>
+
+<h3>Bonus: Coin Change II (#518) — Counting with Unbounded Knapsack</h3>
+
+<p>🔗 https://leetcode.com/problems/coin-change-ii/</p>
+
+<pre><code>
+def change(amount: int, coins: list[int]) -&gt; int:
+    # dp[i] = number of distinct ways to make amount i
+    dp = [0] * (amount + 1)
+    dp[0] = 1  # One way to make 0: use no coins
+
+    # Outer = coins, inner = amount (left to right)
+    # This prevents counting [1,2] and [2,1] as distinct (combinations, not permutations)
+    for coin in coins:
+        for i in range(coin, amount + 1):
+            dp[i] += dp[i - coin]
+
+    return dp[amount]
+</code></pre>
+
+<p><strong>Why coins in outer loop?</strong> If you put amount in the outer loop (like Coin Change #322), each coin is &quot;reconsidered&quot; at every amount independently — which counts permutations. Putting coins in outer loop ensures coin 1 is fully &quot;committed&quot; before coin 2 is ever considered.</p>
+
+<hr/>
+
+<h3>Cheat Sheet: Three Problems, Three Variants</h3>
+
+<pre><code>
+#322 Coin Change       → min coins    → dp[i] = min(dp[i], 1 + dp[i-coin])
+#518 Coin Change II    → count ways   → dp[i] += dp[i-coin]   (coins outer)
+#416 Partition EqualSS → feasibility  → dp[j] = dp[j] or dp[j-num]  (R→L)
+</code></pre>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<h3>Coin Change</h3>
+
+<pre><code>
+coinChange([], 5)          # → -1  (no coins, impossible)
+coinChange([1, 2, 3], 0)   # → 0   (base case: 0 coins for amount 0)
+coinChange([5], 3)          # → -1  (coin larger than amount)
+coinChange([2], 3)          # → -1  (odd amount, only even coin)
+</code></pre>
+
+<p><strong>Float(&#x27;inf&#x27;) vs large sentinel:</strong> Use <code>float(&#x27;inf&#x27;)</code> not <code>amount + 1</code> — cleaner comparisons; <code>amount + 1</code> can cause off-by-one bugs when amount is 0.</p>
+
+<h3>Partition Equal Subset Sum</h3>
+
+<pre><code>
+canPartition([1, 2, 3, 5])   # sum=11, odd → False immediately
+canPartition([10, 10])        # sum=20, target=10 → True
+canPartition([100])           # sum=100, target=50 → False (single element)
+canPartition([1, 1])          # sum=2, target=1 → True
+
+# Large input: nums can have 200 elements, values up to 100
+# target up to 200*100/2 = 10000 → dp array size O(10000), fine
+</code></pre>
+
+<h3>Comparison Table</h3>
+
+<p>| Problem | Pattern | Inner Loop | dp Meaning | Answer |</p>
+<p>|---------|---------|------------|------------|--------|</p>
+<p>| #322 Coin Change | Unbounded | L→R | min coins | <code>dp[amount]</code> |</p>
+<p>| #518 Coin Change II | Unbounded | L→R, coins outer | # ways | <code>dp[amount]</code> |</p>
+<p>| #416 Partition | 0/1 | R→L | reachable? | <code>dp[target]</code> |</p>
+<p>| #474 Ones and Zeroes | 2D 0/1 | R→L (2D) | feasibility | <code>dp[m][n]</code> |</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<h3>支付系统 / Payment Systems</h3>
+
+<p>Coin Change maps directly to ATM dispensing: given bill denominations, find the minimum number of bills to dispense <code>$X</code>. Stripe&#x27;s internal settlement engine uses similar DP to minimize transaction splits.</p>
+
+<h3>资源调度 / Resource Scheduling</h3>
+
+<p>0/1 Knapsack appears in:</p>
+<p>- <strong>Cloud bin packing:</strong> Can these microservices fit in this instance (memory = knapsack capacity, services = items)?</p>
+<p>- <strong>A/B test balancing:</strong> Partition users into two cohorts of equal aggregate spend.</p>
+<p>- <strong>Kubernetes scheduling:</strong> Pack pods into nodes without exceeding CPU/memory limits.</p>
+
+<h3>Bitset 加速 / Bitset Optimization</h3>
+
+<p>For large-scale partition problems (sums up to 10^5), production systems use Python&#x27;s arbitrary-precision integers as bitsets — 64× faster than a bool array:</p>
+
+<pre><code>
+def canPartition_bitset(nums: list[int]) -&gt; bool:
+    total = sum(nums)
+    if total % 2:
+        return False
+    target = total // 2
+
+    # dp as bitmask: bit i is set if sum i is reachable
+    dp = 1  # bit 0 set: sum 0 reachable with empty subset
+    for num in nums:
+        dp |= (dp &lt;&lt; num)  # shift = &quot;add num to all currently reachable sums&quot;
+
+    return bool(dp &amp; (1 &lt;&lt; target))
+# Time: O(n × target / 64) — 64x speedup on CPython
+</code></pre>
+
+<p>Sometimes asked as an optimization follow-up at FAANG+.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Q1: You solved Coin Change. Now each coin can only be used once. How does your solution change?</strong></p>
+
+<p>&gt; Change the inner loop from left→right to right→left. The dp array and transition formula stay identical. This one-line change converts unbounded knapsack to 0/1 knapsack with no change to time or space complexity.</p>
+
+<p><strong>Q2: What&#x27;s the time and space complexity of Coin Change? Can space be reduced?</strong></p>
+
+<p>&gt; Time: O(amount × |coins|). Space: O(amount) for the 1D dp array — already optimal. You can&#x27;t go below O(amount) because you need all subproblem answers simultaneously.</p>
+
+<p><strong>Q3: Why does Coin Change II put coins in the outer loop instead of amount?</strong></p>
+
+<p>&gt; If amount is outer, each coin is reconsidered at every amount independently, which counts permutations (e.g., [1,2] and [2,1] counted separately). With coins outer, coin 1 is fully &quot;committed&quot; before coin 2 is introduced, counting combinations only.</p>
+
+<p><strong>Q4: Can you solve Partition Equal Subset Sum with memoization (top-down)?</strong></p>
+
+<pre><code>
+from functools import lru_cache
+
+def canPartition_memo(nums: list[int]) -&gt; bool:
+    total = sum(nums)
+    if total % 2:
+        return False
+    target = total // 2
+
+    @lru_cache(maxsize=None)
+    def dp(i: int, remaining: int) -&gt; bool:
+        if remaining == 0:
+            return True
+        if remaining &lt; 0 or i == len(nums):
+            return False
+        # Include nums[i] or skip it
+        return dp(i + 1, remaining - nums[i]) or dp(i + 1, remaining)
+
+    return dp(0, target)
+# O(n × target) time and space — same as bottom-up
+</code></pre>
+
+<p><strong>Q5: When do you prefer top-down vs bottom-up?</strong></p>
+
+<p>&gt; Top-down (memoization) is often easier to write and only computes the states you actually need. Bottom-up (tabulation) has no recursion overhead, better cache locality, and avoids stack overflow for large inputs. In interviews, top-down is faster to code and explain; in production, bottom-up is usually preferred.</p>
+
+<hr/>
+
+<h2>Summary / 总结</h2>
+
+<pre><code>
+🎯 One Rule:
+    Inner loop Left  → Right  =  unbounded (can reuse)
+    Inner loop Right → Left   =  0/1 (use once)
+
+📋 Templates:
+    Coin Change:     dp[i] = min(dp[i], 1 + dp[i-coin])      # O(amount×coins)
+    Partition:       dp[j] = dp[j] or dp[j-num]               # O(n×target)
+    Coin Change II:  dp[i] += dp[i-coin]  (coins outer)       # O(amount×coins)
+
+⚡ Complexity:
+    Time:  O(n × target) for all three
+    Space: O(target) after 1D optimization
+
+🔮 Next problems in this block:
+    #198 House Robber → #213 House Robber II → #5 Longest Palindromic Substring
+    → #91 Decode Ways → #322 Coin Change → #152 Max Product Subarray
+    → #139 Word Break → #300 LIS → #416 Partition Equal Subset Sum
+</code></pre>
+
+<p>🔗 Practice List:</p>
+<p>- https://leetcode.com/problems/coin-change/</p>
+<p>- https://leetcode.com/problems/coin-change-ii/</p>
+<p>- https://leetcode.com/problems/partition-equal-subset-sum/</p>
+<p>- https://leetcode.com/problems/target-sum/</p>
+<p>- https://leetcode.com/problems/last-stone-weight-ii/</p>
+<p>- https://leetcode.com/problems/ones-and-zeroes/</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-09-04</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
