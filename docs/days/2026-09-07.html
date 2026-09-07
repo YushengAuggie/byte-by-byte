@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-09-07</title>
+  <meta name="description" content="byte-by-byte daily lessons for Monday, September 7, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Monday, September 7, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-09-07.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-09-06.html" style="color:var(--text2)">← 2026-09-06</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-09-07</span>
+    <h1>Monday, September 7, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-09-06.html" class="day-nav-btn">← 2026-09-06</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 128 (Synthesis: Expert)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>🏗️ 系统设计 / System Design — Day 128 (Synthesis: Expert)</h1>
+
+<blockquote><strong>合成模式</strong> — 60个精选主题已全部覆盖。今天深度对比：分布式系统一致性权衡全景。</blockquote>
+
+<hr/>
+
+<h2>一致性不是布尔值 — 从 CAP 到产品的真实权衡</h2>
+
+<p><strong>Consistency Isn't Binary — Real Tradeoffs from CAP to Production</strong></p>
+
+<hr/>
+
+<h3>🎭 想象你是一家大型电商的首席架构师</h3>
+
+<p>Black Friday 即将来临。你的系统横跨 3 个大洲、12 个数据中心。老板问："库存数据必须准确吗？"</p>
+
+<p>你需要在 <strong>一致性</strong>、<strong>可用性</strong>、<strong>分区容忍性</strong> 中做选择。但真实世界比 CAP 定理复杂得多。</p>
+
+<p><strong>Imagine you're the lead architect at a major e-commerce company.</strong>  </p>
+<p>Black Friday is approaching. Your system spans 3 continents, 12 datacenters. The CEO asks: "Does inventory data need to be exact?" The answer reveals your entire consistency strategy.</p>
+
+<hr/>
+
+<h3>📊 我们学过的所有系统，一张图看懂一致性光谱</h3>
+
+<div class="diagram-block">强一致性 ←————————————————→ 最终一致性
+Strong                         Eventual
+
+  PostgreSQL    etcd/ZK    Redis     DynamoDB   Cassandra
+  (ACID)        (Raft)     (AOF)     (tunable)  (tunable)
+     |             |          |           |          |
+  单机强一致    分布式强   主从复制    可调一致性  可调一致性
+  Multi-row     Consensus  Async rep  R+W&gt;N opt  QUORUM opt
+  transactions  Lineariz.  ~ms lag   strong opt  ~100ms lag
+
+  ← CP (一致性+分区)      AP (可用性+分区) →</div>
+
+<hr/>
+
+<h3>🔍 5类系统的真实一致性策略</h3>
+
+<p><strong>1. 强一致性系统 (CP) — PostgreSQL + etcd</strong></p>
+
+<p>PostgreSQL 通过 WAL + MVCC 保证单机 ACID。  </p>
+<p>etcd/Zookeeper 通过 Raft/Paxos 保证分布式线性一致性 (Linearizability)。</p>
+
+<p>适合：<strong>金融账户、分布式锁、配置中心、Leader 选举</strong></p>
+
+<p>代价：写延迟高 (跨节点需 2-phase commit 或 Raft round-trip)</p>
+
+<p><strong>Strong consistency (CP): PostgreSQL + etcd</strong>  </p>
+<p>Best for: financial ledgers, distributed locks, config, leader election.  </p>
+<p>Cost: Higher write latency — every write needs consensus.</p>
+
+<hr/>
+
+<p><strong>2. 可调一致性 (Tunable) — DynamoDB + Cassandra</strong></p>
+
+<div class="diagram-block">Cassandra 写: W=QUORUM (写超过半数节点成功才返回)
+Cassandra 读: R=QUORUM (读超过半数节点比较返回最新)
+条件: R + W &gt; N → 强一致; R + W &lt;= N → 最终一致</div>
+
+<p>DynamoDB 默认最终一致，强一致性读额外收费 2x。</p>
+
+<p>适合：<strong>购物车 (最终一致)、订单状态 (强一致)</strong></p>
+
+<p><strong>Tunable consistency — DynamoDB + Cassandra</strong>  </p>
+<p>R + W &gt; N guarantees strong consistency. Most apps use eventual (cheaper, faster).</p>
+
+<hr/>
+
+<p><strong>3. 主从异步复制 — Redis Cluster + MySQL replication</strong></p>
+
+<div class="diagram-block">主节点写 → 异步复制到从节点 → 网络延迟期间从节点数据可能落后。</div>
+
+<div class="diagram-block">Primary:  [W1] → [W2] → [W3]   ← 写入成功
+Replica:  [W1] → [W2]          ← 还没收到 W3
+读从库:   可能读到旧数据 (stale read)</div>
+
+<p>适合：<strong>读多写少 (只读副本)、缓存层</strong></p>
+
+<hr/>
+
+<p><strong>4. Kafka 的"一致性" — 有序 + 持久，但非线性一致</strong></p>
+
+<p>Kafka 保证：分区内消息有序、持久化到磁盘、at-least-once 投递。  </p>
+<p>不保证：跨分区全局顺序、exactly-once (需额外配置)。</p>
+
+<p>适合：<strong>事件溯源、审计日志、异步解耦</strong></p>
+
+<hr/>
+
+<p><strong>5. CDN 边缘节点 — 极端最终一致性</strong></p>
+
+<div class="diagram-block">Origin → Edge PoP (全球200+节点)
+         TTL=3600s 内: 可能看到旧内容
+         更新传播: 分钟级</div>
+
+<p>适合：<strong>静态资源、不敏感数据</strong>  </p>
+<p>不适合：<strong>用户权限、价格 (要 TTL=0 或 bypass cache)</strong></p>
+
+<hr/>
+
+<h3>⚠️ 面试常见误区 / Common Interview Mistakes</h3>
+
+<table><thead><tr><th>误区</th><th>真相</th></tr></thead><tbody><tr><td>"用 Redis 就可以保证数据不丢"</td><td>Redis 默认 fsync=everysec，最多丢 1s 数据</td></tr><tr><td>"Cassandra 是 AP，不能做强一致"</td><td>QUORUM 读写可以实现强一致，只是慢</td></tr><tr><td>"微服务用分布式事务就行"</td><td>2PC 在高并发下是性能杀手，优先考虑 Saga</td></tr><tr><td>"读从库没问题，反正差不多"</td><td>主从延迟期间读到旧数据是真实 bug 来源</td></tr></tbody></table>
+
+<hr/>
+
+<h3>🎯 架构决策框架 / Decision Framework</h3>
+
+<div class="diagram-block">问题: 这个数据，读到旧值会有多严重？
+
+严重 (钱/权限/库存) → 强一致 → etcd/PostgreSQL/QUORUM
+中等 (帖子/计数)    → 最终一致 → Cassandra/DynamoDB eventually
+轻微 (推荐/排行)    → 缓存 + 定期更新 → Redis TTL
+静态 (图片/CSS)     → CDN，TTL尽量长</div>
+
+<hr/>
+
+<h3>📚 深入阅读 / References</h3>
+
+<ul><li>https://jepsen.io/analyses — 真实系统的一致性测试报告</li><li>https://www.allthingsdistributed.com/2007/12/eventually_consistent.html — Werner Vogels (Amazon CTO) 经典文章</li><li>https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html — CAP 定理的局限性</li></ul>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象一家连锁超市。<strong>强一致性</strong> 就像所有门店共享一个实时库存系统，买了就减，但系统慢。<strong>最终一致性</strong> 就像每个门店有自己的库存本，每晚同步一次 — 快但中途可能卖出重复。你卖的是什么决定用哪种：卖飞机票要强一致，卖书可以最终一致。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 128 · #746 Min Cost Climbing Stairs 🟢 Easy</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>💻 算法 / Algorithms — Day 128 · #746 Min Cost Climbing Stairs 🟢 Easy</h1>
+
+<p>🧩 <strong>一维动态规划 (2/12)</strong> — 基于前一天 Day 127 的模板继续</p>
+
+<blockquote>📌 前一天（Day 126）我们学了 #70 Climbing Stairs，建立了 1-D DP 模板。今天是同一模式的变体，看看<strong>有了成本</strong>后如何修改。</blockquote>
+
+<hr/>
+
+<h2>问题背景 / Problem Context</h2>
+
+<p>你在爬楼梯，每一级台阶有个"体力成本" cost[i]。从第 i 级迈步需要消耗 cost[i]，之后可以走 1 步或 2 步。你可以从第 0 级或第 1 级出发，到达<strong>最顶端</strong>（数组之外）。求最小总成本。</p>
+
+<p><strong>Real-world analogy:</strong> Like planning a road trip — some waypoints have gas/toll costs. You can skip waypoints (jump 2 steps), but you pay when you leave a waypoint. Minimize total trip cost.</p>
+
+<div class="diagram-block">🔗 [LeetCode #746](https://leetcode.com/problems/min-cost-climbing-stairs/) | 🟢 Easy | 📹 [NeetCode](https://www.youtube.com/watch?v=ktmzAZWkEZ0)</div>
+
+<hr/>
+
+<h2>🧩 与模板对比 / Mapping to Pattern Template</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="昨天 #70 Climbing Stairs:&#10;  dp[i] = 到达第 i 级的【方法数】&#10;  dp[i] = dp[i-1] + dp[i-2]&#10;&#10;今天 #746 Min Cost Climbing Stairs:&#10;  dp[i] = 到达第 i 级的【最小成本】&#10;  dp[i] = min(dp[i-1] + cost[i-1],&#10;              dp[i-2] + cost[i-2])&#10;          ↑ 从上一级走来            ↑ 从两级外走来&#10;&#10;变化: 求 min 而非 count，加了 cost[] 作为&quot;权重&quot;">Copy</button>
+  <pre><code class="language-text">昨天 #70 Climbing Stairs:
+  dp[i] = 到达第 i 级的【方法数】
+  dp[i] = dp[i-1] + dp[i-2]
+
+今天 #746 Min Cost Climbing Stairs:
+  dp[i] = 到达第 i 级的【最小成本】
+  dp[i] = min(dp[i-1] + cost[i-1],
+              dp[i-2] + cost[i-2])
+          ↑ 从上一级走来            ↑ 从两级外走来
+
+变化: 求 min 而非 count，加了 cost[] 作为"权重"</code></pre>
+</div>
+
+<hr/>
+
+<h2>💡 思路与解法 / Solution</h2>
+
+<h3>Step 1: 定义 dp[i]</h3>
+<p><code>dp[i]</code> = <strong>到达第 i 级台阶的最小成本</strong>（注意：到达，还没出发，不含 cost[i]）</p>
+
+<h3>Step 2: 状态转移</h3>
+<ul><li>从第 i-1 级走来：需要先到达 i-1，再付 cost[i-1]，走一步</li><li>从第 i-2 级走来：需要先到达 i-2，再付 cost[i-2]，走两步</li></ul>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="dp[i] = min(dp[i-1] + cost[i-1], dp[i-2] + cost[i-2])">Copy</button>
+  <pre><code class="language-python">dp[i] = min(dp[i-<span style="color:#56b6c2;">1</span>] + cost[i-<span style="color:#56b6c2;">1</span>], dp[i-<span style="color:#56b6c2;">2</span>] + cost[i-<span style="color:#56b6c2;">2</span>])</code></pre>
+</div>
+
+<h3>Step 3: Base cases</h3>
+<ul><li><code>dp[0] = 0</code>（从第 0 级出发，还未付费）</li><li><code>dp[1] = 0</code>（也可以从第 1 级出发）</li></ul>
+
+<h3>Step 4: 目标</h3>
+<p><code>dp[len(cost)]</code> — 到达顶端（数组外）</p>
+
+<hr/>
+
+<h2>🐍 Python 解法 + Trace</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def minCostClimbingStairs(cost: list[int]) -&gt; int:&#10;    n = len(cost)&#10;    dp = [0] * (n + 1)&#10;    # dp[0] = dp[1] = 0 (can start from 0 or 1 for free)&#10;    &#10;    for i in range(2, n + 1):&#10;        from_one_below = dp[i-1] + cost[i-1]  # 从i-1走来，付cost[i-1]&#10;        from_two_below = dp[i-2] + cost[i-2]  # 从i-2走来，付cost[i-2]&#10;        dp[i] = min(from_one_below, from_two_below)&#10;    &#10;    return dp[n]&#10;&#10;# Trace: cost = [10, 15, 20]&#10;# dp[0] = 0, dp[1] = 0&#10;# i=2: min(dp[1]+cost[1], dp[0]+cost[0]) = min(0+15, 0+10) = 10&#10;# i=3: min(dp[2]+cost[2], dp[1]+cost[1]) = min(10+20, 0+15) = 15&#10;# return dp[3] = 15  ✓ (0→1步→3: 付15)">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> minCostClimbingStairs(cost: list[int]) -&gt; int:
+    n = len(cost)
+    dp = [<span style="color:#56b6c2;">0</span>] * (n + <span style="color:#56b6c2;">1</span>)
+    <span style="color:#5c6370;"># dp[0] = dp[1] = 0 (can start from 0 or 1 for free)</span>
+    
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">2</span>, n + <span style="color:#56b6c2;">1</span>):
+        from_one_below = dp[i-<span style="color:#56b6c2;">1</span>] + cost[i-<span style="color:#56b6c2;">1</span>]  <span style="color:#5c6370;"># 从i-1走来，付cost[i-1]</span>
+        from_two_below = dp[i-<span style="color:#56b6c2;">2</span>] + cost[i-<span style="color:#56b6c2;">2</span>]  <span style="color:#5c6370;"># 从i-2走来，付cost[i-2]</span>
+        dp[i] = min(from_one_below, from_two_below)
+    
+    <span style="color:#c678dd;">return</span> dp[n]
+
+<span style="color:#5c6370;"># Trace: cost = [10, 15, 20]</span>
+<span style="color:#5c6370;"># dp[0] = 0, dp[1] = 0</span>
+<span style="color:#5c6370;"># i=2: min(dp[1]+cost[1], dp[0]+cost[0]) = min(0+15, 0+10) = 10</span>
+<span style="color:#5c6370;"># i=3: min(dp[2]+cost[2], dp[1]+cost[1]) = min(10+20, 0+15) = 15</span>
+<span style="color:#5c6370;"># return dp[3] = 15  ✓ (0→1步→3: 付15)</span></code></pre>
+</div>
+
+<p><strong>⚡ 空间优化 O(1):</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def minCostClimbingStairs(cost: list[int]) -&gt; int:&#10;    prev2, prev1 = 0, 0  # dp[0], dp[1]&#10;    &#10;    for i in range(2, len(cost) + 1):&#10;        curr = min(prev1 + cost[i-1], prev2 + cost[i-2])&#10;        prev2, prev1 = prev1, curr&#10;    &#10;    return prev1">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> minCostClimbingStairs(cost: list[int]) -&gt; int:
+    prev2, prev1 = <span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">0</span>  <span style="color:#5c6370;"># dp[0], dp[1]</span>
+    
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">2</span>, len(cost) + <span style="color:#56b6c2;">1</span>):
+        curr = min(prev1 + cost[i-<span style="color:#56b6c2;">1</span>], prev2 + cost[i-<span style="color:#56b6c2;">2</span>])
+        prev2, prev1 = prev1, curr
+    
+    <span style="color:#c678dd;">return</span> prev1</code></pre>
+</div>
+
+<p><strong>复杂度:</strong> Time O(n), Space O(1)</p>
+
+<hr/>
+
+<h2>🔄 举一反三 / Connect to the Block</h2>
+
+<table><thead><tr><th>题目</th><th>dp[i] 含义</th><th>转移方程</th></tr></thead><tbody><tr><td>#70 Climbing Stairs</td><td>到达i的<strong>方法数</strong></td><td>dp[i-1] + dp[i-2]</td></tr><tr><td><strong>#746 Min Cost</strong></td><td>到达i的<strong>最小成本</strong></td><td>min(prev1+cost, prev2+cost)</td></tr><tr><td>#198 House Robber (下一题)</td><td>偷前i家的<strong>最大金额</strong></td><td>max(dp[i-1], dp[i-2]+nums[i])</td></tr></tbody></table>
+
+<blockquote>规律：DP 类型变了（count → min → max），<strong>模板框架不变</strong>，只改 transition 函数和 base case。</blockquote>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://leetcode.com/problems/min-cost-climbing-stairs/</li><li>https://neetcode.io/problems/min-cost-climbing-stairs</li><li>https://en.wikipedia.org/wiki/Dynamic_programming</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>楼梯每一格都要付"过路费"。你从第0格或第1格出发（免费）。每次可以走1步或2步。到了一格才付钱，然后决定跳1步还是2步。问最少花多少钱爬到顶？就像选路线绕收费站，每次都选便宜的那条。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 128 (Synthesis: Expert)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>🗣️ 软技能 / Soft Skills — Day 128 (Synthesis: Expert)</h1>
+
+<blockquote><strong>合成模式</strong> — 60个精选行为题已全部覆盖。今天：Senior/Staff 级跨职能影响力场景。</blockquote>
+
+<hr/>
+
+<h2>新场景 / Fresh Scenario</h2>
+
+<p><strong>"你的团队刚完成一个重大系统迁移，但另一个业务部门的负责人声称这次迁移导致了他们的 KPI 下降，要你的团队承担责任，并要求暂停你们后续的技术计划。你会怎么做？"</strong></p>
+
+<p><strong>"Your team just completed a major system migration. A business unit leader claims the migration caused their KPI to drop and wants your team to take the blame — and halt your upcoming technical roadmap. What do you do?"</strong></p>
+
+<hr/>
+
+<h2>为什么这道题很难 / Why This Is Hard</h2>
+
+<p>这不是技术问题，是<strong>政治问题</strong>。你面对：</p>
+<ul><li>数据归因的模糊性（correlation ≠ causation）</li><li>跨团队的权力动态</li><li>保护团队与公司整体利益的平衡</li></ul>
+
+<p>This isn't a technical problem — it's a <strong>political</strong> one. Data ambiguity + power dynamics + team protection all collide.</p>
+
+<hr/>
+
+<h2>⭐ STAR 框架</h2>
+
+<p><strong>Situation (情境):</strong>  </p>
+<p>迁移后第一周，业务部门 DAU 下降 8%，他们的 VP 在全公司邮件中点名你的团队，要求暂停 Q4 技术计划。</p>
+
+<p><strong>Task (任务):</strong>  </p>
+<p>在不激化矛盾的前提下，快速厘清根因，保护团队名誉，推进技术路线图。</p>
+
+<p><strong>Action (行动):</strong></p>
+<ol><li><strong>数据先行</strong>：48 小时内拉出迁移时间线、系统指标、业务 KPI 的交叉分析。相关性 vs 因果性要搞清楚。</li><li><strong>私下沟通</strong>：先找对方 VP 一对一，而不是在群邮件里辩论。听他们的 hypothesis，分享你的数据。</li><li><strong>联合调查</strong>：提议成立 24-48h 短期联合工作组，两边各出 1 人快速复盘。让他们参与调查过程，而不是等待结论。</li><li><strong>透明沟通</strong>：如果真有关联，主动承认，提出修复方案；如果没有，给出可信的替代解释（季节性、营销投放减少等）。</li><li><strong>解耦技术路线图</strong>：提议将 Q4 计划拆分，高风险部分暂缓，低风险部分继续。不做全有全无的对抗。</li></ol>
+
+<p><strong>Result (结果):</strong>  </p>
+<p>联合调查发现 KPI 下降主要来自竞品的促销活动，迁移本身有一个小 bug 导致 2% 的搜索召回下降（已修复）。对方 VP 公开说明情况，Q4 计划按修订版推进。</p>
+
+<hr/>
+
+<h2>❌ 糟糕回答 / ✅ 优秀回答</h2>
+
+<table><thead><tr><th>❌ Bad</th><th>✅ Good</th></tr></thead><tbody><tr><td>"我们的数据是清白的，我要跟他 escalate 到 CTO"</td><td>"先私下约他聊，看看他看到了什么数据"</td></tr><tr><td>"我会写一封详细的反驳邮件给全公司"</td><td>"联合调查比单方辩护更有说服力"</td></tr><tr><td>"暂停就暂停吧，省得麻烦"</td><td>"把技术路线图拆分，找到双方都能接受的路径"</td></tr><tr><td>完全防御姿态，不接受任何可能</td><td>承认可能存在的问题，主动调查</td></tr></tbody></table>
+
+<hr/>
+
+<h2>👨‍💼 Senior/Staff 要点 / Senior Tips</h2>
+
+<ol><li><strong>数据是你的盾牌</strong> — 在有数据之前，不要公开表态</li><li><strong>让对方参与解决，而不是成为敌人</strong> — 联合调查让他们变成合作者</li><li><strong>保护团队，同时也保护公司关系</strong> — 两者不必对立</li><li><strong>Escalate 是最后手段</strong> — 先穷尽横向协商</li></ol>
+
+<hr/>
+
+<h2>🔑 Key Takeaways</h2>
+
+<ul><li><strong>Correlation ≠ causation</strong> — always establish timeline causality before accepting blame</li><li><strong>Private conversations first</strong> — email wars help no one</li><li><strong>Decompose the conflict</strong> — don't let it become all-or-nothing</li><li><strong>Transparency builds trust</strong> — even if you find a bug, owning it quickly &gt; defending it away</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://hbr.org/2016/01/what-having-a-growth-mindset-actually-means — 应对外部批评的心态</li><li>https://www.manager-tools.com/manager-tools-basics — 横向沟通技巧</li><li>https://increment.com/teams/on-navigating-difficult-conversations/ — 技术团队跨部门对话</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>别人说是你弄坏了他的玩具，但你不确定。先别吵，拉着他一起找找玩具是什么时候坏的、谁动过。如果真是你，道歉修好；如果不是你，一起找出真正的原因。重点是解决问题，不是赢得争论。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 128 (Synthesis: Expert)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>🤖 AI — Day 128 (Synthesis: Expert)</h1>
+
+<blockquote><strong>合成模式</strong> — 30个精选AI主题已全部覆盖。今天深度合成：从 Transformer 到 Agent，串联所有核心概念。</blockquote>
+
+<blockquote>⚠️ Web search unavailable — using CONCEPT synthesis mode across previously covered topics.</blockquote>
+
+<hr/>
+
+<h2>AI 知识图谱：从基础到前沿，一张图串联</h2>
+
+<p><strong>AI Knowledge Map: Connecting All the Dots — From Transformer to Agent</strong></p>
+
+<hr/>
+
+<h3>🗺️ 我们走过的路 / The Journey</h3>
+
+<div class="diagram-block">基础层 (Foundation)
+  Transformers (Day 2) → Tokenization (Day 4) → Embeddings (Day 6)
+      ↓
+训练层 (Training)
+  Fine-tuning vs Prompting (Day 8) → RLHF (Day 12) → LoRA/QLoRA (Day 14)
+      ↓
+应用层 (Application)
+  RAG (Day 16) → Vector DBs (Day 18) → Prompt Engineering (Day 22)
+      ↓
+系统层 (Systems)
+  Context Windows (Day 34) → Inference Optimization (Day 46) → Quantization (Day 44)
+      ↓
+前沿层 (Frontier)
+  Agents/ReAct (Day 26) → MCP (Day 28) → Multimodal (Day 36) → MoE (Day 42)</div>
+
+<hr/>
+
+<h3>🔗 关键连接：这些概念如何互相依赖 / Key Dependencies</h3>
+
+<p><strong>为什么 RAG 需要 Embeddings + Vector DB？</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# RAG Pipeline — 3个核心组件的协作&#10;# 1. Embeddings (Day 6): 把文本变成向量&#10;text = &quot;Python GIL locks prevent true parallelism&quot;&#10;embedding = embed_model.encode(text)  # shape: [1536]&#10;&#10;# 2. Vector DB (Day 18): 存储和检索相似向量&#10;similar_docs = vector_db.query(embedding, top_k=5)&#10;&#10;# 3. LLM + Context (Day 34): 用检索到的上下文生成答案&#10;prompt = f&quot;Context: {similar_docs}\n\nQuestion: {user_query}&quot;&#10;answer = llm.generate(prompt)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># RAG Pipeline — 3个核心组件的协作</span>
+<span style="color:#5c6370;"># 1. Embeddings (Day 6): 把文本变成向量</span>
+text = <span style="color:#e5c07b;">"Python GIL locks prevent true parallelism"</span>
+embedding = embed_model.encode(text)  <span style="color:#5c6370;"># shape: [1536]</span>
+
+<span style="color:#5c6370;"># 2. Vector DB (Day 18): 存储和检索相似向量</span>
+similar_docs = vector_db.query(embedding, top_k=<span style="color:#56b6c2;">5</span>)
+
+<span style="color:#5c6370;"># 3. LLM + Context (Day 34): 用检索到的上下文生成答案</span>
+prompt = f<span style="color:#e5c07b;">"Context: {similar_docs}\n\nQuestion: {user_query}"</span>
+answer = llm.generate(prompt)</code></pre>
+</div>
+
+<p>没有 Embeddings，RAG 无法度量相似度；没有 Vector DB，RAG 无法高效检索；没有足够的 Context Window，RAG 放不下检索结果。</p>
+
+<hr/>
+
+<p><strong>为什么 Agent 需要 Function Calling + Context？</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# ReAct Agent Loop (Day 26) — 依赖 Function Calling (Day 32)&#10;def agent_loop(user_query, tools, max_steps=10):&#10;    messages = [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: user_query}]&#10;    &#10;    for step in range(max_steps):&#10;        # LLM 决定: 思考 or 调用工具?&#10;        response = llm.chat(messages, tools=tools)&#10;        &#10;        if response.tool_calls:&#10;            # 执行工具 (Function Calling)&#10;            for call in response.tool_calls:&#10;                result = execute_tool(call.name, call.args)&#10;                messages.append({&quot;role&quot;: &quot;tool&quot;, &quot;content&quot;: result})&#10;        else:&#10;            # 没有工具调用 = 最终答案&#10;            return response.content&#10;    &#10;    return &quot;Max steps reached&quot;&#10;&#10;# 关键: 每步都消耗 Context Window tokens&#10;# 这就是为什么 Context Window size 直接限制了 Agent 能做多复杂的任务">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># ReAct Agent Loop (Day 26) — 依赖 Function Calling (Day 32)</span>
+<span style="color:#c678dd;">def</span> agent_loop(user_query, tools, max_steps=<span style="color:#56b6c2;">10</span>):
+    messages = [{<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"user"</span>, <span style="color:#e5c07b;">"content"</span>: user_query}]
+    
+    <span style="color:#c678dd;">for</span> step <span style="color:#c678dd;">in</span> range(max_steps):
+        <span style="color:#5c6370;"># LLM 决定: 思考 or 调用工具?</span>
+        response = llm.chat(messages, tools=tools)
+        
+        <span style="color:#c678dd;">if</span> response.tool_calls:
+            <span style="color:#5c6370;"># 执行工具 (Function Calling)</span>
+            <span style="color:#c678dd;">for</span> call <span style="color:#c678dd;">in</span> response.tool_calls:
+                result = execute_tool(call.name, call.args)
+                messages.append({<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"tool"</span>, <span style="color:#e5c07b;">"content"</span>: result})
+        <span style="color:#c678dd;">else</span>:
+            <span style="color:#5c6370;"># 没有工具调用 = 最终答案</span>
+            <span style="color:#c678dd;">return</span> response.content
+    
+    <span style="color:#c678dd;">return</span> <span style="color:#e5c07b;">"Max steps reached"</span>
+
+<span style="color:#5c6370;"># 关键: 每步都消耗 Context Window tokens</span>
+<span style="color:#5c6370;"># 这就是为什么 Context Window size 直接限制了 Agent 能做多复杂的任务</span></code></pre>
+</div>
+
+<hr/>
+
+<h3>⚡ 性能优化全栈 / The Full Optimization Stack</h3>
+
+<div class="diagram-block">问题: LLM 推理太慢/太贵
+    ↓
+1. KV Cache (Day 46): 避免重复计算 attention — 最重要的优化
+   prefill: O(n²) → decode: O(n) per token with cache
+
+2. Quantization (Day 44): 减少模型大小
+   FP32 → FP16: 2x内存节省 | INT4: 8x内存节省
+   精度损失 &lt;1% (通常可接受)
+
+3. Speculative Decoding (Day 46): 小模型打草稿，大模型验证
+   小模型生成 K tokens → 大模型并行验证 → 平均接受 rate ~70%
+   效果: 2-3x 吞吐量提升
+
+4. MoE (Day 42): 只激活部分参数
+   Mixtral 8x7B: 47B 参数，每次只用 13B
+   训练成本 ~1/3，推理成本 ~1/3</div>
+
+<hr/>
+
+<h3>🧩 整合：构建一个生产级 AI 系统</h3>
+
+<div class="diagram-block">用户请求
+    ↓
+[Rate Limiting + Auth]
+    ↓
+[Context Assembly]
+  ├── System prompt (角色定义)
+  ├── RAG 检索结果 (相关文档)
+  ├── 对话历史 (最近N轮)
+  └── 用户消息
+    ↓
+[Model Selection]
+  ├── Simple query → 小模型 (fast/cheap)
+  ├── Complex reasoning → 大模型
+  └── Code → Specialized code model
+    ↓
+[Inference] + KV Cache + Streaming
+    ↓
+[Output Validation] (Structured Output / Guardrails)
+    ↓
+[Monitoring]: 延迟、token消耗、用户满意度、幻觉率</div>
+
+<p><strong>这就是 Day 66 (AI in Production) 说的内容，现在每个模块都有对应的深度知识。</strong></p>
+
+<hr/>
+
+<h3>💡 面试高频合成题 / High-Frequency Synthesis Questions</h3>
+
+<p><strong>Q: RAG vs Fine-tuning，什么时候用哪个？</strong></p>
+<ul><li>RAG: 知识经常更新、需要引用来源、域外知识注入 → <strong>灵活，无需训练</strong></li><li>Fine-tuning: 固定风格/格式、特定任务、小模型专精 → <strong>训练成本，推理快</strong></li></ul>
+
+<p><strong>Q: 为什么 GPT-4 比 GPT-3 对齐更好？</strong></p>
+<ul><li>RLHF (Day 12) + Constitutional AI → 人类偏好建模</li><li>更多的 SFT 数据 + PPO 强化学习 → 减少有害输出</li></ul>
+
+<p><strong>Q: 怎么让 Agent 更可靠？</strong></p>
+<ul><li>工具调用加 schema 验证 (Structured Output)</li><li>关键步骤加 human-in-the-loop</li><li>设置 max_steps 防止无限循环</li><li>记录每步的 reasoning trace 便于调试</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://lilianweng.github.io/posts/2023-06-23-agent/ — Lilian Weng: LLM-powered Autonomous Agents</li><li>https://arxiv.org/abs/2201.11903 — Chain-of-Thought Prompting (Wei et al.)</li><li>https://huggingface.co/blog/rlhf — RLHF 详解</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>想象你雇了一个很聪明的员工（LLM）。他需要工具书（RAG + Vector DB）来查最新资料，需要培训（Fine-tuning）来掌握你公司的风格，需要工具（Function Calling）来真正干活，还需要助手（Agent Loop）来拆解复杂任务。所有 AI 技术都是为了让这个员工更快、更准、更省钱地为你服务。</p>
+
+<div class="attention-card">
+  <h3>Attention Heatmap</h3>
+  <p>When the model processes <code>it</code>, it attends most strongly to <code>animal</code>.</p>
+  <div class="heatmap-wrap">
+    <table class="heatmap">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="heatmap-axis">The</th><th class="heatmap-axis">animal</th><th class="heatmap-axis">didnt</th><th class="heatmap-axis">cross</th><th class="heatmap-axis">the</th><th class="heatmap-axis">street</th><th class="heatmap-axis">because</th><th class="heatmap-axis">it</th><th class="heatmap-axis">was</th><th class="heatmap-axis">too</th><th class="heatmap-axis">tired</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="heatmap-axis row-label">it →</th>
+          <td><div class="heatmap-cell" title="The: 0.02" aria-label="The attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="animal: 0.86" aria-label="animal attention weight 0.86" style="background:rgba(167, 139, 250, 0.86);"></div></td><td><div class="heatmap-cell" title="didnt: 0.03" aria-label="didnt attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="cross: 0.04" aria-label="cross attention weight 0.04" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="the: 0.02" aria-label="the attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="street: 0.08" aria-label="street attention weight 0.08" style="background:rgba(167, 139, 250, 0.08);"></div></td><td><div class="heatmap-cell" title="because: 0.05" aria-label="because attention weight 0.05" style="background:rgba(167, 139, 250, 0.05);"></div></td><td><div class="heatmap-cell" title="it: 0.03" aria-label="it attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="was: 0.07" aria-label="was attention weight 0.07" style="background:rgba(167, 139, 250, 0.07);"></div></td><td><div class="heatmap-cell" title="too: 0.10" aria-label="too attention weight 0.10" style="background:rgba(167, 139, 250, 0.10);"></div></td><td><div class="heatmap-cell" title="tired: 0.30" aria-label="tired attention weight 0.30" style="background:rgba(167, 139, 250, 0.30);"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
