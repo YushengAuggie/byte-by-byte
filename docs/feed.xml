@@ -5,8 +5,115 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 08 Sep 2026 15:13:39 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 09 Sep 2026 15:09:10 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-09-09</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-09-09</guid>
+      <pubDate>Wed, 09 Sep 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>📊 Day 130 Review — 2026-09-09</h2>
+
+<p><strong>进度 / Progress:</strong></p>
+<p>NeetCode: 101/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 2-day streak!</p>
+
+<hr/>
+
+<p>🔄 <strong>复习日 / Review Day</strong></p>
+<p>今天是复习日！回顾过去4天的内容。</p>
+<p>Today is review day! Let&#x27;s revisit the past 4 days.</p>
+
+<p><strong>覆盖主题 / Topics covered:</strong></p>
+<p>- Day 126: Climbing Stairs (爬楼梯 — 基础1D DP)</p>
+<p>- Day 127: 背包问题两大模式 — Coin Change &amp; Partition Equal Subset Sum (Deep Dive)</p>
+<p>- Day 128: Min Cost Climbing Stairs (最低花费爬楼梯 — 1D DP变体)</p>
+<p>- Day 129: House Robber (打家劫舍 — 相邻约束DP)</p>
+
+<hr/>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+
+<p><strong>Q1: [💻 Algorithms — 1D DP 基础]</strong></p>
+
+<p><code>Climbing Stairs</code> 和 <code>Min Cost Climbing Stairs</code> 都是1D DP的经典题。请问：这两题的状态转移方程有何不同？<code>Min Cost</code> 版本需要额外处理什么？</p>
+
+<p><em>Climbing Stairs and Min Cost Climbing Stairs are both 1D DP classics. How do their recurrence relations differ? What extra consideration does the Min Cost version require?</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>Climbing Stairs:</strong> <code>dp[i] = dp[i-1] + dp[i-2]</code></p>
+<p>你只关心到达第 <code>i</code> 级台阶的方案数，每步可走1或2步，没有代价。</p>
+
+<p><strong>Min Cost Climbing Stairs:</strong> <code>dp[i] = min(dp[i-1] + cost[i-1], dp[i-2] + cost[i-2])</code></p>
+<p>关键区别：需要在转移时加上&quot;离开&quot;该台阶的 <strong>代价</strong>，而不只是方案数。另外需要特别处理终点——到达 <code>n</code> 级台阶时可以从 <code>n-1</code> 或 <code>n-2</code> 起跳，所以答案是 <code>min(dp[n-1], dp[n-2])</code>，不需要 <code>cost[n]</code>。</p>
+
+<p><strong>Key insight:</strong> Min Cost adds a <strong>cost layer</strong> to the standard climbing pattern. The &quot;pay to leave&quot; framing vs &quot;pay to enter&quot; is a common confusion point — in LeetCode #746, you pay <code>cost[i]</code> <em>when you step on i</em>, then you can jump from there.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [💻 Algorithms — House Robber 模式]</strong></p>
+
+<p>House Robber 的核心约束是&quot;不能抢相邻两家&quot;。这衍生出一个经典的 <strong>skip-or-take</strong> DP 模式。请写出状态转移方程，并说明为什么空间可以优化到 O(1)？</p>
+
+<p><em>House Robber&#x27;s constraint is &quot;can&#x27;t rob two adjacent houses.&quot; Write the recurrence relation and explain why O(1) space is achievable.</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>状态转移:</strong></p>
+<pre><code>
+dp[i] = max(dp[i-1], dp[i-2] + nums[i])
+</code></pre>
+<p>对于每个房子 <code>i</code>，你有两个选择：</p>
+<p>- <strong>不抢</strong>：延续前一步的最大值 <code>dp[i-1]</code></p>
+<p>- <strong>抢</strong>：前两步的最大值加上当前房子 <code>dp[i-2] + nums[i]</code></p>
+
+<p><strong>O(1) 空间优化原理：</strong> <code>dp[i]</code> 只依赖 <code>dp[i-1]</code> 和 <code>dp[i-2]</code> 两个值，所以只需要两个变量滚动更新：</p>
+<pre><code>
+prev2, prev1 = 0, 0
+for n in nums:
+    prev2, prev1 = prev1, max(prev1, prev2 + n)
+return prev1
+</code></pre>
+
+<p><strong>Pattern recognition:</strong> 任何时候你看到 &quot;只依赖前两个状态&quot; + &quot;从第 i 个选or不选&quot;，立刻想到这个滚动变量优化。House Robber II（环形）只是在线性版本上跑两遍（0..n-2 和 1..n-1）取最大。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [💻 Algorithms — 背包问题两大模式]</strong></p>
+
+<p>Deep Dive Day 127 覆盖了 Coin Change（无限背包）和 Partition Equal Subset Sum（0/1背包）。请比较这两种模式的核心区别：DP数组初始化方式、遍历顺序有何不同？为什么？</p>
+
+<p><em>Day 127 deep dive covered Coin Change (unbounded knapsack) and Partition Equal Subset Sum (0/1 knapsack). Compare the two: how do DP array initialization and traversal order differ, and why?</em></p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>| 特征 | Coin Change（无限背包） | Partition Equal Subset Sum（0/1背包） |</p>
+<p>|------|------------------------|--------------------------------------|</p>
+<p>| 每个物品 | 可重复使用 | 只能用一次 |</p>
+<p>| 1D DP遍历 | <strong>正序</strong>（从小到大） | <strong>逆序</strong>（从大到小） |</p>
+<p>| 初始化 | <code>dp[0]=0</code>, 其余 <code>inf</code> | <code>dp[0]=True</code>, 其余 <code>False</code> |</p>
+
+<p><strong>为什么遍历方向不同？</strong></p>
+
+<p>- <strong>正序（无限背包）：</strong> 当计算 <code>dp[j]</code> 时，<code>dp[j - coin]</code> 已经是&quot;当前轮&quot;更新后的值，意味着同一个硬币被重复&quot;用&quot;了——这正是我们想要的。</p>
+<p>- <strong>逆序（0/1背包）：</strong> 从右往左更新确保每个物品只被使用一次。<code>dp[j]</code> 更新时，<code>dp[j - num]</code> 仍是&quot;上一轮&quot;的值（代表没用当前这个 <code>num</code>）。</p>
+
+<p><strong>口诀：</strong> 无限 → 正序，唯一 → 逆序。记住这一条，两大背包模式手到擒来。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。Review reinforces memory; spiral learning compounds.</em></p>
+<p>📅 明天继续新内容！Tomorrow: new content resumes!</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-09-08</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
