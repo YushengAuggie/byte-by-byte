@@ -942,3 +942,14 @@ _Report-only run — no code changes made._
 - Delivery rate (7d): 7/7
 - Cron errors: none (byte-by-byte optimizer: status=ok, error=null, delivered)
 - Current day: 128 | Last sent: 2026-09-07
+
+## 2026-09-10 Optimization Run
+
+### Issues Found
+- **P0**: Email delivery MISSED on 2026-09-09. No entry in email-send-log.json for that date, despite Day 130 content being generated (3 duplicate commits f3d5e48/dc295b9/163a9d2 for Day 130 indicate retry churn / repeated regen on the 9th). Likely the send step failed or was interrupted while generation succeeded. Needs manual investigation of the 09-09 run to confirm whether subscribers received nothing that day.
+- **P1**: None observed. Sections count is stable (5/day) for 09-07 through 09-10; earlier days show 1 section (09-05/09-06) which may be an older schema and is not new.
+- **P2**: reviewDaysCompleted skips Day 100 (sequence ...95, 105...). Minor bookkeeping gap — Day 100 review either never ran or wasn't recorded.
+
+### Metrics
+- Delivery rate (7d): 6/7 (missed 2026-09-09)
+- Cron errors: cron list via CLI unavailable in this run (subshell nvm/node version mismatch: v25.6.1 vs required >=25.9.0) — not a pipeline error, but the health check for cron state could not read job status this run.
