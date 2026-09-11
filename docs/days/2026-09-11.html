@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-09-11</title>
+  <meta name="description" content="byte-by-byte daily lessons for Friday, September 11, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Friday, September 11, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-09-11.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-09-10.html" style="color:var(--text2)">← 2026-09-10</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-09-11</span>
+    <h1>Friday, September 11, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-09-10.html" class="day-nav-btn">← 2026-09-10</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 132 (Synthesis)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>🏗️ 系统设计 / System Design — Day 132 (Synthesis)</h1>
+<p><strong>一致性模型全景对比：从 Linearizability 到 Eventual Consistency</strong></p>
+<p><strong>Consistency Models: The Full Spectrum in Production</strong></p>
+
+<hr/>
+
+<h2>为什么这个话题重要 / Why This Matters</h2>
+
+<p>过去几个月你学了 CAP 定理、Raft/Paxos、分布式锁、多区域 Active-Active、分布式缓存……但这些系统到底提供什么级别的一致性保障？面试官最爱问："你的设计能提供什么一致性？"很多人答不出来。</p>
+
+<p>You've covered CAP theorem, Raft/Paxos, distributed locks, multi-region active-active, distributed caches — but what consistency level does each actually provide? This synthesis ties them all together.</p>
+
+<hr/>
+
+<h2>一致性光谱 / The Consistency Spectrum</h2>
+
+<div class="diagram-block">Strong ←————————————————————→ Weak
+  │                               │
+Linearizability  Sequential  Causal  Eventual
+  │                               │
+ etcd/Zookeeper   Spanner    Cassandra  DNS/CDN
+ (single-leader)  (TrueTime)  (CRDT)   (async repl)</div>
+
+<h3>1. Linearizability（线性一致性）— "最强"</h3>
+<ul><li>每次读都能看到最新写，好像只有一个节点</li><li>实现：Raft/Paxos，单 leader + 同步复制</li><li>代价：高延迟（需要 quorum 确认），不能分区</li><li><strong>你学过的系统</strong>：etcd (Day 63)、ZooKeeper 分布式锁</li></ul>
+
+<h3>2. Sequential Consistency（顺序一致性）</h3>
+<ul><li>所有操作有全序，但不要求实时。客户端看到的顺序一致</li><li>Spanner 用 TrueTime 实现近似线性一致性</li><li>比 Linearizability 稍宽松，性能更好</li></ul>
+
+<h3>3. Causal Consistency（因果一致性）</h3>
+<ul><li>"你写了一条消息，你朋友一定能读到" — 因果相关的操作有序</li><li>实现：Vector clocks、CRDT</li><li><strong>你学过的系统</strong>：Cassandra 的 LWW（Last Write Wins）是因果一致性的近似</li></ul>
+
+<h3>4. Eventual Consistency（最终一致性）</h3>
+<ul><li>最终会收敛，但过程中可能读到旧数据</li><li>代价最低，可用性最高</li><li><strong>你学过的系统</strong>：CDN (Day 64)、DNS、S3 replication</li></ul>
+
+<hr/>
+
+<h2>你的设计对应哪个级别？</h2>
+
+<table><thead><tr><th>系统</th><th>一致性级别</th><th>原因</th></tr></thead><tbody><tr><td>分布式锁 (etcd)</td><td>Linearizable</td><td>Raft quorum writes</td></tr><tr><td>分布式缓存 (Redis Cluster)</td><td>Eventual</td><td>async replication</td></tr><tr><td>多区域 Active-Active</td><td>Eventual / Causal</td><td>cross-region lag</td></tr><tr><td>Chat 系统消息顺序</td><td>Causal</td><td>per-user ordering</td></tr><tr><td>支付系统</td><td>Linearizable</td><td>不能丢钱</td></tr><tr><td>推荐系统计数器</td><td>Eventual</td><td>丢几个点击无所谓</td></tr></tbody></table>
+
+<hr/>
+
+<h2>常见错误 / Common Mistakes</h2>
+
+<p>❌ "我用 Redis，所以是强一致" — Redis Cluster 是最终一致的！  </p>
+<p>❌ 混淆 "CP" 和 "Linearizable" — CAP 的 C 是 Sequential，不是 Linearizability  </p>
+<p>✅ 面试时先问：这个系统对一致性的要求是什么？钱 &gt; 帖子点赞数</p>
+
+<hr/>
+
+<h2>决策框架 / Decision Framework</h2>
+
+<div class="diagram-block">需要"读你的写"(read-your-writes)?
+  → YES: 至少 Causal Consistency (sticky sessions 或 Raft)
+  
+允许短暂读到旧数据?
+  → YES: Eventual (DNS, CDN, 社交 feed)
+  
+涉及金钱/库存/锁?
+  → YES: Linearizable (etcd/Zookeeper, single-region RDBMS + sync repl)</div>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://jepsen.io/consistency — Kyle Kingsbury 的一致性模型权威指南</li><li>https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html</li><li>https://www.allthingsdistributed.com/2008/12/eventually_consistent.html (Werner Vogels / Amazon CTO)</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>想象你和同学共享一份笔记。Linearizable = 有一本原版，每次改都先锁住给大家看；Eventual = 每人先记自己的，最后汇总——可能有一段时间不同步，但最终一样。</p>
+<p>Linearizability = one shared notebook, everyone waits their turn. Eventual consistency = everyone has their own copy that syncs up... eventually.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 132</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>💻 算法 / Algorithms — Day 132</h1>
+<h2>#5 Longest Palindromic Substring 🟡 Medium</h2>
+<p>🧩 <strong>一维动态规划模式 (5/12)</strong> — building on the template from Day 126</p>
+
+<hr/>
+
+<h2>回顾模版 / Pattern Recap</h2>
+
+<div class="diagram-block">这是本 DP 模块第 5 题。前 4 题（爬楼梯、最小费用爬楼梯、打家劫舍 I &amp; II）都是**线性 1D DP**——每个状态只依赖前几个状态。今天的变化：**状态是二维的 `dp[i][j]`**，但问题本质仍是 1D DP 的思维：定义子问题 → 写转移方程 → 确定 base case。</div>
+
+<p>This is problem 5/12 in the 1-D DP block. The twist: today's DP table is 2D <code>dp[i][j]</code>, but the thinking pattern is the same.</p>
+
+<hr/>
+
+<h2>真实场景 / Real-World Analogy</h2>
+
+<p>想象 DNA 序列分析：找最长的回文子序列，用于检测基因突变对称区域。或者拼写检查器需要找最长的"镜像"词根。</p>
+
+<p>DNA sequence analysis: find the longest symmetric (palindromic) region — same idea.</p>
+
+<hr/>
+
+<h2>问题 / Problem</h2>
+
+<p>🔗 <a href="https://leetcode.com/problems/longest-palindromic-substring/">LeetCode #5</a> | 📹 <a href="https://neetcode.io/problems/longest-palindromic-substring">NeetCode</a></p>
+
+<p>给你一个字符串 <code>s</code>，返回其中最长的回文子串。</p>
+<p>Given string <code>s</code>, return the longest palindromic substring.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Input: s = &quot;babad&quot;&#10;Output: &quot;bab&quot; (or &quot;aba&quot;)&#10;&#10;Input: s = &quot;cbbd&quot;&#10;Output: &quot;bb&quot;">Copy</button>
+  <pre><code class="language-text">Input: s = "babad"
+Output: "bab" (or "aba")
+
+Input: s = "cbbd"
+Output: "bb"</code></pre>
+</div>
+
+<hr/>
+
+<h2>两种解法 / Two Approaches</h2>
+
+<h3>方法一：中心扩展法 O(n²) 时间 O(1) 空间 ✅ 推荐</h3>
+
+<p><strong>思路</strong>：每个字符（或相邻两字符）都可以是回文的中心，向外扩展。</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def longestPalindrome(s: str) -&gt; str:&#10;    res = &quot;&quot;&#10;    res_len = 0&#10;&#10;    for i in range(len(s)):&#10;        # Odd length palindromes (single char center)&#10;        l, r = i, i&#10;        while l &gt;= 0 and r &lt; len(s) and s[l] == s[r]:&#10;            if (r - l + 1) &gt; res_len:&#10;                res = s[l:r+1]&#10;                res_len = r - l + 1&#10;            l -= 1&#10;            r += 1&#10;&#10;        # Even length palindromes (two char center)&#10;        l, r = i, i + 1&#10;        while l &gt;= 0 and r &lt; len(s) and s[l] == s[r]:&#10;            if (r - l + 1) &gt; res_len:&#10;                res = s[l:r+1]&#10;                res_len = r - l + 1&#10;            l -= 1&#10;            r += 1&#10;&#10;    return res">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> longestPalindrome(s: str) -&gt; str:
+    res = <span style="color:#e5c07b;">""</span>
+    res_len = <span style="color:#56b6c2;">0</span>
+
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(len(s)):
+        <span style="color:#5c6370;"># Odd length palindromes (single char center)</span>
+        l, r = i, i
+        <span style="color:#c678dd;">while</span> l &gt;= <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">and</span> r &lt; len(s) <span style="color:#c678dd;">and</span> s[l] == s[r]:
+            <span style="color:#c678dd;">if</span> (r - l + <span style="color:#56b6c2;">1</span>) &gt; res_len:
+                res = s[l:r+<span style="color:#56b6c2;">1</span>]
+                res_len = r - l + <span style="color:#56b6c2;">1</span>
+            l -= <span style="color:#56b6c2;">1</span>
+            r += <span style="color:#56b6c2;">1</span>
+
+        <span style="color:#5c6370;"># Even length palindromes (two char center)</span>
+        l, r = i, i + <span style="color:#56b6c2;">1</span>
+        <span style="color:#c678dd;">while</span> l &gt;= <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">and</span> r &lt; len(s) <span style="color:#c678dd;">and</span> s[l] == s[r]:
+            <span style="color:#c678dd;">if</span> (r - l + <span style="color:#56b6c2;">1</span>) &gt; res_len:
+                res = s[l:r+<span style="color:#56b6c2;">1</span>]
+                res_len = r - l + <span style="color:#56b6c2;">1</span>
+            l -= <span style="color:#56b6c2;">1</span>
+            r += <span style="color:#56b6c2;">1</span>
+
+    <span style="color:#c678dd;">return</span> res</code></pre>
+</div>
+
+<p><strong>Trace for "babad":</strong></p>
+<div class="diagram-block">i=0 'b': odd → "b"; even l=0,r=1 'b'≠'a' stop
+i=1 'a': odd → expand: l=0,r=2 'b'=='b' → "bab" (len 3)
+i=2 'b': odd → expand: l=1,r=3 'a'=='a' → "aba" (also len 3, no update since equal)
+...
+Result: "bab"</div>
+
+<h3>方法二：DP 表格法 O(n²) 时间 O(n²) 空间</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def longestPalindrome_dp(s: str) -&gt; str:&#10;    n = len(s)&#10;    # dp[i][j] = True if s[i..j] is palindrome&#10;    dp = [[False] * n for _ in range(n)]&#10;    &#10;    res = s[0]&#10;    &#10;    # Every single char is a palindrome&#10;    for i in range(n):&#10;        dp[i][i] = True&#10;    &#10;    # Fill by length&#10;    for length in range(2, n + 1):&#10;        for i in range(n - length + 1):&#10;            j = i + length - 1&#10;            if length == 2:&#10;                dp[i][j] = (s[i] == s[j])&#10;            else:&#10;                dp[i][j] = (s[i] == s[j]) and dp[i+1][j-1]&#10;            &#10;            if dp[i][j] and length &gt; len(res):&#10;                res = s[i:j+1]&#10;    &#10;    return res">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> longestPalindrome_dp(s: str) -&gt; str:
+    n = len(s)
+    <span style="color:#5c6370;"># dp[i][j] = True if s[i..j] is palindrome</span>
+    dp = [[<span style="color:#c678dd;">False</span>] * n <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(n)]
+    
+    res = s[<span style="color:#56b6c2;">0</span>]
+    
+    <span style="color:#5c6370;"># Every single char is a palindrome</span>
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(n):
+        dp[i][i] = <span style="color:#c678dd;">True</span>
+    
+    <span style="color:#5c6370;"># Fill by length</span>
+    <span style="color:#c678dd;">for</span> length <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">2</span>, n + <span style="color:#56b6c2;">1</span>):
+        <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(n - length + <span style="color:#56b6c2;">1</span>):
+            j = i + length - <span style="color:#56b6c2;">1</span>
+            <span style="color:#c678dd;">if</span> length == <span style="color:#56b6c2;">2</span>:
+                dp[i][j] = (s[i] == s[j])
+            <span style="color:#c678dd;">else</span>:
+                dp[i][j] = (s[i] == s[j]) <span style="color:#c678dd;">and</span> dp[i+<span style="color:#56b6c2;">1</span>][j-<span style="color:#56b6c2;">1</span>]
+            
+            <span style="color:#c678dd;">if</span> dp[i][j] <span style="color:#c678dd;">and</span> length &gt; len(res):
+                res = s[i:j+<span style="color:#56b6c2;">1</span>]
+    
+    <span style="color:#c678dd;">return</span> res</code></pre>
+</div>
+
+<p><strong>与模版的关系：</strong> <code>dp[i][j]</code> 的转移依赖 <code>dp[i+1][j-1]</code>，这是"收缩"的子问题，而不是线性的前几个。DP 的核心不变：<strong>定义子问题 + 找转移方程</strong>。</p>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+<ul><li>中心扩展：Time <strong>O(n²)</strong> | Space <strong>O(1)</strong> ← 首选</li><li>DP 表格：Time <strong>O(n²)</strong> | Space <strong>O(n²)</strong></li><li>（有 Manacher's Algorithm 可达 O(n)，但面试基本不考）</li></ul>
+
+<hr/>
+
+<h2>举一反三 / Block Connection</h2>
+
+<table><thead><tr><th>题目</th><th>模式变化</th></tr></thead><tbody><tr><td>#647 Palindromic Substrings (下一题!)</td><td>计数而非找最长 → 中心扩展同样适用</td></tr><tr><td>#516 Longest Palindromic Subsequence</td><td>子序列 vs 子串，状态转移不同</td></tr><tr><td>#5 (今天)</td><td>子串，中心扩展最优</td></tr></tbody></table>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="{&quot;question&quot;:&quot;What is the time and space complexity of the expand-around-center approach for Longest Palindromic Substring?&quot;,&quot;options&quot;:[&quot;O(n) time, O(1) space&quot;,&quot;O(n²) time, O(1) space&quot;,&quot;O(n²) time, O(n²) space&quot;,&quot;O(n log n) time, O(n) space&quot;],&quot;correct_index&quot;:1}">Copy</button>
+  <pre><code class="language-json">{<span style="color:#56b6c2;">"question"</span>:"What is the time and space complexity of the expand-around-center approach for Longest Palindromic Substring?",<span style="color:#56b6c2;">"options"</span>:["O(n) time, O(<span style="color:#56b6c2;">1</span>) space","O(n²) time, O(<span style="color:#56b6c2;">1</span>) space","O(n²) time, O(n²) space","O(n log n) time, O(n) space"],<span style="color:#56b6c2;">"correct_index"</span>:<span style="color:#56b6c2;">1</span>}</code></pre>
+</div>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://leetcode.com/problems/longest-palindromic-substring/</li><li>https://neetcode.io/problems/longest-palindromic-substring</li><li>https://en.wikipedia.org/wiki/Longest_palindromic_substring</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>找最长回文子串就像找镜子里的字：从每个字母出发，向两边扩展，只要两边相等就继续，记录最长的那个。</p>
+<p>It's like standing in the middle and checking if the letters on both sides match — keep going as long as they do, and track the longest mirror you found.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 132 (Synthesis)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>🗣️ 软技能 / Soft Skills — Day 132 (Synthesis)</h1>
+<p><strong>综合场景：你如何拆解并交付一个"没有明确终点"的平台项目？</strong></p>
+<p><strong>Synthesis: How do you scope and ship a platform project with no clear end state?</strong></p>
+
+<hr/>
+
+<h2>为什么这道题特别难 / Why This Is Hard</h2>
+
+<p>平台类项目（内部工具、开发者平台、基础设施重构）最大的挑战是：没有"完成"的定义。你既不能无休止地建设，也不能过早宣布完成后留下一堆未覆盖的用例。Senior/Staff 工程师在这里最容易暴雷。</p>
+
+<p>Platform projects (internal tooling, dev platforms, infra rewrites) are uniquely hard: there's no natural "done." You can't build forever, and you can't declare victory too early. This is where senior engineers often stumble.</p>
+
+<hr/>
+
+<h2>STAR 框架 / STAR Breakdown</h2>
+
+<p><strong>场景设定 / Situation:</strong></p>
+<blockquote>"我们的服务部署系统是一堆 bash 脚本，20+ 个团队各自维护自己的 fork，重复逻辑遍地都是。我被指派重建它，但没有截止日期，也没有明确的 scope。"</blockquote>
+
+<p><strong>任务 / Task:</strong></p>
+<p>定义什么是"足够好"，在不阻塞其他团队的前提下交付，同时持续迭代。</p>
+
+<p><strong>行动 / Action:</strong></p>
+<ol><li><strong>先做用户调研</strong>——和 5 个团队各 30 分钟，找 pain points 的交集</li><li><strong>定义 v1 的 done criteria</strong>——"80% 的团队能用，剩下 20% 有清晰 migration path"</li><li><strong>公开 roadmap</strong>——让所有 stakeholders 知道 v1 包含什么、不包含什么，减少"为什么没有 X"的摩擦</li><li><strong>先迁移最大的 2 个团队</strong>——快速建立信心和真实 feedback</li><li><strong>设置 sunset date 给旧系统</strong>——没有截止日期，没人会迁移</li></ol>
+
+<p><strong>结果 / Result:</strong></p>
+<p>6 个月内完成核心迁移，旧系统正式 deprecated，团队从平均 45min 部署时间降到 8min。</p>
+
+<hr/>
+
+<h2>❌ 坏回答 vs ✅ 好回答</h2>
+
+<p>❌ "我们尽量覆盖所有用例，持续迭代改进。"</p>
+<p>— 没有边界，听起来永远做不完，面试官不知道你会交付什么</p>
+
+<p>✅ "我主动定义了 v1 的成功标准，明确了不在 scope 的内容，并设置了旧系统的 sunset date 来推动迁移。"</p>
+<p>— 展示了 ownership + 清晰的 decision-making + 结果导向</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分点</h2>
+
+<ul><li><strong>主动定义 done</strong>，而不是等别人告诉你</li><li><strong>公开不做什么</strong>（explicit non-goals）和做什么同样重要</li><li><strong>用 sunset date 制造urgency</strong>——内部迁移没有外部压力，必须自己创造</li><li><strong>把平台的成功与用户的成功绑定</strong>——Deploy 时间减少 = 平台成功，而不是"我们上线了新系统"</li></ul>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+
+<ol><li><strong>没有截止日期的项目 = 最难管理的项目</strong>，先定义 done criteria</li><li><strong>Migration 必须有 deadline</strong>，否则旧系统永远死不了</li><li><strong>明确 non-goals</strong>，减少 scope creep 和 stakeholder 摩擦</li><li><strong>先找 top pain points</strong>，别从技术最有趣的地方开始</li></ol>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://lethain.com/staff-engineer-archetypes/ — Will Larson 的 Staff Engineer 视角</li><li>https://martinfowler.com/bliki/StranglerFigApplication.html — Martin Fowler 平台迁移模式</li><li>https://increment.com/teams/the-epistemology-of-software-quality/</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>如果你要重建乐高城，最怕的是没有"城建完了"的标准。聪明的做法是先定好"哪几栋楼建好了就算第一期完成"，再设个"旧城墙拆掉的日期"，不然大家都不搬新家。</p>
+<p>Building a new city from scratch is hard when "done" is undefined. Smart engineers define what v1 looks like, announce when the old city gets torn down, and don't try to build everything at once.</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 132 (Synthesis)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>🤖 AI — Day 132 (Synthesis)</h1>
+<h2>综合深化：LLM 推理优化全景 — KV Cache、投机解码、量化的组合拳</h2>
+<p><strong>Synthesis: LLM Inference Optimization — KV Cache + Speculative Decoding + Quantization Together</strong></p>
+
+<hr/>
+
+<h2>为什么今天综合这三个 / Why Synthesize These Three</h2>
+
+<p>你已经学过 KV Cache（推理优化, Day 46）、量化（Day 44）、模型蒸馏（Day 56）。但在真实的 LLM serving 系统（你在 Day 73 学过的 LLM Inference Serving）里，这三件武器是同时使用的。今天搞清楚它们如何组合，以及各自的瓶颈在哪。</p>
+
+<p>You've covered KV Cache, quantization, and distillation separately. In a real LLM serving stack, all three are used together. Today: understand how they compose and where each hits its limits.</p>
+
+<hr/>
+
+<h2>快速复习 / Quick Recap</h2>
+
+<div class="diagram-block">LLM 推理的两个阶段：
+┌─────────────────────────────────────────────────────┐
+│  Prefill (预填充)                                    │
+│  输入 prompt → 计算所有 token 的 KV → 生成第一个 token │
+│  特点：可并行，GPU 利用率高                           │
+├─────────────────────────────────────────────────────┤
+│  Decode (解码)                                       │
+│  逐 token 生成，每步只生成1个 token                   │
+│  特点：串行，内存带宽瓶颈，GPU 利用率低               │
+└─────────────────────────────────────────────────────┘</div>
+
+<p><strong>核心瓶颈：Decode 阶段是内存带宽受限的（memory bandwidth bound），不是算力受限的</strong>。这决定了优化方向。</p>
+
+<hr/>
+
+<h2>三大武器如何配合 / How the Three Tools Compose</h2>
+
+<h3>1. KV Cache — 消除重复计算</h3>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Without KV Cache: recompute all previous tokens every step&#10;# With KV Cache: store K,V matrices, only compute new token&#10;&#10;# Memory cost: 2 * num_layers * num_heads * head_dim * seq_len * batch_size * dtype_bytes&#10;# For Llama-3 70B, 4096 seq len, fp16: ~8GB just for KV cache!">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Without KV Cache: recompute all previous tokens every step</span>
+<span style="color:#5c6370;"># With KV Cache: store K,V matrices, only compute new token</span>
+
+<span style="color:#5c6370;"># Memory cost: 2 * num_layers * num_heads * head_dim * seq_len * batch_size * dtype_bytes</span>
+<span style="color:#5c6370;"># For Llama-3 70B, 4096 seq len, fp16: ~8GB just for KV cache!</span></code></pre>
+</div>
+<div class="diagram-block">**瓶颈**：KV Cache 太大 → GPU 显存不够 → 限制 batch size → 吞吐量低</div>
+
+<h3>2. 量化 — 同时压缩权重和 KV Cache</h3>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# INT8 量化：模型权重 70B → 70GB → ~35GB (fp16→int8)&#10;# INT4 量化：70GB → ~18GB&#10;# KV Cache 量化：KV cache int8 → 内存减半，更大 batch&#10;&#10;# 用 bitsandbytes 加载量化模型&#10;from transformers import AutoModelForCausalLM, BitsAndBytesConfig&#10;import torch&#10;&#10;bnb_config = BitsAndBytesConfig(&#10;    load_in_4bit=True,&#10;    bnb_4bit_quant_type=&quot;nf4&quot;,&#10;    bnb_4bit_compute_dtype=torch.float16,&#10;)&#10;model = AutoModelForCausalLM.from_pretrained(&#10;    &quot;meta-llama/Meta-Llama-3-8B&quot;,&#10;    quantization_config=bnb_config,&#10;)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># INT8 量化：模型权重 70B → 70GB → ~35GB (fp16→int8)</span>
+<span style="color:#5c6370;"># INT4 量化：70GB → ~18GB</span>
+<span style="color:#5c6370;"># KV Cache 量化：KV cache int8 → 内存减半，更大 batch</span>
+
+<span style="color:#5c6370;"># 用 bitsandbytes 加载量化模型</span>
+<span style="color:#c678dd;">from</span> transformers <span style="color:#c678dd;">import</span> AutoModelForCausalLM, BitsAndBytesConfig
+<span style="color:#c678dd;">import</span> torch
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=<span style="color:#c678dd;">True</span>,
+    bnb_4bit_quant_type=<span style="color:#e5c07b;">"nf4"</span>,
+    bnb_4bit_compute_dtype=torch.float16,
+)
+model = AutoModelForCausalLM.from_pretrained(
+    <span style="color:#e5c07b;">"meta-llama/Meta-Llama-3-8B"</span>,
+    quantization_config=bnb_config,
+)</code></pre>
+</div>
+
+<h3>3. 投机解码 / Speculative Decoding — 克服串行瓶颈</h3>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="核心思路：用小模型（draft model）猜几个 token，&#10;         大模型（target model）一次性验证&#10;&#10;步骤：&#10;1. Draft model 生成 k=4 个候选 token: [t1, t2, t3, t4]&#10;2. Target model 并行验证所有 4 个（因为可以并行！）&#10;3. 接受到第一个不匹配处，拒绝后续&#10;&#10;好处：target model 每次&quot;解码&quot;生成多个 token，&#10;     GPU 从 memory-bound 变回 compute-bound">Copy</button>
+  <pre><code class="language-text">核心思路：用小模型（draft model）猜几个 token，
+         大模型（target model）一次性验证
+
+步骤：
+1. Draft model 生成 k=4 个候选 token: [t1, t2, t3, t4]
+2. Target model 并行验证所有 4 个（因为可以并行！）
+3. 接受到第一个不匹配处，拒绝后续
+
+好处：target model 每次"解码"生成多个 token，
+     GPU 从 memory-bound 变回 compute-bound</code></pre>
+</div>
+
+<hr/>
+
+<h2>组合效果 / Combined Effect</h2>
+
+<div class="diagram-block">朴素 Llama-3 70B serving:
+- 内存：~140GB (fp32) → 需要 2x A100 80GB
+- 吞吐：~20 tokens/sec per request
+
+优化后：
+- INT4 量化：~18GB，单卡 A100 可跑
+- KV Cache + paged attention (vLLM)：batch size 提升 10x
+- Speculative Decoding (7B draft)：latency 降低 2-3x
+- 综合：单卡吞吐提升 5-10x</div>
+
+<hr/>
+
+<h2>工程选型 / When to Use What</h2>
+
+<table><thead><tr><th>场景</th><th>推荐优化</th></tr></thead><tbody><tr><td>单卡内存不够</td><td>INT4 量化</td></tr><tr><td>高并发低延迟</td><td>Speculative Decoding + Batching</td></tr><tr><td>长 context（&gt;32k）</td><td>KV Cache 量化 + PagedAttention</td></tr><tr><td>边缘部署</td><td>量化 + 蒸馏（小模型）</td></tr></tbody></table>
+
+<hr/>
+
+<h2>可运行代码 / Runnable Snippet</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# pip install vllm&#10;from vllm import LLM, SamplingParams&#10;&#10;# vLLM combines PagedAttention (KV cache) + continuous batching&#10;llm = LLM(&#10;    model=&quot;meta-llama/Meta-Llama-3.1-8B-Instruct&quot;,&#10;    quantization=&quot;int4&quot;,          # quantization&#10;    speculative_model=&quot;[ngram]&quot;,  # speculative decoding (ngram draft)&#10;    num_speculative_tokens=5,&#10;    max_model_len=4096,&#10;)&#10;&#10;params = SamplingParams(temperature=0.8, max_tokens=200)&#10;outputs = llm.generate([&quot;Explain KV cache in one paragraph&quot;], params)&#10;print(outputs[0].outputs[0].text)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># pip install vllm</span>
+<span style="color:#c678dd;">from</span> vllm <span style="color:#c678dd;">import</span> LLM, SamplingParams
+
+<span style="color:#5c6370;"># vLLM combines PagedAttention (KV cache) + continuous batching</span>
+llm = LLM(
+    model=<span style="color:#e5c07b;">"meta-llama/Meta-Llama-3.1-8B-Instruct"</span>,
+    quantization=<span style="color:#e5c07b;">"int4"</span>,          <span style="color:#5c6370;"># quantization</span>
+    speculative_model=<span style="color:#e5c07b;">"[ngram]"</span>,  <span style="color:#5c6370;"># speculative decoding (ngram draft)</span>
+    num_speculative_tokens=<span style="color:#56b6c2;">5</span>,
+    max_model_len=<span style="color:#56b6c2;">4096</span>,
+)
+
+params = SamplingParams(temperature=<span style="color:#56b6c2;">0.8</span>, max_tokens=<span style="color:#56b6c2;">200</span>)
+outputs = llm.generate([<span style="color:#e5c07b;">"Explain KV cache in one paragraph"</span>], params)
+print(outputs[<span style="color:#56b6c2;">0</span>].outputs[<span style="color:#56b6c2;">0</span>].text)</code></pre>
+</div>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://vllm.ai — vLLM: PagedAttention + continuous batching</li><li>https://arxiv.org/abs/2211.17192 — Speculative Decoding 原论文</li><li>https://huggingface.co/docs/transformers/quantization/bitsandbytes — BitsAndBytes 量化</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>LLM 生成文字就像一个接一个地摆积木——很慢。优化就是：用小帮手先猜几块（投机解码），把积木压缩变小（量化），记住之前摆过的位置不重算（KV Cache）。三招加起来快了好几倍。</p>
+<p>Generating text is like placing one block at a time. Optimizations: have a small helper guess the next few blocks (speculative decoding), shrink the blocks (quantization), remember where you already placed things (KV cache). Together: much faster.</p>
+
+<div class="attention-card">
+  <h3>Attention Heatmap</h3>
+  <p>When the model processes <code>it</code>, it attends most strongly to <code>animal</code>.</p>
+  <div class="heatmap-wrap">
+    <table class="heatmap">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="heatmap-axis">The</th><th class="heatmap-axis">animal</th><th class="heatmap-axis">didnt</th><th class="heatmap-axis">cross</th><th class="heatmap-axis">the</th><th class="heatmap-axis">street</th><th class="heatmap-axis">because</th><th class="heatmap-axis">it</th><th class="heatmap-axis">was</th><th class="heatmap-axis">too</th><th class="heatmap-axis">tired</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="heatmap-axis row-label">it →</th>
+          <td><div class="heatmap-cell" title="The: 0.02" aria-label="The attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="animal: 0.86" aria-label="animal attention weight 0.86" style="background:rgba(167, 139, 250, 0.86);"></div></td><td><div class="heatmap-cell" title="didnt: 0.03" aria-label="didnt attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="cross: 0.04" aria-label="cross attention weight 0.04" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="the: 0.02" aria-label="the attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="street: 0.08" aria-label="street attention weight 0.08" style="background:rgba(167, 139, 250, 0.08);"></div></td><td><div class="heatmap-cell" title="because: 0.05" aria-label="because attention weight 0.05" style="background:rgba(167, 139, 250, 0.05);"></div></td><td><div class="heatmap-cell" title="it: 0.03" aria-label="it attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="was: 0.07" aria-label="was attention weight 0.07" style="background:rgba(167, 139, 250, 0.07);"></div></td><td><div class="heatmap-cell" title="too: 0.10" aria-label="too attention weight 0.10" style="background:rgba(167, 139, 250, 0.10);"></div></td><td><div class="heatmap-cell" title="tired: 0.30" aria-label="tired attention weight 0.30" style="background:rgba(167, 139, 250, 0.30);"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>

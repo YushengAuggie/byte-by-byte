@@ -5,8 +5,612 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 10 Sep 2026 15:19:12 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 11 Sep 2026 15:20:34 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-09-11</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-09-11</guid>
+      <pubDate>Fri, 11 Sep 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 132 (Synthesis)</h2>
+<p><strong>一致性模型全景对比：从 Linearizability 到 Eventual Consistency</strong></p>
+<p><strong>Consistency Models: The Full Spectrum in Production</strong></p>
+
+<hr/>
+
+<h2>为什么这个话题重要 / Why This Matters</h2>
+
+<p>过去几个月你学了 CAP 定理、Raft/Paxos、分布式锁、多区域 Active-Active、分布式缓存……但这些系统到底提供什么级别的一致性保障？面试官最爱问：&quot;你的设计能提供什么一致性？&quot;很多人答不出来。</p>
+
+<p>You&#x27;ve covered CAP theorem, Raft/Paxos, distributed locks, multi-region active-active, distributed caches — but what consistency level does each actually provide? This synthesis ties them all together.</p>
+
+<hr/>
+
+<h2>一致性光谱 / The Consistency Spectrum</h2>
+
+<pre><code>
+Strong ←————————————————————→ Weak
+  │                               │
+Linearizability  Sequential  Causal  Eventual
+  │                               │
+ etcd/Zookeeper   Spanner    Cassandra  DNS/CDN
+ (single-leader)  (TrueTime)  (CRDT)   (async repl)
+</code></pre>
+
+<h3>1. Linearizability（线性一致性）— &quot;最强&quot;</h3>
+<p>- 每次读都能看到最新写，好像只有一个节点</p>
+<p>- 实现：Raft/Paxos，单 leader + 同步复制</p>
+<p>- 代价：高延迟（需要 quorum 确认），不能分区</p>
+<p>- <strong>你学过的系统</strong>：etcd (Day 63)、ZooKeeper 分布式锁</p>
+
+<h3>2. Sequential Consistency（顺序一致性）</h3>
+<p>- 所有操作有全序，但不要求实时。客户端看到的顺序一致</p>
+<p>- Spanner 用 TrueTime 实现近似线性一致性</p>
+<p>- 比 Linearizability 稍宽松，性能更好</p>
+
+<h3>3. Causal Consistency（因果一致性）</h3>
+<p>- &quot;你写了一条消息，你朋友一定能读到&quot; — 因果相关的操作有序</p>
+<p>- 实现：Vector clocks、CRDT</p>
+<p>- <strong>你学过的系统</strong>：Cassandra 的 LWW（Last Write Wins）是因果一致性的近似</p>
+
+<h3>4. Eventual Consistency（最终一致性）</h3>
+<p>- 最终会收敛，但过程中可能读到旧数据</p>
+<p>- 代价最低，可用性最高</p>
+<p>- <strong>你学过的系统</strong>：CDN (Day 64)、DNS、S3 replication</p>
+
+<hr/>
+
+<h2>你的设计对应哪个级别？</h2>
+
+<p>| 系统 | 一致性级别 | 原因 |</p>
+<p>|------|-----------|------|</p>
+<p>| 分布式锁 (etcd) | Linearizable | Raft quorum writes |</p>
+<p>| 分布式缓存 (Redis Cluster) | Eventual | async replication |</p>
+<p>| 多区域 Active-Active | Eventual / Causal | cross-region lag |</p>
+<p>| Chat 系统消息顺序 | Causal | per-user ordering |</p>
+<p>| 支付系统 | Linearizable | 不能丢钱 |</p>
+<p>| 推荐系统计数器 | Eventual | 丢几个点击无所谓 |</p>
+
+<hr/>
+
+<h2>常见错误 / Common Mistakes</h2>
+
+<p>❌ &quot;我用 Redis，所以是强一致&quot; — Redis Cluster 是最终一致的！</p>
+<p>❌ 混淆 &quot;CP&quot; 和 &quot;Linearizable&quot; — CAP 的 C 是 Sequential，不是 Linearizability</p>
+<p>✅ 面试时先问：这个系统对一致性的要求是什么？钱 &gt; 帖子点赞数</p>
+
+<hr/>
+
+<h2>决策框架 / Decision Framework</h2>
+
+<pre><code>
+需要&quot;读你的写&quot;(read-your-writes)?
+  → YES: 至少 Causal Consistency (sticky sessions 或 Raft)
+  
+允许短暂读到旧数据?
+  → YES: Eventual (DNS, CDN, 社交 feed)
+  
+涉及金钱/库存/锁?
+  → YES: Linearizable (etcd/Zookeeper, single-region RDBMS + sync repl)
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://jepsen.io/consistency — Kyle Kingsbury 的一致性模型权威指南</p>
+<p>- https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html</p>
+<p>- https://www.allthingsdistributed.com/2008/12/eventually_consistent.html (Werner Vogels / Amazon CTO)</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象你和同学共享一份笔记。Linearizable = 有一本原版，每次改都先锁住给大家看；Eventual = 每人先记自己的，最后汇总——可能有一段时间不同步，但最终一样。</p>
+<p>Linearizability = one shared notebook, everyone waits their turn. Eventual consistency = everyone has their own copy that syncs up... eventually.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 132</h2>
+<h2>#5 Longest Palindromic Substring 🟡 Medium</h2>
+<p>🧩 <strong>一维动态规划模式 (5/12)</strong> — building on the template from Day 126</p>
+
+<hr/>
+
+<h2>回顾模版 / Pattern Recap</h2>
+
+<p>这是本 DP 模块第 5 题。前 4 题（爬楼梯、最小费用爬楼梯、打家劫舍 I &amp; II）都是<strong>线性 1D DP</strong>——每个状态只依赖前几个状态。今天的变化：<strong>状态是二维的 <code>dp[i][j]</code></strong>，但问题本质仍是 1D DP 的思维：定义子问题 → 写转移方程 → 确定 base case。</p>
+
+<p>This is problem 5/12 in the 1-D DP block. The twist: today&#x27;s DP table is 2D <code>dp[i][j]</code>, but the thinking pattern is the same.</p>
+
+<hr/>
+
+<h2>真实场景 / Real-World Analogy</h2>
+
+<p>想象 DNA 序列分析：找最长的回文子序列，用于检测基因突变对称区域。或者拼写检查器需要找最长的&quot;镜像&quot;词根。</p>
+
+<p>DNA sequence analysis: find the longest symmetric (palindromic) region — same idea.</p>
+
+<hr/>
+
+<h2>问题 / Problem</h2>
+
+<p>🔗 [LeetCode #5](https://leetcode.com/problems/longest-palindromic-substring/) | 📹 [NeetCode](https://neetcode.io/problems/longest-palindromic-substring)</p>
+
+<p>给你一个字符串 <code>s</code>，返回其中最长的回文子串。</p>
+<p>Given string <code>s</code>, return the longest palindromic substring.</p>
+
+<pre><code>
+Input: s = &quot;babad&quot;
+Output: &quot;bab&quot; (or &quot;aba&quot;)
+
+Input: s = &quot;cbbd&quot;
+Output: &quot;bb&quot;
+</code></pre>
+
+<hr/>
+
+<h2>两种解法 / Two Approaches</h2>
+
+<h3>方法一：中心扩展法 O(n²) 时间 O(1) 空间 ✅ 推荐</h3>
+
+<p><strong>思路</strong>：每个字符（或相邻两字符）都可以是回文的中心，向外扩展。</p>
+
+<pre><code>
+def longestPalindrome(s: str) -&gt; str:
+    res = &quot;&quot;
+    res_len = 0
+
+    for i in range(len(s)):
+        # Odd length palindromes (single char center)
+        l, r = i, i
+        while l &gt;= 0 and r &lt; len(s) and s[l] == s[r]:
+            if (r - l + 1) &gt; res_len:
+                res = s[l:r+1]
+                res_len = r - l + 1
+            l -= 1
+            r += 1
+
+        # Even length palindromes (two char center)
+        l, r = i, i + 1
+        while l &gt;= 0 and r &lt; len(s) and s[l] == s[r]:
+            if (r - l + 1) &gt; res_len:
+                res = s[l:r+1]
+                res_len = r - l + 1
+            l -= 1
+            r += 1
+
+    return res
+</code></pre>
+
+<p><strong>Trace for &quot;babad&quot;:</strong></p>
+<pre><code>
+i=0 &#x27;b&#x27;: odd → &quot;b&quot;; even l=0,r=1 &#x27;b&#x27;≠&#x27;a&#x27; stop
+i=1 &#x27;a&#x27;: odd → expand: l=0,r=2 &#x27;b&#x27;==&#x27;b&#x27; → &quot;bab&quot; (len 3)
+i=2 &#x27;b&#x27;: odd → expand: l=1,r=3 &#x27;a&#x27;==&#x27;a&#x27; → &quot;aba&quot; (also len 3, no update since equal)
+...
+Result: &quot;bab&quot;
+</code></pre>
+
+<h3>方法二：DP 表格法 O(n²) 时间 O(n²) 空间</h3>
+
+<pre><code>
+def longestPalindrome_dp(s: str) -&gt; str:
+    n = len(s)
+    # dp[i][j] = True if s[i..j] is palindrome
+    dp = [[False] * n for _ in range(n)]
+    
+    res = s[0]
+    
+    # Every single char is a palindrome
+    for i in range(n):
+        dp[i][i] = True
+    
+    # Fill by length
+    for length in range(2, n + 1):
+        for i in range(n - length + 1):
+            j = i + length - 1
+            if length == 2:
+                dp[i][j] = (s[i] == s[j])
+            else:
+                dp[i][j] = (s[i] == s[j]) and dp[i+1][j-1]
+            
+            if dp[i][j] and length &gt; len(res):
+                res = s[i:j+1]
+    
+    return res
+</code></pre>
+
+<p><strong>与模版的关系：</strong> <code>dp[i][j]</code> 的转移依赖 <code>dp[i+1][j-1]</code>，这是&quot;收缩&quot;的子问题，而不是线性的前几个。DP 的核心不变：<strong>定义子问题 + 找转移方程</strong>。</p>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+<p>- 中心扩展：Time <strong>O(n²)</strong> | Space <strong>O(1)</strong> ← 首选</p>
+<p>- DP 表格：Time <strong>O(n²)</strong> | Space <strong>O(n²)</strong></p>
+<p>- （有 Manacher&#x27;s Algorithm 可达 O(n)，但面试基本不考）</p>
+
+<hr/>
+
+<h2>举一反三 / Block Connection</h2>
+
+<p>| 题目 | 模式变化 |</p>
+<p>|------|---------|</p>
+<p>| #647 Palindromic Substrings (下一题!) | 计数而非找最长 → 中心扩展同样适用 |</p>
+<p>| #516 Longest Palindromic Subsequence | 子序列 vs 子串，状态转移不同 |</p>
+<p>| #5 (今天) | 子串，中心扩展最优 |</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+<pre><code>
+{&quot;question&quot;:&quot;What is the time and space complexity of the expand-around-center approach for Longest Palindromic Substring?&quot;,&quot;options&quot;:[&quot;O(n) time, O(1) space&quot;,&quot;O(n²) time, O(1) space&quot;,&quot;O(n²) time, O(n²) space&quot;,&quot;O(n log n) time, O(n) space&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://leetcode.com/problems/longest-palindromic-substring/</p>
+<p>- https://neetcode.io/problems/longest-palindromic-substring</p>
+<p>- https://en.wikipedia.org/wiki/Longest_palindromic_substring</p>
+
+<h2>🧒 ELI5</h2>
+<p>找最长回文子串就像找镜子里的字：从每个字母出发，向两边扩展，只要两边相等就继续，记录最长的那个。</p>
+<p>It&#x27;s like standing in the middle and checking if the letters on both sides match — keep going as long as they do, and track the longest mirror you found.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 132 (Synthesis)</h2>
+<p><strong>综合场景：你如何拆解并交付一个&quot;没有明确终点&quot;的平台项目？</strong></p>
+<p><strong>Synthesis: How do you scope and ship a platform project with no clear end state?</strong></p>
+
+<hr/>
+
+<h2>为什么这道题特别难 / Why This Is Hard</h2>
+
+<p>平台类项目（内部工具、开发者平台、基础设施重构）最大的挑战是：没有&quot;完成&quot;的定义。你既不能无休止地建设，也不能过早宣布完成后留下一堆未覆盖的用例。Senior/Staff 工程师在这里最容易暴雷。</p>
+
+<p>Platform projects (internal tooling, dev platforms, infra rewrites) are uniquely hard: there&#x27;s no natural &quot;done.&quot; You can&#x27;t build forever, and you can&#x27;t declare victory too early. This is where senior engineers often stumble.</p>
+
+<hr/>
+
+<h2>STAR 框架 / STAR Breakdown</h2>
+
+<p><strong>场景设定 / Situation:</strong></p>
+<p>&gt; &quot;我们的服务部署系统是一堆 bash 脚本，20+ 个团队各自维护自己的 fork，重复逻辑遍地都是。我被指派重建它，但没有截止日期，也没有明确的 scope。&quot;</p>
+
+<p><strong>任务 / Task:</strong></p>
+<p>定义什么是&quot;足够好&quot;，在不阻塞其他团队的前提下交付，同时持续迭代。</p>
+
+<p><strong>行动 / Action:</strong></p>
+<p>1. <strong>先做用户调研</strong>——和 5 个团队各 30 分钟，找 pain points 的交集</p>
+<p>2. <strong>定义 v1 的 done criteria</strong>——&quot;80% 的团队能用，剩下 20% 有清晰 migration path&quot;</p>
+<p>3. <strong>公开 roadmap</strong>——让所有 stakeholders 知道 v1 包含什么、不包含什么，减少&quot;为什么没有 X&quot;的摩擦</p>
+<p>4. <strong>先迁移最大的 2 个团队</strong>——快速建立信心和真实 feedback</p>
+<p>5. <strong>设置 sunset date 给旧系统</strong>——没有截止日期，没人会迁移</p>
+
+<p><strong>结果 / Result:</strong></p>
+<p>6 个月内完成核心迁移，旧系统正式 deprecated，团队从平均 45min 部署时间降到 8min。</p>
+
+<hr/>
+
+<h2>❌ 坏回答 vs ✅ 好回答</h2>
+
+<p>❌ &quot;我们尽量覆盖所有用例，持续迭代改进。&quot;</p>
+<p>— 没有边界，听起来永远做不完，面试官不知道你会交付什么</p>
+
+<p>✅ &quot;我主动定义了 v1 的成功标准，明确了不在 scope 的内容，并设置了旧系统的 sunset date 来推动迁移。&quot;</p>
+<p>— 展示了 ownership + 清晰的 decision-making + 结果导向</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分点</h2>
+
+<p>- <strong>主动定义 done</strong>，而不是等别人告诉你</p>
+<p>- <strong>公开不做什么</strong>（explicit non-goals）和做什么同样重要</p>
+<p>- <strong>用 sunset date 制造urgency</strong>——内部迁移没有外部压力，必须自己创造</p>
+<p>- <strong>把平台的成功与用户的成功绑定</strong>——Deploy 时间减少 = 平台成功，而不是&quot;我们上线了新系统&quot;</p>
+
+<hr/>
+
+<h2>Key Takeaways</h2>
+
+<p>1. <strong>没有截止日期的项目 = 最难管理的项目</strong>，先定义 done criteria</p>
+<p>2. <strong>Migration 必须有 deadline</strong>，否则旧系统永远死不了</p>
+<p>3. <strong>明确 non-goals</strong>，减少 scope creep 和 stakeholder 摩擦</p>
+<p>4. <strong>先找 top pain points</strong>，别从技术最有趣的地方开始</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://lethain.com/staff-engineer-archetypes/ — Will Larson 的 Staff Engineer 视角</p>
+<p>- https://martinfowler.com/bliki/StranglerFigApplication.html — Martin Fowler 平台迁移模式</p>
+<p>- https://increment.com/teams/the-epistemology-of-software-quality/</p>
+
+<h2>🧒 ELI5</h2>
+<p>如果你要重建乐高城，最怕的是没有&quot;城建完了&quot;的标准。聪明的做法是先定好&quot;哪几栋楼建好了就算第一期完成&quot;，再设个&quot;旧城墙拆掉的日期&quot;，不然大家都不搬新家。</p>
+<p>Building a new city from scratch is hard when &quot;done&quot; is undefined. Smart engineers define what v1 looks like, announce when the old city gets torn down, and don&#x27;t try to build everything at once.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🎨 前端 / Frontend — Day 132</h2>
+<h2>React 18 并发特性实战：useTransition &amp; useDeferredValue</h2>
+<p><strong>React 18 Concurrency in Practice: useTransition &amp; useDeferredValue</strong></p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个 dashboard，有一个搜索框，用户每次输入都会触发一个昂贵的列表过滤（1000+ 条记录）。输入卡顿，用户体验差。</p>
+
+<p>You&#x27;re building a dashboard with a search input that filters 1000+ records on every keystroke. It feels laggy.</p>
+
+<hr/>
+
+<h2>核心概念 / Core Concept</h2>
+
+<p>React 18 引入了<strong>并发渲染</strong>：不是所有更新都一样紧急。</p>
+
+<p>- <code>useTransition</code> — 把状态更新标记为&quot;非紧急&quot;（用户操作 &gt; 过滤计算）</p>
+<p>- <code>useDeferredValue</code> — 把一个值标记为&quot;可以延迟同步&quot;</p>
+
+<hr/>
+
+<h2>代码示例 / Code Example</h2>
+
+<h3>❌ 没有并发优化（卡顿）</h3>
+
+<pre><code>
+function SearchList() {
+  const [query, setQuery] = useState(&#x27;&#x27;);
+  const results = filterItems(query); // runs sync on every keystroke
+
+  return (
+    &lt;&gt;
+      &lt;input value={query} onChange={e =&gt; setQuery(e.target.value)} /&gt;
+      &lt;ItemList items={results} /&gt;
+    &lt;/&gt;
+  );
+}
+</code></pre>
+
+<h3>✅ 用 useTransition（输入流畅，列表延迟更新）</h3>
+
+<pre><code>
+import { useState, useTransition } from &#x27;react&#x27;;
+
+function SearchList() {
+  const [query, setQuery] = useState(&#x27;&#x27;);
+  const [filteredQuery, setFilteredQuery] = useState(&#x27;&#x27;);
+  const [isPending, startTransition] = useTransition();
+
+  function handleChange(e: React.ChangeEvent&lt;HTMLInputElement&gt;) {
+    const val = e.target.value;
+    setQuery(val); // urgent: update input immediately
+    startTransition(() =&gt; {
+      setFilteredQuery(val); // non-urgent: defer the expensive filter
+    });
+  }
+
+  const results = filterItems(filteredQuery);
+
+  return (
+    &lt;&gt;
+      &lt;input value={query} onChange={handleChange} /&gt;
+      {isPending &amp;&amp; &lt;span&gt;Filtering...&lt;/span&gt;}
+      &lt;ItemList items={results} /&gt;
+    &lt;/&gt;
+  );
+}
+</code></pre>
+
+<h3>✅ 用 useDeferredValue（更简洁，适合外部值）</h3>
+
+<pre><code>
+import { useState, useDeferredValue } from &#x27;react&#x27;;
+
+function SearchList() {
+  const [query, setQuery] = useState(&#x27;&#x27;);
+  const deferredQuery = useDeferredValue(query);
+
+  const results = filterItems(deferredQuery); // uses stale value until idle
+
+  return (
+    &lt;&gt;
+      &lt;input value={query} onChange={e =&gt; setQuery(e.target.value)} /&gt;
+      &lt;ItemList items={results} /&gt;
+    &lt;/&gt;
+  );
+}
+</code></pre>
+
+<hr/>
+
+<h2>猜猜输出 / Quiz — What happens?</h2>
+
+<pre><code>
+const [val, setVal] = useState(&#x27;&#x27;);
+const deferred = useDeferredValue(val);
+
+// User types &quot;a&quot;, then &quot;ab&quot; rapidly.
+// What does &lt;HeavyComponent query={deferred} /&gt; receive during typing?
+</code></pre>
+
+<p>A) <code>&quot;a&quot;</code> then <code>&quot;ab&quot;</code> immediately</p>
+<p>B) Possibly <code>&quot;&quot;</code> then <code>&quot;ab&quot;</code> (skips <code>&quot;a&quot;</code>)</p>
+<p>C) Always the same as <code>val</code></p>
+<p>D) Throws an error</p>
+
+<p><strong>Answer: B</strong> — React may skip intermediate values if the UI is busy. The component receives whatever the scheduler decides is the &quot;latest idle&quot; value.</p>
+
+<hr/>
+
+<h2>useTransition vs useDeferredValue — 何时用哪个？</h2>
+
+<p>| | useTransition | useDeferredValue |</p>
+<p>|---|---|---|</p>
+<p>| 控制点 | 你控制 state setter | 你只有一个值（来自 props 或外部） |</p>
+<p>| isPending | ✅ 有 | ❌ 没有 |</p>
+<p>| 适合场景 | 自己的 state transition | 接收外部 prop 并需要延迟 |</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+<pre><code>
+{&quot;question&quot;:&quot;Which React 18 hook gives you an `isPending` boolean to show a loading indicator during a non-urgent update?&quot;,&quot;options&quot;:[&quot;useDeferredValue&quot;,&quot;useTransition&quot;,&quot;useOptimistic&quot;,&quot;useSyncExternalStore&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://react.dev/reference/react/useTransition</p>
+<p>- https://react.dev/reference/react/useDeferredValue</p>
+<p>- https://react.dev/blog/2022/03/29/react-v18#new-feature-transitions</p>
+
+<h2>🧒 ELI5</h2>
+<p>就像餐厅服务员：先响应客人点菜（紧急），后端整理桌面（不紧急）。<code>useTransition</code> 让 React 先响应用户输入，再处理慢的计算。</p>
+<p>Like a waiter who takes your order first (urgent) before clearing other tables (less urgent). <code>useTransition</code> tells React which updates are most important.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 132 (Synthesis)</h2>
+<h2>综合深化：LLM 推理优化全景 — KV Cache、投机解码、量化的组合拳</h2>
+<p><strong>Synthesis: LLM Inference Optimization — KV Cache + Speculative Decoding + Quantization Together</strong></p>
+
+<hr/>
+
+<h2>为什么今天综合这三个 / Why Synthesize These Three</h2>
+
+<p>你已经学过 KV Cache（推理优化, Day 46）、量化（Day 44）、模型蒸馏（Day 56）。但在真实的 LLM serving 系统（你在 Day 73 学过的 LLM Inference Serving）里，这三件武器是同时使用的。今天搞清楚它们如何组合，以及各自的瓶颈在哪。</p>
+
+<p>You&#x27;ve covered KV Cache, quantization, and distillation separately. In a real LLM serving stack, all three are used together. Today: understand how they compose and where each hits its limits.</p>
+
+<hr/>
+
+<h2>快速复习 / Quick Recap</h2>
+
+<pre><code>
+LLM 推理的两个阶段：
+┌─────────────────────────────────────────────────────┐
+│  Prefill (预填充)                                    │
+│  输入 prompt → 计算所有 token 的 KV → 生成第一个 token │
+│  特点：可并行，GPU 利用率高                           │
+├─────────────────────────────────────────────────────┤
+│  Decode (解码)                                       │
+│  逐 token 生成，每步只生成1个 token                   │
+│  特点：串行，内存带宽瓶颈，GPU 利用率低               │
+└─────────────────────────────────────────────────────┘
+</code></pre>
+
+<p><strong>核心瓶颈：Decode 阶段是内存带宽受限的（memory bandwidth bound），不是算力受限的</strong>。这决定了优化方向。</p>
+
+<hr/>
+
+<h2>三大武器如何配合 / How the Three Tools Compose</h2>
+
+<h3>1. KV Cache — 消除重复计算</h3>
+<pre><code>
+# Without KV Cache: recompute all previous tokens every step
+# With KV Cache: store K,V matrices, only compute new token
+
+# Memory cost: 2 * num_layers * num_heads * head_dim * seq_len * batch_size * dtype_bytes
+# For Llama-3 70B, 4096 seq len, fp16: ~8GB just for KV cache!
+</code></pre>
+<p><strong>瓶颈</strong>：KV Cache 太大 → GPU 显存不够 → 限制 batch size → 吞吐量低</p>
+
+<h3>2. 量化 — 同时压缩权重和 KV Cache</h3>
+<pre><code>
+# INT8 量化：模型权重 70B → 70GB → ~35GB (fp16→int8)
+# INT4 量化：70GB → ~18GB
+# KV Cache 量化：KV cache int8 → 内存减半，更大 batch
+
+# 用 bitsandbytes 加载量化模型
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+import torch
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type=&quot;nf4&quot;,
+    bnb_4bit_compute_dtype=torch.float16,
+)
+model = AutoModelForCausalLM.from_pretrained(
+    &quot;meta-llama/Meta-Llama-3-8B&quot;,
+    quantization_config=bnb_config,
+)
+</code></pre>
+
+<h3>3. 投机解码 / Speculative Decoding — 克服串行瓶颈</h3>
+<pre><code>
+核心思路：用小模型（draft model）猜几个 token，
+         大模型（target model）一次性验证
+
+步骤：
+1. Draft model 生成 k=4 个候选 token: [t1, t2, t3, t4]
+2. Target model 并行验证所有 4 个（因为可以并行！）
+3. 接受到第一个不匹配处，拒绝后续
+
+好处：target model 每次&quot;解码&quot;生成多个 token，
+     GPU 从 memory-bound 变回 compute-bound
+</code></pre>
+
+<hr/>
+
+<h2>组合效果 / Combined Effect</h2>
+
+<pre><code>
+朴素 Llama-3 70B serving:
+- 内存：~140GB (fp32) → 需要 2x A100 80GB
+- 吞吐：~20 tokens/sec per request
+
+优化后：
+- INT4 量化：~18GB，单卡 A100 可跑
+- KV Cache + paged attention (vLLM)：batch size 提升 10x
+- Speculative Decoding (7B draft)：latency 降低 2-3x
+- 综合：单卡吞吐提升 5-10x
+</code></pre>
+
+<hr/>
+
+<h2>工程选型 / When to Use What</h2>
+
+<p>| 场景 | 推荐优化 |</p>
+<p>|------|---------|</p>
+<p>| 单卡内存不够 | INT4 量化 |</p>
+<p>| 高并发低延迟 | Speculative Decoding + Batching |</p>
+<p>| 长 context（&gt;32k） | KV Cache 量化 + PagedAttention |</p>
+<p>| 边缘部署 | 量化 + 蒸馏（小模型） |</p>
+
+<hr/>
+
+<h2>可运行代码 / Runnable Snippet</h2>
+
+<pre><code>
+# pip install vllm
+from vllm import LLM, SamplingParams
+
+# vLLM combines PagedAttention (KV cache) + continuous batching
+llm = LLM(
+    model=&quot;meta-llama/Meta-Llama-3.1-8B-Instruct&quot;,
+    quantization=&quot;int4&quot;,          # quantization
+    speculative_model=&quot;[ngram]&quot;,  # speculative decoding (ngram draft)
+    num_speculative_tokens=5,
+    max_model_len=4096,
+)
+
+params = SamplingParams(temperature=0.8, max_tokens=200)
+outputs = llm.generate([&quot;Explain KV cache in one paragraph&quot;], params)
+print(outputs[0].outputs[0].text)
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://vllm.ai — vLLM: PagedAttention + continuous batching</p>
+<p>- https://arxiv.org/abs/2211.17192 — Speculative Decoding 原论文</p>
+<p>- https://huggingface.co/docs/transformers/quantization/bitsandbytes — BitsAndBytes 量化</p>
+
+<h2>🧒 ELI5</h2>
+<p>LLM 生成文字就像一个接一个地摆积木——很慢。优化就是：用小帮手先猜几块（投机解码），把积木压缩变小（量化），记住之前摆过的位置不重算（KV Cache）。三招加起来快了好几倍。</p>
+<p>Generating text is like placing one block at a time. Optimizations: have a small helper guess the next few blocks (speculative decoding), shrink the blocks (quantization), remember where you already placed things (KV cache). Together: much faster.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-09-10</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
