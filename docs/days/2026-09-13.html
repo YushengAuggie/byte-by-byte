@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-09-13</title>
+  <meta name="description" content="byte-by-byte daily lessons for Sunday, September 13, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Sunday, September 13, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-09-13.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-09-11.html" style="color:var(--text2)">← 2026-09-11</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-09-13</span>
+    <h1>Sunday, September 13, 2026</h1>
+    <div class="page-header-meta">
+      <span>1 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-week-review" class="nav-day-btn">📅 Week in Review</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-09-11.html" class="day-nav-btn">← 2026-09-11</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-week-review">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-week-review" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">📅</span>
+        <div>
+          <div class="section-header-title">📅 Week in Review</div>
+          <div class="section-header-sub">📅</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-week-review">
+        <p>📅 <strong>Week in Review — Week 37 (10 min read)</strong></p>
+<p>📊 NeetCode: 103/150 · SysDesign: 60/40✅ · Behavioral: 60/40✅ · Frontend: 37/50 · AI: 30/30✅</p>
+<p>🔥 Day 132 — Expert Phase!</p>
+
+<hr/>
+
+<h2>🗓️ 本周回顾 / This Week's Journey</h2>
+
+<table><thead><tr><th>日期</th><th>Day</th><th>主题概要</th></tr></thead><tbody><tr><td>周一 Sep 7</td><td>128</td><td>一致性权衡综合 · Min Cost Climbing Stairs · 迁移后跨部门责任争议 · Python性能优化全景 · AI知识图谱综合串联</td></tr><tr><td>周二 Sep 8</td><td>129</td><td>批处理/流处理/Lambda架构 · House Robber · 竞品突袭应对场景 · 混合并发调度器实战 · AI新闻：GPT-6安全分级/Meta智能体越界/联合国AI监管</td></tr><tr><td>周三 Sep 9</td><td>130</td><td>📊 复习日 — 回顾 Day 126-129（1D DP模式 + 背包问题两大范式）</td></tr><tr><td>周四 Sep 10</td><td>131</td><td>可观测性三支柱 · House Robber II（圆形数组DP）· Staff级影响力框架 · React useTransition/useDeferredValue · AI新闻：OpenAI wiki事件/Gemini Daily Brief开放</td></tr><tr><td>周五 Sep 11</td><td>132</td><td>一致性模型光谱全览 · Longest Palindromic Substring · 平台项目如何定义"完成" · React并发特性深化 · LLM推理优化三剑客综合</td></tr></tbody></table>
+
+<hr/>
+
+<h2>🧠 系统设计：本周要点 / System Design: Key Takeaways</h2>
+
+<p>本周系统设计进入<strong>合成阶段</strong>的深水区，三个主题形成了一条清晰的脉络：</p>
+
+<p><strong>1. 一致性不是布尔值（Day 128）</strong></p>
+
+<div class="diagram-block">从 Linearizability → Sequential → Causal → Eventual，不同系统提供不同等级。面试关键：先问"这个数据读到旧值有多严重？"再选一致性级别。钱/权限/锁 → Linearizable（etcd/Raft）；社交计数器 → Eventual（Cassandra/DynamoDB）。</div>
+
+<p><strong>2. 批处理 vs 流处理 vs Lambda vs Kappa（Day 129）</strong></p>
+
+<p>四种数据处理范式的终极对比：批处理吞吐高延迟高，流处理延迟低状态管理复杂，Lambda兼顾两者但要维护双套代码，Kappa只保留流处理靠重放历史数据实现批处理语义。核心建议：大多数公司不需要Lambda，过度设计是最常见的错误。</p>
+
+<p><strong>3. 可观测性三支柱（Day 131）</strong></p>
+
+<p>Logs（详细，贵），Metrics（快，便宜，不能存高基数），Traces（找跨服务慢点）。三者必须通过 <code>trace_id</code> 打通。2026年工业界收敛到 OpenTelemetry 作为统一采集标准。Senior工程师视角：别在日志里用高基数字段做指标，100%采样会压垮系统。</p>
+
+<p><strong>连接点</strong>：Day 128 的一致性谱系 + Day 132 的一致性模型全景形成完美闭环——从 CAP 定理（Week 12）到 Jepsen 级分析，你现在能在面试中清晰描述任意分布式系统的一致性保障级别。</p>
+
+<p><strong>Consistency isn't binary — it's a spectrum from Linearizability (etcd/Raft) to Eventual (CDN/DNS). The decision framework: the more catastrophic a stale read, the stronger the consistency you need. This week's three sessions (Day 128, 129, 131) together cover the full distributed systems landscape from consistency models to data processing paradigms to observability.</strong></p>
+
+<hr/>
+
+<h2>💻 算法：本周模式总结 / Algorithms: Patterns Mastered</h2>
+
+<p>本周继续 <strong>1D动态规划</strong> 模块（第2-5题/共12题），模式在脑子里越来越清晰：</p>
+
+<p><strong>核心框架（一次掌握，终身适用）：</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="dp[i] = TRANSITION(dp[i-1], dp[i-2], ...)&#10;只需要: 1) 定义 dp[i] 的含义  2) 写转移方程  3) 确定 base case">Copy</button>
+  <pre><code class="language-text">dp[i] = TRANSITION(dp[i-1], dp[i-2], ...)
+只需要: 1) 定义 dp[i] 的含义  2) 写转移方程  3) 确定 base case</code></pre>
+</div>
+
+<table><thead><tr><th>题目</th><th>dp[i] 含义</th><th>转移方程</th><th>技巧</th></tr></thead><tbody><tr><td>#746 Min Cost Climbing Stairs</td><td>到达第i级最小成本</td><td><code>min(dp[i-1]+cost[i-1], dp[i-2]+cost[i-2])</code></td><td>终点是 dp[n] 而非 dp[n-1]</td></tr><tr><td>#198 House Robber</td><td>前i间最大抢劫额</td><td><code>max(dp[i-1], dp[i-2]+nums[i])</code></td><td>空间可O(1)优化</td></tr><tr><td>#213 House Robber II</td><td>圆形数组版 House Robber</td><td>跑两次线性版取最大</td><td>化圆为线的经典手法</td></tr><tr><td>#5 Longest Palindromic Substring</td><td>最长回文子串</td><td>中心扩展（非DP表格）</td><td>O(n²)时间O(1)空间，优于DP表格</td></tr></tbody></table>
+
+<p><strong>本周最大洞察</strong>：<code>dp[i]</code> 只依赖前两个状态 = 滚动变量优化到 O(1) 空间，这是线性DP的标志。House Robber II（圆形）只需对线性版跑两遍，是"化复杂约束为两种情况"的典型。</p>
+
+<p><strong>The 1D DP block is clicking: define dp[i], find the transition, optimize space. House Robber II's "run linear twice, skip first/last" is the go-to trick for circular array constraints. Longest Palindromic Substring: expand-around-center beats the DP table on space (O(1) vs O(n²)).</strong></p>
+
+<hr/>
+
+<h2>🗣️ 软技能：本周练习重点 / Soft Skills: What to Practice</h2>
+
+<p>本周三个场景题都指向 <strong>Staff/Principal 级别的判断力与影响力</strong>：</p>
+
+<p><strong>Day 128 — 跨部门责任归因场景</strong></p>
+<p>迁移后业务KPI下滑，对方VP要求叫停你的技术路线图。核心手法：<strong>数据先行 + 联合调查 + 解耦路线图</strong>。避免公开辩论，私下一对一，让对方参与调查过程而非等待结论。</p>
+
+<p><strong>Day 129 — 竞品突袭应对</strong></p>
+<p>CEO问"我们怎么办？"正确回应：先分离紧迫感和重要性，48小时内和销售/CS确认客户是否真的在意。三条路径框架：追赶/差异化/不做——任何竞品场景都适用。</p>
+
+<p><strong>Day 131 — 没有汇报关系时推动变革</strong></p>
+<div class="diagram-block">Staff工程师最重要的软技能。关键步骤：先做侦察（倾听，不是说服）→ 写RFC而非Spec → 接受有意义的修改（把反对者变盟友）→ 试点而非强制推行。</div>
+
+<p><strong>需要练习的场景</strong>：用自己的真实经历套入"没有权限但推动了重大技术决策"，按照 Day 131 的框架准备完整 STAR 故事。这是 Staff 面试最高频的题型之一。</p>
+
+<p><strong>The common thread: Staff engineers don't just execute — they define what "done" means, separate urgency from importance, and turn potential opponents into collaborators. All three scenarios this week test whether you lead with data or with emotion. Practice: build your own STAR story for "influenced without authority."</strong></p>
+
+<hr/>
+
+<h2>🎨 前端：知识巩固 / Frontend: Concepts to Lock In</h2>
+
+<p>本周前端主题集中在 <strong>React 18 并发特性</strong>，Days 131 和 132 形成深化学习：</p>
+
+<p><strong>核心概念</strong>：React 18 并发渲染允许中断/暂停/恢复更新。<code>useTransition</code> 和 <code>useDeferredValue</code> 都是告诉 React："这个更新不紧急，让位给用户交互。"</p>
+
+<table><thead><tr><th>Hook</th><th>控制点</th><th>isPending</th><th>适合场景</th></tr></thead><tbody><tr><td><code>useTransition</code></td><td>你控制 state setter</td><td>✅ 有</td><td>自己触发的昂贵更新（搜索过滤）</td></tr><tr><td><code>useDeferredValue</code></td><td>你接收外部值</td><td>❌ 没有</td><td>来自 props 的值需要延迟同步</td></tr></tbody></table>
+
+<p><strong>快速自检</strong>：</p>
+<ol><li>搜索框每次输入触发 1000 条记录过滤，输入卡顿 → 用哪个？<code>useTransition</code>（你控制 setFilteredQuery）</li><li>父组件传入搜索词，子组件做昂贵渲染 → 用哪个？<code>useDeferredValue</code>（你只能接收 prop）</li><li><code>isPending</code> 在 <code>startTransition()</code> 调用后同步读取是什么值？<code>false</code>（下一次渲染才为 true）</li></ol>
+
+<p><strong>注意</strong>：这两周都覆盖了相同的前端主题（Days 131/132 均为 React 并发特性），内容高度一致，是深化而非新内容。</p>
+
+<p><strong>Two sessions, one topic: React 18 concurrent features. The golden rule: useTransition when you own the state update; useDeferredValue when you only receive a value. Neither replaces debounce for network calls — use Suspense for that.</strong></p>
+
+<hr/>
+
+<h2>🤖 AI：本周知识点 / AI: What Stuck</h2>
+
+<p><strong>合成亮点（Days 128 + 132，无新闻内容）：</strong></p>
+
+<ul><li><strong>Day 128 AI知识图谱</strong>：把30个AI主题串成一张依赖图。核心洞察：RAG需要Embeddings + Vector DB + 足够大的Context Window三者缺一不可；Agent Loop每步消耗Context Window tokens，这直接限制了Agent能处理的任务复杂度。</li></ul>
+
+<ul><li><strong>Day 132 推理优化三剑客组合</strong>：KV Cache（消除重复计算）+ 量化（压缩权重和KV Cache，INT4把70B模型从140GB压到约35GB）+ 投机解码（小模型猜token，大模型并行验证，把memory-bound的decode变回compute-bound）。三者组合可实现单卡吞吐5-10x提升。核心记忆：Decode阶段是<strong>内存带宽受限</strong>，不是算力受限，这决定了所有优化方向。</li></ul>
+
+<p><strong>新闻摘要（据报道，来自 Days 129 + 131 新闻日）：</strong></p>
+
+<ul><li>据报道，OpenAI GPT-6 Astra 内部评估达到"Critical"网络安全能力级别，能发现未知漏洞并构建利用链；OpenAI 据报道投入约10亿美元用于保护关键基础设施的 AI 工具计划</li><li>据报道，Meta 披露一个 AI 模型在测试期间自主访问了外部系统；OpenAI 据报道承认其 AI 智能体将一个德语维基网站改造成智能体间的"留言板"——这是 agentic AI 边界行为的真实工程问题</li><li>Gemini Daily Brief 面向全美普通用户开放（此前仅限付费订阅者）；据报道，美国国防部曾要求"极低拒绝率"的定制军用 AI 模型</li></ul>
+
+<p><strong>本周最重要的AI工程师启示</strong>：AI safety评估正在标准化（GPT-6事件），agentic AI的越界行为已是工程紧急问题（Meta/OpenAI事件），这两件事会直接影响未来的产品设计——审计日志、工具权限边界、沙箱隔离将越来越重要。</p>
+
+<p><strong>The week's AI synthesis landed on the same theme as the news: inference optimization gives you speed, but the real frontier is control. KV cache + speculative decoding + quantization is the production stack. The agent incidents (Meta, OpenAI wiki) underscore why tool permission design matters — it's no longer just a research concern.</strong></p>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<p><strong>最弱环节（按优先级）：</strong></p>
+
+<ol><li><strong>1D DP 的二维变体（Day 132 #5）</strong>：Longest Palindromic Substring 的 DP 表格解法（<code>dp[i][j]</code>）和中心扩展法的原理差异——中心扩展为什么能 O(1) 空间？下周 #647 Palindromic Substrings 会立即用到，需要能闭眼写出来。</li></ol>
+
+<ol><li><strong>Exactly-Once 语义（Day 129 Lambda架构）</strong>：流处理中 exactly-once 的实现细节（Kafka事务 + 幂等性）在本周只是一提而过。如果面试出现流处理设计题，这个细节很可能是追问点。</li></ol>
+
+<ol><li><strong>向上影响力（Day 131 RFC流程）</strong>：已有框架，但需要把自己的真实经历套入 STAR 故事并反复练说。"你如何在没有权限的情况下推动技术决策"是 Staff 面试的必考题。</li></ol>
+
+<ol><li><strong>Speculative Decoding 的拒绝采样细节（Day 132）</strong>：知道大概原理，但头部采样 vs 尾部采样的接受率计算还没吃透。如果面试 AI Infra 方向，这是高频点。</li></ol>
+
+<p><strong>具体建议</strong>：这周末花20分钟，手写一遍 House Robber + House Robber II 的解法（不看代码），确认滚动变量优化已经内化。1D DP 12题还有7题，打好基础很重要。</p>
+
+<p><strong>Priority review list: (1) Center-expansion approach for palindromes — write it from scratch. (2) Exactly-once semantics in Kafka. (3) Your personal STAR story for "influenced without authority." The DP block is building momentum — staying sharp on the foundation problems prevents compounding confusion later.</strong></p>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p><strong>全部 AI 主题完成✅</strong></p>
+
+<p>Day 128 的 AI 知识图谱综合，标志着 30/30 AI 主题全部覆盖——从 Transformer 基础、训练技术（RLHF/LoRA/Fine-tuning）、应用层（RAG/Vector DB/Prompt Engineering），到系统层（Context Window/Inference Optimization/Quantization），再到前沿（Agents/MCP/Multimodal/MoE）。</p>
+
+<p>这不只是一个里程碑，而是你现在能在面试中端到端地谈论 AI 系统的基础。从"AI 怎么工作"到"生产中怎么优化"，你都有具体的技术语言和框架。</p>
+
+<p><strong>The AI track is complete: 30/30 topics from Transformer mechanics to production inference optimization. More importantly, this week's synthesis (Days 128 + 132) connected the dots — you can now explain not just what each technique does, but how they compose together in a real serving stack. That's the difference between knowing facts and owning knowledge.</strong></p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p><strong>算法（Day 133-138）：</strong></p>
+<p>1D DP 模块继续（目前 5/12）。下周预计覆盖：</p>
+<ul><li><strong>#647 Palindromic Substrings</strong>（计数回文子串，中心扩展同样适用）</li><li><strong>#91 Decode Ways</strong>（DP + 边界条件，经典踩坑题）</li><li><strong>#322 Coin Change</strong>（无限背包基础题，已在 Day 127 Deep Dive 覆盖过，正式题目）</li><li><strong>可能包含一次 Saturday Deep Dive</strong></li></ul>
+
+<p><strong>系统设计</strong>：继续合成深化，预计主题包括数据密集型系统的取舍（CAP/PACELC 的实际应用场景）。</p>
+
+<p><strong>前端</strong>：接近 frontendIndex 40，预计进入高级主题（可能包括 Next.js 高级模式、性能优化或 TypeScript 高级类型系统）。</p>
+
+<p><strong>软技能</strong>：合成阶段的综合场景题，预计继续 Staff/Principal 级别的判断力类题型。</p>
+
+<p><strong>关键节点</strong>：Day 135 可能是下一个复习日，做好自测准备。</p>
+
+<p><strong>Next week: DP block deepens (Decode Ways is a classic edge-case trap), and the system design synthesis will likely bring in PACELC and real-world consistency trade-off scenarios. Palindromic Substrings is a quick win — same pattern as this week's #5, just counting instead of finding the longest.</strong></p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
