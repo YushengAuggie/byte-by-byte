@@ -953,3 +953,15 @@ _Report-only run — no code changes made._
 ### Metrics
 - Delivery rate (7d): 6/7 (missed 2026-09-09)
 - Cron errors: cron list via CLI unavailable in this run (subshell nvm/node version mismatch: v25.6.1 vs required >=25.9.0) — not a pipeline error, but the health check for cron state could not read job status this run.
+
+## 2026-09-13 Optimization Run
+
+### Issues Found
+- **P0**: Email delivery MISSED on 2026-09-12. No entry in email-send-log.json and no "Day" content commit for that date. There is a gap between the 09-11 (Day 132) and 09-13 (Day 132) commits — nothing ran on the 12th. Needs manual check to confirm subscribers received nothing on 09-12.
+- **P1**: Day counter stuck. Two commits are both labeled "Day 132" (f62ed96 on 09-11, 75382a8 on 09-13) — currentDay did not advance from 132 despite a new send. Also state.json `lastSentDate=2026-09-11` is stale: email-send-log.json shows 09-13 delivered OK, so the send step ran but state was not updated to 09-13. State bookkeeping and the day-increment step are out of sync — a regeneration/resend appears to reuse the same day number instead of advancing.
+- **P2**: nvm default Node still mismatched in exec shell (v25.6.1 vs required >=25.9.0) — `openclaw cron list --json` fails from subshell; used native cron tool (job status=ok, error=null, delivered). Day 100 review gap (from prior run) still unaddressed in reviewDaysCompleted.
+
+### Metrics
+- Delivery rate (7d): 5/7 (missed 2026-09-12 and 2026-09-09)
+- Cron errors: none (byte-by-byte optimizer: lastRunStatus=ok, lastRunError=null, lastDelivered=true)
+- Current day: 132 (stuck — same number on 09-11 and 09-13) | state.lastSentDate: 2026-09-11 (stale; actual last delivery 09-13)
