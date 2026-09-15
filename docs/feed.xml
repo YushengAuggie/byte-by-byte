@@ -5,8 +5,641 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 13 Sep 2026 15:11:48 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 15 Sep 2026 15:45:49 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-09-15</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-09-15</guid>
+      <pubDate>Tue, 15 Sep 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>系统设计综合 / System Design Synthesis — Day 133</h2>
+<p><strong>日期 / Date:</strong> 2026-09-15 | <strong>阶段 / Phase:</strong> Expert | <strong>模式 / Mode:</strong> Synthesis</p>
+
+<hr/>
+
+<h2>🏗️ 系统设计 / System Design — 事件驱动 vs 请求驱动架构的终极对比</h2>
+<h3>Event-Driven vs Request-Driven Architecture: When to Use What at Scale</h3>
+
+<hr/>
+
+<h3>🌏 综合背景 / Synthesis Background</h3>
+
+<p>在过去 132 天里，我们深入研究了：</p>
+<p>- 消息队列与事件驱动架构（Day 13）</p>
+<p>- 限流与节流（Day 17）</p>
+<p>- 通知系统（Day 24）</p>
+<p>- 聊天系统（Day 28）</p>
+<p>- 支付系统（Day 38）</p>
+<p>- 股票交易所（Day 62）</p>
+<p>- 实时流媒体（Day 61）</p>
+
+<p>今天将这些系统背后的<strong>架构选型</strong>做一次系统性对比。</p>
+
+<p>Over 132 days, we&#x27;ve designed systems that span both paradigms. Today: the meta-question — <strong>when does event-driven win, and when does it hurt you?</strong></p>
+
+<hr/>
+
+<h3>🏛️ 两种范式对比 / Two Paradigms Compared</h3>
+
+<pre><code>
+REQUEST-DRIVEN (同步 / Synchronous)
+┌──────────┐    HTTP/gRPC    ┌──────────────┐
+│  Client  │ ─────────────► │   Service B  │
+│          │ ◄───────────── │              │
+└──────────┘   response      └──────────────┘
+特点: 即时反馈、强耦合、调用链清晰
+
+EVENT-DRIVEN (异步 / Asynchronous)
+┌──────────┐   publish    ┌─────────────┐   subscribe  ┌──────────┐
+│ Producer │ ───────────► │  Message    │ ────────────► │Consumer A│
+│          │              │  Broker     │               ├──────────┤
+└──────────┘              │ (Kafka/SQS) │ ────────────► │Consumer B│
+                          └─────────────┘               └──────────┘
+特点: 解耦、异步、最终一致性
+</code></pre>
+
+<hr/>
+
+<h3>⚡ 实战系统分析 / Real-World System Analysis</h3>
+
+<p>| 系统 / System | 核心通信方式 | 为什么这样选？|</p>
+<p>|---|---|---|</p>
+<p>| 支付系统 (Day 38) | <strong>请求驱动</strong> (同步 HTTP + 2PC) | 需要即时确认、幂等性保证、强一致性 |</p>
+<p>| 通知系统 (Day 24) | <strong>事件驱动</strong> (Kafka + 扇出) | 低优先级、可延迟、需要广播给多个消费者 |</p>
+<p>| 聊天系统 (Day 28) | <strong>混合</strong>: WebSocket (实时) + MQ (离线) | 在线用户走 push，离线用户走 queue |</p>
+<p>| 股票交易所 (Day 62) | <strong>事件溯源</strong> (Event Sourcing) | 不可变审计日志、时间回溯、订单簿重建 |</p>
+<p>| 推荐系统 (Day 46) | <strong>事件驱动</strong> (行为流 → Flink) | 用户行为是天然的事件流，批/流混合 |</p>
+
+<hr/>
+
+<h3>🧩 架构决策框架 / Decision Framework</h3>
+
+<p><strong>选择请求驱动 (同步) 当：</strong></p>
+<pre><code>
+✅ 需要即时响应 (用户等待结果)
+✅ 强一致性是硬需求 (支付、库存扣减)
+✅ 调用链简单、团队小
+✅ 需要向调用方传播错误
+</code></pre>
+
+<p><strong>选择事件驱动 (异步) 当：</strong></p>
+<pre><code>
+✅ 解耦多个独立消费者 (1对多)
+✅ 流量削峰填谷 (promotions, flash sales)
+✅ 操作可以最终一致 (邮件、推送、审计日志)
+✅ 需要时间旅行 / 事件回放 (Event Sourcing)
+✅ 跨服务边界的 saga 编排
+</code></pre>
+
+<hr/>
+
+<h3>💥 别踩的坑 / Common Mistakes at Scale</h3>
+
+<p><strong>事件驱动最常见错误：</strong></p>
+
+<p>1. <strong>消息不幂等</strong> — 消费者 crash 后重消费导致副作用</p>
+<p>- ✅ 解法：事件携带唯一 ID，消费前检查是否已处理</p>
+
+<p>2. <strong>顺序假设</strong> — Kafka 分区内有序，但不同分区间无序</p>
+<p>- ✅ 解法：同一实体（如 user_id）路由到同一分区</p>
+
+<p>3. <strong>事件 schema 演进</strong> — 生产者改字段，旧消费者崩溃</p>
+<p>- ✅ 解法：Avro/Protobuf + Schema Registry，向后兼容</p>
+
+<p>4. <strong>没有 dead letter queue (DLQ)</strong> — 毒消息让消费者永久卡住</p>
+<p>- ✅ 解法：maxDeliveryAttempts + DLQ + 告警</p>
+
+<p><strong>请求驱动最常见错误：</strong></p>
+<p>1. <strong>同步链路过深</strong> — A→B→C→D→E，任何一环超时整个链路挂</p>
+<p>- ✅ 解法：超过 2 跳的非关键操作异步化</p>
+
+<hr/>
+
+<h3>🎯 高级模式：Saga Pattern / Advanced: Saga for Distributed Transactions</h3>
+
+<pre><code>
+# 支付流程 Saga (编排模式 / Orchestrator Pattern)
+class PaymentSaga:
+    def execute(self, order):
+        steps = [
+            (self.reserve_inventory, self.release_inventory),
+            (self.charge_payment,    self.refund_payment),
+            (self.ship_order,        self.cancel_shipment),
+        ]
+        completed = []
+        for forward, compensate in steps:
+            try:
+                forward(order)
+                completed.append(compensate)
+            except Exception:
+                # 补偿事务回滚 / Run compensating transactions
+                for comp in reversed(completed):
+                    comp(order)
+                raise
+</code></pre>
+
+<p>&gt; <strong>核心洞察：</strong> Saga 用一系列本地事务 + 补偿事务替代分布式两阶段提交（2PC），牺牲强一致性换取可用性，是微服务时代的标准解法。</p>
+<p>&gt;</p>
+<p>&gt; <strong>Key Insight:</strong> Saga replaces distributed 2PC with local transactions + compensating actions. Trade strong consistency for availability — the standard microservices pattern.</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://martinfowler.com/articles/201701-event-driven.html — Martin Fowler on event-driven architectures</p>
+<p>- https://microservices.io/patterns/data/saga.html — Saga pattern documentation</p>
+<p>- https://www.confluent.io/blog/event-sourcing-cqrs-stream-processing-apache-kafka-whats-connection/ — Confluent on Event Sourcing + Kafka</p>
+
+<h3>🧒 ELI5</h3>
+<p>请求驱动就像打电话：你说话，等对方回应，再继续。事件驱动就像发短信到群里：你发出去就不管了，想看的人自己去看。购物付款要打电话（同步），发优惠券推送发短信就够了（异步）。</p>
+
+<p>Request-driven is like a phone call — you talk, wait for the reply, continue. Event-driven is like a group text — you send it and move on, subscribers read when they can. Use the phone for payments, group texts for notifications.</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>算法 / Algorithms — Day 133</h2>
+<p><strong>日期 / Date:</strong> 2026-09-15 | <strong>题目 / Problem:</strong> #647 Palindromic Substrings | <strong>难度:</strong> Medium 🟡</p>
+<p><strong>模式 / Pattern:</strong> 1-D Dynamic Programming (6/12)</p>
+
+<hr/>
+
+<h2>💻 算法 / Algorithms — #647 Palindromic Substrings (Medium) 🟡</h2>
+
+<p>🧩 <strong>一维动态规划模式 (6/12)</strong> — 基于第 126 天的 DP 模板继续深化</p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+<p>- 🔗 LeetCode: https://leetcode.com/problems/palindromic-substrings/</p>
+<p>- 📹 NeetCode: https://neetcode.io/problems/palindromic-substrings</p>
+
+<hr/>
+
+<h3>🌏 与模板的联系 / Building on the Pattern</h3>
+
+<p>上一题 (#5 Longest Palindromic Substring, Day 132) 找的是<strong>最长回文子串</strong>，今天 #647 找的是<strong>所有回文子串的数量</strong>。两者核心技术相同：<strong>中心扩展法 (Expand Around Center)</strong>，但返回值不同。</p>
+
+<p>Previous problem (#5) found the <em>longest</em> palindromic substring. Today we count <em>all</em> palindromic substrings. Same core technique, different output.</p>
+
+<hr/>
+
+<h3>🧩 从模板到今天的变体 / Pattern Variation</h3>
+
+<pre><code>
+通用 1-D DP 模板:
+dp[i] = TRANSITION(dp[i-1], dp[i-2], ...)
+
+但本题更优解是: 中心扩展法
+对每个中心点，向外扩展，每扩展一次就计一个回文
+→ 不需要 DP 表，O(n²) 时间 O(1) 空间
+</code></pre>
+
+<p><strong>和 Day 132 (#5 Longest Palindromic Substring) 的对比：</strong></p>
+<pre><code>
+Day 132: 返回最长回文字串本身  → 记录 max_len, start
+Day 133: 返回所有回文数量    → 每次扩展成功 count += 1
+</code></pre>
+
+<hr/>
+
+<h3>🌍 真实类比 / Real-World Analogy</h3>
+
+<p>想象你在审核一个 DNA 序列，需要找出所有&quot;回文酶切位点&quot;（回文序列）——每个位置都可能是回文的中心。从每个位置向外扩展，一旦不匹配就停止。</p>
+
+<p>Imagine scanning a DNA sequence for all palindromic restriction sites — every position can be a center. Expand outward, stop when it breaks.</p>
+
+<hr/>
+
+<h3>🎯 问题 / Problem</h3>
+
+<p>给定字符串 <code>s</code>，返回其中<strong>回文子串的数量</strong>。</p>
+
+<p>&gt; 单个字符也算回文。<code>&quot;aaa&quot;</code> 有 6 个回文子串：<code>&quot;a&quot;</code>, <code>&quot;a&quot;</code>, <code>&quot;a&quot;</code>, <code>&quot;aa&quot;</code>, <code>&quot;aa&quot;</code>, <code>&quot;aaa&quot;</code></p>
+
+<hr/>
+
+<h3>✅ Python 解法 / Solution with Trace</h3>
+
+<pre><code>
+def countSubstrings(s: str) -&gt; int:
+    count = 0
+    n = len(s)
+    
+    def expand(left: int, right: int) -&gt; int:
+        &quot;&quot;&quot;从中心向外扩展，返回回文数量 / Expand from center, count palindromes&quot;&quot;&quot;
+        local_count = 0
+        while left &gt;= 0 and right &lt; n and s[left] == s[right]:
+            local_count += 1   # found a palindrome
+            left -= 1          # expand outward
+            right += 1
+        return local_count
+    
+    for i in range(n):
+        count += expand(i, i)      # 奇数长度 / odd length: center at i
+        count += expand(i, i + 1)  # 偶数长度 / even length: center between i and i+1
+    
+    return count
+
+# Trace for s = &quot;aaa&quot;:
+# i=0: expand(0,0)→ &quot;a&quot;=count 1; expand(0,1)→ s[0]=&#x27;a&#x27;==s[1]=&#x27;a&#x27; count 1, then -1&gt;=0? no → 1
+# i=1: expand(1,1)→ &quot;a&quot; 1; then &quot;aaa&quot; 1 → expand(1,2)→ &quot;aa&quot; 1 → total so far = 1+1+1+1+1 = 5
+# i=2: expand(2,2)→ &quot;a&quot; 1; expand(2,3)→ out of bounds 0
+# Total = 6 ✅
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- ⏱ Time: O(n²) — 每个中心最多扩展 n 次</p>
+<p>- 💾 Space: O(1) — 无额外数组</p>
+
+<hr/>
+
+<h3>🔄 举一反三 / Connect to Pattern Block</h3>
+
+<p>这个模式块的 12 题都共享同一个核心思想：<strong>定义子问题 → 找转移关系</strong>：</p>
+
+<p>| 题目 | 子问题定义 | 转移方程 |</p>
+<p>|---|---|---|</p>
+<p>| #70 Climbing Stairs | dp[i] = ways to reach step i | dp[i-1] + dp[i-2] |</p>
+<p>| #198 House Robber | dp[i] = max money using first i houses | max(dp[i-1], dp[i-2]+nums[i]) |</p>
+<p>| #5 Longest Palindrome | expand(center) → max length | 中心扩展 |</p>
+<p>| <strong>#647 今天</strong> | <strong>expand(center) → count palindromes</strong> | <strong>中心扩展，count++</strong> |</p>
+
+<p><strong>下一题预告 (Day 134): #91 Decode Ways</strong> — 又回到 dp[i] = dp[i-1] + dp[i-2] 形式，但带条件判断</p>
+
+<hr/>
+
+<h3>📝 Quiz</h3>
+<p>&gt; 对于字符串 <code>s = &quot;abc&quot;</code>, <code>countSubstrings(s)</code> 返回什么？</p>
+
+<p>&lt;details&gt;&lt;summary&gt;查看答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>答案: 3</strong></p>
+
+<p>- &quot;a&quot; (回文), &quot;b&quot; (回文), &quot;c&quot; (回文)</p>
+<p>- &quot;ab&quot; ❌, &quot;bc&quot; ❌, &quot;abc&quot; ❌</p>
+
+<p>每个单字符都是回文，但没有长度 &gt; 1 的回文子串。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://leetcode.com/problems/palindromic-substrings/ — LeetCode #647</p>
+<p>- https://neetcode.io/problems/palindromic-substrings — NeetCode video</p>
+<p>- https://cp-algorithms.com/string/manacher.html — Manacher&#x27;s Algorithm (O(n) solution)</p>
+
+<h3>🧒 ELI5</h3>
+<p>把字符串里每个位置当作镜子的中心，向两边看：左右字母一样？这就是个回文，数一个！左右不一样了就停。每个位置试两次：当奇数回文的中心（单字符），和偶数回文中间缝的中心（双字符）。</p>
+
+<p>Treat each position as a mirror center — look left and right. If they match, it&#x27;s a palindrome, count it! Try each position twice: as center of odd-length palindromes and as the gap between even-length ones.</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>软技能 / Soft Skills — Day 133</h2>
+<p><strong>日期 / Date:</strong> 2026-09-15 | <strong>阶段 / Phase:</strong> Expert | <strong>模式 / Mode:</strong> Synthesis</p>
+
+<hr/>
+
+<h2>🗣️ 软技能 / Soft Skills — Staff-Level 场景综合</h2>
+<h3>Fresh Scenario: Navigating a Major Org Reorg Mid-Project</h3>
+
+<hr/>
+
+<h3>🎯 场景 / Scenario</h3>
+
+<p>&gt; 你是 Staff Engineer，正在领导一个已进行到 60% 的关键基础设施迁移项目。公司突然宣布重组：你的团队被拆分，部分成员去了另一个 BU，你的新 manager 对这个项目背景完全陌生。如何让项目继续推进并维护信任？</p>
+<p>&gt;</p>
+<p>&gt; You&#x27;re a Staff Engineer, 60% through a critical infrastructure migration. The company announces a reorg: your team is split, some members move to another BU, your new manager has zero context on the project. How do you keep it moving and maintain trust?</p>
+
+<hr/>
+
+<h3>⭐ STAR 框架拆解 / STAR Breakdown</h3>
+
+<p><strong>Situation (背景):</strong></p>
+<p>- 项目进行中、人员流失、新 manager 无上下文</p>
+<p>- 关键 context：你的 credibility 是基于旧结构建立的</p>
+
+<p><strong>Task (任务):</strong></p>
+<p>- 维持项目交付不 slip</p>
+<p>- 让新 manager 在 48 小时内建立足够信任</p>
+<p>- 保留关键知识，防止 team 离散时知识流失</p>
+
+<p><strong>Action (行动) — Senior 水平的做法：</strong></p>
+
+<p>1. <strong>立即行动：写一份 &quot;Project Health Doc&quot;</strong>（不等新 manager 来问）</p>
+<p>- 当前状态、风险、决策历史、依赖方、剩余工作 → 一页纸</p>
+<p>- 目的：让任何人 15 分钟内能 onboard</p>
+
+<p>2. <strong>主动 1:1 新 manager，带着明确议程</strong>：</p>
+<p>- &quot;这是我们的状态，这是最大的 3 个风险，这是我需要你帮助解封的 1 件事&quot;</p>
+<p>- 不 dump 所有历史，只给他们&quot;决策所需的最小上下文&quot;</p>
+
+<p>3. <strong>与离队成员快速知识迁移</strong>：</p>
+<p>- 写 ADR（Architecture Decision Records）补全缺失文档</p>
+<p>- 用 pair programming 把隐性知识显性化</p>
+
+<p>4. <strong>调整计划，但守住交付日期</strong>：</p>
+<p>- 主动提出&quot;我们可以 descope X 以保证核心目标&quot;，而不是要求延期</p>
+<p>- Staff 水平：你要提方案，不是汇报问题</p>
+
+<p><strong>Result (结果):</strong></p>
+<p>- 新 manager 在第一周末就能独立向上汇报项目状态</p>
+<p>- 项目按时交付，只 descoped 了非关键功能</p>
+<p>- 你建立了在模糊环境下的可靠性声誉</p>
+
+<hr/>
+
+<h3>❌ Bad vs ✅ Good</h3>
+
+<pre><code>
+❌ 等新 manager 来找你要状态更新
+   &quot;我在等新的组织架构确认后再推进&quot;
+   抱怨 reorg 打断了项目节奏
+
+✅ 主动写 Project Health Doc，第一天就发
+   &quot;不管结构如何变，我的目标不变，这是我的计划&quot;
+   把 reorg 当作展示 Staff 级别 resilience 的机会
+</code></pre>
+
+<hr/>
+
+<h3>🎓 Senior/Staff 级别的洞察 / Senior/Staff Insight</h3>
+
+<p><strong>为什么这道题在 Staff 面试很常见？</strong></p>
+
+<p>它测试的是：</p>
+<p>1. <strong>Organizational resilience</strong> — 你在混乱中的可靠性</p>
+<p>2. <strong>Influence without authority</strong> — 新 manager 是 blank slate，你要快速建立 credibility</p>
+<p>3. <strong>Proactive vs reactive</strong> — Staff 不等问题找你，你找问题</p>
+
+<p>&gt; <strong>关键词 / Key Framing:</strong> &quot;我把每一次 reorg 当作机会，而不是障碍。混乱时期，谁能提供清晰度，谁就有影响力。&quot;</p>
+<p>&gt;</p>
+<p>&gt; &quot;I treat every reorg as an opportunity. In chaos, whoever provides clarity gains influence.&quot;</p>
+
+<hr/>
+
+<h3>💡 Key Takeaways</h3>
+
+<p>1. <strong>写下来胜过说出来</strong> — 文档是你在场时和不在场时都有效的影响力工具</p>
+<p>2. <strong>给新老板&quot;最小可决策上下文&quot;</strong>，不是历史课</p>
+<p>3. <strong>主动提 descope，不等被要求延期</strong> — 控制叙事</p>
+<p>4. <strong>Reorg 是 Staff 的考场</strong>，不是障碍</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://staffeng.com/guides/staff-projects — Will Larson on Staff-level projects</p>
+<p>- https://lethain.com/navigating-ambiguity/ — Navigating ambiguity at senior levels</p>
+<p>- https://www.amazon.com/Staff-Engineer-Leadership-beyond-management/dp/1736417916 — Staff Engineer book</p>
+
+<h3>🧒 ELI5</h3>
+<p>就像你正在盖一栋楼，突然换了个新包工头，他完全不知道楼的设计图。你要做的不是抱怨，而是先给他画一张简明地图，告诉他：现在到哪了、剩下什么、最大的风险是什么。这就是 Staff 工程师的样子——在混乱中制造清晰。</p>
+
+<p>Imagine you&#x27;re building a house and suddenly get a new foreman who knows nothing about the design. Don&#x27;t complain — hand them a simple map: where we are, what&#x27;s left, what&#x27;s risky. That&#x27;s Staff-level: creating clarity in chaos.</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Python Craft — Day 133</h2>
+<p><strong>日期 / Date:</strong> 2026-09-15 | <strong>阶段 / Phase:</strong> Expert | <strong>模式 / Mode:</strong> Synthesis</p>
+
+<hr/>
+
+<h2>🐍 Python Craft — 深入 Python 字节码与 `dis` 模块</h2>
+<h3>Bytecode Internals: What CPython Actually Executes</h3>
+
+<hr/>
+
+<h3>🌏 为什么这个值得深入？/ Why Go Deeper Here?</h3>
+
+<p>我们覆盖了 50 个 Python 工艺话题——从 GIL、asyncio 到设计模式。今天去一个极少数工程师真正理解的地方：<strong>Python 字节码</strong>。当你写 <code>x = a + b</code>，CPython 实际执行的是什么？</p>
+
+<p>We&#x27;ve covered 50 Python Craft topics. Today: somewhere few engineers actually go — <strong>Python bytecode</strong>. When you write <code>x = a + b</code>, what does CPython <em>actually</em> run?</p>
+
+<hr/>
+
+<h3>🔬 `dis` 模块实战 / dis Module in Action</h3>
+
+<pre><code>
+import dis
+
+def add_numbers(a, b):
+    x = a + b
+    return x
+
+dis.dis(add_numbers)
+# Output:
+#   2           0 RESUME                   0
+#   3           2 LOAD_FAST                0 (a)
+#               4 LOAD_FAST                1 (b)
+#               6 BINARY_OP               0 (+)
+#              10 STORE_FAST               2 (x)
+#   4          12 LOAD_FAST                2 (x)
+#              14 RETURN_VALUE
+</code></pre>
+
+<p><strong>字节码指令解析 / Bytecode breakdown:</strong></p>
+<p>- <code>LOAD_FAST</code> — 从局部变量表加载（比 <code>LOAD_GLOBAL</code> 快 ~3x）</p>
+<p>- <code>BINARY_OP</code> — 调用 <code>a.__add__(b)</code>，走类型调度</p>
+<p>- <code>STORE_FAST</code> — 写回局部变量表</p>
+<p>- <code>RETURN_VALUE</code> — 弹出栈顶返回</p>
+
+<hr/>
+
+<h3>⚡ 为什么局部变量比全局变量快？/ Why Locals Beat Globals</h3>
+
+<pre><code>
+import timeit
+
+x = 10  # global
+
+def use_global():
+    return x + 1      # LOAD_GLOBAL → dict lookup
+
+def use_local():
+    x = 10
+    return x + 1      # LOAD_FAST → array index lookup
+
+# Local is ~3x faster because:
+# LOAD_GLOBAL → hash lookup in __dict__
+# LOAD_FAST   → direct array[index] access in frame
+
+print(timeit.timeit(use_global, number=10_000_000))  # ~0.8s
+print(timeit.timeit(use_local,  number=10_000_000))  # ~0.3s
+</code></pre>
+
+<p>&gt; 这就是为什么 CPython 高性能代码常见技巧：把频繁访问的全局函数先赋给局部变量</p>
+<p>&gt; <code>_append = list.append</code> — saves repeated LOAD_GLOBAL in tight loops</p>
+
+<hr/>
+
+<h3>🏗️ 代码对象 / Code Objects</h3>
+
+<pre><code>
+def outer():
+    x = 1
+    def inner():
+        return x
+    return inner
+
+fn = outer()
+code = fn.__code__
+
+print(code.co_varnames)    # (&#x27;x&#x27;,) — local variable names
+print(code.co_freevars)    # (&#x27;x&#x27;,) — variables from closure
+print(code.co_consts)      # constants embedded in bytecode
+print(code.co_stacksize)   # max stack depth needed
+
+# 每个函数都有自己的 code object
+# Code objects are IMMUTABLE and SHARED across calls
+# The frame (execution context) is created fresh per call
+</code></pre>
+
+<hr/>
+
+<h3>🔍 实战应用：Profile 热点前先看字节码 / Practical: Read Bytecode Before Profiling</h3>
+
+<pre><code>
+# 为什么这段代码慢？先 dis 看看
+def slow_concat(items):
+    result = &quot;&quot;
+    for item in items:
+        result = result + str(item)  # 每次 BINARY_OP + 创建新字符串对象
+    return result
+
+# dis 揭示每次循环都有 BINARY_OP (string concat = O(n²))
+
+def fast_concat(items):
+    parts = []
+    for item in items:
+        parts.append(str(item))  # LOAD_ATTR + CALL (amortized O(1))
+    return &quot;&quot;.join(parts)        # 一次性分配
+
+# 或者更 Pythonic:
+def fastest_concat(items):
+    return &quot;&quot;.join(str(i) for i in items)
+</code></pre>
+
+<hr/>
+
+<h3>🧠 CPython 执行模型速览 / CPython Execution Model</h3>
+
+<pre><code>
+Python source (.py)
+        ↓ compile()
+Bytecode (.pyc) — code object with opcodes
+        ↓ eval loop (ceval.c)
+CPython interpreter — stack-based VM
+        ↓
+C-level operations (list.append, int.__add__, etc.)
+</code></pre>
+
+<p>- Python 是<strong>栈式虚拟机</strong> (stack-based VM)，不是寄存器 VM</p>
+<p>- 每次函数调用创建一个新的 <strong>PyFrameObject</strong>（持有局部变量、字节码指针、栈）</p>
+<p>- <code>sys._getframe()</code> 可以在运行时获取当前帧</p>
+
+<hr/>
+
+<h3>🎯 面试加分项 / Interview Extra Credit</h3>
+
+<p>当面试官问&quot;Python 为什么慢&quot;，大多数人说&quot;GIL&quot;。但更深层的原因：</p>
+<p>1. <strong>动态类型 + BINARY_OP 要走类型调度</strong>，每次 <code>a + b</code> 都要查 <code>type(a).__add__</code></p>
+<p>2. <strong>栈式 VM overhead</strong>，每个操作都是函数调用</p>
+<p>3. <strong>对象模型</strong>，所有 int 都是堆分配的 PyObject（Rust/C 的 int 是栈上原始值）</p>
+
+<p>这也是为什么 Cython、Numba、PyPy 能大幅提速的根本原因。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://docs.python.org/3/library/dis.html — Official dis module docs</p>
+<p>- https://realpython.com/cpython-source-code-guide/ — CPython source code guide</p>
+<p>- https://leanpub.com/insidethepythonvirtualmachine — Inside the Python Virtual Machine</p>
+
+<h3>🧒 ELI5</h3>
+<p>你写的 Python 代码就像食谱（高层语言），CPython 先把食谱翻译成&quot;烹饪步骤卡片&quot;（字节码），再按顺序执行每张卡片。<code>dis</code> 模块让你能直接看到这些步骤卡片，帮你理解为什么有些写法比另一些慢。</p>
+
+<p>Your Python code is a recipe. CPython translates it into step-by-step instruction cards (bytecode), then executes them one by one. The <code>dis</code> module lets you peek at those cards, explaining why some code is faster than others.</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>AI 每日动态 / AI News — Day 133</h2>
+<p><strong>日期 / Date:</strong> 2026-09-15 | <strong>模式 / Mode:</strong> News Roundup</p>
+
+<hr/>
+
+<h2>🤖 AI 每日动态 / AI News Roundup — 2026年9月第二周</h2>
+
+<hr/>
+
+<h3>📰 Story 1: AI 模型价格战加剧，DeepSeek V4.1 Flash 刷新成本底线</h3>
+<p><strong>The AI Price War Intensifies: DeepSeek V4.1 Flash Sets a New Cost Floor</strong></p>
+
+<p>DeepSeek 于 9 月 10 日发布了 V4.1 Flash，据报道将缓存输入价格定为每百万 token $0.003，成为当前前沿模型中价格最低的选项之一。同期，OpenAI 的部分 GPT-5.6 系列模型于 7 月已降价达 80%，整个行业的 token 成本持续下滑。</p>
+
+<p>DeepSeek released V4.1 Flash on September 10, reportedly pricing cached input at $0.003 per million tokens — among the lowest for any frontier model. OpenAI had already cut some GPT-5.6 series prices by up to 80% in July, continuing the industry-wide token cost collapse.</p>
+
+<p>&gt; 💡 <strong>为什么重要 / Why it matters:</strong> 对后端工程师来说，AI 推理成本正在从&quot;稀缺资源&quot;变成&quot;接近免费的工具&quot;。这将根本性改变产品设计决策——是否 inline AI、cache 粒度、fallback 策略都需要重新评估。</p>
+<p>&gt;</p>
+<p>&gt; For backend engineers, AI inference is moving from &quot;scarce resource&quot; to &quot;near-free utility.&quot; This fundamentally changes product design: whether to inline AI, cache granularity, and fallback strategies all need re-evaluation.</p>
+
+<p>📎 Source: https://www.forbes.com/sites/jonmarkman/2026/09/14/deepseek-v41-flash-prices-cached-input-to-0003-per-million-tokens/</p>
+
+<hr/>
+
+<h3>📰 Story 2: OpenAI GPT-6 Astra 发布，被列为潜在&quot;关键级&quot;安全风险</h3>
+<p><strong>OpenAI Launches GPT-6 Astra, Classifies It as Potentially &quot;Critical&quot; Cybersecurity Risk</strong></p>
+
+<p>OpenAI 于 9 月 3 日发布 GPT-6 Astra。据报道，该模型在数学和代码基准上表现优异，但 OpenAI 将其在网络安全领域的能力评级为其 Preparedness Framework 中&quot;关键级别&quot;，并暂时暂停了部分内部使用以加强安全控制。</p>
+
+<p>OpenAI launched GPT-6 Astra on September 3rd. The model reportedly demonstrates strong performance on math and coding benchmarks, but OpenAI classified its cybersecurity capabilities as &quot;Critical&quot; under its Preparedness Framework, temporarily halting some internal uses to add enhanced security controls.</p>
+
+<p>&gt; 💡 <strong>为什么重要 / Why it matters:</strong> 这是 AI 公司首次在正式发布时公开承认模型可能达到&quot;关键&quot;安全阈值。Preparedness Framework 的实际执行正在被检验——这对整个行业的 AI governance 有重要信号意义。</p>
+<p>&gt;</p>
+<p>&gt; This marks a first: an AI company publicly acknowledging at launch that a model may hit a &quot;critical&quot; safety threshold. It&#x27;s a live test of whether Preparedness Frameworks translate into real constraints — a significant signal for AI governance industry-wide.</p>
+
+<p>📎 Source: https://augusto.digital/insights/blogs/monthly-llm-news-september-2026/</p>
+
+<hr/>
+
+<h3>📰 Story 3: Anthropic 发布 Claude Enterprise，上下文窗口达 50 万词</h3>
+<p><strong>Anthropic Launches Claude Enterprise with 500K-Word Context Window</strong></p>
+
+<p>Anthropic 推出面向高风险行业（金融、法律、医疗）的 Claude Enterprise，据报道支持高达 50 万词的上下文窗口。这意味着可以在一个 prompt 中放入整个代码库或大型法律文档集。</p>
+
+<p>Anthropic launched Claude Enterprise targeting high-stakes industries (finance, legal, healthcare), reportedly supporting a 500,000-word context window. That means fitting entire codebases or large legal document collections in a single prompt.</p>
+
+<p>&gt; 💡 <strong>为什么重要 / Why it matters:</strong> 超长上下文窗口改变了 RAG 的必要性评估。对于能直接 fit 进上下文的文档集，RAG 的复杂性可能得不偿失——但成本依然是关键变量（长上下文 = 更多 token = 更高费用）。</p>
+<p>&gt;</p>
+<p>&gt; Ultra-long context windows change the calculus for RAG. If a document set fits in context, RAG&#x27;s added complexity may not be worth it — but cost remains the key variable (longer context = more tokens = higher bills).</p>
+
+<p>📎 Source: https://www.shakudo.io/blog/top-9-large-language-models</p>
+
+<hr/>
+
+<h3>🔧 工程师视角 / Engineer&#x27;s Take</h3>
+
+<p>本周 AI 新闻的底层趋势是<strong>能力 vs 成本的双向压缩</strong>：</p>
+<p>- 能力边界在向上移（GPT-6 Astra 的 critical 安全阈值）</p>
+<p>- 成本在向下崩（DeepSeek Flash 缓存定价）</p>
+
+<p>对于产品工程师，这意味着：<strong>选型框架要从&quot;哪个模型最好&quot;转向&quot;哪个模型性价比最优、风险最低&quot;</strong>。</p>
+
+<p>The underlying trend: capabilities and costs are compressing in opposite directions. For product engineers, the selection framework needs to shift from &quot;which model is best&quot; to &quot;which model has the best risk-adjusted cost-performance ratio.&quot;</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://www.forbes.com/sites/jonmarkman/2026/09/14/deepseek-v41-flash-prices-cached-input-to-0003-per-million-tokens/</p>
+<p>- https://augusto.digital/insights/blogs/monthly-llm-news-september-2026/</p>
+<p>- https://www.shakudo.io/blog/top-9-large-language-models</p>
+
+<h3>🧒 ELI5</h3>
+<p>AI 这周发生了三件大事：1）AI 用起来越来越便宜了，有公司把价格降到了极低水平；2）OpenAI 新模型太强了，自己都承认它在网络安全方面可能有危险，需要额外管控；3）Claude 企业版能一次&quot;读完&quot;整本书那么多文字了。总体趋势：AI 更强、更便宜、但也更需要管理。</p>
+
+<p>Three big AI moves this week: 1) AI is getting dramatically cheaper, with prices hitting record lows; 2) OpenAI&#x27;s new model is so powerful they flagged it as potentially dangerous for cybersecurity and added extra controls; 3) Claude Enterprise can now read an entire large codebase in one go. The trend: AI is getting stronger, cheaper, and more in need of governance.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-09-13</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
