@@ -965,3 +965,16 @@ _Report-only run — no code changes made._
 - Delivery rate (7d): 5/7 (missed 2026-09-12 and 2026-09-09)
 - Cron errors: none (byte-by-byte optimizer: lastRunStatus=ok, lastRunError=null, lastDelivered=true)
 - Current day: 132 (stuck — same number on 09-11 and 09-13) | state.lastSentDate: 2026-09-11 (stale; actual last delivery 09-13)
+
+## 2026-09-16 Optimization Run
+
+### Issues Found
+- **P0 (likely, needs confirmation)**: 2026-09-16 has NO send yet as of 09:00 PT, well past the normal 08:00–08:45 send window. If nothing lands today, that's a missed delivery. Watch for it.
+- **P0 pattern**: Alternating-day misses. Last 7 days show a clean every-other-day pattern — sends on 09-10, 09-11, 09-13, 09-15 (OK) and misses on 09-12, 09-14, 09-16. The pipeline appears to be firing only every other day rather than daily. Delivery rate dropped to 4/7. Needs manual check of the daily cron schedule / trigger — this looks like a cadence bug, not random failures.
+- **P1**: Day counter cadence. Day advanced 132 (09-13) → 133 (09-15) across a 2-day gap with 09-14 missed, i.e. one day increment per two calendar days. state.lastSentDate=2026-09-15 now matches the last email-log entry (09-15), so the state-vs-log desync flagged on 09-13 has resolved — but the underlying every-other-day execution remains.
+- **P2**: reviewDaysCompleted still skips Day 100 (…95, 105…). Unchanged bookkeeping gap. nvm default Node in exec shell still mismatched (v25.6.1 vs required >=25.9.0) — `openclaw cron list --json` fails from subshell; used native cron tool instead (optimizer job: lastRunStatus=ok, lastRunError=null, lastDelivered=true).
+
+### Metrics
+- Delivery rate (7d): 4/7 (missed 2026-09-12, 2026-09-14, and 2026-09-16-so-far)
+- Cron errors: none (byte-by-byte optimizer: lastRunStatus=ok, lastRunError=null, lastDelivered=true)
+- Current day: 133 | Last sent: 2026-09-15
