@@ -978,3 +978,15 @@ _Report-only run — no code changes made._
 - Delivery rate (7d): 4/7 (missed 2026-09-12, 2026-09-14, and 2026-09-16-so-far)
 - Cron errors: none (byte-by-byte optimizer: lastRunStatus=ok, lastRunError=null, lastDelivered=true)
 - Current day: 133 | Last sent: 2026-09-15
+
+## 2026-09-19 Optimization Run
+
+### Issues Found
+- **P0 CRITICAL — Pipeline down 4+ consecutive days.** No delivery since 2026-09-15. Missed 09-16, 09-17, 09-18, 09-19 (all four have no email-send-log entry and no "Day" content commit). This is no longer an every-other-day cadence bug — the daily send has stopped entirely. state.json still shows lastSentDate=2026-09-15, currentDay=133. Subscribers have received nothing for 4 days. NEEDS MANUAL FIX.
+- **P0 — Daily content cron job MISSING from scheduler.** `cron list` returns only ONE job: "byte-by-byte optimizer" (this job). There is no daily content-generation/send cron job registered at all. This almost certainly explains the total stop in deliveries: the job that generates + emails daily content appears to have been deleted, disabled, or never re-registered. This is the likely root cause of the P0 above. Recreate/re-enable the daily byte-by-byte send cron.
+- **P2**: nvm default Node in exec subshell still mismatched (v25.6.1 vs required >=25.9.0) — `openclaw cron list --json` fails from subshell; used native cron tool instead (optimizer job: lastRunStatus=ok, lastRunError=null, lastDelivered=true). Day 100 review gap in reviewDaysCompleted (…95,105…) still unaddressed.
+
+### Metrics
+- Delivery rate (7d): 2/7 (OK: 09-13, 09-15 | MISSED: 09-14, 09-16, 09-17, 09-18, 09-19)
+- Cron errors: none reported by optimizer job (lastRunStatus=ok). BUT the daily send job is absent from the scheduler entirely — see P0 above.
+- Current day: 133 | Last sent: 2026-09-15 (stale, 4 days ago)
