@@ -5,8 +5,635 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 15 Sep 2026 15:45:49 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 20 Sep 2026 15:09:41 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-09-20</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-09-20</guid>
+      <pubDate>Sun, 20 Sep 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 38 (8 min read)</strong></p>
+<p>📊 NeetCode: 104/150 · SysDesign: 60/40✅ · Behavioral: 60/40✅ · Frontend: 37/50 · AI: 30/30✅</p>
+<p>🔥 Day 134 — Expert Phase!</p>
+
+<hr/>
+
+<h2>🗓️ 本周回顾 / This Week&#x27;s Journey</h2>
+
+<p>| 日期 | Day | 主题概要 |</p>
+<p>|------|-----|---------|</p>
+<p>| 周一 Sep 15 | 133 | 事件驱动 vs 请求驱动架构终极综合 · Palindromic Substrings（中心扩展法）· Org Reorg 中 Staff 级应对 · Python 字节码与 dis 模块 · AI新闻：DeepSeek/GPT-6/Claude Enterprise |</p>
+<p>| 周六 Sep 19 | 134 | 🔬 Saturday Deep Dive — Decode Ways (LC #91 + #639)：从暴力递归到 O(1) 空间 DP，含通配符完整变体 |</p>
+
+<p><strong>本周节奏较缓，内容集中在质量深度而非数量覆盖。2 个活跃日，但每一天的深度都在线。</strong></p>
+
+<hr/>
+
+<h2>🧠 系统设计：本周要点 / System Design: Key Takeaways</h2>
+
+<p><strong>Day 133: 事件驱动 vs 请求驱动架构终极对比</strong></p>
+
+<p>本周系统设计是跨越全程的架构综合——把支付、通知、聊天、股票交易所等过去所有设计题背后的架构选型逻辑串联起来，提炼出可复用的决策框架。</p>
+
+<p><strong>三大核心洞察 / Top 3 Insights:</strong></p>
+
+<p>1. <strong>选型核心问题只有一个</strong>：调用方是否需要等待结果？需要 → 请求驱动（同步 HTTP/gRPC）；不需要 → 事件驱动（Kafka/SQS）。支付走同步，通知走异步，聊天混用（WebSocket 在线 + MQ 离线）。</p>
+
+<p><em>The deciding question: does the caller need to wait for the result? Yes → request-driven. No → event-driven. Payments are phone calls; notifications are group texts.</em></p>
+
+<p>2. <strong>事件驱动四大必踩坑</strong>：消息幂等性缺失 → 重消费副作用；顺序假设错误 → 跨分区乱序；schema 演进无保护 → 消费者崩溃；没有 DLQ → 毒消息永久卡住。</p>
+
+<p><em>At scale, event-driven systems fail in four predictable ways: non-idempotent consumers, ordering assumptions, unprotected schema evolution, and missing dead-letter queues.</em></p>
+
+<p>3. <strong>Saga = 微服务时代分布式事务的标准答案</strong>：本地事务 + 补偿事务替代 2PC，以最终一致性换可用性。面试中凡是被问&quot;分布式事务怎么做&quot;，Saga + 补偿事务就是框架。</p>
+
+<p><em>Saga Pattern replaces 2PC with local transactions + compensating transactions. The go-to answer for &quot;how do you handle distributed transactions in microservices?&quot;</em></p>
+
+<hr/>
+
+<h2>💻 算法：模式总结 / Algorithms: Patterns Mastered</h2>
+
+<p><strong>本周题目：</strong></p>
+<p>- Day 133: #647 Palindromic Substrings (Medium) — 1-D DP 模式 6/12</p>
+<p>- Day 134 Deep Dive: #91 Decode Ways + #639 Decode Ways II (Hard)</p>
+
+<p><strong>模式对比表 / Pattern Comparison:</strong></p>
+
+<p>| 题目 | 核心技术 | 关键变化 |</p>
+<p>|------|---------|---------|</p>
+<p>| #5 Longest Palindromic Substring | 中心扩展法 | 记录最长，返回字串本身 |</p>
+<p>| #647 Palindromic Substrings | 中心扩展法 | 每次扩展 count++，返回数量 |</p>
+<p>| #91 Decode Ways | 爬楼梯 + guard | <code>dp[i-1]</code>（单位有效）+ <code>dp[i-2]</code>（两位有效） |</p>
+<p>| #639 Decode Ways II | 同上 + 乘法因子 | <code>*</code> 通配引入 9/6/15 倍率，枚举 4 种 case |</p>
+
+<p><strong>本周最重要的算法洞察：</strong></p>
+<p>- #647 和 #5 是同一技术的两种输出形式 — 中心扩展掌握一次等于两道题免费</p>
+<p>- Decode Ways 本质 = &quot;带禁行台阶的爬楼梯&quot;，转移方程与 Climbing Stairs 完全同构</p>
+<p>- <code>dp[0] = 1</code> 是最容易忘的 base case — 漏掉它所有两位解码永远贡献 0</p>
+<p>- LC #639 通配符：<code><em></code>+<code></em></code> → 15种，<code>1</code>+<code><em></code> → 9种，<code>2</code>+<code></em></code> → 6种，<code>*</code>+<code>c</code> → ×2（c≤6）或 ×1（c&gt;6）</p>
+
+<p><em>Master insight: Decode Ways is Climbing Stairs on a broken staircase. The recurrence is identical — the only difference is guards that zero out invalid steps.</em></p>
+
+<hr/>
+
+<h2>🗣️ 软技能：练习重点 / Soft Skills: What to Practice</h2>
+
+<p><strong>Day 133 场景：Org Reorg 中途，如何维持 Staff 级项目交付</strong></p>
+
+<p><strong>覆盖场景 / Scenario Covered:</strong></p>
+<p>项目进行到 60%，公司突然重组：团队拆散、新 manager 零上下文。如何保证交付不 slip + 48 小时内建立新 credibility？</p>
+
+<p><strong>Staff 级标准动作（按优先级）：</strong></p>
+<p>1. <strong>第一动作是写，不是说</strong> — 发出 Project Health Doc：状态、风险、决策历史、依赖方、剩余工作，一页纸，15 分钟任何人可 onboard</p>
+<p>2. <strong>给新 manager 最小可决策上下文</strong> — 不是历史课，是&quot;现状 + 3 大风险 + 1 件需要你解封的事&quot;</p>
+<p>3. <strong>主动提 descope，不等被要求延期</strong> — Staff 控制叙事，不汇报问题</p>
+<p>4. <strong>离队成员知识迁移</strong> — ADR + pair programming，把隐性知识显性化</p>
+
+<p><strong>金句 / Key Framing:</strong></p>
+<p>&gt; &quot;混乱时期，谁能提供清晰度，谁就有影响力。&quot;</p>
+<p>&gt; <em>In chaos, whoever provides clarity gains influence.</em></p>
+
+<p><strong>需要练习的点：</strong></p>
+<p>- 能否 2 分钟内用完整 STAR 讲出这个场景，突出 proactive 动作？</p>
+<p>- 有没有真实 reorg 经历可以替换进来，让故事更有说服力？</p>
+
+<p><em>The Staff tell: you hand your new manager a one-page project health doc before they ask — then show up to the 1:1 with an agenda, not a status update.</em></p>
+
+<hr/>
+
+<h2>🎨 前端：知识巩固 / Frontend: Concepts to Lock In</h2>
+
+<p><strong>本周前端内容：</strong> 无新专项内容（综合阶段，本周无独立前端章节）</p>
+
+<p><strong>快速自检 — 近期前端知识点是否还在：</strong></p>
+<p>- <code>useTransition</code> vs <code>useDeferredValue</code>：哪个是&quot;我主动触发的低优先级更新&quot;，哪个是&quot;我响应别人触发的延迟&quot;？</p>
+<p>- React Server Components 下，哪些 hooks 不能用？为什么？</p>
+<p>- 当前进度：37/50，剩余 13 个主题</p>
+
+<p><em>Frontend stalled this week. Quick check: can you explain useTransition vs useDeferredValue without looking it up? If not, that&#x27;s the first thing to revisit.</em></p>
+
+<hr/>
+
+<h2>🤖 AI：知识点 / AI: What Stuck</h2>
+
+<p><strong>Day 133 AI 新闻要点（以下具体数字/声明均来自新闻整理，据报道）：</strong></p>
+
+<p>1. <strong>据报道 DeepSeek V4.1 Flash 缓存定价 $0.003/M tokens</strong> — AI 推理成本正从&quot;稀缺资源&quot;变成&quot;近乎免费的工具&quot;，产品选型框架应从&quot;哪个最好&quot;转向&quot;哪个性价比最优、风险最低&quot;。</p>
+
+<p><em>Reportedly $0.003/M cached input tokens — AI inference is becoming a commodity utility. Shift your model selection framework to risk-adjusted cost-performance.</em></p>
+
+<p>2. <strong>据报道 OpenAI GPT-6 Astra 在发布时被评为网络安全&quot;关键级别&quot;风险</strong> — 首次公开发布时承认达到 Critical 安全阈值，检验 Preparedness Framework 是否真有约束力的实战信号。</p>
+
+<p><em>Reportedly classified as &quot;Critical&quot; cybersecurity risk at launch — a live test of whether AI safety frameworks translate into real constraints.</em></p>
+
+<p>3. <strong>据报道 Claude Enterprise 支持 50 万词上下文窗口</strong> — 重新评估 RAG 必要性：若文档集能直接 fit 进上下文，RAG 的额外复杂度可能得不偿失。但成本依然是关键变量（长上下文 = 更多 token）。</p>
+
+<p><em>500K-word context changes the RAG calculus: when the corpus fits directly, added RAG complexity may not pay off — but watch the token bill.</em></p>
+
+<p><strong>本周最重要的 AI 洞察 / Most Important Takeaway:</strong></p>
+<p>能力上限在涨，单价在崩 — <strong>性价比与风险控制</strong>将是未来 AI 选型的核心维度，而不再是&quot;哪个模型最强&quot;。</p>
+
+<p><em>Capabilities and costs are compressing in opposite directions. Risk-adjusted cost-performance is the new selection criterion.</em></p>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<p><strong>优先级排序：</strong></p>
+
+<p>1. <strong>🔴 Decode Ways II 的 <code><em></code> case 枚举需要能流利背出</strong> — 4 种 case 组合（<code></em><em></code> → 15, <code>1</em></code> → 9, <code>2<em></code> → 6, <code></em>c</code> → ×2 或 ×1）是高频翻车点。面试中就算遇不到这道题，展示你能推导乘法因子来源本身就是加分项。</p>
+
+<p>2. <strong>🟡 1-D DP 模式尚在进行中（6/12）</strong> — Decode Ways 之后是 #139 Word Break、#300 LIS 等。这批题关联性强，动能不能断。建议下周保持每日 1 道 DP 题的节奏。</p>
+
+<p>3. <strong>🟡 前端进度停滞 37/50，已超 2 周无专项内容</strong> — 建议下周强制补上 1-2 个前端主题。候选：Next.js 进阶 API / Server Actions 深化，或 Web Performance 实战（LCP/CLS 优化）。</p>
+
+<p>4. <strong>🟢 系统设计综合是否真正内化？</strong> — 建议做一次无辅助口头 whiteboard：出题&quot;设计通知系统，事件驱动，1B DAU&quot;。如果能自然串出 Kafka 扇出 + DLQ + schema registry + Saga，就是真正掌握了。</p>
+
+<p><em>Top priority: Decode Ways II wildcard cases + keep the DP momentum going. Don&#x27;t let frontend sit at 37 for a third week.</em></p>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p><strong>Saturday Deep Dive: Decode Ways 双题全解，把一道题彻底搞透 🔬</strong></p>
+
+<p>从暴力递归 → 记忆化 Top-Down → Bottom-Up DP → O(1) 空间优化，再到 Hard 变体 LC #639 的 <code>*</code> 通配符完整 case 枚举，还有 5 道面试模拟 Q&amp;A——这不是刷题，这是 ownership。</p>
+
+<p>一般人 AC 了就翻篇。你把同一道题从 3 个角度、4 种实现、5 道 Q&amp;A 全部拆透。这才是 Staff 水平的学习方式——不只会做，还要能教，还要能在面试中回答&quot;那如果换成 <code>*</code> 通配符呢？&quot;</p>
+
+<p><em>Going from brute force to O(1) space to the Hard variant with 5 interview Q&amp;As — that&#x27;s not just solving a problem, that&#x27;s owning it. This is what separates candidates who &quot;can code&quot; from those who truly understand.</em></p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p>基于当前进度（Day 134 完成，1-D DP 6/12）：</p>
+
+<p>| 预期方向 | 内容 |</p>
+<p>|---------|------|</p>
+<p>| 算法（Day 135+） | 1-D DP 继续：#139 Word Break · #300 Longest Increasing Subsequence · #416 Partition Equal Subset Sum |</p>
+<p>| 系统设计 | Synthesis 综合 |</p>
+<p>| 软技能 | Synthesis 综合 |</p>
+<p>| Python Craft | Synthesis 综合 |</p>
+<p>| 前端 | 建议重新激活：Next.js / Web Performance 主题 |</p>
+<p>| AI | News Roundup 或综合 |</p>
+
+<p><strong>大目标提醒：</strong></p>
+<p>- NeetCode: 104/150，还剩 46 题</p>
+<p>- Frontend: 37/50，还剩 13 个主题</p>
+<p>- 下周目标：3-4 个活跃学习日，重新找到 Mon-Fri 节奏</p>
+
+<p><em>Next up: close out the 1-D DP block, get frontend moving again, aim for 3-4 active days this week.</em></p>
+]]></description>
+    </item>
+    <item>
+      <title>byte-by-byte — 2026-09-19</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-09-19</guid>
+      <pubDate>Sat, 19 Sep 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Decode Ways — 从计数到通配解码 (LC #91 + #639) (18 min read)</strong></p>
+<p>📊 NeetCode: 104/150 · SysDesign: 60/60 · Behavioral: 60/60 · Frontend: 37/50 · AI: 30/30</p>
+<p>🗓️ Day 134 · Expert Phase</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>解码方式是经典的一维动态规划入门题，但它极度迷惑人。表面上只是把数字字符串解码成字母，实际上边界情况能让你在面试中翻车。LC #91（Medium）靠边界条件拦人；LC #639（Hard）再加一个 <code>*</code> 通配符，让题目的 case 数量翻几倍。</p>
+
+<p>这道题在 Meta、Google、Amazon、Microsoft 的面试中高频出现，因为它同时测试：</p>
+<p>1. 一维 DP 的状态定义能力</p>
+<p>2. 字符串处理的细心程度</p>
+<p>3. 对&quot;边界条件如何传播&quot;的理解</p>
+
+<p>把这两道题一起搞定，你对 1-D DP 的掌握就算真正扎实了。</p>
+
+<p><strong>English:</strong></p>
+<p>Decode Ways looks deceivingly simple: count valid decodings of a digit string using the mapping 1→A, 2→B, ..., 26→Z. But the edge cases are treacherous. Level it up with wildcard <code>*</code> (LC #639) and it becomes a rigorous test of DP transition mastery.</p>
+
+<p>This pair appears frequently in FAANG interviews because it rewards careful state definition and boundary thinking — not just pattern recognition.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>问题定义 / Problem Definition</h3>
+
+<p><strong>中文：</strong> 给定只含数字的字符串 <code>s</code>，统计有多少种方式将其解码为字母序列（1→A, 2→B, ..., 26→Z）。</p>
+
+<p><strong>English:</strong> Given digit string <code>s</code>, return the number of valid decodings using the mapping 1→A through 26→Z.</p>
+
+<pre><code>
+&quot;12&quot;   → &quot;AB&quot; or &quot;L&quot;          → 2 ways
+&quot;226&quot;  → &quot;BBF&quot;, &quot;BZ&quot;, &quot;VF&quot;    → 3 ways
+&quot;06&quot;   → (none)               → 0 ways  ← leading zero, &quot;06&quot;&gt;26 AND &quot;0&quot; alone invalid
+&quot;10&quot;   → &quot;J&quot; only             → 1 way   ← &quot;1&quot;+&quot;0&quot; fails; &quot;10&quot;=J works
+</code></pre>
+
+<h3>为什么贪心不行 / Why Greedy Fails</h3>
+
+<p><strong>中文：</strong></p>
+<p>如果你贪心地尽量取两位数，你会漏路径；如果贪心地取一位数，你也会漏路径。原因是每一步的选择影响后续所有子问题——这是重叠子结构的教科书定义，DP 的信号。</p>
+
+<p><strong>English:</strong></p>
+<p>Every choice at position <code>i</code> (take 1 digit or 2?) branches into subproblems that share computation. That&#x27;s overlapping subproblems. Greedy picks one path; DP counts all valid paths simultaneously.</p>
+
+<h3>DP 状态定义 / State Definition</h3>
+
+<pre><code>
+dp[i] = 前 i 个字符的有效解码方式数
+      = number of ways to decode s[0..i-1]
+</code></pre>
+
+<h3>转移方程 / Transition</h3>
+
+<p>在位置 <code>i</code>（1-indexed），有两个选择：</p>
+
+<pre><code>
+选择1 — 单位解码 s[i-1]:
+  if s[i-1] != &#x27;0&#x27;:           # &#x27;0&#x27; 单独无法解码
+      dp[i] += dp[i-1]
+
+选择2 — 两位解码 s[i-2..i-1]:
+  two = int(s[i-2:i])
+  if 10 &lt;= two &lt;= 26:         # 有效范围：10-26
+      dp[i] += dp[i-2]
+</code></pre>
+
+<h3>Base Cases</h3>
+
+<pre><code>
+dp[0] = 1   # 空字符串算1种（递推的出发点）
+dp[1] = 1 if s[0] != &#x27;0&#x27; else 0
+</code></pre>
+
+<h3>Mental Model — 楼梯思维</h3>
+
+<p><strong>中文：</strong> 把字符串想象成一排台阶，每步可以迈 1 格或 2 格，但某些台阶是&quot;损坏的&quot;（&#x27;0&#x27; 单独、两位数&gt;26）。<code>dp[i]</code> = 从起点走到第 <code>i</code> 阶的总路径数。关键：损坏的台阶不会把之前的路径数清零——它只是让&quot;从这里出发的那一步&quot;贡献 0。</p>
+
+<p><strong>English:</strong> Decode Ways = Climbing Stairs with forbidden steps. A &#x27;0&#x27; makes the single-step contribution 0; a two-digit &gt; 26 makes the double-step contribution 0. dp[i] = total paths to stair i, accumulated from valid steps only.</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>方法1：暴力递归 (Exponential) — 用于理解结构</h3>
+
+<pre><code>
+def numDecodings_brute(s: str) -&gt; int:
+    &quot;&quot;&quot;
+    Naive recursion — O(2^n) time, O(n) stack space.
+    Don&#x27;t use in interviews; use to understand the branching structure.
+    &quot;&quot;&quot;
+    def dfs(i: int) -&gt; int:
+        # Base: consumed all characters successfully
+        if i == len(s):
+            return 1
+        # Dead end: current character is &#x27;0&#x27;, no valid single-digit mapping
+        if s[i] == &#x27;0&#x27;:
+            return 0
+
+        # Branch 1: decode s[i] as a single character (1-9)
+        ways = dfs(i + 1)
+
+        # Branch 2: decode s[i:i+2] as a two-digit number (10-26)
+        if i + 1 &lt; len(s):
+            two_digit = int(s[i:i+2])
+            if 10 &lt;= two_digit &lt;= 26:
+                ways += dfs(i + 2)
+
+        return ways
+
+    return dfs(0)
+</code></pre>
+
+<h3>方法2：记忆化递归 Top-Down — O(n) time, O(n) space</h3>
+
+<pre><code>
+from functools import lru_cache
+
+def numDecodings_memo(s: str) -&gt; int:
+    &quot;&quot;&quot;
+    Top-down DP with memoization.
+    Identical logic to brute force, but each unique index computed once.
+    &quot;&quot;&quot;
+    @lru_cache(maxsize=None)
+    def dfs(i: int) -&gt; int:
+        if i == len(s):
+            return 1
+        if s[i] == &#x27;0&#x27;:
+            return 0
+
+        ways = dfs(i + 1)  # single-digit decode
+
+        if i + 1 &lt; len(s) and 10 &lt;= int(s[i:i+2]) &lt;= 26:
+            ways += dfs(i + 2)  # two-digit decode
+
+        return ways
+
+    return dfs(0)
+</code></pre>
+
+<h3>方法3：迭代 DP Bottom-Up — 标准解法 ⭐</h3>
+
+<pre><code>
+def numDecodings(s: str) -&gt; int:
+    &quot;&quot;&quot;
+    Bottom-up DP — O(n) time, O(n) space.
+
+    dp[i] = number of ways to decode s[0..i-1]
+
+    Recurrence:
+      if s[i-1] != &#x27;0&#x27;:           dp[i] += dp[i-1]  (1-digit decode)
+      if 10 &lt;= s[i-2:i] &lt;= 26:    dp[i] += dp[i-2]  (2-digit decode)
+    &quot;&quot;&quot;
+    n = len(s)
+    dp = [0] * (n + 1)
+
+    dp[0] = 1                          # empty string baseline
+    dp[1] = 0 if s[0] == &#x27;0&#x27; else 1   # first char: 1 way unless it&#x27;s &#x27;0&#x27;
+
+    for i in range(2, n + 1):
+        # --- Option 1: decode the single character s[i-1] ---
+        if s[i-1] != &#x27;0&#x27;:              # &#x27;0&#x27; has no standalone mapping
+            dp[i] += dp[i-1]
+
+        # --- Option 2: decode the two-character s[i-2:i] ---
+        two_digit = int(s[i-2:i])
+        if 10 &lt;= two_digit &lt;= 26:      # valid two-digit encoding range
+            dp[i] += dp[i-2]
+
+    return dp[n]
+
+
+# --- Trace: s = &quot;226&quot; ---
+#
+# dp = [1, 1, 0, 0]   (initialized)
+#
+# i=2: s[1]=&#x27;2&#x27;  → != &#x27;0&#x27; → dp[2] += dp[1] = 1
+#       s[0:2]=&quot;22&quot; → 10&lt;=22&lt;=26 → dp[2] += dp[0] = 1   → dp[2] = 2
+#
+# i=3: s[2]=&#x27;6&#x27;  → != &#x27;0&#x27; → dp[3] += dp[2] = 2
+#       s[1:3]=&quot;26&quot; → 10&lt;=26&lt;=26 → dp[3] += dp[1] = 1   → dp[3] = 3
+#
+# Answer: 3  ✓  (BBF, BZ, VF)
+</code></pre>
+
+<h3>方法4：空间优化 O(1) — 面试首选 ⭐⭐</h3>
+
+<pre><code>
+def numDecodings_optimized(s: str) -&gt; int:
+    &quot;&quot;&quot;
+    Space-optimized DP — O(n) time, O(1) space.
+
+    Since dp[i] only depends on dp[i-1] and dp[i-2],
+    replace the array with two rolling variables.
+    &quot;&quot;&quot;
+    n = len(s)
+
+    prev2 = 1                           # dp[0]: empty string
+    prev1 = 0 if s[0] == &#x27;0&#x27; else 1    # dp[1]: first character
+
+    if n == 1:
+        return prev1
+
+    for i in range(2, n + 1):
+        curr = 0
+
+        # Single digit
+        if s[i-1] != &#x27;0&#x27;:
+            curr += prev1
+
+        # Two digit
+        two_digit = int(s[i-2:i])
+        if 10 &lt;= two_digit &lt;= 26:
+            curr += prev2
+
+        # Slide window: prev2 ← prev1, prev1 ← curr
+        prev2, prev1 = prev1, curr
+
+    return prev1
+</code></pre>
+
+<hr/>
+
+<h3>进阶：Decode Ways II (LC #639, Hard) 🔥</h3>
+
+<p><strong>中文：</strong></p>
+<p>在 LC #639 中，字符串可以包含 <code>*</code>，代表 1-9 中的<strong>任意</strong>数字（不包括 0）。答案对 10^9+7 取模。</p>
+
+<p><code>*</code> 引入了多路分支，我们不再是加 0/1，而是加一个倍数。</p>
+
+<p><strong>核心枚举：</strong></p>
+
+<pre><code>
+单位解码 &#x27;*&#x27;:    9 种可能 (1-9)
+
+两位解码（以 * 开头或结尾）:
+  prev=&#x27;1&#x27;, curr=&#x27;*&#x27; → &quot;1*&quot; → 11-19 → 9 种
+  prev=&#x27;2&#x27;, curr=&#x27;*&#x27; → &quot;2*&quot; → 21-26 → 6 种  (只有 1-6 有效)
+  prev=&#x27;*&#x27;, curr=&#x27;*&#x27; → &quot;**&quot; → 11-19(9种) + 21-26(6种) = 15 种
+  prev=&#x27;*&#x27;, curr=数字c:
+      if c &lt;= &#x27;6&#x27;: &quot;1c&quot; 有效 + &quot;2c&quot; 有效 → ×2
+      if c &gt;  &#x27;6&#x27;: 只有 &quot;1c&quot; 有效 → ×1
+</code></pre>
+
+<p><strong>English:</strong></p>
+<p>LC #639 adds <code><em></code> (represents 1–9, never 0). The key is multiplying dp values by the count of valid interpretations of each <code></em></code> rather than just adding 0 or 1.</p>
+
+<pre><code>
+def numDecodings_ii(s: str) -&gt; int:
+    &quot;&quot;&quot;
+    Decode Ways II — handles &#x27;*&#x27; wildcard.
+    O(n) time, O(1) space. Result mod 10^9 + 7.
+
+    &#x27;*&#x27; represents any digit in 1-9 (NOT 0).
+    &quot;&quot;&quot;
+    MOD = 10**9 + 7
+    n = len(s)
+
+    # dp[1] for the first character
+    prev2 = 1
+    if s[0] == &#x27;*&#x27;:
+        prev1 = 9       # &#x27;*&#x27; can be 1-9 → 9 ways
+    elif s[0] == &#x27;0&#x27;:
+        prev1 = 0       # &#x27;0&#x27; alone is never valid
+    else:
+        prev1 = 1       # any other digit: exactly 1 way
+
+    if n == 1:
+        return prev1
+
+    for i in range(2, n + 1):
+        curr = 0
+        c = s[i-1]   # current character
+        p = s[i-2]   # previous character
+
+        # ---- Single-digit decode ----
+        if c == &#x27;*&#x27;:
+            curr += 9 * prev1      # &#x27;*&#x27; = 1-9: 9 choices
+        elif c != &#x27;0&#x27;:
+            curr += prev1          # literal non-zero digit: 1 choice
+
+        # ---- Two-digit decode ----
+        if p == &#x27;*&#x27; and c == &#x27;*&#x27;:
+            # &quot;**&quot;: 11-19 (9 combos) + 21-26 (6 combos) = 15
+            curr += 15 * prev2
+
+        elif p == &#x27;*&#x27; and c != &#x27;*&#x27;:
+            # prev=&#x27;*&#x27;, curr=literal digit c
+            # &quot;1c&quot; is always valid (10-19, c=0-9)
+            # &quot;2c&quot; is valid only if c &lt;= &#x27;6&#x27; (20-26)
+            if c &lt;= &#x27;6&#x27;:
+                curr += 2 * prev2  # both &quot;1c&quot; and &quot;2c&quot; work
+            else:
+                curr += 1 * prev2  # only &quot;1c&quot; works (c&gt;6 → &quot;2c&quot;&gt;26)
+
+        elif p != &#x27;*&#x27; and c == &#x27;*&#x27;:
+            # prev=literal digit p, curr=&#x27;*&#x27;
+            if p == &#x27;1&#x27;:
+                curr += 9 * prev2  # &quot;1*&quot; → 11-19 → 9 ways
+            elif p == &#x27;2&#x27;:
+                curr += 6 * prev2  # &quot;2*&quot; → 21-26 → 6 ways
+            # else p &gt;= &#x27;3&#x27;: &quot;3*&quot; &gt;= 31 &gt; 26, always invalid → +0
+
+        else:
+            # Both literal digits: same as LC #91
+            two_digit = int(s[i-2:i])
+            if 10 &lt;= two_digit &lt;= 26:
+                curr += prev2
+
+        curr %= MOD
+        prev2, prev1 = prev1, curr
+
+    return prev1
+</code></pre>
+
+<hr/>
+
+<h3>✅ Step 4 Cross-Check: 对照代码与状态图</h3>
+
+<p>追踪 <code>s = &quot;1*&quot;</code> 的执行路径（验证图与代码一致）：</p>
+
+<pre><code>
+状态图 / Flow Diagram:
+
+  s[0]=&#x27;1&#x27;                s[1]=&#x27;*&#x27;
+     │                       │
+  dp[1]=1               dp[2]=?
+     │                   ┌───┴───────────────────┐
+     │             单位解码&#x27;*&#x27;           两位解码&quot;1*&quot;
+     │             9 × dp[1] = 9        9 × dp[0] = 9
+     │                   └───────────────────────┘
+     │                        dp[2] = 18
+
+代码路径 (i=2, p=&#x27;1&#x27;, c=&#x27;*&#x27;):
+  单位: c==&#x27;*&#x27; → curr += 9 * prev1 = 9 * 1 = 9         ← 对应图中&quot;单位解码&quot;
+  两位: p==&#x27;1&#x27;, c==&#x27;*&#x27; → curr += 9 * prev2 = 9 * 1 = 9 ← 对应图中&quot;两位解码&quot;
+  curr = 18 ✓ — 代码与图完全一致
+</code></pre>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p>| Input | Output | 原因 / Why |</p>
+<p>|-------|--------|-----------|</p>
+<p>| <code>&quot;0&quot;</code> | 0 | &#x27;0&#x27; 单独无映射 |</p>
+<p>| <code>&quot;06&quot;</code> | 0 | dp[1]=0 因为 s[0]=&#x27;0&#x27;，级联为 0 |</p>
+<p>| <code>&quot;10&quot;</code> | 1 | &quot;10&quot;=J 有效；&quot;1&quot;+&quot;0&quot; 无效（&#x27;0&#x27; 单独） |</p>
+<p>| <code>&quot;30&quot;</code> | 0 | &quot;30&quot;&gt;26 无效；&quot;3&quot;+&quot;0&quot; 无效 |</p>
+<p>| <code>&quot;100&quot;</code> | 0 | &quot;1&quot;+&quot;0&quot;+&quot;0&quot;: &#x27;0&#x27; 单独；&quot;10&quot;+&quot;0&quot;: &#x27;0&#x27; 单独 |</p>
+<p>| <code>&quot;*&quot;</code> | 9 | 1-9 各一种 |</p>
+<p>| <code>&quot;1*&quot;</code> | 18 | 如上图 |</p>
+<p>| <code>&quot;**&quot;</code> | 96 | dp[1]=9; dp[2]=9×9(单) + 15×1(两) = 81+15 = 96 |</p>
+
+<p><strong>最常踩的坑 / Most Common Pitfalls:</strong></p>
+
+<p>1. <strong><code>dp[0] = 1</code> 忘了</strong> — 这是空字符串的出发点，必须为 1，否则两位解码永远贡献 0</p>
+<p>2. <strong><code>s[i-2:i]</code> 写成 <code>s[i-1:i+1]</code></strong> — Python 切片 off-by-one 是经典翻车</p>
+<p>3. <strong>LC #639 忘记 <code>% MOD</code></strong> — Python bigint 不会溢出但运算变慢；C++ 直接溢出</p>
+<p>4. <strong><code><em></code> 代表 1-9 不代表 0</strong> — 单独 <code></em></code> 一定是 9 种，而不是 10 种</p>
+<p>5. <strong>两位解码的下界检查</strong> — 很多人只检查 <code>&lt;= 26</code> 忘了 <code>&gt;= 10</code>，导致 &quot;01&quot;, &quot;09&quot; 等被算进去</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>1. <strong>压缩算法的解码验证</strong>：霍夫曼编码给定一段比特流，统计有多少种合法前缀解码方式，用于检测码本歧义性</p>
+<p>2. <strong>中文/日文 NLP 分词</strong>：&quot;结婚的和尚未结婚的&quot; → 多种切法，本质就是 DP 计数有效切分方案数</p>
+<p>3. <strong>生物信息学 — 读码框分析</strong>：DNA 每3个碱基编码1个氨基酸，但如果读码框有偏移或突变，计算有效解码路径数帮助分析突变影响</p>
+<p>4. <strong>密码学暴力分析</strong>：给定替代密码的密文，枚举所有合法明文候选（Decode Ways 是其简化版）</p>
+
+<p><strong>English:</strong></p>
+
+<p>1. <strong>Codec Ambiguity Detection</strong>: Huffman coding — does a given bitstream have exactly one valid decoding? Count &gt; 1 means the codebook is ambiguous.</p>
+<p>2. <strong>CJK NLP Tokenization</strong>: Chinese/Japanese have no spaces. Counting valid word-boundary segmentations is structurally identical to Decode Ways.</p>
+<p>3. <strong>Bioinformatics — ORF Analysis</strong>: Counting valid Open Reading Frames across a mutated DNA sequence uses the same DP with more complex validity rules.</p>
+<p>4. <strong>QR / Barcode Error Recovery</strong>: When partial data is corrupted, estimate how many valid payloads are consistent with the readable portions.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Q1: 如果要返回所有解码字符串（而不只是计数），怎么改？</strong></p>
+
+<p><strong>A（中文）：</strong> 把 <code>dp[i] = int</code> 改成 <code>dp[i] = List[str]</code>，状态转移变成字符串拼接而非数字相加。时间复杂度从 O(n) 变成 O(n × 答案数)，最坏 O(n × 2^n)。这就是为什么面试通常问计数而不是枚举——后者的输出本身就是指数级的。</p>
+
+<p><strong>A (EN):</strong> Change <code>dp[i]</code> from <code>int</code> to <code>List[str]</code>. Transitions become string concatenation. Time blows up to O(n × answer count) — exponential worst case. That&#x27;s why interviews ask for count: the all-paths output can&#x27;t be represented in polynomial time.</p>
+
+<hr/>
+
+<p><strong>Q2: 这题和 Climbing Stairs 有什么本质关系？</strong></p>
+
+<p><strong>A（中文）：</strong> 完全同构。Climbing Stairs 是 <code>dp[i] = dp[i-1] + dp[i-2]</code>，没有任何限制。Decode Ways 是同样的方程，但每一项都加了 guard（<code>s[i] != &#x27;0&#x27;</code> 和 <code>10 &lt;= two &lt;= 26</code>），guard 为假时该项贡献 0。可以说 Decode Ways 是&quot;带禁行台阶的爬楼梯&quot;。</p>
+
+<p><strong>A (EN):</strong> They&#x27;re isomorphic. Climbing Stairs = unrestricted <code>dp[i-1] + dp[i-2]</code>. Decode Ways = same recurrence with guards that zero out individual contributions. Decode Ways is Climbing Stairs on a partially broken staircase.</p>
+
+<hr/>
+
+<p><strong>Q3: 两个滚动变量为什么够用？什么情况需要三个？</strong></p>
+
+<p><strong>A（中文）：</strong> 因为转移方程最多往回看2步（<code>dp[i-1]</code> 和 <code>dp[i-2]</code>）。如果题目变成&quot;每次可以迈1、2或3步&quot;（Tribonacci），那就需要3个变量。一般原则：滚动变量数 = 转移方程的&quot;历史深度&quot;。</p>
+
+<p><strong>A (EN):</strong> The recurrence only looks back 2 positions. If the recurrence had <code>dp[i-3]</code> (like the Tribonacci sequence / &quot;3-step staircase&quot;), you&#x27;d need 3 variables. Rule: rolling variable count = recurrence lookback depth.</p>
+
+<hr/>
+
+<p><strong>Q4: LC #639 中，<code>prev=&#x27;*&#x27;</code> + <code>curr=数字c</code> 为什么有时是 ×2 有时是 ×1？</strong></p>
+
+<p><strong>A（中文）：</strong> <code>*</code> 可以是 1-9。前缀能构成有效两位数（10-26）的情况：</p>
+<p>- <code>*</code> = 1 时：<code>1c</code> 恒有效（10-19，无论 c 是什么）</p>
+<p>- <code>*</code> = 2 时：<code>2c</code> 仅在 c ∈ {0,1,2,3,4,5,6} 时有效（20-26）</p>
+
+<p>所以当 <code>c &lt;= &#x27;6&#x27;</code>，两种前缀都行（×2）；当 <code>c &gt; &#x27;6&#x27;</code>，只有&quot;前缀为1&quot;能成立（×1）。</p>
+
+<p><strong>A (EN):</strong> <code>*</code> can be 1 or 2 (among others). <code>1c</code> is always in 10-19 (valid). <code>2c</code> is in 20-2c; only valid if <code>2c &lt;= 26</code>, i.e., <code>c &lt;= &#x27;6&#x27;</code>. So c ≤ 6: both &#x27;1&#x27; and &#x27;2&#x27; work (×2). c &gt; 6: only &#x27;1&#x27; works (×1).</p>
+
+<hr/>
+
+<p><strong>Q5: 如果字符串长度是 10^7，有哪些实现注意点？</strong></p>
+
+<p><strong>A（中文）：</strong></p>
+<p>1. O(1) 空间的滚动变量解法直接可用，内存没问题</p>
+<p>2. LC #639 必须在每次迭代末尾执行 <code>% MOD</code>，不要等到最后——Python bigint 不会溢出，但操作变慢；C++/Java 会溢出</p>
+<p>3. Python 切片 <code>s[i-2:i]</code> 在长字符串中每次创建新 str 对象，可以改用 <code>ord(s[i-2]) <em> 10 + ord(s[i-1]) - 11 </em> ord(&#x27;0&#x27;)</code> 避免对象分配（微优化，面试不必提）</p>
+
+<p><strong>A (EN):</strong> O(1) space rolling-variable solution handles it. For LC #639: apply <code>% MOD</code> every iteration, not at the end — Python bigint grows; C++/Java overflows. For Python hot paths, avoid string slicing in the inner loop; use arithmetic on <code>ord()</code> values instead.</p>
+
+<hr/>
+
+<p>🔗 <strong>LeetCode #91 — Decode Ways:</strong> https://leetcode.com/problems/decode-ways/</p>
+<p>🔗 <strong>LeetCode #639 — Decode Ways II:</strong> https://leetcode.com/problems/decode-ways-ii/</p>
+<p>📹 <strong>NeetCode #91:</strong> https://www.youtube.com/watch?v=6aEyTjOwlJU</p>
+<p>📹 <strong>NeetCode #639:</strong> https://www.youtube.com/watch?v=aNnlf2qJMaI</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-09-15</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
