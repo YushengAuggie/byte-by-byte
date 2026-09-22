@@ -990,3 +990,17 @@ _Report-only run — no code changes made._
 - Delivery rate (7d): 2/7 (OK: 09-13, 09-15 | MISSED: 09-14, 09-16, 09-17, 09-18, 09-19)
 - Cron errors: none reported by optimizer job (lastRunStatus=ok). BUT the daily send job is absent from the scheduler entirely — see P0 above.
 - Current day: 133 | Last sent: 2026-09-15 (stale, 4 days ago)
+
+## 2026-09-22 Optimization Run
+
+### Issues Found
+- **RECOVERY confirmed.** The P0 total-outage flagged on 09-19 (no deliveries 09-16 → 09-19) has RESOLVED. Daily send resumed and ran cleanly 09-20, 09-21, 09-22. state.json now advances correctly: currentDay=135, lastSentDate=2026-09-22 (matches email-send-log). Day counter is now incrementing one-per-calendar-day again (133→134→135 across 09-20/21/22).
+- **P0 (historical, closed)**: 4-day gap 09-16 through 09-19 remains in the record — subscribers missed those 4 days. No further action; delivery is healthy again. Root cause from 09-19 (daily content cron absent from scheduler) appears fixed since sends resumed.
+- **P2**: `deepDiveCoveredNums` and per-track indexes advancing normally. `reviewDaysCompleted` Day 100 gap (…95, 105…) still present — minor bookkeeping, unchanged.
+- **P2**: nvm default Node in exec subshell still mismatched — `openclaw cron list --json` fails from the subshell (JSON decode error). Used native cron tool instead: optimizer job lastRunStatus=ok, lastRunError=null. Only the optimizer job is listed via the native tool, but daily sends are clearly executing (09-20/21/22 committed + logged), so the daily job is running even if not surfaced in this list view.
+
+### Metrics
+- Delivery rate (7d): 3/7 (OK: 09-20, 09-21, 09-22 | MISSED: 09-16, 09-17, 09-18, 09-19 — all pre-recovery)
+- Trailing 3d delivery: 3/3 (fully recovered)
+- Cron errors: none (optimizer job: lastRunStatus=ok, lastRunError=null)
+- Current day: 135 | Last sent: 2026-09-22
