@@ -5,8 +5,186 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 21 Sep 2026 15:16:21 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 22 Sep 2026 15:08:27 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-09-22</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-09-22</guid>
+      <pubDate>Tue, 22 Sep 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 / Review Day — Day 135</h2>
+<p><strong>Date:</strong> 2026-09-22</p>
+<p><strong>Phase:</strong> Expert | <strong>Topics:</strong> 1D Dynamic Programming Block (Days 131–134)</p>
+
+<hr/>
+
+<p>📊 NeetCode: 105/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 1-day streak!</p>
+
+<hr/>
+
+<h2>回顾内容 / Topics Covered (Days 131–134)</h2>
+
+<p>| Day | Algorithm |</p>
+<p>|-----|-----------|</p>
+<p>| 131 | House Robber II (循环数组 DP) |</p>
+<p>| 132 | Longest Palindromic Substring (最长回文子串) |</p>
+<p>| 133 | Palindromic Substrings (回文子串计数) |</p>
+<p>| 134 | Decode Ways (解码方式) |</p>
+
+<hr/>
+
+<h2>📝 Quick Quiz — 3 Mini-Reviews</h2>
+
+<hr/>
+
+<p><strong>Q1: [💻 Algorithms — House Robber II]</strong></p>
+
+<p>House Robber I 是线性数组，House Robber II 是循环数组（第一个和最后一个房子相邻）。你会如何修改 DP 来处理这个约束？</p>
+
+<p>House Robber I is a linear array. House Robber II adds a circular constraint: the first and last houses are adjacent and can&#x27;t both be robbed. How do you modify the DP to handle this?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>核心思路 / Key Insight:</strong> 把一个循环问题拆成两个线性子问题。</p>
+
+<p>将数组分成两段分别跑标准 House Robber DP，取最大值：</p>
+<p>- 子问题 1：<code>houses[0..n-2]</code>（排除最后一个）</p>
+<p>- 子问题 2：<code>houses[1..n-1]</code>（排除第一个）</p>
+
+<p>答案是两个子问题结果的最大值。</p>
+
+<p><strong>Split into two linear subproblems:</strong></p>
+<p>- Run standard O(n) House Robber on <code>houses[0..n-2]</code> (exclude last)</p>
+<p>- Run standard O(n) House Robber on <code>houses[1..n-1]</code> (exclude first)</p>
+<p>- Return <code>max(result1, result2)</code></p>
+
+<p>This works because in a valid circular solution, either the first house is robbed (so last isn&#x27;t) or the last is robbed (so first isn&#x27;t). The two subproblems cover both cases exhaustively.</p>
+
+<pre><code>
+def rob(nums):
+    if len(nums) == 1: return nums[0]
+    def rob_linear(arr):
+        prev2, prev1 = 0, 0
+        for n in arr:
+            prev2, prev1 = prev1, max(prev1, prev2 + n)
+        return prev1
+    return max(rob_linear(nums[:-1]), rob_linear(nums[1:]))
+</code></pre>
+
+<p>时间 O(n)，空间 O(1)。</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [💻 Algorithms — Decode Ways]</strong></p>
+
+<p>在 Decode Ways 中，DP 转移方程有两个部分。什么时候应该加 <code>dp[i-2]</code>（双位数解码）？什么情况下 <code>dp[i-1]</code> 反而为 0 不能加？</p>
+
+<p>In Decode Ways, the DP recurrence has two parts. When should you add <code>dp[i-2]</code> (two-digit decode)? When is <code>dp[i-1]</code> actually 0 and cannot be added?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>核心思路 / Key Insight:</strong> 单位数和双位数的有效性检查各自独立。</p>
+
+<p><strong>单位数解码 (<code>dp[i] += dp[i-1]</code>):</strong> 当 <code>s[i-1] != &#x27;0&#x27;</code> 时成立（&#x27;0&#x27; 不是合法字母映射）</p>
+
+<p><strong>双位数解码 (<code>dp[i] += dp[i-2]</code>):</strong> 当 <code>s[i-2:i]</code> 在 <code>&quot;10&quot;</code> 到 <code>&quot;26&quot;</code> 之间时成立</p>
+
+<p><strong>陷阱：<code>s[i-1] == &#x27;0&#x27;</code> 的情况</strong></p>
+<p>- 如果当前字符是 <code>&#x27;0&#x27;</code>，单位数解码无效（<code>dp[i-1]</code> 不能加）</p>
+<p>- 但如果 <code>s[i-2]</code> 是 <code>&#x27;1&#x27;</code> 或 <code>&#x27;2&#x27;</code>，双位数解码有效（&quot;10&quot; 或 &quot;20&quot;）</p>
+<p>- &quot;00&quot; → 完全无效，<code>dp[i] = 0</code>（注意防止死胡同）</p>
+
+<p><strong>Single-digit:</strong> Add <code>dp[i-1]</code> when <code>s[i-1] != &#x27;0&#x27;</code></p>
+
+<p><strong>Two-digit:</strong> Add <code>dp[i-2]</code> when <code>10 &lt;= int(s[i-2:i]) &lt;= 26</code></p>
+
+<pre><code>
+def numDecodings(s):
+    n = len(s)
+    dp = [0] * (n + 1)
+    dp[0] = 1
+    dp[1] = 1 if s[0] != &#x27;0&#x27; else 0
+    for i in range(2, n + 1):
+        one = int(s[i-1])
+        two = int(s[i-2:i])
+        if one &gt;= 1:
+            dp[i] += dp[i-1]    # single-digit valid
+        if 10 &lt;= two &lt;= 26:
+            dp[i] += dp[i-2]    # two-digit valid
+    return dp[n]
+</code></pre>
+
+<p>The key edge case: <code>&quot;06&quot;</code> → two-digit <code>06 = 6 &lt; 10</code>, invalid. Only <code>10–26</code> count.</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [💻 Algorithms — Palindromic Substrings vs Longest Palindromic Substring]</strong></p>
+
+<p>这两道题用的是同一种&quot;中心扩展&quot;技巧，但输出不同。请解释：(1) 如何同时处理奇数长度和偶数长度回文？(2) 这两道题分别返回什么？</p>
+
+<p>Both problems use the same &quot;expand around center&quot; technique but return different things. Explain: (1) How do you handle both odd and even length palindromes? (2) What does each problem return?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>核心思路 / Key Insight:</strong> 每个字符（奇数）和每对相邻字符（偶数）各是一个潜在的回文中心。</p>
+
+<p><strong>中心扩展 / Expand Around Center:</strong></p>
+<p>- 奇数长度：以 <code>(i, i)</code> 为中心扩展 → 处理 &quot;aba&quot; 类型</p>
+<p>- 偶数长度：以 <code>(i, i+1)</code> 为中心扩展 → 处理 &quot;abba&quot; 类型</p>
+<p>- 共 <code>2n - 1</code> 个中心，每个最多扩展 O(n)，总体 O(n²) 时间，O(1) 空间</p>
+
+<p><strong>Palindromic Substrings (#647) — 返回计数 / returns count:</strong></p>
+<pre><code>
+def countSubstrings(s):
+    count = 0
+    def expand(l, r):
+        nonlocal count
+        while l &gt;= 0 and r &lt; len(s) and s[l] == s[r]:
+            count += 1
+            l -= 1; r += 1
+    for i in range(len(s)):
+        expand(i, i)    # odd
+        expand(i, i+1)  # even
+    return count
+</code></pre>
+
+<p><strong>Longest Palindromic Substring (#5) — 返回子串 / returns substring:</strong></p>
+<pre><code>
+def longestPalindrome(s):
+    res, resLen = &quot;&quot;, 0
+    def expand(l, r):
+        nonlocal res, resLen
+        while l &gt;= 0 and r &lt; len(s) and s[l] == s[r]:
+            if r - l + 1 &gt; resLen:
+                res, resLen = s[l:r+1], r - l + 1
+            l -= 1; r += 1
+    for i in range(len(s)):
+        expand(i, i); expand(i, i+1)
+    return res
+</code></pre>
+
+<p><strong>区别 / Difference:</strong></p>
+<p>- #647: accumulate count per expansion</p>
+<p>- #5: track max length + start index</p>
+<p>- Both: O(n²) time, O(1) space — better than DP&#x27;s O(n²) space</p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>复习巩固记忆，螺旋式上升。这4天的 DP 模式：线性 DP + 边界条件处理，是面试高频考点。</em></p>
+
+<p>💡 <em>Spaced repetition builds lasting memory. This week&#x27;s theme: 1D DP with tricky boundary conditions — house constraints, circular arrays, character validity checks.</em></p>
+
+<p>📅 明天继续新内容！Tomorrow back to new content!</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-09-21</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
