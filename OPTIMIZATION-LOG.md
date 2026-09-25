@@ -1004,3 +1004,17 @@ _Report-only run — no code changes made._
 - Trailing 3d delivery: 3/3 (fully recovered)
 - Cron errors: none (optimizer job: lastRunStatus=ok, lastRunError=null)
 - Current day: 135 | Last sent: 2026-09-22
+
+## 2026-09-25 Optimization Run
+
+### Issues Found
+- **P0 CRITICAL — Delivery stopped:** No email sent on 2026-09-24 or 2026-09-25. `state.json` lastSentDate stuck at 2026-09-23 (Day 136), and no Day 137/138 commits exist in git log. `cron list` shows ONLY the optimizer job — the daily byte-by-byte content/send cron is not present (disabled or deleted). This is the root cause of the missed days and needs manual restoration of the daily generation+send cron job.
+- **P0 (earlier gap):** 2026-09-19 also MISSED (isolated, recovered afterward).
+- P1: None observed in delivered content (19–23 sent OK).
+- P2: `cron list --json` output not machine-parseable in Step 0 (python json.load failed on non-JSON/first-line noise); optimizer had to fall back to the cron tool. Minor tooling nit, not blocking.
+
+### Metrics
+- Delivery rate (7d): 4/7 (missed 09-19, 09-24, 09-25)
+- Consecutive miss streak: 2 days (09-24, 09-25) — active outage
+- Cron errors: optimizer job healthy (lastRunStatus=ok); daily content cron ABSENT
+- State: currentDay=136, lastSentDate=2026-09-23, lastReviewDay=135
