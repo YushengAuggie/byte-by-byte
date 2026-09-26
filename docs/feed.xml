@@ -5,8 +5,513 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 23 Sep 2026 15:14:45 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 26 Sep 2026 15:11:25 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-09-26</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-09-26</guid>
+      <pubDate>Sat, 26 Sep 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Maximum Product Subarray — 乘积子数组的双轨 DP (15 min read)</strong></p>
+<p>📊 NeetCode: 106/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 Day 137!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>Maximum Product Subarray（LeetCode #152）是一道看似简单、实则暗藏杀机的 DP 题。如果你用 Kadane 算法的思路去做乘法版本，你会在负数上摔跟头。核心问题是：<strong>负数乘以负数会变成正数</strong>——这意味着&quot;当前最小值&quot;随时可能翻身成为&quot;当前最大值&quot;。</p>
+
+<p>本期深度解析：</p>
+<p>1. 为什么乘积 DP 必须同时追踪 max 和 min</p>
+<p>2. 完整的状态转移推导过程</p>
+<p>3. 从暴力 O(n²) 到最优 O(n) 的进化路径</p>
+<p>4. 负数、零、全负数数组等 5 种边界情况</p>
+<p>5. 这个&quot;双轨追踪&quot;技巧在其他题目上的延伸</p>
+
+<p><strong>English：</strong></p>
+<p>Maximum Product Subarray (#152) is deceptively tricky. If you naively apply Kadane&#x27;s algorithm to multiplication, negatives will bite you. The core insight: <strong>a negative × a negative = a positive</strong>, meaning today&#x27;s minimum product could become tomorrow&#x27;s maximum.</p>
+
+<p>This deep dive covers:</p>
+<p>1. Why you must track both max and min simultaneously</p>
+<p>2. Full derivation of the state transition</p>
+<p>3. Evolution from brute force O(n²) to optimal O(n)</p>
+<p>4. 5 edge cases that trip up candidates</p>
+<p>5. Where this &quot;dual-track DP&quot; pattern appears in other problems</p>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/maximum-product-subarray/</p>
+<p>📹 NeetCode: https://neetcode.io/problems/maximum-product-subarray</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>为什么加法 DP 不能直接用于乘法？/ Why Kadane&#x27;s Doesn&#x27;t Directly Transfer</h3>
+
+<p><strong>中文：</strong></p>
+
+<p>先回忆 Kadane 算法（最大子数组和）的核心思想：</p>
+
+<pre><code>
+max_ending_here = max(num, max_ending_here + num)
+</code></pre>
+
+<p>逻辑很简单：要么从当前数重新开始，要么把当前数加到之前的最大子数组上。</p>
+
+<p>但乘法完全不同。考虑数组 <code>[-2, -3, 7]</code>：</p>
+<p>- Kadane 思维：-2 为负，丢掉；-3 为负，丢掉；答案是 7</p>
+<p>- <strong>正确答案</strong>：(-2) × (-3) × 7 = <strong>42</strong></p>
+
+<p>为什么？因为两个负数相乘变正数，而且乘积的绝对值可以很大。</p>
+
+<p>关键推论：<strong>在乘法 DP 中，我们必须同时维护两个状态——以 i 结尾的子数组的最大乘积（max_prod）和最小乘积（min_prod）。</strong></p>
+
+<p><strong>English：</strong></p>
+
+<p>Recall Kadane&#x27;s core idea (maximum subarray sum):</p>
+<pre><code>
+max_ending_here = max(num, max_ending_here + num)
+</code></pre>
+
+<p>Simple logic: either restart from current element, or extend the previous best subarray.</p>
+
+<p>With multiplication, consider <code>[-2, -3, 7]</code>:</p>
+<p>- Kadane thinking: -2 is negative, discard; -3 is negative, discard; answer = 7</p>
+<p>- <strong>Correct answer</strong>: (-2) × (-3) × 7 = <strong>42</strong></p>
+
+<p>Why? Two negatives multiply to a positive, potentially huge. The key corollary: <strong>in product DP, we must maintain both max_prod and min_prod ending at position i.</strong></p>
+
+<hr/>
+
+<h3>状态定义 / State Definition</h3>
+
+<p><strong>中文：</strong></p>
+
+<pre><code>
+max_prod[i] = 以 nums[i] 结尾的所有子数组中乘积最大的值
+min_prod[i] = 以 nums[i] 结尾的所有子数组中乘积最小的值
+</code></pre>
+
+<p>状态转移方程（3 种候选）：</p>
+
+<pre><code>
+以 nums[i] 结尾的子数组，只有 3 种情况：
+  1. 仅包含 nums[i] 本身
+  2. nums[i] × max_prod[i-1]  （扩展之前的最大乘积）
+  3. nums[i] × min_prod[i-1]  （扩展之前的最小乘积）
+
+当 nums[i] &gt; 0 时，情况2通常产生新最大值
+当 nums[i] &lt; 0 时，情况3可能翻转成新最大值（负 × 负 = 正！）
+当 nums[i] = 0 时，3种候选都归零，重新开始
+</code></pre>
+
+<p>因此：</p>
+<pre><code>
+max_prod[i] = max(nums[i], nums[i] × max_prod[i-1], nums[i] × min_prod[i-1])
+min_prod[i] = min(nums[i], nums[i] × max_prod[i-1], nums[i] × min_prod[i-1])
+</code></pre>
+
+<p><strong>English：</strong></p>
+
+<pre><code>
+max_prod[i] = maximum product of any subarray ending at nums[i]
+min_prod[i] = minimum product of any subarray ending at nums[i]
+</code></pre>
+
+<p>State transition — 3 candidates at each position:</p>
+<pre><code>
+Subarrays ending at nums[i] fall into exactly 3 cases:
+  1. Just nums[i] alone
+  2. nums[i] × max_prod[i-1]  (extend previous max)
+  3. nums[i] × min_prod[i-1]  (extend previous min)
+
+When nums[i] &gt; 0: case 2 likely gives the new max
+When nums[i] &lt; 0: case 3 might flip to new max (negative × negative = positive!)
+When nums[i] = 0: all candidates are 0; reset
+</code></pre>
+
+<p>Therefore:</p>
+<pre><code>
+max_prod[i] = max(nums[i], nums[i] × max_prod[i-1], nums[i] × min_prod[i-1])
+min_prod[i] = min(nums[i], nums[i] × max_prod[i-1], nums[i] × min_prod[i-1])
+</code></pre>
+
+<hr/>
+
+<h3>直觉图 / Intuition Diagram</h3>
+
+<pre><code>
+Input: [-2, 3, -4]
+
+Position:      0        1        2
+Value:        -2        3       -4
+
+max_prod:     -2        3       -4 × -2 = 8   ← 负 × 负 翻转！
+min_prod:     -2    -2×3=-6    -6×(-4)=-24   (new min, useless for now)
+
+Global result: max(-2, 3, 8) = 8 ✓
+
+The &quot;min track&quot; (-6 at pos 1) became critical at pos 2:
+  -6 × (-4) = +24... wait let me retrace.
+
+Correct trace for [-2, 3, -4]:
+  i=0: max=-2, min=-2
+  i=1: candidates=(3, 3×(-2)=-6, 3×(-2)=-6) → max=3, min=-6
+  i=2: candidates=(-4, 3×(-4)=-12, -6×(-4)=24) → max=24, min=-12
+
+Answer: max(-2, 3, 24) = 24 ✓
+The min_prod of -6 at i=1 became the hero at i=2!
+</code></pre>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Approach 1: Naive Brute Force — O(n²)</h3>
+
+<p><strong>中文：</strong>暴力解法：枚举所有子数组。面试时展示&quot;我知道更优解，先给基准&quot;。</p>
+
+<p><strong>English:</strong> Brute force — enumerate all subarrays. Show this first to establish baseline.</p>
+
+<pre><code>
+def maxProduct_brute(nums: list[int]) -&gt; int:
+    &quot;&quot;&quot;
+    Brute force: try every possible subarray [i..j]
+    Time: O(n^2), Space: O(1)
+    &quot;&quot;&quot;
+    n = len(nums)
+    result = nums[0]
+    
+    for i in range(n):
+        product = 1
+        for j in range(i, n):
+            product *= nums[j]              # extend subarray [i..j]
+            result = max(result, product)   # update global max
+    
+    return result
+
+# Test: [2, 3, -2, 4] → 6 (subarray [2,3])
+print(maxProduct_brute([2, 3, -2, 4]))   # 6 ✓
+print(maxProduct_brute([-2, 0, -1]))      # 0 ✓
+print(maxProduct_brute([-2, 3, -4]))      # 24 ✓
+</code></pre>
+
+<hr/>
+
+<h3>Approach 2: Optimal Dual-Track DP — O(n) time, O(1) space</h3>
+
+<pre><code>
+def maxProduct(nums: list[int]) -&gt; int:
+    &quot;&quot;&quot;
+    Dual-track DP: track both max and min product ending at current position.
+    
+    Key insight: when nums[i] is negative, multiply by min_prod (which is
+    also negative) gives a large positive — the new max.
+    
+    Time: O(n), Space: O(1)
+    &quot;&quot;&quot;
+    if not nums:
+        return 0
+    
+    # Initialize: both max and min start as nums[0]
+    max_prod = nums[0]   # max product of subarray ending here
+    min_prod = nums[0]   # min product of subarray ending here  
+    result = nums[0]     # global maximum found so far
+    
+    for i in range(1, len(nums)):
+        n = nums[i]
+        
+        # --- CRITICAL: compute candidates BEFORE overwriting max_prod/min_prod ---
+        # Three possible products for subarrays ending at index i:
+        candidate1 = n                  # start fresh: just [nums[i]]
+        candidate2 = n * max_prod       # extend previous max subarray
+        candidate3 = n * min_prod       # extend previous min subarray
+        
+        # New max is the largest of the three
+        max_prod = max(candidate1, candidate2, candidate3)
+        # New min is the smallest (track for future negative multiplications)
+        min_prod = min(candidate1, candidate2, candidate3)
+        
+        # Update global result
+        result = max(result, max_prod)
+    
+    return result
+
+
+# ═══════════════════════════════════════════════
+# Trace through [2, 3, -2, 4]:
+# ═══════════════════════════════════════════════
+# Start:  max_prod=2, min_prod=2, result=2
+#
+# i=1, n=3:
+#   candidates = (3, 3*2=6, 3*2=6)
+#   max_prod=6, min_prod=3, result=6
+#
+# i=2, n=-2:
+#   candidates = (-2, -2*6=-12, -2*3=-6)
+#   max_prod=-2, min_prod=-12, result=6
+#
+# i=3, n=4:
+#   candidates = (4, 4*(-2)=-8, 4*(-12)=-48)
+#   max_prod=4, min_prod=-48, result=6
+#
+# Final: 6 ✓ (subarray [2,3])
+</code></pre>
+
+<hr/>
+
+<h3>Full Walkthrough with State Table / 完整状态表</h3>
+
+<pre><code>
+def maxProduct_verbose(nums: list[int]) -&gt; int:
+    &quot;&quot;&quot;Same algorithm with step-by-step logging for understanding.&quot;&quot;&quot;
+    max_prod = min_prod = result = nums[0]
+    print(f&quot;Init: max={max_prod}, min={min_prod}, result={result}&quot;)
+    
+    for i in range(1, len(nums)):
+        n = nums[i]
+        # Must save before overwriting!
+        prev_max, prev_min = max_prod, min_prod
+        
+        max_prod = max(n, n * prev_max, n * prev_min)
+        min_prod = min(n, n * prev_max, n * prev_min)
+        result = max(result, max_prod)
+        
+        print(f&quot;i={i}, n={n}: &quot;
+              f&quot;candidates=({n}, {n*prev_max}, {n*prev_min}) &quot;
+              f&quot;→ max={max_prod}, min={min_prod}, result={result}&quot;)
+    
+    return result
+
+# Output for [-2, 3, -4]:
+# Init: max=-2, min=-2, result=-2
+# i=1, n=3: candidates=(3, -6, -6) → max=3, min=-6, result=3
+# i=2, n=-4: candidates=(-4, -12, 24) → max=24, min=-12, result=24
+# Answer: 24 ✓
+</code></pre>
+
+<hr/>
+
+<h3>One-Liner Trick (Pythonic) / 一行技巧</h3>
+
+<p><strong>中文：</strong>可以用 <code>min()</code> 和 <code>max()</code> 组合成更简洁的写法：</p>
+
+<p><strong>English:</strong> A compact version using tuple unpacking:</p>
+
+<pre><code>
+def maxProduct_compact(nums: list[int]) -&gt; int:
+    max_p = min_p = result = nums[0]
+    for n in nums[1:]:
+        # Python evaluates the ENTIRE right-hand tuple BEFORE any assignment,
+        # so both max() and min() see the original (old) max_p and min_p. ✓
+        max_p, min_p = (
+            max(n, n * max_p, n * min_p),
+            min(n, n * max_p, n * min_p)
+        )
+        result = max(result, max_p)
+    return result
+    
+# 💡 Python tuple assignment is safe here: the RHS is fully evaluated first.
+# max_p and min_p on the right still refer to the OLD values.
+# If you prefer explicit clarity, save old values first:
+# Safer (more readable) pattern:
+
+def maxProduct_safe(nums: list[int]) -&gt; int:
+    max_p = min_p = result = nums[0]
+    for n in nums[1:]:
+        # Save originals explicitly
+        old_max, old_min = max_p, min_p
+        max_p = max(n, n * old_max, n * old_min)
+        min_p = min(n, n * old_max, n * old_min)
+        result = max(result, max_p)
+    return result
+</code></pre>
+
+<hr/>
+
+<h3>Cross-Check: Diagram ↔ Code Trace / 交叉验证</h3>
+
+<p><strong>Pick input: <code>[-2, 3, -4]</code></strong></p>
+
+<pre><code>
+State Diagram:
+─────────────────────────────────────────────────────────
+Index:    0          1           2
+Value:   -2          3          -4
+         ↓          ↓           ↓
+max_p   -2    → max(3,-6,-6)=3  → max(-4,-12,24)=24  ← HERO
+min_p   -2    → min(3,-6,-6)=-6 → min(-4,-12,24)=-12
+result  -2          3              24
+─────────────────────────────────────────────────────────
+               ↑ min=-6 here          ↑ min×n=-6×-4=24 ← min_prod rescued us!
+</code></pre>
+
+<p><strong>Code trace (using <code>maxProduct_safe</code>):</strong></p>
+<p>- Init: <code>max_p=-2, min_p=-2, result=-2</code></p>
+<p>- <code>n=3</code>: <code>old_max=-2, old_min=-2</code> → <code>max_p=max(3,-6,-6)=3</code>, <code>min_p=min(3,-6,-6)=-6</code>, <code>result=3</code></p>
+<p>- <code>n=-4</code>: <code>old_max=3, old_min=-6</code> → <code>max_p=max(-4,-12,24)=24</code>, <code>min_p=min(-4,-12,24)=-12</code>, <code>result=24</code></p>
+<p>- <strong>Return 24 ✓</strong></p>
+
+<p><strong>Diagram matches code exactly.</strong> The <code>min_prod=-6</code> tracked at i=1 is used at i=2 (<code>-6 × -4 = 24</code>) — matching the diagram&#x27;s &quot;HERO&quot; path. ✓</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文：</strong>5 个必须测试的边界情况：</p>
+
+<p><strong>English:</strong> 5 edge cases every interviewer expects you to handle:</p>
+
+<pre><code>
+# ─────────────────────────────────────────────────
+# Case 1: Single element (including negative)
+# ─────────────────────────────────────────────────
+assert maxProduct_safe([-3]) == -3          # Can&#x27;t avoid it; must take it
+
+# ─────────────────────────────────────────────────
+# Case 2: Contains zero → resets the product chain
+# ─────────────────────────────────────────────────
+assert maxProduct_safe([-2, 0, -1]) == 0    # Zero breaks both sides
+# Why: [-2,0] = 0, [0,-1] = 0, [-2,0,-1] = 0 → best is 0
+
+# ─────────────────────────────────────────────────
+# Case 3: All negative (even count) → product is positive
+# ─────────────────────────────────────────────────
+assert maxProduct_safe([-2, -3, -4]) == 12  # (-2)×(-3)×(-4)... nope
+# Wait: best subarray is [-2,-3]→6 or [-3,-4]→12 → answer is 12 ✓
+
+# ─────────────────────────────────────────────────
+# Case 4: All negative (odd count) → forced to leave one out
+# ─────────────────────────────────────────────────
+assert maxProduct_safe([-2, -3, -4, -5]) == 120  # All four: (-2)×(-3)×(-4)×(-5) = 120
+# Even count of negatives → full array product is positive. Answer: 120
+
+assert maxProduct_safe([-2, -3, -4]) == 12  # Odd count → skip one end
+# Best: skip -2 → (-3)×(-4)=12, or skip -4 → (-2)×(-3)=6 → answer 12
+
+# ─────────────────────────────────────────────────
+# Case 5: Multiple zeros splitting the array
+# ─────────────────────────────────────────────────
+assert maxProduct_safe([0, 2, 0, -5, 0]) == 2  # Each segment independent
+</code></pre>
+
+<p><strong>面试注意点 / Interview Gotchas:</strong></p>
+
+<p>| 情况 | 原因 | 处理方式 |</p>
+<p>|------|------|----------|</p>
+<p>| 遇到 0 | 乘积归零，之后的子数组独立计算 | 候选1（仅nums[i]）=0，自然重置 |</p>
+<p>| 全负偶数个 | 全部相乘最优 | 算法自动处理 |</p>
+<p>| 全负奇数个 | 去掉绝对值最小的端点 | 算法自动处理 |</p>
+<p>| 单元素 | 必须返回该元素（即使为负） | 初始化为nums[0] |</p>
+<p>| 候选计算顺序 | 必须用上一轮的max/min | 先保存 old_max, old_min |</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>这道题的核心技巧——<strong>同时追踪最大值和最小值</strong>——在生产环境中有真实的类比场景：</p>
+
+<p><strong>1. 金融风险计算：</strong></p>
+<p>一系列乘法收益率（如 +10%, -20%, +30%）中，找最优持仓窗口。负收益可能&quot;救活&quot;另一段负收益期（空头仓位）。追踪最大潜在收益和最大潜在损失同样重要。</p>
+
+<p><strong>2. 对数转换 → 加法：</strong></p>
+<p>在实际系统中，连续乘积常用对数转化为加法（避免下溢/上溢）：</p>
+<pre><code>
+import math
+# Max product of subarray ≡ max sum of log(|nums[i]|)
+# 但要处理负数的符号问题 → 需要特殊标记
+</code></pre>
+
+<p><strong>3. NLP/ML 序列评分：</strong></p>
+<p>语言模型计算句子概率是各词概率的连乘积。找&quot;最高置信度子序列&quot;本质上是变种的 Maximum Product Subarray。</p>
+
+<p><strong>English:</strong></p>
+
+<p>The dual-track technique appears in real systems:</p>
+
+<p><strong>1. Financial returns:</strong> A series of multiplicative returns (+10%, -20%, +30%) — find the optimal holding window. Short positions mean negative returns can compound positively.</p>
+
+<p><strong>2. Log-space arithmetic:</strong> Production ML systems compute log-probabilities (sums) instead of raw products to avoid underflow. But the sign-tracking problem remains.</p>
+
+<p><strong>3. Sequence scoring:</strong> Finding the highest-confidence span in an NLP model&#x27;s token probability sequence is exactly this pattern.</p>
+
+<p><strong>The abstract pattern (generalize this!):</strong></p>
+<p>&gt; &quot;When the &#x27;worst&#x27; state can become the &#x27;best&#x27; state due to the nature of the operation, you must track both extremes.&quot;</p>
+
+<p>This appears in: Maximum Product Subarray, Maximum Absolute Sum of Subarray (#1749), products with complex numbers, etc.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>场景：你在 Meta E5 面试，题目是 #152</strong></p>
+
+<hr/>
+
+<p><strong>Q1: 面试官问：为什么要追踪 min_prod？不就是追踪最大的就好了？</strong></p>
+
+<p>&gt; <strong>A:</strong> 不够。乘法有&quot;翻转&quot;效应：当前的最小乘积（负数）乘以下一个负数，会变成最大乘积。如果只追踪 max_prod，你会错过这个翻转机会。</p>
+<p>&gt;</p>
+<p>&gt; 例子：<code>[-5, -3]</code> → 仅追踪 max 的话，max_prod[-5]=-5；到 -3 时，候选是（-3, -3×(-5)=15, -3×(-5)=15）→ max=15。这里恰好还是对的，但在更复杂的序列中你需要 min 来避免错过深层翻转。</p>
+
+<p><strong>Q2: 这个算法处理全零数组正确吗？</strong></p>
+
+<p>&gt; <strong>A:</strong> 是的。全零数组 <code>[0, 0, 0]</code>：初始化 result=0；每步三个候选都是 0；最终返回 0。正确。</p>
+
+<p><strong>Q3: 如果题目改成&quot;最小乘积子数组&quot;怎么改？</strong></p>
+
+<p>&gt; <strong>A:</strong> 只需把 <code>result = max(result, max_prod)</code> 改成 <code>result = min(result, min_prod)</code>，其余逻辑完全相同。min_prod 已经在追踪了。</p>
+
+<p><strong>Q4: 能用 Divide and Conquer 解这道题吗？时间复杂度多少？</strong></p>
+
+<p>&gt; <strong>A:</strong> 可以，类似 Maximum Subarray 的分治解法。每次从中点分割，答案是以下三者之一：左半部分的最大乘积、右半部分的最大乘积、或跨越中点的最大乘积。跨越中点的计算需要从中点向两侧扩展，但乘法版本需要同时维护最大和最小，复杂度 O(n log n)。不如线性 DP，通常没必要提，但体现了分治思维。</p>
+
+<p><strong>Q5: 如果数组非常大（10亿元素），如何并行化？</strong></p>
+
+<p>&gt; <strong>A:</strong> 这是系统设计延伸。可以分块并行，每块返回 <code>(max_prod, min_prod, prefix_max, prefix_min, suffix_max, suffix_min, total_product)</code>，然后合并。类似 segment tree 的思路，适合 MapReduce 或 Spark。合并逻辑是这道题状态转移方程的&quot;分布式版本&quot;。</p>
+
+<hr/>
+
+<h2>Summary / 总结</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>| 维度 | 要点 |</p>
+<p>|------|------|</p>
+<p>| 核心洞察 | 负 × 负 = 正，必须同时追踪 max 和 min |</p>
+<p>| 状态 | <code>max_prod[i]</code>, <code>min_prod[i]</code>，空间优化为 O(1) |</p>
+<p>| 转移方程 | <code>max(n, n×prev_max, n×prev_min)</code> |</p>
+<p>| 零的处理 | 候选1（仅n本身）自动处理重置 |</p>
+<p>| 时间复杂度 | O(n) |</p>
+<p>| 面试技巧 | 先展示暴力解，再推导双轨 DP，用具体例子说明为何需要 min_prod |</p>
+
+<p><strong>English:</strong></p>
+
+<p>| Dimension | Key Point |</p>
+<p>|-----------|-----------|</p>
+<p>| Core Insight | Negative × negative = positive; track both max AND min |</p>
+<p>| State | <code>max_prod[i]</code>, <code>min_prod[i]</code>; space-optimize to O(1) |</p>
+<p>| Recurrence | <code>max(n, n×prev_max, n×prev_min)</code> |</p>
+<p>| Zero handling | Candidate 1 (just <code>n</code>) auto-resets the chain |</p>
+<p>| Time Complexity | O(n) |</p>
+<p>| Interview tip | Show brute force first, derive dual-track DP, use <code>[-2,3,-4]</code> to motivate why min_prod matters |</p>
+
+<p><strong>延伸练习 / Related Problems:</strong></p>
+<p>- #53 Maximum Subarray (加法版，Kadane 经典)</p>
+<p>- #1749 Maximum Absolute Sum of Any Subarray (追踪绝对值的最大和最小)</p>
+<p>- #628 Maximum Product of Three Numbers (三元素，排序贪心)</p>
+<p>- #238 Product of Array Except Self (前缀/后缀乘积)</p>
+
+<hr/>
+
+<p><em>byte-by-byte Day 137 — Saturday Deep Dive</em></p>
+<p><em>Generated: 2026-09-26</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-09-23</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
