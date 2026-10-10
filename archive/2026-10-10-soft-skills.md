@@ -1,0 +1,1 @@
+/Users/davidding/.openclaw/workspace/byte-by-byte/archive/2026-10-09-soft-skills.md
