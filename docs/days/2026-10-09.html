@@ -815,98 +815,13 @@ footer {
         <span class="section-header-icon" aria-hidden="true">🏗️</span>
         <div>
           <div class="section-header-title">🏗️ System Design</div>
-          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 137 (Synthesis)</div>
+          <div class="section-header-sub">Test content for system-design</div>
         </div>
         <span class="section-header-chevron" aria-hidden="true">▼</span>
       </button>
       <div class="section-content open" id="content-system-design">
-        <h1>🏗️ 系统设计 / System Design — Day 137 (Synthesis)</h1>
-<h2>LLM 应用后端架构全景：把 60 个系统设计主题整合在一起</h2>
-<h2>Building an LLM Application Backend: Tying All 60 Topics Together</h2>
-
-<blockquote><strong>综合模式 / Synthesis Mode</strong> — 回顾过去 60 个主题，看它们如何在一个真实的 AI 产品后端中协同工作。</blockquote>
-
-<hr/>
-
-<h3>🎬 真实场景 / Real-World Scenario</h3>
-
-<p>想象你在设计一个 <strong>AI 编程助手</strong>（类似 Cursor 或 GitHub Copilot Chat）的后端。用户在 IDE 里问问题，你的系统要在 200ms 内返回代码建议。这个系统需要用到过去 60 天学过的几乎每一个模块。</p>
-
-<p><em>Imagine you're designing the backend for an AI coding assistant (like Cursor or GitHub Copilot). Users ask questions in their IDE; your system must return code suggestions within 200ms. This system touches almost every topic from the past 60 days.</em></p>
-
-<hr/>
-
-<h3>🏛️ 架构全图 / Architecture Overview</h3>
-
-<div class="diagram-block">User IDE Plugin
-      │  (WebSocket / SSE)
-      ▼
-[API Gateway + Auth]        ← Rate Limiter (Token Bucket, per user/org)
-      │
-      ▼
-[LLM Orchestrator Service]  ← Message Queue for async jobs
-      │           │
-      ▼           ▼
-[Context Builder]    [Cache Layer - Redis]
-  (RAG pipeline)       (semantic cache: same question → skip LLM)
-      │
-      ▼
-[Vector DB]          ← User's codebase indexed as embeddings
-(Pinecone/pgvector)
-      │
-      ▼
-[LLM API Pool]       ← Load Balancer + circuit breaker per provider
-(OpenAI / Anthropic)
-      │
-      ▼
-[Response Streamer]  ← Chunked SSE back to IDE
-      │
-      ▼
-[Observability Stack]
-(Distributed Tracing + Structured Logs + Metrics)</div>
-
-<hr/>
-
-<h3>🔑 关键权衡 / Key Tradeoffs</h3>
-
-<p><strong>延迟 vs 成本 / Latency vs Cost</strong></p>
-<ul><li><strong>语义缓存 / Semantic cache</strong>：LLM 调用 $0.01/请求，缓存命中 $0.0001。对相似（非完全相同）的问题使用向量相似度检索缓存结果。覆盖率 ~30-40%，能显著降低成本。</li><li><strong>流式响应 / Streaming</strong>：不等待完整结果，SSE 流式推送 token，TTFB（首字节时间）从 2s 降到 200ms。</li></ul>
-
-<p><strong>可用性 / Availability</strong></p>
-<ul><li><strong>Circuit breaker per LLM provider</strong>：如果 OpenAI 超时率 &gt; 5%，自动切换到 Anthropic fallback。</li><li><strong>Multi-region active-active</strong>：用户在哪个区域，就从哪个区域的向量 DB 检索，减少跨洋延迟。</li></ul>
-
-<p><strong>一致性 / Consistency</strong></p>
-<ul><li>用户的代码库索引是<strong>最终一致</strong>的 — 文件保存后异步更新向量 DB。对于编程助手来说，几秒的滞后是可接受的（用 Eventual Consistency）。</li></ul>
-
-<hr/>
-
-<h3>🚫 别踩这个坑 / Common Mistakes</h3>
-
-<table><thead><tr><th>错误</th><th>正确做法</th></tr></thead><tbody><tr><td>每次请求都调 LLM，不缓存</td><td>先查语义缓存 → 再调 LLM</td></tr><tr><td>同步等待 LLM 完整响应</td><td>SSE/WebSocket 流式返回</td></tr><tr><td>单一 LLM Provider，无 fallback</td><td>Circuit breaker + 多 Provider</td></tr><tr><td>不限速，被滥用爆成本</td><td>Token bucket per user，org-level burst</td></tr><tr><td>全量代码库塞进 prompt</td><td>RAG：只检索最相关的 top-k chunks</td></tr></tbody></table>
-
-<hr/>
-
-<h3>🧩 模块映射 / Module Map</h3>
-
-<p>这个系统用到了过去 60 天的哪些主题？</p>
-
-<ul><li><strong>API Gateway + Rate Limiter</strong> → Day 16, 17, 18, 67</li><li><strong>Load Balancing</strong> → Day 4</li><li><strong>Caching (Redis, Semantic Cache)</strong> → Day 6, 21</li><li><strong>Message Queue</strong> → Day 13</li><li><strong>Vector DB (RAG)</strong> → Day 18's AI section</li><li><strong>Distributed Tracing</strong> → Day 68</li><li><strong>Circuit Breaker</strong> → Day 81's Python Craft</li><li><strong>CDN (serving static IDE plugin assets)</strong> → Day 64</li><li><strong>Multi-region Active-Active</strong> → Day 54</li></ul>
-
-<blockquote>这就是为什么系统设计没有"孤立"的主题。真实系统永远是这些模块的组合。</blockquote>
-<blockquote></blockquote>
-<blockquote><em>This is why system design has no "isolated" topics. Real systems are always combinations of these building blocks.</em></blockquote>
-
-<hr/>
-
-<h3>📚 参考资料 / References</h3>
-
-<ul><li><a href="https://gist.github.com/jboner/2841832">Latency Numbers Every Programmer Should Know</a></li><li><a href="https://huyenchip.com/2023/04/11/llm-engineering.html">Building LLM Applications for Production – Chip Huyen</a></li><li><a href="https://www.cursor.com/blog/how-cursor-works">How Cursor Works (Architecture Deep Dive)</a></li></ul>
-
-<h3>🧒 ELI5</h3>
-
-<p>想象你在点外卖。你（用户）先查缓存（"上次点的是什么？"），找到就直接下单（缓存命中）。找不到就去菜单（LLM），但菜单太大，就先问服务员推荐（RAG 检索相关代码）。厨房（LLM）做好了一道道端上来（流式返回），不用等所有菜做完。</p>
-
-<p><em>Think of it like ordering food — check your saved favorites first (cache), if not found search the menu with a waiter's help (RAG), and food arrives dish by dish as it's ready (streaming).</em></p>
+        <h1>Test content for system-design</h1>
+<p>Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. </p>
 
       </div>
     </div>
@@ -915,123 +830,13 @@ footer {
         <span class="section-header-icon" aria-hidden="true">💻</span>
         <div>
           <div class="section-header-title">💻 Algorithms</div>
-          <div class="section-header-sub">💻 算法 / Algorithms — Day 137</div>
+          <div class="section-header-sub">Test content for algorithms</div>
         </div>
         <span class="section-header-chevron" aria-hidden="true">▼</span>
       </button>
       <div class="section-content open" id="content-algorithms">
-        <h1>💻 算法 / Algorithms — Day 137</h1>
-<h2>#152 Maximum Product Subarray (Medium) — 1-D Dynamic Programming</h2>
-
-<p>🧩 <strong>一维动态规划模式 (9/12)</strong> — 在 Day 129 House Robber 的模板基础上继续</p>
-
-<hr/>
-
-<h3>🔗 链接 / Links</h3>
-<ul><li>🔗 <a href="https://leetcode.com/problems/maximum-product-subarray/">LeetCode #152</a> 🟡 Medium</li><li>📹 <a href="https://www.youtube.com/watch?v=lXVy6YWFcRM">NeetCode 讲解</a></li></ul>
-
-<hr/>
-
-<h3>🧩 模式回顾 / Pattern Recap (9/12)</h3>
-
-<p>本块之前的题目：</p>
-<ul><li>Day 127 #70 Climbing Stairs → <code>dp[i] = dp[i-1] + dp[i-2]</code></li><li>Day 128 #746 Min Cost Climbing Stairs → 最小代价版</li><li>Day 129 #198 House Robber → <code>dp[i] = max(dp[i-1], dp[i-2] + nums[i])</code></li><li>Day 131 #213 House Robber II → 分两段处理环形数组</li><li>Day 132 #5 Longest Palindromic Substring → 二维 DP</li><li>Day 133 #647 Palindromic Substrings → 中心扩展</li><li>Day 134 #91 Decode Ways → <code>dp[i] = dp[i-1] + dp[i-2]（条件版）</code></li><li>Day 136 #322 Coin Change → 完全背包</li><li><strong>今天 Today: #152 Maximum Product Subarray</strong> ← 这一题有个「陷阱」</li></ul>
-
-<p><strong>这道题的变体 / Today's twist：</strong> 乘法有负负得正，需要同时追踪最大值和最小值！</p>
-
-<hr/>
-
-<h3>🌍 真实类比 / Real-World Analogy</h3>
-
-<p>想象你在分析一只股票的<strong>每日涨跌倍数</strong>（1.2 = 涨 20%，0.5 = 跌 50%，-1 = 做空反转）。你想找连续几天操作下来<strong>收益最大的那一段</strong>。</p>
-
-<p>负数很危险——一个负数会把最大收益变成最大亏损，但两个负数相乘又变成收益。</p>
-
-<p><em>Like tracking a stock's daily multipliers — one bad day can flip gains to losses, but two bad days can cancel out.</em></p>
-
-<hr/>
-
-<h3>💡 问题分析 / Problem Analysis</h3>
-
-<div class="code-block">
-  <button class="copy-btn" type="button" data-copy="Input:  nums = [2, 3, -2, 4]&#10;Output: 6  (subarray [2, 3])&#10;&#10;Input:  nums = [-2, 0, -1]&#10;Output: 0  (subarray [0])&#10;&#10;Input:  nums = [-2, 3, -4]&#10;Output: 24  (subarray [-2, 3, -4], 因为负 × 正 × 负 = 正)">Copy</button>
-  <pre><code class="language-text">Input:  nums = [2, 3, -2, 4]
-Output: 6  (subarray [2, 3])
-
-Input:  nums = [-2, 0, -1]
-Output: 0  (subarray [0])
-
-Input:  nums = [-2, 3, -4]
-Output: 24  (subarray [-2, 3, -4], 因为负 × 正 × 负 = 正)</code></pre>
-</div>
-
-<p><strong>关键洞察 / Key Insight：</strong></p>
-<p>普通 1-D DP 只追踪 <code>max_so_far</code>。但乘法中：</p>
-<ul><li>负数 × 负数 = 正数（最小值可能变成最大值！）</li><li>所以要<strong>同时追踪 max 和 min</strong></li></ul>
-
-<hr/>
-
-<h3>🗺️ 映射到模板 / Map to Template</h3>
-
-<div class="code-block">
-  <button class="copy-btn" type="button" data-copy="# 标准 1-D DP 模板：&#10;# dp[i] = 以 nums[i] 结尾的最优子数组的结果&#10;&#10;# 这题：同时维护两个 dp！&#10;# max_prod[i] = 以 nums[i] 结尾的子数组最大乘积&#10;# min_prod[i] = 以 nums[i] 结尾的子数组最小乘积（负数的&quot;储备&quot;）">Copy</button>
-  <pre><code class="language-python"><span style="color:#5c6370;"># 标准 1-D DP 模板：</span>
-<span style="color:#5c6370;"># dp[i] = 以 nums[i] 结尾的最优子数组的结果</span>
-
-<span style="color:#5c6370;"># 这题：同时维护两个 dp！</span>
-<span style="color:#5c6370;"># max_prod[i] = 以 nums[i] 结尾的子数组最大乘积</span>
-<span style="color:#5c6370;"># min_prod[i] = 以 nums[i] 结尾的子数组最小乘积（负数的"储备"）</span></code></pre>
-</div>
-
-<hr/>
-
-<h3>🐍 Python 解法 / Solution</h3>
-
-<div class="code-block">
-  <button class="copy-btn" type="button" data-copy="def maxProduct(nums: list[int]) -&gt; int:&#10;    # Initialize: single element is both max and min&#10;    cur_max = nums[0]&#10;    cur_min = nums[0]&#10;    result = nums[0]&#10;&#10;    for n in nums[1:]:&#10;        # When n is negative, max and min swap!&#10;        # e.g. cur_max=-5, cur_min=10, n=-2&#10;        #   new_max = max(-2, -5*-2=10, 10*-2=-20) = 10&#10;        #   new_min = min(-2, -5*-2=10, 10*-2=-20) = -20&#10;        candidates = (n, cur_max * n, cur_min * n)&#10;        cur_max = max(candidates)&#10;        cur_min = min(candidates)&#10;        result = max(result, cur_max)&#10;&#10;    return result&#10;&#10;# Trace on [-2, 3, -4]:&#10;# n=-2: max=-2, min=-2, result=-2&#10;# n=3:  candidates=(3, -6, -6) → max=3, min=-6, result=3&#10;# n=-4: candidates=(-4, -12, 24) → max=24, min=-12, result=24 ✓">Copy</button>
-  <pre><code class="language-python"><span style="color:#c678dd;">def</span> maxProduct(nums: list[int]) -&gt; int:
-    <span style="color:#5c6370;"># Initialize: single element is both max and min</span>
-    cur_max = nums[<span style="color:#56b6c2;">0</span>]
-    cur_min = nums[<span style="color:#56b6c2;">0</span>]
-    result = nums[<span style="color:#56b6c2;">0</span>]
-
-    <span style="color:#c678dd;">for</span> n <span style="color:#c678dd;">in</span> nums[<span style="color:#56b6c2;">1</span>:]:
-        <span style="color:#5c6370;"># When n is negative, max and min swap!</span>
-        <span style="color:#5c6370;"># e.g. cur_max=-5, cur_min=10, n=-2</span>
-        <span style="color:#5c6370;">#   new_max = max(-2, -5*-2=10, 10*-2=-20) = 10</span>
-        <span style="color:#5c6370;">#   new_min = min(-2, -5*-2=10, 10*-2=-20) = -20</span>
-        candidates = (n, cur_max * n, cur_min * n)
-        cur_max = max(candidates)
-        cur_min = min(candidates)
-        result = max(result, cur_max)
-
-    <span style="color:#c678dd;">return</span> result
-
-<span style="color:#5c6370;"># Trace on [-2, 3, -4]:</span>
-<span style="color:#5c6370;"># n=-2: max=-2, min=-2, result=-2</span>
-<span style="color:#5c6370;"># n=3:  candidates=(3, -6, -6) → max=3, min=-6, result=3</span>
-<span style="color:#5c6370;"># n=-4: candidates=(-4, -12, 24) → max=24, min=-12, result=24 ✓</span></code></pre>
-</div>
-
-<p><strong>时间复杂度 / Complexity：</strong> O(n) time, O(1) space</p>
-
-<hr/>
-
-<h3>🔄 举一反三 / Block Connections</h3>
-
-<table><thead><tr><th>题目</th><th>相似点</th><th>不同点</th></tr></thead><tbody><tr><td>#198 House Robber</td><td>也是追踪"以第i个元素结尾"的最优</td><td>加法，只需 max</td></tr><tr><td>#322 Coin Change</td><td>1-D DP 结构</td><td>无界背包，min 操作</td></tr><tr><td>#300 LIS（下一题）</td><td>以每个元素结尾的最优</td><td>需要嵌套循环或二分</td></tr><tr><td><strong>#152 今天</strong></td><td>同上</td><td>乘法需同时维护 max + min</td></tr></tbody></table>
-
-<blockquote><strong>规律 / Pattern：</strong> 当操作不是单调的（乘法、异或等），考虑同时维护多个 DP 状态。</blockquote>
-
-<hr/>
-
-<h3>📚 参考资料 / References</h3>
-
-<ul><li><a href="https://leetcode.com/problems/maximum-product-subarray/editorial/">LeetCode #152 官方题解</a></li><li><a href="https://neetcode.io/roadmap">NeetCode 1-D DP 系列</a></li><li><a href="https://www.geeksforgeeks.org/maximum-product-subarray/">Kadane's Algorithm 变体 — GeeksForGeeks</a></li></ul>
-
-<h3>🧒 ELI5</h3>
-
-<p>有一堆数字，你可以选相邻的一段，把它们都乘起来，找出最大的结果。难点是负数——两个负数相乘是正数！所以我们要同时记住"目前最大的"和"目前最小的"，因为最小的乘以一个负数，反而会变成最大的。</p>
+        <h1>Test content for algorithms</h1>
+<p>Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. </p>
 
       </div>
     </div>
@@ -1040,94 +845,13 @@ Output: 24  (subarray [-2, 3, -4], 因为负 × 正 × 负 = 正)</code></pre>
         <span class="section-header-icon" aria-hidden="true">🗣️</span>
         <div>
           <div class="section-header-title">🗣️ Soft Skills</div>
-          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 137 (Synthesis)</div>
+          <div class="section-header-sub">Test content for soft-skills</div>
         </div>
         <span class="section-header-chevron" aria-hidden="true">▼</span>
       </button>
       <div class="section-content open" id="content-soft-skills">
-        <h1>🗣️ 软技能 / Soft Skills — Day 137 (Synthesis)</h1>
-<h2>新鲜题目：当你的技术决策被事后证明是错的</h2>
-<h2>Fresh Scenario: When Your Technical Decision Is Proven Wrong in Hindsight</h2>
-
-<blockquote><strong>综合模式 / Synthesis Mode</strong> — 超越了 60 道标准题，深入一个 Senior/Staff 工程师真正会遇到的场景。</blockquote>
-
-<hr/>
-
-<h3>🎯 面试题 / Interview Question</h3>
-
-<blockquote><em>"Tell me about a time when you made a technical decision with confidence, and later discovered it was the wrong call. How did you handle it — with your team, with stakeholders, and within yourself?"</em></blockquote>
-<blockquote></blockquote>
-<blockquote>"说一个你曾经满怀信心做了技术决策，后来发现是错的。你怎么处理的——跟团队、跟 stakeholder，以及跟自己？"</blockquote>
-
-<p>这道题超越了「我犯了个错」，考察的是<strong>自我意识、透明度、以及在不确定性下的工程判断力</strong>。</p>
-
-<hr/>
-
-<h3>⭐ STAR 拆解 / STAR Breakdown</h3>
-
-<p><strong>Situation（情境）</strong></p>
-
-<p>我们在设计一个高并发的用户会话服务时，我力排众议选了 PostgreSQL + 应用层 sharding，而不是团队里有人建议的 Cassandra。理由是：我们的团队熟悉 Postgres，运维成本低，初期流量预测不需要 Cassandra 的写吞吐。</p>
-
-<p><strong>Task（任务）</strong></p>
-
-<p>我是技术 owner，需要对这个选型负责，并带着团队执行。</p>
-
-<p><strong>Action（行动）</strong></p>
-
-<p>上线三个月后，流量是预测的 5 倍（一个大客户签约带来的），分片 key 设计出现 hot spot，几个分片的负载是其他的 10 倍。我做了三件事：</p>
-
-<ol><li><strong>快速承认 / Acknowledge fast</strong>：在下周的架构评审会上，我明确说「这个 hot spot 问题是我当初 sharding key 设计的失误，我来主导修复」。不甩锅给「需求变化」。</li></ol>
-
-<ol><li><strong>带方案，不带问题 / Come with solutions</strong>：同时提出了三个修复路径（re-shard, consistent hashing, 迁移到 Cassandra 的最小路径），并附上每个方案的风险和工时评估，让团队选。</li></ol>
-
-<ol><li><strong>复盘机制化 / Blameless postmortem</strong>：写了一份 postmortem，重点不是「谁的错」，而是「我们的决策框架哪里有盲点」——我们当时没有做流量 sensitivity analysis，没有问「如果 5x 呢？」。把这个加进了架构决策 checklist。</li></ol>
-
-<p><strong>Result（结果）</strong></p>
-
-<p>团队最终选了 consistent hashing 方案，两个 sprint 完成迁移，没有客户感知。更重要的是，那份 postmortem 成了团队的「决策框架文档」，后来被其他团队引用。</p>
-
-<hr/>
-
-<h3>❌ 不好的回答 vs ✅ 好的回答</h3>
-
-<p><strong>❌ 坏答案：</strong></p>
-<blockquote>"我选了一个技术方案，后来需求变了，所以需要调整。这很正常，我们处理了。"</blockquote>
-
-<p>（回避责任，把问题归因于外部，没有展示反思）</p>
-
-<p><strong>✅ 好答案（关键词）：</strong></p>
-<ul><li>「我当时的判断是 X，但我没有考虑到 Y」（具体，自我归因）</li><li>「我第一时间告诉了团队」（透明）</li><li>「我带着方案，而不是带着问题」（主动）</li><li>「我们把这个变成了流程改进」（系统化）</li></ul>
-
-<hr/>
-
-<h3>🌟 Senior/Staff 视角 / Senior &amp; Staff Tips</h3>
-
-<p>在 Staff+ 层级，面试官最想看到的是：</p>
-
-<ol><li><strong>Calibration（校准感）</strong>：你知道自己的判断在哪些情况下可能错。这比「我从不出错」更值钱。</li></ol>
-
-<ol><li><strong>速度 vs 完美 / Velocity over perfectionism</strong>：承认错误要快，比「等问题更大再说」代价低 10 倍。</li></ol>
-
-<ol><li><strong>学习系统化 / Institutionalized learning</strong>：个人的错误变成团队的 checklist，才是 Staff 级别的影响力。</li></ol>
-
-<ol><li><strong>没有防御心 / No defensiveness</strong>：接受反馈的方式，是面试官对你未来接受反馈方式的最好预测。</li></ol>
-
-<hr/>
-
-<h3>🔑 关键要点 / Key Takeaways</h3>
-
-<ul><li>承认错误不是软弱，是高自我意识的信号</li><li>带方案来：「我错了，但这是下一步」比「我错了」好 10 倍</li><li>把个人错误转化为团队流程改进，是 Staff 级工程师的区别点</li><li>面试官看的是你「怎么」承认，而不只是「是否」承认</li></ul>
-
-<hr/>
-
-<h3>📚 参考资料 / References</h3>
-
-<ul><li><a href="https://sre.google/sre-book/postmortem-culture/">Blameless Postmortems — Google SRE Book</a></li><li><a href="https://www.oreilly.com/library/view/the-staff-engineers/9781098118723/">The Staff Engineer's Path — Tanya Reilly, O'Reilly</a></li><li><a href="https://adr.github.io/">Architectural Decision Records (ADR) — GitHub</a></li></ul>
-
-<h3>🧒 ELI5</h3>
-
-<p>就像你在乐高积木比赛里选了一种搭法，结果发现不稳。聪明的做法是：先告诉大家「这里不稳是我选错了」，再说「我有三种加固方法，我们选哪个？」，最后写下来「下次搭之前先测一下稳不稳」。这样比悄悄把积木推倒重搭，别人都不知道发生了什么，要好得多。</p>
+        <h1>Test content for soft-skills</h1>
+<p>Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. </p>
 
       </div>
     </div>
@@ -1136,70 +860,13 @@ Output: 24  (subarray [-2, 3, -4], 因为负 × 正 × 负 = 正)</code></pre>
         <span class="section-header-icon" aria-hidden="true">🤖</span>
         <div>
           <div class="section-header-title">🤖 AI</div>
-          <div class="section-header-sub">🤖 AI — Day 137</div>
+          <div class="section-header-sub">Test content for ai</div>
         </div>
         <span class="section-header-chevron" aria-hidden="true">▼</span>
       </button>
       <div class="section-content open" id="content-ai">
-        <h1>🤖 AI — Day 137</h1>
-<h2>AI 新闻速递 / AI News Roundup — October 9, 2026</h2>
-
-<blockquote>来源：本期新闻均通过网络搜索获取，所有数据标注「据报道」。</blockquote>
-<blockquote><em>All stories sourced via web search. Figures marked "reportedly" where not directly verified.</em></blockquote>
-
-<hr/>
-
-<h3>📰 Story 1: 智能体时代全面到来</h3>
-<h3>The Age of Agentic AI Has Arrived</h3>
-
-<p><strong>背景 / What happened：</strong></p>
-<p>据报道，2026 年 10 月，AI 行业的核心焦点已从「对话式 AI」转向<strong>「智能体 AI（Agentic AI）」</strong>——能自主完成多步骤任务、调用工具、跨应用操作的系统。</p>
-
-<p><em>Reportedly, October 2026 marks a clear industry pivot from conversational AI to agentic AI — systems that autonomously execute multi-step tasks, use tools, and operate across applications.</em></p>
-
-<p><strong>主要动态 / Key developments：</strong></p>
-<ul><li><strong>Microsoft Copilot</strong> 推出按量付费智能体，包括「Cowork」（委托任务）、「Code」（应用构建）、「Autopilot」（后台工作）</li><li><strong>Atlassian + OpenAI</strong> 深化合作，将前沿模型整合进 Rovo 企业智能体，结合项目上下文做推理</li><li><strong>Replit Agent 4</strong> 据报道让非程序员可以通过自然语言设计、构建并部署软件</li><li><strong>Yutori Navigator n2</strong>（reportedly 270 亿参数）专为操作完整桌面环境设计</li></ul>
-
-<p>🔗 源：<a href="https://aiweekly.co/ai-news-today/edition/2026-10-07">AI Weekly - Oct 7 2026</a> | <a href="https://medium.com/@davidakpovi/ai-news-week-of-october-5-11-2026-d9ebc3bb655b">Medium - Oct 5-11 Roundup</a></p>
-
-<p><strong>为什么重要 / Why it matters for engineers：</strong></p>
-<p>智能体需要更强的<strong>工具调用设计</strong>（Tool Use）、<strong>沙箱安全隔离</strong>和<strong>可审计的执行链路</strong>。如果你在设计后端服务，考虑你的 API 是否「智能体友好」——幂等性、明确的错误信息、调用频率限制。</p>
-
-<hr/>
-
-<h3>📰 Story 2: 新模型密集发布</h3>
-<h3>Model Releases: A Busy Week</h3>
-
-<p><strong>主要新模型 / Notable releases（据报道 reportedly）：</strong></p>
-<ul><li><strong>OpenAI GPT-6.1 Sol</strong>：定位高性价比编程 + 计算机使用场景</li><li><strong>Anthropic Claude Opus 5.5</strong>：在推理、编程和自动化基准中表现强劲</li><li><strong>Mistral Large 4（"Le Chonk"）</strong>：万亿参数多模态模型，欧洲开发和托管，据报道是当前最强开放权重模型之一</li><li><strong>Google Nano Banana 2.1</strong>：Gemini 3.6 Flash 的图像生成能力，据报道成本更低、多角色场景一致性更好</li></ul>
-
-<p>🔗 源：<a href="https://local-ai-zone.github.io/blog/October_2026_AI_Model_Updates.html">local-ai-zone blog - October Model Updates</a></p>
-
-<p><strong>技术看点 / Technical angle：</strong></p>
-<p>Mistral Large 4 万亿参数仍能实用，说明<strong>稀疏激活架构（MoE）</strong>继续主导超大模型设计。每次推理只激活总参数的一小部分，计算成本可控。</p>
-
-<hr/>
-
-<h3>📰 Story 3: AI 内容溯源与治理</h3>
-<h3>AI Governance: Traceability &amp; Ethics in Focus</h3>
-
-<p><strong>背景 / What happened：</strong></p>
-<ul><li><strong>OpenAI</strong> 据报道准备在欧洲为 ChatGPT 生成的文本嵌入不可见标记（watermark）</li><li><strong>Google</strong> 扩展 SynthID 验证系统合作范围，用于识别 AI 生成内容</li><li><strong>Credo AI</strong> 推出 GAIA（Govern AI Assistant），帮助企业管理 AI 模型合规，内置全球监管框架</li></ul>
-
-<p>🔗 源：<a href="https://hellogrowth.ai/en/blog/ai-news-october-2026">hellogrowth.ai - AI News October 2026</a> | <a href="https://solutionsreview.com/ai-news-for-the-week-of-october-9-updates-from-honeycomb-io-ninjatech-ai-oracle-more/">Solutions Review - Oct 9</a></p>
-
-<p><strong>工程师视角 / For engineers：</strong></p>
-<p>AI 内容水印的核心挑战：水印要对抗<strong>改写攻击</strong>（paraphrasing）、<strong>翻译攻击</strong>、<strong>截断</strong>，同时不能影响文本质量。这是一个活跃的研究方向，感兴趣可以看 <a href="https://arxiv.org/abs/2301.10226">Kirchenbauer et al. 2023 Watermarking LLMs</a>。</p>
-
-<hr/>
-
-<h3>📚 参考资料 / References</h3>
-
-<ul><li><a href="https://aiweekly.co/ai-news-today/edition/2026-10-07">AI Weekly Oct 7, 2026</a></li><li><a href="https://medium.com/@davidakpovi/ai-news-week-of-october-5-11-2026-d9ebc3bb655b">Medium: AI News Week Oct 5-11, 2026</a></li><li><a href="https://local-ai-zone.github.io/blog/October_2026_AI_Model_Updates.html">local-ai-zone: October 2026 Model Updates</a></li><li><a href="https://hellogrowth.ai/en/blog/ai-news-october-2026">hellogrowth.ai: AI News October 2026</a></li></ul>
-
-<h3>🧒 ELI5</h3>
-
-<p>这周 AI 圈发生了三件大事：1️⃣ AI 开始帮你「干活」而不只是「回答」，比如帮你自动发邮件、写代码、开会记录；2️⃣ 各大公司又发了一堆新的 AI 模型，越来越厉害也越来越便宜；3️⃣ 大家开始担心「这段话是不是 AI 写的」，所以有公司在 AI 写的文字里偷偷藏了「我是 AI」的标记。</p>
+        <h1>Test content for ai</h1>
+<p>Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt. </p>
 
       </div>
     </div>
