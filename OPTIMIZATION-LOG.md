@@ -1046,3 +1046,22 @@ _Report-only run — no code changes made._
 - Last successful send: 2026-10-10 (prior: 2026-09-26)
 - Cron errors: optimizer job healthy; daily content cron ABSENT
 - State: currentDay=136 (stuck since ~09-23), lastSentDate=2026-09-23, lastReviewDay=135
+
+## 2026-10-13 Optimization Run
+
+### Issues Found
+
+**P0 Critical:**
+- None currently active. Delivery has recovered. The prior outage (Sept 27 – Oct 9, flagged in the 10-09 and 10-10 runs) is resolved: email-send-log shows an unbroken OK streak since 2026-10-10, and state.json is advancing normally (currentDay=138, lastSentDate=2026-10-13).
+
+**P1 Quality:**
+- None observed. State indices advancing cleanly; review schedule current (lastReviewDay=135, Day 135 recorded in reviewDaysCompleted).
+
+**P2 Maintenance:**
+- Historical delivery gap remains visible in email-send-log (2026-09-27 → 2026-10-09, ~13 days). Informational only — recovered and no action needed, but worth noting the pipeline went ~2 weeks dark before self-healing on Oct 10.
+- Optimizer's own `openclaw cron list --json` data-gather step returns non-JSON (python parse error on empty/non-JSON stdout), so the "Recent cron errors" section is blank. Cosmetic — cron state was retrieved via the cron tool instead. Could harden the Step 0 snippet to tolerate empty output.
+
+### Metrics
+- Delivery rate (7d): 4/7 — OK: 2026-10-10,11,12,13; MISSED: 2026-10-07,08,09 (tail end of the resolved outage)
+- Delivery rate (last 4d): 4/4 (healthy)
+- Cron errors: optimizer job shows lastRunStatus=error with lastRunError=null (prior-run timeout artifact; no actionable error). Content/daily pipeline delivering normally.
