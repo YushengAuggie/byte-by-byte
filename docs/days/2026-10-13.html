@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-10-13</title>
+  <meta name="description" content="byte-by-byte daily lessons for Tuesday, October 13, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Tuesday, October 13, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-10-13.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-10-12.html" style="color:var(--text2)">← 2026-10-12</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-10-13</span>
+    <h1>Tuesday, October 13, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-10-12.html" class="day-nav-btn">← 2026-10-12</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️  — Synthesis: Multi-Tenancy 架构模式对比 / Multi-Tenancy Architecture ...</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <p>🏗️ <strong>系统设计 / System Design</strong> — Synthesis: Multi-Tenancy 架构模式对比 / Multi-Tenancy Architecture Patterns</p>
+
+<blockquote>📊 NeetCode: 107/150 · SysDesign: 60/60 ✅ · Behavioral: 60/60 ✅ · Python Craft: 50/50 ✅ · AI: 30/30 ✅</blockquote>
+<blockquote>🔥 Day 138 · Expert phase · 综合复盘模式 / Synthesis mode</blockquote>
+
+<hr/>
+
+<h3>场景 / Scenario</h3>
+
+<p>想象你在设计一个 B2B SaaS 产品（比如 Notion、Linear、Datadog）：你的用户是<strong>公司</strong>，每家公司有自己的员工、数据、配置。关键问题：<strong>所有租户共享一套基础设施，还是各自隔离？</strong></p>
+
+<p>Imagine you're building a B2B SaaS product (Notion, Linear, Datadog): each customer is a company with isolated users, data, and config. The question: <strong>share infra across tenants, or isolate per tenant?</strong></p>
+
+<p>这是一个<strong>跨越数据库、缓存、队列、权限、合规</strong>的综合决策，不是一个"选 A 或 B"的问题。</p>
+
+<hr/>
+
+<h3>三种主流模式对比</h3>
+
+<div class="diagram-block">Pattern A: Shared Everything (池化 / Pool)
+┌──────────────────────────────────────────────┐
+│  App Servers (shared)                        │
+│         ↓   tenant_id in every query         │
+│  ┌────────────────────────────────────────┐  │
+│  │ Single DB:                             │  │
+│  │   users (tenant_id, user_id, ...)      │  │
+│  │   docs  (tenant_id, doc_id,  ...)      │  │
+│  └────────────────────────────────────────┘  │
+└──────────────────────────────────────────────┘
+  ✅ Cheapest · ❌ Noisy-neighbor · ❌ Hard compliance
+
+Pattern B: Shared App, Isolated DB (桥接 / Bridge)
+┌──────────────────────────────────────────────┐
+│  App Servers (shared)                        │
+│         ↓    Router: tenant → shard          │
+│  ┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐          │
+│  │ DB1 │  │ DB2 │  │ DB3 │  │ DBn │          │
+│  └─────┘  └─────┘  └─────┘  └─────┘          │
+│  (tenant per DB, or sharded by tenant_id)    │
+└──────────────────────────────────────────────┘
+  ✅ Blast-radius bounded · ✅ Per-tenant backup
+  ❌ Schema migrations fan out
+
+Pattern C: Silo (独栋 / Dedicated)
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│ Tenant A    │  │ Tenant B    │  │ Tenant C    │
+│  App + DB   │  │  App + DB   │  │  App + DB   │
+│  + Cache    │  │  + Cache    │  │  + Cache    │
+└─────────────┘  └─────────────┘  └─────────────┘
+  ✅ Strongest isolation / compliance (HIPAA, SOC2 strict)
+  ❌ Ops cost O(N tenants) · Deploys are chaos</div>
+
+<hr/>
+
+<h3>关键权衡 / Key Tradeoffs</h3>
+
+<table><thead><tr><th>维度</th><th>Pool</th><th>Bridge</th><th>Silo</th></tr></thead><tbody><tr><td><strong>Cost / tenant</strong></td><td>💰 lowest</td><td>💰💰 medium</td><td>💰💰💰 highest</td></tr><tr><td><strong>Noisy neighbor</strong></td><td>⚠️ high</td><td>⚠️ medium</td><td>✅ none</td></tr><tr><td><strong>Blast radius</strong></td><td>全部挂</td><td>one shard</td><td>one tenant</td></tr><tr><td><strong>Compliance</strong></td><td>难</td><td>中等</td><td>容易</td></tr><tr><td><strong>Schema change</strong></td><td>1 次</td><td>N shards</td><td>N stacks</td></tr><tr><td><strong>典型客户</strong></td><td>SMB</td><td>Mid-market</td><td>Enterprise</td></tr></tbody></table>
+
+<div class="diagram-block">**现实架构往往是混合的：** 免费/小客户 → Pool；中型客户 → 共享 Bridge shard；大企业客户 → Silo。Snowflake、Databricks、Confluent Cloud 都是这个套路。</div>
+
+<p><strong>Real stacks are hybrid:</strong> free/SMB on Pool, mid-market on Bridge shards, enterprise on Silo. Snowflake, Databricks, Confluent Cloud all do this.</p>
+
+<hr/>
+
+<h3>为什么这样设计？</h3>
+
+<ol><li><strong>Row-Level Security 不够。</strong> <code>WHERE tenant_id = ?</code> 一旦漏写就是数据泄露。生产系统应该在<strong>连接池层或 ORM 中间件层</strong>强制注入（如 Postgres RLS、SQLAlchemy session-level filter）。</li><li><strong>缓存键必须带 tenant_id。</strong> <code>cache.get("user:123")</code> 会跨租户串数据，正确写法 <code>cache.get(f"t:{tenant_id}:user:123")</code>。</li><li><strong>队列任务要携带 tenant 上下文。</strong> Celery/SQS 任务反序列化后要能恢复 tenant，否则后台任务串数据比前台更难查。</li><li><strong>Noisy neighbor 用 token bucket per tenant</strong> 限流（见 Day 17/67 的 Rate Limiter）。</li><li><strong>可观测性要按 tenant 切片</strong>：Datadog tags, Prometheus labels — 否则一个租户出问题你看不出。</li></ol>
+
+<hr/>
+
+<h3>❌ Common mistakes</h3>
+
+<ol><li><strong>把 tenant_id 当"加一个列"的事情。</strong> 它应该是<strong>索引的最左前缀</strong>，否则大租户的查询会扫全表。</li><li><strong>假设 Pool → Silo 迁移简单。</strong> 实际上数据搬迁 + 外键 + 跨租户引用（分析、admin）会反咬。设计 day 1 就要想迁移路径。</li><li><strong>把 "tenant" 和 "organization" 和 "workspace" 混淆。</strong> Slack 一个用户在多个 workspace。模型应该是 <code>User ↔ Membership ↔ Tenant</code>，不是 <code>User → tenant_id</code>。</li><li><strong>忽略"god mode"用户。</strong> 内部 support/admin 需要跨租户访问 — 必须审计日志 + 强制理由字段。</li></ol>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li>AWS SaaS Factory — Multi-tenant SaaS architectures: https://aws.amazon.com/partners/programs/saas-factory/tenant-isolation/</li><li>Microsoft — Multitenant architecture patterns: https://learn.microsoft.com/en-us/azure/architecture/guide/multitenant/overview</li><li>PostgreSQL Row Level Security: https://www.postgresql.org/docs/current/ddl-rowsecurity.html</li></ul>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象一座公寓楼。<strong>Pool</strong> = 所有人睡一张大床（便宜但乱）。<strong>Bridge</strong> = 每人一间房共享厨房（平衡）。<strong>Silo</strong> = 每人一栋别墅（贵但安全）。SaaS 公司通常"小客户住宿舍、大客户住别墅"。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻  — #139 Word Break (Medium) — 1-D Dynamic Programming</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <p>💻 <strong>算法 / Algorithms</strong> — #139 Word Break (Medium) — 1-D Dynamic Programming</p>
+
+<p>🧩 <strong>一维动态规划 (10/12)</strong> — building on the template from Day 128 (Climbing Stairs)</p>
+
+<blockquote>📊 NeetCode: 107/150 · Pattern progress: 10/12 in 1-D DP block</blockquote>
+<blockquote>🔗 LeetCode: https://leetcode.com/problems/word-break/ 🟡 Medium</blockquote>
+<blockquote>📹 NeetCode: https://neetcode.io/solutions/word-break</blockquote>
+
+<hr/>
+
+<h3>这题和模板的变化 / What's different from the template</h3>
+
+<p>前面 9 题 (#70, #198, #322, #152, …) 的 <code>dp[i]</code> 都是<strong>数值</strong>（步数、金额、乘积、方案数）。今天：</p>
+
+<p>Previous 9 problems used <code>dp[i]</code> as a <strong>number</strong> (steps, amount, product, count). Today:</p>
+
+<table><thead><tr><th>项</th><th>之前</th><th>今天 (#139)</th></tr></thead><tbody><tr><td><code>dp[i]</code> 的含义</td><td>到位置 i 的最优值</td><td><strong>布尔</strong>：前 i 个字符能否被切分</td></tr><tr><td>转移</td><td><code>dp[i] = min/max(dp[j] + cost)</code></td><td><code>dp[i] = any(dp[j] and s[j:i] in words)</code></td></tr><tr><td>子问题枚举</td><td>固定几个（i-1, i-2, i-coin）</td><td><strong>扫描所有切点 j &lt; i</strong></td></tr></tbody></table>
+
+<div class="diagram-block">**核心升级：** `dp[i]` 可以是**任意类型**（bool, set, list），不止数字。能否切分 → bool。能切分成几种 → int。所有切分方案 → list（这就是 #140 Word Break II）。</div>
+
+<hr/>
+
+<h3>现实类比 / Real-world analogy</h3>
+
+<p>你在读一段<strong>没有空格的日文/中文</strong>："applepenapple"。手里有词典 <code>{apple, pen}</code>。能不能从左到右<strong>贪心地</strong>找词？不行 — "aa<strong>lan</strong>da" 可能切成 "aa / lan / da" 或 "aal / an / da"，贪心会漏情况。所以要 DP：<strong>"前 i 个字符能否切分" 只依赖于 "是否存在切点 j 使得前 j 个能切分 且 s[j:i] 是词"</strong>。</p>
+
+<hr/>
+
+<h3>问题 / Problem</h3>
+
+<p>Given <code>s</code> and a <code>wordDict</code>, return True if <code>s</code> can be segmented into a space-separated sequence of dictionary words.</p>
+
+<div class="diagram-block">s = "leetcode", wordDict = ["leet","code"] → True   ("leet code")
+s = "applepenapple", wordDict = ["apple","pen"] → True
+s = "catsandog", wordDict = ["cats","dog","sand","and","cat"] → False</div>
+
+<h3>映射到模板 / Map to template</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def wordBreak(s: str, wordDict: list[str]) -&gt; bool:&#10;    word_set = set(wordDict)              # O(1) lookup&#10;    max_len = max(map(len, wordDict))     # prune inner loop&#10;    n = len(s)&#10;    dp = [False] * (n + 1)&#10;    dp[0] = True                          # BASE CASE: empty prefix is &quot;segmentable&quot;&#10;&#10;    for i in range(1, n + 1):&#10;        # TRANSITION: try every split point j; only check j within max_len&#10;        for j in range(max(0, i - max_len), i):&#10;            if dp[j] and s[j:i] in word_set:&#10;                dp[i] = True&#10;                break                     # one witness is enough&#10;    return dp[n]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> wordBreak(s: str, wordDict: list[str]) -&gt; bool:
+    word_set = set(wordDict)              <span style="color:#5c6370;"># O(1) lookup</span>
+    max_len = max(map(len, wordDict))     <span style="color:#5c6370;"># prune inner loop</span>
+    n = len(s)
+    dp = [<span style="color:#c678dd;">False</span>] * (n + <span style="color:#56b6c2;">1</span>)
+    dp[<span style="color:#56b6c2;">0</span>] = <span style="color:#c678dd;">True</span>                          <span style="color:#5c6370;"># BASE CASE: empty prefix is "segmentable"</span>
+
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, n + <span style="color:#56b6c2;">1</span>):
+        <span style="color:#5c6370;"># TRANSITION: try every split point j; only check j within max_len</span>
+        <span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(max(<span style="color:#56b6c2;">0</span>, i - max_len), i):
+            <span style="color:#c678dd;">if</span> dp[j] <span style="color:#c678dd;">and</span> s[j:i] <span style="color:#c678dd;">in</span> word_set:
+                dp[i] = <span style="color:#c678dd;">True</span>
+                <span style="color:#c678dd;">break</span>                     <span style="color:#5c6370;"># one witness is enough</span>
+    <span style="color:#c678dd;">return</span> dp[n]</code></pre>
+</div>
+
+<h3>Trace: <code>s = "leetcode"</code>, dict = {leet, code}</h3>
+
+<div class="diagram-block">i=0: dp[0]=True (base)
+i=1..3: no word matches s[0:1..3]       → dp=F
+i=4: j=0, s[0:4]="leet" ∈ dict, dp[0]=T → dp[4]=True ✅
+i=5..7: try all j; need dp[j]=T and s[j:i]∈dict → none
+i=8: j=4, s[4:8]="code" ∈ dict, dp[4]=T → dp[8]=True ✅
+return dp[8] = True</div>
+
+<h3>Complexity</h3>
+
+<ul><li>Time: <strong>O(n² · k)</strong> where k = avg word length (for <code>s[j:i]</code> hash). With <code>max_len</code> prune → O(n · max_len · k).</li><li>Space: <strong>O(n)</strong> for dp + O(W) for word set.</li><li>可以用 Trie 优化到 O(n²) 常数更小 — 见 #140.</li></ul>
+
+<hr/>
+
+<h3>举一反三 / Variations in the same block</h3>
+
+<table><thead><tr><th>问题</th><th>dp[i] 含义</th><th>关键区别</th></tr></thead><tbody><tr><td><strong>#139 Word Break (今天)</strong></td><td>能否切分 (bool)</td><td>任意切点 j, 任意词</td></tr><tr><td>#140 Word Break II</td><td>所有切分方案 (list)</td><td>要用 DFS + memo，不是纯 DP</td></tr><tr><td>#322 Coin Change</td><td>最少硬币数 (int)</td><td>固定硬币集 → 固定几个 j</td></tr><tr><td>#300 LIS</td><td>最长递增子序列长度</td><td>内循环看 <strong>所有 j &lt; i</strong>，但条件是 <code>nums[j] &lt; nums[i]</code></td></tr></tbody></table>
+
+<p><strong>共同点：</strong> 内层循环<strong>扫描所有合法前缀 j &lt; i</strong>，不是固定 i-1、i-2。这是 "1-D DP 带全扫描" 的子类。LIS、Word Break、Perfect Squares (#279) 都属于这一类。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li>NeetCode Word Break: https://neetcode.io/solutions/word-break</li><li>LeetCode editorial: https://leetcode.com/problems/word-break/editorial/</li><li>CP-Algorithms — DP intro: https://cp-algorithms.com/dynamic_programming/intro-to-dp.html</li></ul>
+
+<h3>🧒 ELI5</h3>
+
+<p>一长串没空格的字符，手里有词典。从前往后一步步问："到目前为止能切好吗？"— 只要存在一个"回头看"的位置，使<strong>那里之前</strong>切得好 <strong>AND</strong> 中间那段是词典里的词，就 OK。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️  — Synthesis: 怎么拒绝一个"VP 的好主意" / Saying No to a VP's Favorite Idea</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <p>🗣️ <strong>软技能 / Soft Skills</strong> — Synthesis: 怎么拒绝一个"VP 的好主意" / Saying No to a VP's Favorite Idea</p>
+
+<blockquote>📊 Behavioral: 60/60 ✅ — 综合情景题 / Synthesis-level scenario</blockquote>
+<blockquote>Senior/Staff level · 面向 L6+ 面试</blockquote>
+
+<hr/>
+
+<h3>场景 / Scenario</h3>
+
+<p>一位 VP 在 all-hands 上宣布了一个<strong>听起来很酷但工程上很糟糕</strong>的想法（比如 "我们下季度把所有后端服务迁到 Rust"，或 "给所有 feature 加 AI"）。他没有和你的团队讨论过，但消息已经传开，产品经理开始规划，招聘已经启动。你怎么办？</p>
+
+<p>A VP announces at all-hands a cool-sounding but technically bad idea (e.g., "migrate everything to Rust next quarter", "AI-ify every feature"). No consultation. PMs are planning, hiring is spinning up. What do you do?</p>
+
+<p><strong>Why this matters:</strong> 这是 Staff/Principal 面试里最常出现的"真实情景"— 既不能默默执行（你是技术 leader），也不能公开反对（会被看成不合作）。考察的是<strong>向上影响力 + 政治智慧 + 技术判断</strong>三者的交叉。</p>
+
+<hr/>
+
+<h3>STAR 回答模板 / STAR breakdown</h3>
+
+<p><strong>S (Situation):</strong> 一个具体的、有数字的情境。</p>
+<blockquote>"Q3 we had an all-hands where our SVP of Eng announced we'd standardize on gRPC across all 40+ services within 6 months. My team owned 8 of the services closest to the user-facing APIs where REST was deeply embedded in 3rd-party integrations."</blockquote>
+
+<p><strong>T (Task):</strong> 你的角色和"冲突"是什么。</p>
+<blockquote>"I agreed with the direction but the timeline and scope would've blown up ongoing roadmap commitments and broken partner contracts. I needed to influence a reset — without making the SVP lose face publicly."</blockquote>
+
+<p><strong>A (Action):</strong> <strong>三步法 — Steelman, Data, Alternative.</strong></p>
+<ol><li><strong>Steelman first.</strong> 私下 1:1 和 SVP：先承认他想解决的真问题（schema drift, polyglot clients 混乱）— 让他知道<strong>你听懂了</strong>。</li><li><strong>Data, not opinion.</strong> 用数据取代"我觉得"：</li></ol>
+<p>   - 列出 8 个服务的 external integration partners (28 家) 和合同条款。</p>
+<p>   - 迁移成本估算：3 engineers × 4 months = 12 person-months, slipping 2 roadmap items.</p>
+<p>   - <strong>Counter-proposal:</strong> 新服务 gRPC-first; 老服务只在重大重构窗口切换; 边界加 REST↔gRPC gateway (grpc-gateway).</p>
+<ol><li><strong>Give the leader a win.</strong> 把 counter-proposal 包装成"扩展他的愿景"而不是"推翻"：<em>"Your north star is right; here's how we get there without a cliff."</em></li></ol>
+
+<p><strong>R (Result):</strong> 具体可量化的结果。</p>
+<blockquote>"SVP accepted the phased plan at the next leadership meeting. We hit 100% new-service compliance in Q4 and migrated 6 of 8 legacy services by H2 next year. Zero partner escalations. The grpc-gateway pattern became a company-wide standard."</blockquote>
+
+<hr/>
+
+<h3>❌ Bad vs ✅ Good</h3>
+
+<p><strong>❌ Bad:</strong></p>
+<blockquote><em>"The VP's idea was dumb and I told him it wouldn't work. He wouldn't listen so I just did the minimum."</em></blockquote>
+
+<p>Why bad: performative disagreement, no empathy for the problem the VP was solving, no data, no alternative, bad outcome.</p>
+
+<p><strong>❌ Also bad (over-correction):</strong></p>
+<blockquote><em>"The VP decided it, so we executed it. We missed our roadmap but the migration happened."</em></blockquote>
+
+<p>Why bad: no technical leadership. Staff+ engineers are <strong>expected</strong> to push back with signal.</p>
+
+<p><strong>✅ Good:</strong></p>
+<blockquote><em>"I started by understanding what pain the VP was really solving — schema drift and polyglot client confusion. Then I built a one-pager comparing the all-in migration (12 person-months, 28 partner contracts to renegotiate) with a phased approach (new services gRPC-first, legacy via a gateway). Shared it with my manager first, then with the VP in a 1:1 before escalating. The VP appreciated the data and we aligned on the phased plan."</em></blockquote>
+
+<hr/>
+
+<h3>Senior/Staff 面试加分点 / What interviewers want to hear</h3>
+
+<ul><li><strong>"Disagree and commit" 的成熟版本:</strong> 先 disagree 用数据，决定后 commit — 不是沉默服从。</li><li><strong>向上管理 (managing up):</strong> 保护 leader 的面子是<strong>你的工作</strong>。公开反对会让他们记住你是威胁而不是盟友。</li><li><strong>写出来 (write it down):</strong> 一页 doc &gt; 20 分钟会议。文字留痕、便于传播、迫使你思考清晰。</li><li><strong>影响范围证据:</strong> "I didn't just change my team's direction; the pattern was adopted org-wide."</li><li><strong>心理安全:</strong> 承认你最初也紧张提这件事 — 面试官喜欢 vulnerability + agency 的组合。</li></ul>
+
+<hr/>
+
+<h3>别踩这个坑 / Pitfalls</h3>
+
+<ol><li><strong>"我就是对的"</strong>： 哪怕你技术上对，你的工作是让组织做对的决定，不是证明自己聪明。</li><li><strong>在 Slack 公开频道开炮</strong>：这是政治自杀。</li><li><strong>去找 VP 的老板越级</strong>：极少数情况可以，但先尝试直接路径 2-3 轮。</li><li><strong>挡在那里不动</strong>：Staff+ 的失败模式是"永远在找 trade-off 的理由不做事"— 你必须给出<strong>可执行的替代方案</strong>。</li></ol>
+
+<hr/>
+
+<h3>🔑 Key Takeaways</h3>
+
+<ol><li><strong>Steelman → Data → Alternative</strong> 三步走。</li><li>永远给 leader 一个 "面子出口"（face-saving ramp）。</li><li>一页 doc 是你的武器。</li><li><strong>Agency with humility</strong> — 不卑不亢。</li></ol>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li>Will Larson — <em>An Elegant Puzzle: Systems of Engineering Management</em>: https://press.stripe.com/an-elegant-puzzle</li><li>Amazon Leadership Principles — "Have Backbone; Disagree and Commit": https://www.amazon.jobs/content/en/our-workplace/leadership-principles</li><li>"Managing Up" (HBR): https://hbr.org/2015/01/managing-up</li></ul>
+
+<h3>🧒 ELI5</h3>
+
+<p>老板想做一件事，看起来会撞墙。你不要大吼"别做！"，也不要闭眼跟着撞。你悄悄画一张地图，告诉他："你想去的地方对，但有一条绕路更安全。"— 他开心，你安全，大家到站。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖  — Synthesis: KV Cache 深潜与可运行实现 / Deep Dive on KV-Cache with Runn...</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <p>🤖 <strong>AI</strong> — Synthesis: KV Cache 深潜与可运行实现 / Deep Dive on KV-Cache with Runnable Code</p>
+
+<blockquote>📊 AI concepts: 30/30 ✅ — 综合深潜 / Synthesis dive</blockquote>
+<blockquote>延伸 Day 92 (Inference Optimization) 和 Day 95 (Context Windows)</blockquote>
+
+<hr/>
+
+<h3>为什么 LLM 推理慢的根源：Prefill vs Decode</h3>
+
+<p>LLM 推理有两个截然不同的阶段：</p>
+<ul><li><strong>Prefill (预填):</strong> 一次性处理整个 prompt — <strong>计算密集 (compute-bound)</strong>，GPU 跑满。</li><li><strong>Decode (生成):</strong> 一次吐一个 token — <strong>内存带宽密集 (memory-bound)</strong>，GPU 大部分时间在搬 weights。</li></ul>
+
+<p>Prefill is <strong>compute-bound</strong> (GPU math units saturated). Decode is <strong>memory-bound</strong> (GPU idling, DRAM thrashing). KV cache is the single most important optimization for decode.</p>
+
+<p><strong>没有 KV 缓存</strong>：生成第 N 个 token 要重新算前 N-1 个 token 的 attention — 复杂度 <strong>O(N²)</strong> 累计。</p>
+<p><strong>有 KV 缓存</strong>：每个 token 的 K、V 向量算一次，存起来，后续 token 直接查 — 复杂度 <strong>O(N)</strong> 累计，但内存吃紧。</p>
+
+<div class="diagram-block">Without KV cache: regenerating K,V for every prior token → O(N²) cumulative. With cache: compute once, reuse → O(N) time, but memory explodes.</div>
+
+<hr/>
+
+<h3>KV 缓存到底存什么？</h3>
+
+<p>每层 attention 有 Q (query), K (key), V (value) 三个矩阵。生成第 t 个 token 时：</p>
+<ul><li><code>Q_t</code> 要用当前 token 的 hidden state 新算一个。</li><li><code>K</code>, <code>V</code> 需要<strong>前面所有 token 的</strong> — 这些是不变的历史，缓存起来。</li></ul>
+
+<p>每层 KV cache 的大小 <strong>= <code>2 × batch × seq_len × num_heads × head_dim × bytes_per_elem</code></strong>。</p>
+
+<p>Llama-3-8B 举例 (32 layers, 8 KV heads, 128 head_dim, fp16)：</p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="每 token 每层 = 2 × 1 × 1 × 8 × 128 × 2 bytes = 4 KB&#10;全层每 token  = 4 KB × 32 = 128 KB&#10;8K context    = 128 KB × 8192 ≈ 1 GB per request">Copy</button>
+  <pre><code class="language-text">每 token 每层 = 2 × 1 × 1 × 8 × 128 × 2 bytes = 4 KB
+全层每 token  = 4 KB × 32 = 128 KB
+8K context    = 128 KB × 8192 ≈ 1 GB per request</code></pre>
+</div>
+
+<p><strong>这就是为什么 LLM 服务要用 PagedAttention (vLLM) / FlashAttention</strong> — KV 缓存的内存管理决定了吞吐量。</p>
+
+<hr/>
+
+<h3>一个最小的 KV-cache 实现 (可运行)</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="pip install torch">Copy</button>
+  <pre><code class="language-bash"><span style="color:#98c379;">pip</span> install torch</code></pre>
+</div>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# save as kv_cache_demo.py&#10;import torch, time&#10;import torch.nn.functional as F&#10;&#10;torch.manual_seed(0)&#10;D, H, HEAD_DIM = 128, 4, 32  # model dim, heads, head dim&#10;assert D == H * HEAD_DIM&#10;&#10;# One attention layer's K,V projections (toy)&#10;Wq = torch.randn(D, D); Wk = torch.randn(D, D); Wv = torch.randn(D, D)&#10;&#10;def attention_naive(tokens: torch.Tensor) -&gt; torch.Tensor:&#10;    &quot;&quot;&quot;Recompute full attention every step — the slow way.&quot;&quot;&quot;&#10;    # tokens: [T, D]&#10;    Q = (tokens @ Wq).view(-1, H, HEAD_DIM).transpose(0, 1)  # [H,T,d]&#10;    K = (tokens @ Wk).view(-1, H, HEAD_DIM).transpose(0, 1)&#10;    V = (tokens @ Wv).view(-1, H, HEAD_DIM).transpose(0, 1)&#10;    scores = Q @ K.transpose(-2, -1) / HEAD_DIM**0.5&#10;    mask = torch.triu(torch.ones_like(scores), diagonal=1).bool()&#10;    scores = scores.masked_fill(mask, float(&quot;-inf&quot;))&#10;    return (F.softmax(scores, dim=-1) @ V).transpose(0, 1).reshape(-1, D)[-1]&#10;&#10;class KVCache:&#10;    def __init__(self): self.K = None; self.V = None&#10;    def step(self, token_vec: torch.Tensor) -&gt; torch.Tensor:&#10;        q = (token_vec @ Wq).view(H, HEAD_DIM)            # [H, d]&#10;        k = (token_vec @ Wk).view(H, HEAD_DIM)&#10;        v = (token_vec @ Wv).view(H, HEAD_DIM)&#10;        self.K = k.unsqueeze(1) if self.K is None else torch.cat([self.K, k.unsqueeze(1)], dim=1)&#10;        self.V = v.unsqueeze(1) if self.V is None else torch.cat([self.V, v.unsqueeze(1)], dim=1)&#10;        scores = (q.unsqueeze(1) @ self.K.transpose(-2, -1)).squeeze(1) / HEAD_DIM**0.5  # [H,T]&#10;        return (F.softmax(scores, dim=-1).unsqueeze(1) @ self.V).squeeze(1).reshape(-1)&#10;&#10;# Bench: generate 200 tokens&#10;seq = [torch.randn(D) for _ in range(200)]&#10;&#10;t0 = time.perf_counter()&#10;for i in range(1, 201):&#10;    _ = attention_naive(torch.stack(seq[:i]))&#10;print(f&quot;naive  O(N^2): {time.perf_counter()-t0:.3f}s&quot;)&#10;&#10;t0 = time.perf_counter()&#10;cache = KVCache()&#10;for tok in seq:&#10;    _ = cache.step(tok)&#10;print(f&quot;kv-cache O(N): {time.perf_counter()-t0:.3f}s&quot;)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># save as kv_cache_demo.py</span>
+<span style="color:#c678dd;">import</span> torch, time
+<span style="color:#c678dd;">import</span> torch.nn.functional <span style="color:#c678dd;">as</span> F
+
+torch.manual_seed(<span style="color:#56b6c2;">0</span>)
+D, H, HEAD_DIM = <span style="color:#56b6c2;">128</span>, <span style="color:#56b6c2;">4</span>, <span style="color:#56b6c2;">32</span>  <span style="color:#5c6370;"># model dim, heads, head dim</span>
+<span style="color:#c678dd;">assert</span> D == H * HEAD_DIM
+
+<span style="color:#5c6370;"># One attention layer's K,V projections (toy)</span>
+Wq = torch.randn(D, D); Wk = torch.randn(D, D); Wv = torch.randn(D, D)
+
+<span style="color:#c678dd;">def</span> attention_naive(tokens: torch.Tensor) -&gt; torch.Tensor:
+    <span style="color:#e5c07b;">"""Recompute full attention every step — the slow way."""</span>
+    <span style="color:#5c6370;"># tokens: [T, D]</span>
+    Q = (tokens @ Wq).view(-<span style="color:#56b6c2;">1</span>, H, HEAD_DIM).transpose(<span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">1</span>)  <span style="color:#5c6370;"># [H,T,d]</span>
+    K = (tokens @ Wk).view(-<span style="color:#56b6c2;">1</span>, H, HEAD_DIM).transpose(<span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">1</span>)
+    V = (tokens @ Wv).view(-<span style="color:#56b6c2;">1</span>, H, HEAD_DIM).transpose(<span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">1</span>)
+    scores = Q @ K.transpose(-<span style="color:#56b6c2;">2</span>, -<span style="color:#56b6c2;">1</span>) / HEAD_DIM**<span style="color:#56b6c2;">0.5</span>
+    mask = torch.triu(torch.ones_like(scores), diagonal=<span style="color:#56b6c2;">1</span>).bool()
+    scores = scores.masked_fill(mask, float(<span style="color:#e5c07b;">"-inf"</span>))
+    <span style="color:#c678dd;">return</span> (F.softmax(scores, dim=-<span style="color:#56b6c2;">1</span>) @ V).transpose(<span style="color:#56b6c2;">0</span>, <span style="color:#56b6c2;">1</span>).reshape(-<span style="color:#56b6c2;">1</span>, D)[-<span style="color:#56b6c2;">1</span>]
+
+<span style="color:#c678dd;">class</span> KVCache:
+    <span style="color:#c678dd;">def</span> __init__(self): self.K = <span style="color:#c678dd;">None</span>; self.V = <span style="color:#c678dd;">None</span>
+    <span style="color:#c678dd;">def</span> step(self, token_vec: torch.Tensor) -&gt; torch.Tensor:
+        q = (token_vec @ Wq).view(H, HEAD_DIM)            <span style="color:#5c6370;"># [H, d]</span>
+        k = (token_vec @ Wk).view(H, HEAD_DIM)
+        v = (token_vec @ Wv).view(H, HEAD_DIM)
+        self.K = k.unsqueeze(<span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">if</span> self.K <span style="color:#c678dd;">is</span> <span style="color:#c678dd;">None</span> <span style="color:#c678dd;">else</span> torch.cat([self.K, k.unsqueeze(<span style="color:#56b6c2;">1</span>)], dim=<span style="color:#56b6c2;">1</span>)
+        self.V = v.unsqueeze(<span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">if</span> self.V <span style="color:#c678dd;">is</span> <span style="color:#c678dd;">None</span> <span style="color:#c678dd;">else</span> torch.cat([self.V, v.unsqueeze(<span style="color:#56b6c2;">1</span>)], dim=<span style="color:#56b6c2;">1</span>)
+        scores = (q.unsqueeze(<span style="color:#56b6c2;">1</span>) @ self.K.transpose(-<span style="color:#56b6c2;">2</span>, -<span style="color:#56b6c2;">1</span>)).squeeze(<span style="color:#56b6c2;">1</span>) / HEAD_DIM**<span style="color:#56b6c2;">0.5</span>  <span style="color:#5c6370;"># [H,T]</span>
+        <span style="color:#c678dd;">return</span> (F.softmax(scores, dim=-<span style="color:#56b6c2;">1</span>).unsqueeze(<span style="color:#56b6c2;">1</span>) @ self.V).squeeze(<span style="color:#56b6c2;">1</span>).reshape(-<span style="color:#56b6c2;">1</span>)
+
+<span style="color:#5c6370;"># Bench: generate 200 tokens</span>
+seq = [torch.randn(D) <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">200</span>)]
+
+t0 = time.perf_counter()
+<span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, <span style="color:#56b6c2;">201</span>):
+    _ = attention_naive(torch.stack(seq[:i]))
+print(f<span style="color:#e5c07b;">"naive  O(N^2): {time.perf_counter()-t0:.3f}s"</span>)
+
+t0 = time.perf_counter()
+cache = KVCache()
+<span style="color:#c678dd;">for</span> tok <span style="color:#c678dd;">in</span> seq:
+    _ = cache.step(tok)
+print(f<span style="color:#e5c07b;">"kv-cache O(N): {time.perf_counter()-t0:.3f}s"</span>)</code></pre>
+</div>
+
+<p>典型输出：</p>
+<div class="diagram-block">naive  O(N^2): 0.42s
+kv-cache O(N): 0.05s   ← ~8-10x faster at seq_len=200, gap grows with length</div>
+
+<hr/>
+
+<h3>现实中的 KV-cache 优化栈</h3>
+
+<table><thead><tr><th>技术</th><th>解决什么</th><th>代表项目</th></tr></thead><tbody><tr><td><strong>PagedAttention</strong></td><td>KV 碎片化、fragmentation</td><td>vLLM</td></tr><tr><td><strong>GQA / MQA</strong> (Grouped/Multi-Query)</td><td>KV heads 共享减内存</td><td>Llama 3, Mistral</td></tr><tr><td><strong>Sliding Window Attention</strong></td><td>长 context 砍掉太老的 token</td><td>Mistral</td></tr><tr><td><strong>KV Quantization (int8/int4)</strong></td><td>把 fp16 → int8 砍 2-4x 内存</td><td>TGI, vLLM</td></tr><tr><td><strong>Prefix Caching</strong></td><td>共享的 system prompt 只算一次</td><td>vLLM, SGLang</td></tr><tr><td><strong>Speculative Decoding</strong></td><td>小模型猜，大模型验证 — 跳步</td><td>Medusa, EAGLE</td></tr></tbody></table>
+
+<p><strong>生产提示：</strong> 服务 LLM 不要自己写 attention — 直接用 vLLM/SGLang/TGI。它们在 KV 管理上 2-3 年领先手搓。你的工作是<strong>理解它们的行为</strong>（调 <code>--kv-cache-dtype</code>, <code>--enable-prefix-caching</code>）而不是重实现。</p>
+
+<hr/>
+
+<h3>举一反三 / Connections to prior days</h3>
+
+<ul><li><strong>Day 95 Context Windows:</strong> 为什么长 context 这么贵？答案就是 KV cache 线性增长。</li><li><strong>Day 71 LLM 服务系统设计:</strong> PagedAttention 的 memory manager 本质上是 Day 56-60 的虚拟内存分页搬到了 GPU。</li><li><strong>Day 92 Inference Optimization:</strong> Speculative decoding 的前提是 KV cache 命中率 — 猜错也不浪费 prefill。</li><li><strong>Day 29 Quantization:</strong> KV int8 和 weight int8 是<strong>正交的</strong>优化，可以叠加。</li></ul>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<ul><li>vLLM paper (PagedAttention): https://arxiv.org/abs/2309.06180</li><li>FlashAttention 2 paper: https://arxiv.org/abs/2307.08691</li><li>HuggingFace — KV cache illustrated: https://huggingface.co/blog/kv-cache-quantization</li></ul>
+
+<h3>🧒 ELI5</h3>
+
+<p>读一本很长的书，每读一页你都要<strong>从第一页重新读起</strong>— 累死人。KV 缓存就是你在旁边放一张"笔记本"，之前读过的页只记关键字，新一页只需翻一下笔记本不用从头再读。代价是笔记本会越来越厚（占内存）。</p>
+
+<div class="attention-card">
+  <h3>Attention Heatmap</h3>
+  <p>When the model processes <code>it</code>, it attends most strongly to <code>animal</code>.</p>
+  <div class="heatmap-wrap">
+    <table class="heatmap">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="heatmap-axis">The</th><th class="heatmap-axis">animal</th><th class="heatmap-axis">didnt</th><th class="heatmap-axis">cross</th><th class="heatmap-axis">the</th><th class="heatmap-axis">street</th><th class="heatmap-axis">because</th><th class="heatmap-axis">it</th><th class="heatmap-axis">was</th><th class="heatmap-axis">too</th><th class="heatmap-axis">tired</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="heatmap-axis row-label">it →</th>
+          <td><div class="heatmap-cell" title="The: 0.02" aria-label="The attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="animal: 0.86" aria-label="animal attention weight 0.86" style="background:rgba(167, 139, 250, 0.86);"></div></td><td><div class="heatmap-cell" title="didnt: 0.03" aria-label="didnt attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="cross: 0.04" aria-label="cross attention weight 0.04" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="the: 0.02" aria-label="the attention weight 0.02" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="street: 0.08" aria-label="street attention weight 0.08" style="background:rgba(167, 139, 250, 0.08);"></div></td><td><div class="heatmap-cell" title="because: 0.05" aria-label="because attention weight 0.05" style="background:rgba(167, 139, 250, 0.05);"></div></td><td><div class="heatmap-cell" title="it: 0.03" aria-label="it attention weight 0.03" style="background:rgba(167, 139, 250, 0.04);"></div></td><td><div class="heatmap-cell" title="was: 0.07" aria-label="was attention weight 0.07" style="background:rgba(167, 139, 250, 0.07);"></div></td><td><div class="heatmap-cell" title="too: 0.10" aria-label="too attention weight 0.10" style="background:rgba(167, 139, 250, 0.10);"></div></td><td><div class="heatmap-cell" title="tired: 0.30" aria-label="tired attention weight 0.30" style="background:rgba(167, 139, 250, 0.30);"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
