@@ -1065,3 +1065,17 @@ _Report-only run — no code changes made._
 - Delivery rate (7d): 4/7 — OK: 2026-10-10,11,12,13; MISSED: 2026-10-07,08,09 (tail end of the resolved outage)
 - Delivery rate (last 4d): 4/4 (healthy)
 - Cron errors: optimizer job shows lastRunStatus=error with lastRunError=null (prior-run timeout artifact; no actionable error). Content/daily pipeline delivering normally.
+
+## 2026-10-16 Optimization Run
+
+### Issues Found
+- P0: Email delivery gap on 2026-10-14 (MISSED). Git log confirms the generator skipped a day — Day 138 (2026-10-13) → Day 139 (2026-10-15), no commit/content on 10-14. Single isolated miss; delivery resumed 10-15 and 10-16. No daily-generator cron job is currently visible in `cron list` (only the optimizer job exists), so the daily send may be driven by a non-byte-named job or heartbeat — worth confirming the generator schedule to prevent silent single-day drops.
+- P1: None. Content delivered 6/7 days with no quality flags.
+
+### Metrics
+- Delivery rate (7d): 6/7 (missed 2026-10-14)
+- Cron errors: none — optimizer job lastRunStatus=ok, lastRunError=null, delivered.
+- State: currentDay=140, lastSentDate=2026-10-16, review day 140 completed on schedule.
+
+### Note
+- Local `openclaw cron list --json` CLI fails under this run's node (v25.6.1 < required); used cron tool instead. Not a pipeline issue.
