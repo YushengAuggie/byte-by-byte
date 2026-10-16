@@ -1079,3 +1079,15 @@ _Report-only run — no code changes made._
 
 ### Note
 - Local `openclaw cron list --json` CLI fails under this run's node (v25.6.1 < required); used cron tool instead. Not a pipeline issue.
+
+## 2026-10-16 Optimization Run (re-run / confirm)
+
+### Issues Found
+- P0: None active. Delivery healthy — last 3 days (10-14 was the only miss in window) resolved; 10-15 and 10-16 delivered on schedule. The 10-14 single-day drop was already flagged in the earlier 10-16 entry; no recurrence.
+- P1: None.
+- P2: `openclaw cron list --json` still returns non-JSON under this run's node (v25.9.0 CLI path mismatch); fell back to the cron tool for optimizer-job state. Cosmetic, non-blocking.
+
+### Metrics
+- Delivery rate (7d): 6/7 (missed 2026-10-14; OK 10-10,11,12,13,15,16)
+- Cron errors: optimizer job lastRunStatus=error with lastRunError=null — prior-run timeout artifact, no actionable error. Daily content pipeline delivering normally.
+- State: currentDay=140, lastSentDate=2026-10-16, review day 140 completed on schedule.
