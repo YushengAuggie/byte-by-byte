@@ -1104,3 +1104,32 @@ _Report-only run — no code changes made._
 - Delivery rate (last 2d): 2/2 (healthy)
 - Cron errors: optimizer job lastRunStatus=error, lastRunError=null — prior-run timeout artifact, not actionable. Daily content pipeline delivering normally.
 - State: currentDay=140, lastSentDate=2026-10-16, review day 140 completed on schedule.
+
+## 2026-10-23 Optimization Run (3-day cycle)
+
+### Issues Found
+- **P0 CRITICAL — Pipeline down, ~5 consecutive missed days.** Email delivery log shows only 2026-10-18 delivered in the last 7 days; 10-17, 10-19, 10-20, 10-21, 10-22, 10-23 all MISSED. Nothing has been sent since 10-18.
+- **P0 — Multiple cron jobs failing on isolated-agent startup.** `cron list` shows these byte-by-byte jobs in `error` state:
+  - `review-and-send`: "cron: isolated agent setup timed out before runner start"
+  - `weekday`: same ("isolated agent setup timed out before runner start")
+  - `late-send`: same
+  - `health-check`: same
+  - `saturday`: "Request timed out before a response was generated. Please try again, or increase `agents.defaults.timeoutSeconds`"
+  - `backup-send`: error (no message captured)
+  - `optimizer`: error (no message captured; this very run)
+  - `sunday`: OK (only healthy job)
+  This is an infrastructure/agent-startup timeout, not pipeline-code logic — the isolated cron runner is timing out before it can start. The backup-send and late-send safety nets are ALSO failing, so there is no fallback currently catching the misses.
+- **P0 — State not advancing.** `state.json` still shows `currentDay=140` and `lastSentDate=2026-10-16`, yet git log shows "Day 140 (2026-10-18)". currentDay has not incremented past 140 and lastSentDate is stale (10-16) despite a 10-18 send — the deterministic state-commit step is not running because the generating agent never starts.
+
+### Suggested manual fix
+- Investigate isolated-agent startup timeout (likely `agents.defaults.timeoutSeconds` too low, or gateway/runner resource contention). Bump `agents.defaults.timeoutSeconds` and verify the isolated cron runner can start.
+- Once runner starts cleanly, manually trigger a catch-up send and confirm `state.json` advances (currentDay, lastSentDate).
+- Confirm `backup-send`/`late-send` safety nets recover so single-run failures don't cascade into multi-day gaps.
+
+### Metrics
+- Delivery rate (7d): 1/7 (OK only 10-18; MISSED 10-17,10-19,10-20,10-21,10-22,10-23)
+- Cron errors: 7 of 8 byte jobs in error state (only `sunday` OK). Dominant error: "isolated agent setup timed out before runner start".
+- State: currentDay=140 (stuck), lastSentDate=2026-10-16 (stale), review day 140 last completed.
+
+### Note
+- CLI `openclaw cron list --json` runs under correct node (v25.9.0) once nvm is sourced; prefixes config warnings before JSON (strip to first `{`).
