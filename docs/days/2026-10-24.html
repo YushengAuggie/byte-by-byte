@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-10-24</title>
+  <meta name="description" content="byte-by-byte daily lessons for Saturday, October 24, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Saturday, October 24, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-10-24.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-10-18.html" style="color:var(--text2)">← 2026-10-18</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-10-24</span>
+    <h1>Saturday, October 24, 2026</h1>
+    <div class="page-header-meta">
+      <span>1 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-deepdive" class="nav-day-btn">🔬 Deep Dive</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-10-18.html" class="day-nav-btn">← 2026-10-18</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-deepdive">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-deepdive" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🔬</span>
+        <div>
+          <div class="section-header-title">🔬 Deep Dive</div>
+          <div class="section-header-sub">🔬</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-deepdive">
+        <p>🔬 <strong>Saturday Deep Dive: Edit Distance — 编辑距离 (15 min read)</strong></p>
+<p>📊 NeetCode: 109/150 · SysDesign: 60/60 · Behavioral: 60/60 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 Day 141 — Expert Phase</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong> 本周我们完成了一维动态规划的全部 12 道题。今天，我们跨越到二维 DP 的核心——<strong>编辑距离</strong>（Levenshtein Distance）。这是面试中最经典的 Hard 级别 DP 题之一，也是无数现实系统的基石：Git diff、拼写检查、DNA 序列比对、模糊搜索。</p>
+
+<p><strong>English:</strong> This week we finished all 12 problems in the 1-D DP block. Today we cross into 2-D DP with its defining problem: <strong>Edit Distance</strong> (Levenshtein Distance). It's one of the most elegant Hard DP problems in interviews and powers real systems you use daily — git diff, spell checkers, DNA alignment, Elasticsearch fuzzy queries.</p>
+
+<p><strong>The problem:</strong> Given two strings <code>word1</code> and <code>word2</code>, return the minimum number of operations (insert, delete, replace) to transform <code>word1</code> into <code>word2</code>.</p>
+
+<div class="diagram-block">Input:  word1 = "horse", word2 = "ros"
+Output: 3
+
+horse → rorse (replace 'h' → 'r')
+rorse → rose  (delete 'r')
+rose  → ros   (delete 'e')</div>
+
+<p>🔗 LeetCode #72: https://leetcode.com/problems/edit-distance/</p>
+<p>📹 NeetCode Video: https://www.youtube.com/watch?v=XYi2-LPrwm4</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>1.1 从递归思维开始 / Start with Recursive Thinking</h3>
+
+<p><strong>中文：</strong> DP 的关键是找到「子问题」。对于编辑距离，子问题是：</p>
+
+<blockquote><code>dp[i][j]</code> = 将 <code>word1</code> 的前 <code>i</code> 个字符变成 <code>word2</code> 的前 <code>j</code> 个字符所需的最少操作数</blockquote>
+
+<p>比较最后一个字符 <code>word1[i-1]</code> 和 <code>word2[j-1]</code>，只有两种情况：</p>
+
+<p><strong>English:</strong> The key to DP is finding the subproblem:</p>
+
+<blockquote><code>dp[i][j]</code> = min operations to transform <code>word1[:i]</code> into <code>word2[:j]</code></blockquote>
+
+<p>Compare the last character of each prefix — two cases:</p>
+
+<hr/>
+
+<p><strong>Case 1: Characters match → <code>word1[i-1] == word2[j-1]</code></strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="中文: 最后一个字符已经匹配，无需操作，问题缩小为子问题 dp[i-1][j-1]&#10;&#10;dp[i][j] = dp[i-1][j-1]">Copy</button>
+  <pre><code class="language-text">中文: 最后一个字符已经匹配，无需操作，问题缩小为子问题 dp[i-1][j-1]
+
+dp[i][j] = dp[i-1][j-1]</code></pre>
+</div>
+
+<p>No operation needed. The answer for this pair equals the answer for the pair without these characters.</p>
+
+<hr/>
+
+<p><strong>Case 2: Characters differ → <code>word1[i-1] != word2[j-1]</code></strong></p>
+
+<div class="diagram-block">中文: 有三种操作可选，取最优（+1 是当前这次操作的代价）:
+
+Replace:  dp[i][j] = dp[i-1][j-1] + 1   ← 替换 word1[i-1] 为 word2[j-1]
+Delete:   dp[i][j] = dp[i-1][j]   + 1   ← 删除 word1[i-1]
+Insert:   dp[i][j] = dp[i][j-1]   + 1   ← 在 word1 末尾插入 word2[j-1]</div>
+
+<p><strong>Mental model for each operation:</strong></p>
+<ul><li><strong>Replace</strong> <code>dp[i-1][j-1]</code>: Both pointers move back — you replaced <code>word1[i-1]</code> with <code>word2[j-1]</code></li><li><strong>Delete</strong> <code>dp[i-1][j]</code>: Only <code>i</code> moves back — you deleted <code>word1[i-1]</code> (so now <code>word1[:i-1]</code> must reach <code>word2[:j]</code>)</li><li><strong>Insert</strong> <code>dp[i][j-1]</code>: Only <code>j</code> moves back — you inserted <code>word2[j-1]</code> at the end of <code>word1[:i]</code></li></ul>
+
+<p><strong>中文关键洞察：</strong> "插入" 和 "删除" 是对称的。从 word1 视角插入 = 从 word2 视角删除，反之亦然。</p>
+
+<p><strong>Key insight:</strong> Insert and Delete are symmetric. "Insert into word1" is equivalent to "delete from word2."</p>
+
+<hr/>
+
+<h3>1.2 Base Cases / 边界条件</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="dp[i][0] = i   # word2 is empty → delete all i chars from word1&#10;dp[0][j] = j   # word1 is empty → insert all j chars from word2">Copy</button>
+  <pre><code class="language-python">dp[i][<span style="color:#56b6c2;">0</span>] = i   <span style="color:#5c6370;"># word2 is empty → delete all i chars from word1</span>
+dp[<span style="color:#56b6c2;">0</span>][j] = j   <span style="color:#5c6370;"># word1 is empty → insert all j chars from word2</span></code></pre>
+</div>
+
+<hr/>
+
+<h3>1.3 DP Table Visualization / DP 表格可视化</h3>
+
+<p>For <code>word1 = "horse"</code>, <code>word2 = "ros"</code>:</p>
+
+<div class="diagram-block">       ""   r    o    s
+  ""  [ 0][ 1][ 2][ 3]
+  h   [ 1][ 1][ 2][ 3]
+  o   [ 2][ 2][ 1][ 2]
+  r   [ 3][ 2][ 2][ 2]
+  s   [ 4][ 3][ 3][ 2]
+  e   [ 5][ 4][ 4][ 3]  ← answer: dp[5][3] = 3</div>
+
+<p><strong>中文：</strong> 读懂这张表是理解编辑距离的关键。每个格子 <code>dp[i][j]</code> 代表将 <code>word1</code> 前 <code>i</code> 个字符变成 <code>word2</code> 前 <code>j</code> 个字符的最小代价。右下角就是答案。</p>
+
+<p><strong>English:</strong> Every cell <code>dp[i][j]</code> is the minimum cost to transform the first <code>i</code> chars of <code>word1</code> into the first <code>j</code> chars of <code>word2</code>. Bottom-right = answer.</p>
+
+<p>Let's trace a few key cells manually:</p>
+<ul><li><code>dp[2][2]</code>: <code>word1[:2]="ho"</code>, <code>word2[:2]="ro"</code>. Last chars: <code>'o' == 'o'</code> → <code>dp[1][1] = 1</code> ✓</li><li><code>dp[3][1]</code>: <code>word1[:3]="hor"</code>, <code>word2[:1]="r"</code>. Last chars: <code>'r' == 'r'</code> → <code>dp[2][0] = 2</code> ✓</li><li><code>dp[5][3]</code>: <code>'e' != 's'</code> → <code>1 + min(dp[4][2]=3, dp[4][3]=2, dp[5][2]=4) = 1+2 = 3</code> ✓</li></ul>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Approach 1: Recursive + Memoization (Top-Down) / 递归 + 记忆化</h3>
+
+<p><strong>中文：</strong> 先写递归，理解清楚再优化。</p>
+
+<p><strong>English:</strong> Write recursion first to understand, then optimize.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from functools import lru_cache&#10;&#10;def minDistance_memo(word1: str, word2: str) -&gt; int:&#10;    m, n = len(word1), len(word2)&#10;    &#10;    @lru_cache(maxsize=None)&#10;    def dp(i, j):&#10;        # Base cases: one string exhausted&#10;        if i == 0: return j  # insert j chars from word2&#10;        if j == 0: return i  # delete i chars from word1&#10;        &#10;        if word1[i-1] == word2[j-1]:&#10;            # Characters match — no operation needed&#10;            return dp(i-1, j-1)&#10;        &#10;        # Characters differ — try all 3 operations, pick cheapest&#10;        replace = dp(i-1, j-1)  # replace word1[i-1] with word2[j-1]&#10;        delete  = dp(i-1, j)    # delete word1[i-1]&#10;        insert  = dp(i, j-1)    # insert word2[j-1] after word1[:i]&#10;        &#10;        return 1 + min(replace, delete, insert)&#10;    &#10;    return dp(m, n)">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> functools <span style="color:#c678dd;">import</span> lru_cache
+
+<span style="color:#c678dd;">def</span> minDistance_memo(word1: str, word2: str) -&gt; int:
+    m, n = len(word1), len(word2)
+    
+    @lru_cache(maxsize=<span style="color:#c678dd;">None</span>)
+    <span style="color:#c678dd;">def</span> dp(i, j):
+        <span style="color:#5c6370;"># Base cases: one string exhausted</span>
+        <span style="color:#c678dd;">if</span> i == <span style="color:#56b6c2;">0</span>: <span style="color:#c678dd;">return</span> j  <span style="color:#5c6370;"># insert j chars from word2</span>
+        <span style="color:#c678dd;">if</span> j == <span style="color:#56b6c2;">0</span>: <span style="color:#c678dd;">return</span> i  <span style="color:#5c6370;"># delete i chars from word1</span>
+        
+        <span style="color:#c678dd;">if</span> word1[i-<span style="color:#56b6c2;">1</span>] == word2[j-<span style="color:#56b6c2;">1</span>]:
+            <span style="color:#5c6370;"># Characters match — no operation needed</span>
+            <span style="color:#c678dd;">return</span> dp(i-<span style="color:#56b6c2;">1</span>, j-<span style="color:#56b6c2;">1</span>)
+        
+        <span style="color:#5c6370;"># Characters differ — try all 3 operations, pick cheapest</span>
+        replace = dp(i-<span style="color:#56b6c2;">1</span>, j-<span style="color:#56b6c2;">1</span>)  <span style="color:#5c6370;"># replace word1[i-1] with word2[j-1]</span>
+        delete  = dp(i-<span style="color:#56b6c2;">1</span>, j)    <span style="color:#5c6370;"># delete word1[i-1]</span>
+        insert  = dp(i, j-<span style="color:#56b6c2;">1</span>)    <span style="color:#5c6370;"># insert word2[j-1] after word1[:i]</span>
+        
+        <span style="color:#c678dd;">return</span> <span style="color:#56b6c2;">1</span> + min(replace, delete, insert)
+    
+    <span style="color:#c678dd;">return</span> dp(m, n)</code></pre>
+</div>
+
+<p><strong>Time:</strong> O(m × n) — each subproblem computed once  </p>
+<p><strong>Space:</strong> O(m × n) for the cache + O(m+n) call stack</p>
+
+<hr/>
+
+<h3>Approach 2: Bottom-Up 2-D DP (Optimal Clarity) / 自底向上二维 DP</h3>
+
+<p><strong>中文：</strong> 把递归改成迭代，消除递归栈开销。这是面试中最推荐写法——思路清晰，代码简洁。</p>
+
+<p><strong>English:</strong> Convert recursion to iteration. This is the preferred interview answer — clean and readable.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def minDistance_2d(word1: str, word2: str) -&gt; int:&#10;    m, n = len(word1), len(word2)&#10;    &#10;    # dp[i][j] = min ops to transform word1[:i] into word2[:j]&#10;    # Table is (m+1) x (n+1) to accommodate empty string base cases&#10;    dp = [[0] * (n + 1) for _ in range(m + 1)]&#10;    &#10;    # Base case: transform to/from empty string&#10;    for i in range(m + 1):&#10;        dp[i][0] = i  # delete i chars to get empty string&#10;    for j in range(n + 1):&#10;        dp[0][j] = j  # insert j chars from empty string&#10;    &#10;    # Fill table row by row&#10;    for i in range(1, m + 1):&#10;        for j in range(1, n + 1):&#10;            if word1[i-1] == word2[j-1]:&#10;                # Characters match — no operation needed, inherit diagonal&#10;                dp[i][j] = dp[i-1][j-1]&#10;            else:&#10;                # Take cheapest of the 3 operations&#10;                dp[i][j] = 1 + min(&#10;                    dp[i-1][j-1],  # replace&#10;                    dp[i-1][j],    # delete from word1&#10;                    dp[i][j-1]     # insert into word1&#10;                )&#10;    &#10;    return dp[m][n]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> minDistance_2d(word1: str, word2: str) -&gt; int:
+    m, n = len(word1), len(word2)
+    
+    <span style="color:#5c6370;"># dp[i][j] = min ops to transform word1[:i] into word2[:j]</span>
+    <span style="color:#5c6370;"># Table is (m+1) x (n+1) to accommodate empty string base cases</span>
+    dp = [[<span style="color:#56b6c2;">0</span>] * (n + <span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(m + <span style="color:#56b6c2;">1</span>)]
+    
+    <span style="color:#5c6370;"># Base case: transform to/from empty string</span>
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(m + <span style="color:#56b6c2;">1</span>):
+        dp[i][<span style="color:#56b6c2;">0</span>] = i  <span style="color:#5c6370;"># delete i chars to get empty string</span>
+    <span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(n + <span style="color:#56b6c2;">1</span>):
+        dp[<span style="color:#56b6c2;">0</span>][j] = j  <span style="color:#5c6370;"># insert j chars from empty string</span>
+    
+    <span style="color:#5c6370;"># Fill table row by row</span>
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, m + <span style="color:#56b6c2;">1</span>):
+        <span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, n + <span style="color:#56b6c2;">1</span>):
+            <span style="color:#c678dd;">if</span> word1[i-<span style="color:#56b6c2;">1</span>] == word2[j-<span style="color:#56b6c2;">1</span>]:
+                <span style="color:#5c6370;"># Characters match — no operation needed, inherit diagonal</span>
+                dp[i][j] = dp[i-<span style="color:#56b6c2;">1</span>][j-<span style="color:#56b6c2;">1</span>]
+            <span style="color:#c678dd;">else</span>:
+                <span style="color:#5c6370;"># Take cheapest of the 3 operations</span>
+                dp[i][j] = <span style="color:#56b6c2;">1</span> + min(
+                    dp[i-<span style="color:#56b6c2;">1</span>][j-<span style="color:#56b6c2;">1</span>],  <span style="color:#5c6370;"># replace</span>
+                    dp[i-<span style="color:#56b6c2;">1</span>][j],    <span style="color:#5c6370;"># delete from word1</span>
+                    dp[i][j-<span style="color:#56b6c2;">1</span>]     <span style="color:#5c6370;"># insert into word1</span>
+                )
+    
+    <span style="color:#c678dd;">return</span> dp[m][n]</code></pre>
+</div>
+
+<p><strong>Time:</strong> O(m × n)  </p>
+<p><strong>Space:</strong> O(m × n)</p>
+
+<hr/>
+
+<h3>Approach 3: Space-Optimized 1-D DP / 空间优化一维 DP</h3>
+
+<p><strong>中文：</strong> 关键观察：填表时每行只需要上一行的数据。因此可以压缩到两行，甚至一行（用 <code>prev</code> 变量记录对角线值）。</p>
+
+<p><strong>English:</strong> Key observation: filling row <code>i</code> only needs row <code>i-1</code>. We can compress to O(n) space.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def minDistance_optimized(word1: str, word2: str) -&gt; int:&#10;    m, n = len(word1), len(word2)&#10;    &#10;    # prev[j] represents dp[i-1][j] from the 2D version&#10;    prev = list(range(n + 1))  # base case: dp[0][j] = j&#10;    &#10;    for i in range(1, m + 1):&#10;        # curr[j] = dp[i][j] for the current row&#10;        curr = [0] * (n + 1)&#10;        curr[0] = i  # base case: dp[i][0] = i&#10;        &#10;        for j in range(1, n + 1):&#10;            if word1[i-1] == word2[j-1]:&#10;                # Match: take diagonal (prev row, prev column)&#10;                curr[j] = prev[j-1]&#10;            else:&#10;                curr[j] = 1 + min(&#10;                    prev[j-1],  # replace  (diagonal in 2D)&#10;                    prev[j],    # delete   (cell above in 2D)&#10;                    curr[j-1],  # insert   (cell left in 2D)&#10;                )&#10;        &#10;        prev = curr  # shift rows&#10;    &#10;    return prev[n]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> minDistance_optimized(word1: str, word2: str) -&gt; int:
+    m, n = len(word1), len(word2)
+    
+    <span style="color:#5c6370;"># prev[j] represents dp[i-1][j] from the 2D version</span>
+    prev = list(range(n + <span style="color:#56b6c2;">1</span>))  <span style="color:#5c6370;"># base case: dp[0][j] = j</span>
+    
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, m + <span style="color:#56b6c2;">1</span>):
+        <span style="color:#5c6370;"># curr[j] = dp[i][j] for the current row</span>
+        curr = [<span style="color:#56b6c2;">0</span>] * (n + <span style="color:#56b6c2;">1</span>)
+        curr[<span style="color:#56b6c2;">0</span>] = i  <span style="color:#5c6370;"># base case: dp[i][0] = i</span>
+        
+        <span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, n + <span style="color:#56b6c2;">1</span>):
+            <span style="color:#c678dd;">if</span> word1[i-<span style="color:#56b6c2;">1</span>] == word2[j-<span style="color:#56b6c2;">1</span>]:
+                <span style="color:#5c6370;"># Match: take diagonal (prev row, prev column)</span>
+                curr[j] = prev[j-<span style="color:#56b6c2;">1</span>]
+            <span style="color:#c678dd;">else</span>:
+                curr[j] = <span style="color:#56b6c2;">1</span> + min(
+                    prev[j-<span style="color:#56b6c2;">1</span>],  <span style="color:#5c6370;"># replace  (diagonal in 2D)</span>
+                    prev[j],    <span style="color:#5c6370;"># delete   (cell above in 2D)</span>
+                    curr[j-<span style="color:#56b6c2;">1</span>],  <span style="color:#5c6370;"># insert   (cell left in 2D)</span>
+                )
+        
+        prev = curr  <span style="color:#5c6370;"># shift rows</span>
+    
+    <span style="color:#c678dd;">return</span> prev[n]</code></pre>
+</div>
+
+<p><strong>Time:</strong> O(m × n)  </p>
+<p><strong>Space:</strong> O(n) — only one row at a time</p>
+
+<hr/>
+
+<h3>Complexity Comparison / 复杂度对比</h3>
+
+<table><thead><tr><th>Approach</th><th>Time</th><th>Space</th><th>Notes</th></tr></thead><tbody><tr><td>Brute-force recursion</td><td>O(3^(m+n))</td><td>O(m+n)</td><td>TLE for large inputs</td></tr><tr><td>Memoization</td><td>O(m×n)</td><td>O(m×n)</td><td>Good starting point</td></tr><tr><td>Bottom-up 2-D</td><td>O(m×n)</td><td>O(m×n)</td><td>Best readability</td></tr><tr><td>Space-optimized</td><td>O(m×n)</td><td>O(n)</td><td>Best for production</td></tr></tbody></table>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文：</strong> 这道题的常见错误和陷阱：</p>
+
+<p><strong>English:</strong> Common pitfalls:</p>
+
+<hr/>
+
+<p><strong>1. Off-by-one: DP table is (m+1) × (n+1), not (m × n)</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# ❌ WRONG: missing base cases&#10;dp = [[0] * n for _ in range(m)]&#10;&#10;# ✅ CORRECT: includes empty string rows/columns&#10;dp = [[0] * (n + 1) for _ in range(m + 1)]">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># ❌ WRONG: missing base cases</span>
+dp = [[<span style="color:#56b6c2;">0</span>] * n <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(m)]
+
+<span style="color:#5c6370;"># ✅ CORRECT: includes empty string rows/columns</span>
+dp = [[<span style="color:#56b6c2;">0</span>] * (n + <span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(m + <span style="color:#56b6c2;">1</span>)]</code></pre>
+</div>
+
+<p><strong>中文：</strong> 表格的行列数各多 1，是为了容纳空字符串的 base case。<code>dp[0][j]</code> 表示空串变成 <code>word2[:j]</code> 的代价。</p>
+
+<hr/>
+
+<p><strong>2. Forgetting base case initialization</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# ❌ WRONG: only creates zero table&#10;dp = [[0] * (n+1) for _ in range(m+1)]&#10;# Missing: dp[i][0] = i and dp[0][j] = j !&#10;&#10;# ✅ CORRECT&#10;for i in range(m + 1): dp[i][0] = i&#10;for j in range(n + 1): dp[0][j] = j">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># ❌ WRONG: only creates zero table</span>
+dp = [[<span style="color:#56b6c2;">0</span>] * (n+<span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(m+<span style="color:#56b6c2;">1</span>)]
+<span style="color:#5c6370;"># Missing: dp[i][0] = i and dp[0][j] = j !</span>
+
+<span style="color:#5c6370;"># ✅ CORRECT</span>
+<span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(m + <span style="color:#56b6c2;">1</span>): dp[i][<span style="color:#56b6c2;">0</span>] = i
+<span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(n + <span style="color:#56b6c2;">1</span>): dp[<span style="color:#56b6c2;">0</span>][j] = j</code></pre>
+</div>
+
+<hr/>
+
+<p><strong>3. Index confusion: <code>word1[i-1]</code> not <code>word1[i]</code></strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# ❌ WRONG&#10;if word1[i] == word2[j]:  # IndexError when i=m&#10;&#10;# ✅ CORRECT: i is 1-indexed in dp, 0-indexed in string&#10;if word1[i-1] == word2[j-1]:">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># ❌ WRONG</span>
+<span style="color:#c678dd;">if</span> word1[i] == word2[j]:  <span style="color:#5c6370;"># IndexError when i=m</span>
+
+<span style="color:#5c6370;"># ✅ CORRECT: i is 1-indexed in dp, 0-indexed in string</span>
+<span style="color:#c678dd;">if</span> word1[i-<span style="color:#56b6c2;">1</span>] == word2[j-<span style="color:#56b6c2;">1</span>]:</code></pre>
+</div>
+
+<p><strong>中文：</strong> dp 表格是 1-indexed（第 <code>i</code> 行代表前 <code>i</code> 个字符），但字符串本身是 0-indexed。所以访问字符要用 <code>word1[i-1]</code>。</p>
+
+<hr/>
+
+<p><strong>4. What counts as one operation?</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="中文: 题目默认 insert / delete / replace 各算一步操作，代价相同。&#10;如果题目改成代价不同（比如 insert=2, delete=1），只需修改 +1 的部分。&#10;&#10;English: All three operations cost 1. If costs differ (weighted edit distance),&#10;just change the +1 to +cost for each operation type.">Copy</button>
+  <pre><code class="language-text">中文: 题目默认 insert / delete / replace 各算一步操作，代价相同。
+如果题目改成代价不同（比如 insert=2, delete=1），只需修改 +1 的部分。
+
+English: All three operations cost 1. If costs differ (weighted edit distance),
+just change the +1 to +cost for each operation type.</code></pre>
+</div>
+
+<hr/>
+
+<p><strong>5. Empty string edge case</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="minDistance(&quot;&quot;, &quot;ros&quot;)  # → 3 (insert 3 chars)&#10;minDistance(&quot;horse&quot;, &quot;&quot;)  # → 5 (delete 5 chars)&#10;minDistance(&quot;&quot;, &quot;&quot;)  # → 0&#10;&#10;# All handled correctly by base case initialization">Copy</button>
+  <pre><code class="language-python">minDistance(<span style="color:#e5c07b;">""</span>, <span style="color:#e5c07b;">"ros"</span>)  <span style="color:#5c6370;"># → 3 (insert 3 chars)</span>
+minDistance(<span style="color:#e5c07b;">"horse"</span>, <span style="color:#e5c07b;">""</span>)  <span style="color:#5c6370;"># → 5 (delete 5 chars)</span>
+minDistance(<span style="color:#e5c07b;">""</span>, <span style="color:#e5c07b;">""</span>)  <span style="color:#5c6370;"># → 0</span>
+
+<span style="color:#5c6370;"># All handled correctly by base case initialization</span></code></pre>
+</div>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong> 编辑距离不只是面试题——它在工业级系统中无处不在。</p>
+
+<p><strong>English:</strong> Edit distance isn't just an interview problem — it's in production systems you use daily.</p>
+
+<hr/>
+
+<h3>1. Git Diff / Unix Diff</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="$ git diff HEAD~1 HEAD -- file.py">Copy</button>
+  <pre><code class="language-bash"><span style="color:#98c379;">$</span> git diff HEAD~1 HEAD <span style="color:#56b6c2;">--</span> file.py</code></pre>
+</div>
+
+<p><strong>中文：</strong> Git diff 使用编辑距离的变体（Myers diff algorithm）计算两个文件版本之间的差异，以最小操作数展示变更。</p>
+
+<p><strong>English:</strong> Git uses a variant (Myers diff algorithm) to compute the minimum edit script between file versions. Every <code>+</code> and <code>-</code> line in a diff represents insert/delete operations.</p>
+
+<hr/>
+
+<h3>2. Spell Checkers / 拼写检查</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Simplified spell checker using edit distance&#10;def suggest_corrections(word: str, dictionary: list[str], max_dist: int = 2) -&gt; list[str]:&#10;    return [&#10;        w for w in dictionary&#10;        if minDistance(word, w) &lt;= max_dist&#10;    ]&#10;&#10;suggest_corrections(&quot;recieve&quot;, [&quot;receive&quot;, &quot;relieve&quot;, &quot;retrieve&quot;])&#10;# → [&quot;receive&quot;]  (edit distance = 1: swap i and e)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Simplified spell checker using edit distance</span>
+<span style="color:#c678dd;">def</span> suggest_corrections(word: str, dictionary: list[str], max_dist: int = <span style="color:#56b6c2;">2</span>) -&gt; list[str]:
+    <span style="color:#c678dd;">return</span> [
+        w <span style="color:#c678dd;">for</span> w <span style="color:#c678dd;">in</span> dictionary
+        <span style="color:#c678dd;">if</span> minDistance(word, w) &lt;= max_dist
+    ]
+
+suggest_corrections(<span style="color:#e5c07b;">"recieve"</span>, [<span style="color:#e5c07b;">"receive"</span>, <span style="color:#e5c07b;">"relieve"</span>, <span style="color:#e5c07b;">"retrieve"</span>])
+<span style="color:#5c6370;"># → ["receive"]  (edit distance = 1: swap i and e)</span></code></pre>
+</div>
+
+<p><strong>中文：</strong> 拼写检查器预计算词典中所有词与输入词的编辑距离，距离 ≤ 2 的作为候选建议。</p>
+
+<hr/>
+
+<h3>3. DNA Sequence Alignment / DNA 序列比对</h3>
+
+<div class="diagram-block">Reference: ATCGTACG
+Mutated:   ATCGAACG
+              ^
+              G → A (point mutation, edit distance = 1)</div>
+
+<p><strong>中文：</strong> 基因组学中，Needleman-Wunsch 和 Smith-Waterman 算法是编辑距离的变体，用于比对 DNA/蛋白质序列，找到进化上的同源序列。</p>
+
+<p><strong>English:</strong> Bioinformatics uses weighted edit distance variants to align DNA sequences. The "alignment score" you see in BLAST results is essentially an edit distance computation.</p>
+
+<hr/>
+
+<h3>4. Elasticsearch Fuzzy Search / 模糊搜索</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="{&#10;  &quot;query&quot;: {&#10;    &quot;fuzzy&quot;: {&#10;      &quot;name&quot;: {&#10;        &quot;value&quot;: &quot;recieve&quot;,&#10;        &quot;fuzziness&quot;: 1   ← max edit distance of 1&#10;      }&#10;    }&#10;  }&#10;}">Copy</button>
+  <pre><code class="language-json">{
+  <span style="color:#56b6c2;">"query"</span>: {
+    <span style="color:#56b6c2;">"fuzzy"</span>: {
+      <span style="color:#56b6c2;">"name"</span>: {
+        <span style="color:#56b6c2;">"value"</span>: <span style="color:#e5c07b;">"recieve"</span>,
+        <span style="color:#56b6c2;">"fuzziness"</span>: <span style="color:#56b6c2;">1</span>   ← max edit distance of <span style="color:#56b6c2;">1</span>
+      }
+    }
+  }
+}</code></pre>
+</div>
+
+<p><strong>中文：</strong> Elasticsearch 的 <code>fuzziness</code> 参数直接对应编辑距离阈值。内部使用 Levenshtein automaton 高效执行。</p>
+
+<p><strong>English:</strong> Elasticsearch's <code>fuzziness</code> parameter is literally the edit distance threshold. Behind the scenes it uses a Levenshtein automaton for efficient execution across millions of terms.</p>
+
+<hr/>
+
+<h3>5. Autocorrect on Mobile / 手机自动更正</h3>
+
+<p><strong>中文：</strong> iOS/Android 键盘的自动更正功能将编辑距离与打字错误模式（键盘邻键）结合，给出概率最高的修正建议。</p>
+
+<p><strong>English:</strong> Mobile keyboards combine edit distance with keyboard-proximity weights (adjacent keys get lower cost). Hitting 'j' when you meant 'h' costs less than a random key swap.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>中文：</strong> 面试官最常追问的 5 个问题：</p>
+
+<p><strong>English:</strong> The 5 most common follow-ups:</p>
+
+<hr/>
+
+<p><strong>Q1: "What's the time and space complexity? Can you improve the space?"</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="A: Time is O(m×n) — we compute each of the m×n cells once.&#10;   Space is O(m×n) for the 2D table, reducible to O(n) by keeping&#10;   only the current and previous rows. We can even do O(min(m,n)) by&#10;   iterating over the shorter string in the inner loop.&#10;&#10;中文: 时间 O(m×n) 无法进一步优化（每个子问题至少算一次）。&#10;      空间可从 O(m×n) 优化到 O(n)，只保留当前行和上一行。">Copy</button>
+  <pre><code class="language-text">A: Time is O(m×n) — we compute each of the m×n cells once.
+   Space is O(m×n) for the 2D table, reducible to O(n) by keeping
+   only the current and previous rows. We can even do O(min(m,n)) by
+   iterating over the shorter string in the inner loop.
+
+中文: 时间 O(m×n) 无法进一步优化（每个子问题至少算一次）。
+      空间可从 O(m×n) 优化到 O(n)，只保留当前行和上一行。</code></pre>
+</div>
+
+<hr/>
+
+<p><strong>Q2: "How would you reconstruct the actual sequence of edits, not just the count?"</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Backtrack through the DP table from dp[m][n] to dp[0][0]&#10;def reconstruct_ops(word1, word2, dp):&#10;    ops = []&#10;    i, j = len(word1), len(word2)&#10;    while i &gt; 0 or j &gt; 0:&#10;        if i &gt; 0 and j &gt; 0 and word1[i-1] == word2[j-1]:&#10;            i -= 1; j -= 1  # no op, diagonal&#10;        elif i &gt; 0 and j &gt; 0 and dp[i][j] == dp[i-1][j-1] + 1:&#10;            ops.append(f&quot;replace word1[{i-1}] with '{word2[j-1]}'&quot;)&#10;            i -= 1; j -= 1&#10;        elif i &gt; 0 and dp[i][j] == dp[i-1][j] + 1:&#10;            ops.append(f&quot;delete word1[{i-1}]='{word1[i-1]}'&quot;)&#10;            i -= 1&#10;        else:&#10;            ops.append(f&quot;insert '{word2[j-1]}' at position {i}&quot;)&#10;            j -= 1&#10;    return list(reversed(ops))&#10;&#10;# 中文: 从右下角反推，每步判断当前值来自哪个方向（对角/上/左），还原操作序列。">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Backtrack through the DP table from dp[m][n] to dp[0][0]</span>
+<span style="color:#c678dd;">def</span> reconstruct_ops(word1, word2, dp):
+    ops = []
+    i, j = len(word1), len(word2)
+    <span style="color:#c678dd;">while</span> i &gt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">or</span> j &gt; <span style="color:#56b6c2;">0</span>:
+        <span style="color:#c678dd;">if</span> i &gt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">and</span> j &gt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">and</span> word1[i-<span style="color:#56b6c2;">1</span>] == word2[j-<span style="color:#56b6c2;">1</span>]:
+            i -= <span style="color:#56b6c2;">1</span>; j -= <span style="color:#56b6c2;">1</span>  <span style="color:#5c6370;"># no op, diagonal</span>
+        <span style="color:#c678dd;">elif</span> i &gt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">and</span> j &gt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">and</span> dp[i][j] == dp[i-<span style="color:#56b6c2;">1</span>][j-<span style="color:#56b6c2;">1</span>] + <span style="color:#56b6c2;">1</span>:
+            ops.append(f<span style="color:#e5c07b;">"replace word1[{i-1}] with '{word2[j-1]}'"</span>)
+            i -= <span style="color:#56b6c2;">1</span>; j -= <span style="color:#56b6c2;">1</span>
+        <span style="color:#c678dd;">elif</span> i &gt; <span style="color:#56b6c2;">0</span> <span style="color:#c678dd;">and</span> dp[i][j] == dp[i-<span style="color:#56b6c2;">1</span>][j] + <span style="color:#56b6c2;">1</span>:
+            ops.append(f<span style="color:#e5c07b;">"delete word1[{i-1}]='{word1[i-1]}'"</span>)
+            i -= <span style="color:#56b6c2;">1</span>
+        <span style="color:#c678dd;">else</span>:
+            ops.append(f<span style="color:#e5c07b;">"insert '{word2[j-1]}' at position {i}"</span>)
+            j -= <span style="color:#56b6c2;">1</span>
+    <span style="color:#c678dd;">return</span> list(reversed(ops))
+
+<span style="color:#5c6370;"># 中文: 从右下角反推，每步判断当前值来自哪个方向（对角/上/左），还原操作序列。</span></code></pre>
+</div>
+
+<hr/>
+
+<p><strong>Q3: "How does this differ from Longest Common Subsequence (LCS)?"</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="A: They're related! Edit distance and LCS both use a 2D DP table with&#10;   similar recurrence. The connection:&#10;   &#10;   editDistance(s1, s2) = m + n - 2 * LCS(s1, s2)&#10;   &#10;   (Where LCS length tells you the max chars you DON'T need to change)&#10;&#10;中文: 编辑距离和 LCS 本质相通。LCS 越长，需要修改的字符越少。&#10;      如果操作只有 insert/delete（无 replace），公式成立。&#10;      有 replace 时稍有不同，但直觉相同。">Copy</button>
+  <pre><code class="language-text">A: They're related! Edit distance and LCS both use a 2D DP table with
+   similar recurrence. The connection:
+   
+   editDistance(s1, s2) = m + n - 2 * LCS(s1, s2)
+   
+   (Where LCS length tells you the max chars you DON'T need to change)
+
+中文: 编辑距离和 LCS 本质相通。LCS 越长，需要修改的字符越少。
+      如果操作只有 insert/delete（无 replace），公式成立。
+      有 replace 时稍有不同，但直觉相同。</code></pre>
+</div>
+
+<hr/>
+
+<p><strong>Q4: "What if operations have different costs — e.g., insert=2, delete=1, replace=3?"</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# Just change the constants:&#10;def weightedEditDistance(word1, word2, ins=2, dlt=1, rep=3):&#10;    # ...same structure, replace +1 with +ins, +dlt, +rep&#10;    dp[i][j] = min(&#10;        dp[i-1][j-1] + rep,  # replace&#10;        dp[i-1][j]   + dlt,  # delete&#10;        dp[i][j-1]   + ins,  # insert&#10;    )&#10;    &#10;# 中文: 改变代价系数即可。这也是生物信息学中 alignment scoring matrix 的基础。">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># Just change the constants:</span>
+<span style="color:#c678dd;">def</span> weightedEditDistance(word1, word2, ins=<span style="color:#56b6c2;">2</span>, dlt=<span style="color:#56b6c2;">1</span>, rep=<span style="color:#56b6c2;">3</span>):
+    <span style="color:#5c6370;"># ...same structure, replace +1 with +ins, +dlt, +rep</span>
+    dp[i][j] = min(
+        dp[i-<span style="color:#56b6c2;">1</span>][j-<span style="color:#56b6c2;">1</span>] + rep,  <span style="color:#5c6370;"># replace</span>
+        dp[i-<span style="color:#56b6c2;">1</span>][j]   + dlt,  <span style="color:#5c6370;"># delete</span>
+        dp[i][j-<span style="color:#56b6c2;">1</span>]   + ins,  <span style="color:#5c6370;"># insert</span>
+    )
+    
+<span style="color:#5c6370;"># 中文: 改变代价系数即可。这也是生物信息学中 alignment scoring matrix 的基础。</span></code></pre>
+</div>
+
+<hr/>
+
+<p><strong>Q5: "What are some limitations or when would edit distance NOT be the right metric?"</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="A: Edit distance treats every character equally — it doesn't understand&#10;   that 'o' and '0' look similar, or that keyboard proximity matters.&#10;   &#10;   Better alternatives:&#10;   - Jaro-Winkler: optimized for names/short strings (rewards prefix matches)&#10;   - BK-trees: efficient data structure for edit distance lookups at scale&#10;   - Word-level edit distance: for NLP, compare words not characters&#10;   - Phonetic distance: Soundex/Metaphone for audio similarity&#10;&#10;中文: 编辑距离把所有字符等价对待，不考虑视觉相似性、发音相似性或键盘邻近性。&#10;      实际系统通常组合多种相似度指标，而非单用编辑距离。">Copy</button>
+  <pre><code class="language-text">A: Edit distance treats every character equally — it doesn't understand
+   that 'o' and '0' look similar, or that keyboard proximity matters.
+   
+   Better alternatives:
+   - Jaro-Winkler: optimized for names/short strings (rewards prefix matches)
+   - BK-trees: efficient data structure for edit distance lookups at scale
+   - Word-level edit distance: for NLP, compare words not characters
+   - Phonetic distance: Soundex/Metaphone for audio similarity
+
+中文: 编辑距离把所有字符等价对待，不考虑视觉相似性、发音相似性或键盘邻近性。
+      实际系统通常组合多种相似度指标，而非单用编辑距离。</code></pre>
+</div>
+
+<hr/>
+
+<h2>Step 4: Cross-Check / 交叉验证</h2>
+
+<p><strong>中文：</strong> 验证 ASCII 表格与代码实现一致性。</p>
+
+<p><strong>English:</strong> Verifying the ASCII diagram matches the code.</p>
+
+<p><strong>Input:</strong> <code>word1 = "horse"</code>, <code>word2 = "ros"</code></p>
+
+<p><strong>Tracing <code>dp[5][3]</code> through the DP table diagram:</strong></p>
+<div class="diagram-block">       ""   r    o    s
+  ""  [ 0][ 1][ 2][ 3]
+  h   [ 1][ 1][ 2][ 3]
+  o   [ 2][ 2][ 1][ 2]
+  r   [ 3][ 2][ 2][ 2]
+  s   [ 4][ 3][ 3][ 2]
+  e   [ 5][ 4][ 4][ 3]  ← dp[5][3] = 3</div>
+
+<p><strong>Tracing <code>dp[5][3]</code> through the code:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# i=5 (word1[4]='e'), j=3 (word2[2]='s')&#10;# 'e' != 's' → take minimum of:&#10;#   dp[4][2] (replace) = 3&#10;#   dp[4][3] (delete)  = 2   ← minimum&#10;#   dp[5][2] (insert)  = 4&#10;# dp[5][3] = 1 + 2 = 3  ✓&#10;&#10;# Verify dp[4][3]: i=4 (word1[3]='s'), j=3 (word2[2]='s')&#10;# 's' == 's' → dp[3][2] = 2  ✓&#10;&#10;# Verify dp[3][2]: i=3 (word1[2]='r'), j=2 (word2[1]='o')&#10;# 'r' != 'o' → 1 + min(dp[2][1]=2, dp[2][2]=1, dp[3][1]=2) = 1+1 = 2  ✓">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># i=5 (word1[4]='e'), j=3 (word2[2]='s')</span>
+<span style="color:#5c6370;"># 'e' != 's' → take minimum of:</span>
+<span style="color:#5c6370;">#   dp[4][2] (replace) = 3</span>
+<span style="color:#5c6370;">#   dp[4][3] (delete)  = 2   ← minimum</span>
+<span style="color:#5c6370;">#   dp[5][2] (insert)  = 4</span>
+<span style="color:#5c6370;"># dp[5][3] = 1 + 2 = 3  ✓</span>
+
+<span style="color:#5c6370;"># Verify dp[4][3]: i=4 (word1[3]='s'), j=3 (word2[2]='s')</span>
+<span style="color:#5c6370;"># 's' == 's' → dp[3][2] = 2  ✓</span>
+
+<span style="color:#5c6370;"># Verify dp[3][2]: i=3 (word1[2]='r'), j=2 (word2[1]='o')</span>
+<span style="color:#5c6370;"># 'r' != 'o' → 1 + min(dp[2][1]=2, dp[2][2]=1, dp[3][1]=2) = 1+1 = 2  ✓</span></code></pre>
+</div>
+
+<p><strong>Result:</strong> Diagram and code agree — <code>dp[5][3] = 3</code>. ✓</p>
+
+<hr/>
+
+<h2>Summary / 总结</h2>
+
+<p><strong>中文要点：</strong></p>
+<ol><li><strong>子问题定义</strong>：<code>dp[i][j]</code> = 将 <code>word1[:i]</code> 变成 <code>word2[:j]</code> 的最少操作数</li><li><strong>状态转移</strong>：字符相同取对角，字符不同取三方向最小值 +1</li><li><strong>三种操作</strong>：replace（对角）、delete（上方）、insert（左方）</li><li><strong>空间优化</strong>：O(m×n) → O(n)，只保留两行</li><li><strong>现实意义</strong>：git diff、拼写检查、DNA 比对、模糊搜索都用这个思想</li></ol>
+
+<p><strong>English Takeaways:</strong></p>
+<ol><li><strong>Subproblem:</strong> <code>dp[i][j]</code> = min ops to transform <code>word1[:i]</code> → <code>word2[:j]</code></li><li><strong>Transition:</strong> Match → take diagonal; mismatch → take min of 3 neighbors + 1</li><li><strong>Three ops map to three directions:</strong> replace=diagonal, delete=up, insert=left</li><li><strong>Space optimization:</strong> Compress 2D table to 1 row with a <code>prev</code> variable</li><li><strong>Real-world:</strong> This algorithm (or its variants) runs inside tools you use every day</li></ol>
+
+<p><strong>Pattern to remember / 记忆口诀:</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="两串对比找距离，dp 表格填满你&#10;字符相同取对角，字符不同三选一&#10;删插替换各 +1，右下角就是答案">Copy</button>
+  <pre><code class="language-text">两串对比找距离，dp 表格填满你
+字符相同取对角，字符不同三选一
+删插替换各 +1，右下角就是答案</code></pre>
+</div>
+
+<hr/>
+
+<p><em>📬 byte-by-byte · Day 141 · Saturday Deep Dive</em></p>
+<p><em>🔗 Day 141 · Saturday Deep Dive</em></p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
