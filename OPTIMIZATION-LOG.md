@@ -1133,3 +1133,21 @@ _Report-only run — no code changes made._
 
 ### Note
 - CLI `openclaw cron list --json` runs under correct node (v25.9.0) once nvm is sourced; prefixes config warnings before JSON (strip to first `{`).
+
+## 2026-10-25 Optimization Run
+
+### Issues Found
+
+**P0 Critical:**
+- **5-day delivery outage (Oct 19–23)** — email-send-log shows MISSED for Oct 19, 20, 21, 22, 23. Root cause: `byte-by-byte weekday` cron is in `status=error` with `isolated agent setup timed out before runner start`. This is the same isolated-agent startup timeout flagged in the Oct 23 optimizer run (commit bc4db9b). Delivery RESUMED Oct 24 & Oct 25 (both OK), so pipeline is currently recovered, but the weekday cron still carries an error state and may fail again.
+
+**P1 Quality:**
+- **Day 141 generated twice** — git log shows two "Day 141" commits (Oct 24 `e094ea3` and Oct 25 `4e7b06f`). The Oct 24 run appears to be a catch-up/backup send after the outage that reused the Day 141 label, then the Oct 25 regular run also labeled Day 141. Day counter did not advance between Oct 24 and Oct 25 (state.currentDay=141, lastSentDate=2026-10-24). Risk: subscribers may have received duplicate/near-duplicate Day 141 content, or a day was effectively skipped in the counter. Worth manual verification of what landed in subscribers' inboxes.
+
+**P2 Maintenance:**
+- Weekday cron `isolated agent setup timed out before runner start` recurs across runs — suggests an environmental/startup-reliability issue with isolated-agent spin-up rather than content code. The working fallback (late-send/backup-send/review-and-send) is what restored delivery. Consider hardening the primary weekday path or promoting a more reliable send path as primary.
+
+### Metrics
+- Delivery rate (7d): 2/7 (Oct 24, 25 OK; Oct 19–23 MISSED)
+- Cron errors: `byte-by-byte weekday` = error (isolated agent setup timed out before runner start); all other byte jobs = ok
+- State: currentDay=141, lastSentDate=2026-10-24, lastReviewDay=140
