@@ -5,8 +5,526 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 26 Oct 2026 15:13:11 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 27 Oct 2026 15:12:46 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-10-27</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-10-27</guid>
+      <pubDate>Tue, 27 Oct 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Expert Synthesis Day 143</h2>
+
+<p><strong>高可用三角：限流 + 缓存 + 一致性 — 综合实战</strong></p>
+<p><strong>The HA Triangle: Rate Limiting + Caching + Consistency — Expert Synthesis</strong></p>
+
+<hr/>
+
+<h2>想象你是首席架构师 / Imagine You&#x27;re the Principal Architect</h2>
+
+<p>你的 VP 说：&quot;我们 Black Friday 要扛 50x 流量，不能挂。&quot;</p>
+
+<p>你脑海里立刻出现三个武器：<strong>限流、缓存、一致性策略</strong>。但真正的挑战不是每个独立用，而是<strong>三者如何协同，又如何相互冲突</strong>。</p>
+
+<p>Your VP says: &quot;We can&#x27;t go down on Black Friday — expect 50x traffic.&quot; Your three weapons: rate limiting, caching, and consistency. The real challenge is how they interact — and when they fight each other.</p>
+
+<hr/>
+
+<h2>ASCII 架构图</h2>
+
+<pre><code>
+Client
+  │
+  ▼
+[CDN / Edge Cache]  ← 静态资源 + HTML Shell
+  │
+  ▼
+[API Gateway]
+  ├─ Rate Limiter (Token Bucket / Sliding Window)
+  └─ Auth / JWT verify
+       │
+       ▼
+  [Application Layer]
+       ├─ Redis Cache (read-through)  ← 热点数据，TTL 5-60s
+       └─ DB (PostgreSQL / DynamoDB)
+            ├─ Read Replica ← 分流读流量
+            └─ Write Primary ← 强一致写
+</code></pre>
+
+<hr/>
+
+<h2>三者协同：理想与现实 / The Ideal vs Reality</h2>
+
+<p><strong>限流（Rate Limiting）→ 保护后端</strong></p>
+<p>- Token Bucket：允许短时 burst，适合 API</p>
+<p>- Sliding Window：更公平，适合 per-user 限流</p>
+<p>- ⚠️ 陷阱：分布式限流需要用 Redis Lua 脚本做原子操作，否则多实例会超限</p>
+
+<p><strong>缓存（Caching）→ 降低延迟和 DB 压力</strong></p>
+<p>- Cache-aside（Lazy Load）：cache miss 才查 DB，简单但首次慢</p>
+<p>- Write-through：写 DB 同时更新缓存，一致性好但写慢</p>
+<p>- ⚠️ 陷阱：Cache stampede — 热点 key 过期时几千请求同时穿透 → 用 mutex lock + 概率过期（jitter TTL）</p>
+
+<p><strong>一致性（Consistency）→ 正确性保证</strong></p>
+<p>- 读己所写（Read Your Writes）：90% 业务只需要这个，不需要全局强一致</p>
+<p>- 最终一致（Eventual）：评论、点赞、浏览量 — 脏读无所谓</p>
+<p>- 线性一致（Linearizable）：库存扣减、支付 — 必须用分布式锁或 CAS</p>
+
+<hr/>
+
+<h2>真实冲突案例 / Real Conflicts</h2>
+
+<p><strong>案例：商品秒杀</strong></p>
+<pre><code>
+问题：10万人同时抢 1 个商品
+❌ 方案1：读缓存判断 → 超卖（缓存不一致）
+❌ 方案2：每次查 DB → DB 崩溃
+✅ 方案3：
+  - 限流：前端 + 网关削峰，只放 1000 QPS 进来
+  - Redis DECR 原子操作：库存 &gt; 0 才进入 DB
+  - DB 最终写入：用乐观锁 (version) 防止并发超卖
+</code></pre>
+
+<hr/>
+
+<h2>常见错误 / Common Mistakes</h2>
+
+<p>❌ 只做单层缓存，没有多级降级（CDN → Redis → DB）</p>
+<p>❌ 缓存 key 粒度太粗，一个 key 更新就让所有用户缓存失效（惊群）</p>
+<p>❌ 限流在 LB 上做，而不是在每个服务实例上做，导致实例间不均衡</p>
+
+<p>✅ <strong>Senior 答法</strong>：先问&quot;这个数据的一致性要求是什么？&quot;再决定缓存策略</p>
+
+<hr/>
+
+<h2>关键洞察 / Key Insight</h2>
+
+<p>&gt; <strong>限流 = 系统的免疫系统；缓存 = 系统的记忆；一致性 = 系统的诚信。三者失衡，系统必出问题。</strong></p>
+<p>&gt; Rate limiting is your immune system; caching is your memory; consistency is your integrity. Imbalance any one of them and the system breaks.</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [AWS Architecture: Cache Strategies](https://docs.aws.amazon.com/whitepapers/latest/database-caching-strategies-using-redis/caching-patterns.html)</p>
+<p>- [Cloudflare: How we handle Black Friday traffic](https://blog.cloudflare.com/traffic-spikes-and-ddos-protection/)</p>
+<p>- [Martin Fowler: Patterns of Distributed Systems — Two-Phase Locking](https://martinfowler.com/articles/patterns-of-distributed-systems/two-phase-locking.html)</p>
+
+<h2>🧒 ELI5</h2>
+<p>超市收银台（限流）控制人流，仓库有备货（缓存）不用每次去总仓拿，账本（一致性）确保每笔买卖都记对。三件事都做好，超市才不会在促销日崩掉。</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 143 | #62 Unique Paths [Medium] — 2-D Dynamic Programming</h2>
+
+<hr/>
+
+<h2>🧩 新模式 / New Pattern: 二维动态规划模式 (2-D Dynamic Programming)</h2>
+<p>📍 This block: 11 problems</p>
+
+<p><strong>什么时候用 / When to use:</strong> 网格路径、字符串匹配、背包问题 — 当两个维度的子问题都影响当前结果时</p>
+
+<p><strong>识别信号 / Signals:</strong> grid paths, edit distance, longest common subsequence, knapsack, matrix, &quot;how many ways&quot;, &quot;min cost across grid&quot;</p>
+
+<p><strong>通用模版 / Template:</strong></p>
+<pre><code>
+dp = [[0] * (m+1) for _ in range(n+1)]
+for i in range(1, n+1):
+    for j in range(1, m+1):
+        dp[i][j] = TRANSITION(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])
+return dp[n][m]
+</code></pre>
+
+<p><strong>核心洞察 / Key Insight:</strong> 二维表格填充 — 画出表格手动填几格就能发现转移规律。先推导几个小例子，转移方程自然浮现。</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 [LeetCode #62 - Unique Paths](https://leetcode.com/problems/unique-paths/) 🟡 Medium</p>
+<p>📹 [NeetCode Solution](https://neetcode.io/problems/count-paths)</p>
+
+<p><strong>真实类比 / Real-world analogy:</strong></p>
+<p>想象你在 Google Maps 里从左上角走到右下角，只能向右或向下走。有多少条不同路线？这不只是数学游戏 — 机器人路径规划、包裹配送路由优化都用到同样的思路。</p>
+
+<p>Imagine you&#x27;re in Google Maps, moving from top-left to bottom-right, only right or down. How many routes exist? This models robot path planning and delivery route optimization.</p>
+
+<hr/>
+
+<h2>映射到模版 / Map to Template</h2>
+
+<pre><code>
+dp[i][j] = &quot;到达 (i,j) 的路径数&quot;
+
+转移：dp[i][j] = dp[i-1][j] + dp[i][j-1]
+     (从上面来) + (从左边来)
+
+Base case: dp[i][1] = 1, dp[1][j] = 1  (第一行/列只有一条路)
+</code></pre>
+
+<p>手动填 3×3 表格:</p>
+<pre><code>
+    c1  c2  c3
+r1 [ 1,  1,  1]
+r2 [ 1,  2,  3]
+r3 [ 1,  3,  6]
+</code></pre>
+<p>规律立刻显现：每格 = 上面 + 左边。</p>
+
+<hr/>
+
+<h2>Python 解法 / Solution</h2>
+
+<pre><code>
+def uniquePaths(m: int, n: int) -&gt; int:
+    # dp[i][j] = number of paths to reach cell (i, j)
+    dp = [[1] * n for _ in range(m)]
+    
+    # First row and first col are all 1s (only one way to reach them)
+    for i in range(1, m):
+        for j in range(1, n):
+            dp[i][j] = dp[i-1][j] + dp[i][j-1]
+    
+    return dp[m-1][n-1]
+
+# Trace: m=3, n=3
+# Initial: [[1,1,1],[1,0,0],[1,0,0]]
+# i=1,j=1: dp[1][1] = dp[0][1]+dp[1][0] = 1+1 = 2
+# i=1,j=2: dp[1][2] = dp[0][2]+dp[1][1] = 1+2 = 3
+# i=2,j=1: dp[2][1] = dp[1][1]+dp[2][0] = 2+1 = 3
+# i=2,j=2: dp[2][2] = dp[1][2]+dp[2][1] = 3+3 = 6
+# Output: 6 ✓
+</code></pre>
+
+<p><strong>空间优化 / Space Optimization (O(n)):</strong></p>
+<pre><code>
+def uniquePaths(m: int, n: int) -&gt; int:
+    # Only need the previous row — rolling array trick
+    row = [1] * n
+    for i in range(1, m):
+        for j in range(1, n):
+            row[j] += row[j-1]  # row[j] = old row[j] + row[j-1]
+    return row[-1]
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(m × n)</p>
+<p>- Space: O(m × n) → O(n) with rolling array</p>
+
+<hr/>
+
+<h2>举一反三 / Connect the Pattern</h2>
+
+<p>本 block 11 题都是 2-D DP 的变体，转移方程会越来越复杂：</p>
+<p>- <strong>明天 #1143 LCS</strong>: <code>dp[i][j] = dp[i-1][j-1]+1</code> if match, else <code>max(dp[i-1][j], dp[i][j-1])</code></p>
+<p>- <strong>#72 Edit Distance</strong>: 三向转移 <code>min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+replace)</code></p>
+<p>- <strong>#312 Burst Balloons</strong>: 区间 DP，枚举最后一个戳破的气球</p>
+
+<p>每道题的突破口：<strong>先手绘一个小 case 的 dp 表格</strong>。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [LeetCode #62 Official](https://leetcode.com/problems/unique-paths/)</p>
+<p>- [NeetCode: Unique Paths Video](https://neetcode.io/problems/count-paths)</p>
+<p>- [CP-Algorithms: DP on Grids](https://cp-algorithms.com/dynamic_programming/dp-on-broken-profile.html)</p>
+
+<h2>🧒 ELI5</h2>
+<p>你在方格纸左上角，要走到右下角，只能往右或往下。每格的走法数 = 上面那格 + 左边那格的走法加起来。就像数叉路口有几条路汇进来。</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 143 | Expert Synthesis</h2>
+
+<p><strong>高级场景：你要重构一个核心系统，但没人给你时间</strong></p>
+<p><strong>Senior Scenario: You need to refactor a critical system but nobody will give you time</strong></p>
+
+<hr/>
+
+<h2>为什么这道题难 / Why This Question Is Hard</h2>
+
+<p>这不是一道普通的&quot;怎么处理冲突&quot;题。它考查的是：<strong>在没有授权的情况下，如何推动技术必要性与业务优先级之间的博弈</strong>。Staff+ 工程师每周都面对这个。</p>
+
+<p>This isn&#x27;t a standard conflict question. It tests: <strong>how do you drive technical necessity against business priority without top-down authority?</strong> Staff+ engineers face this weekly.</p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<p>&gt; &quot;你发现核心支付服务有严重的技术债，任何新功能都要花 3x 时间。但 PM 说 Q3 有 5 个 feature 要上，没有时间重构。你怎么做？&quot;</p>
+
+<hr/>
+
+<h2>STAR Framework</h2>
+
+<p><strong>Situation（背景）:</strong></p>
+<p>在某次 sprint，我意识到我们的 checkout service 已经积累了 4 年的 spaghetti code — 没有单元测试，所有状态都耦合在一个 God Object 里，每次改动都要同时改 8 个文件。</p>
+
+<p><strong>Task（任务）:</strong></p>
+<p>我需要在不阻塞 Q3 roadmap 的情况下，让团队和 PM 认识到这个问题的代价，并争取到合理的重构时间。</p>
+
+<p><strong>Action（行动）:</strong></p>
+<p>1. <strong>量化技术债成本</strong>：我统计了过去 3 个月的 bug rate 和开发速度 — 每个新 feature 平均多花 40% 时间，有 60% 的 hotfix 来自这个模块。</p>
+<p>2. <strong>翻译成业务语言</strong>：不说&quot;代码烂&quot;，说&quot;这模块每季度让我们少交付 2 个 feature&quot;。</p>
+<p>3. <strong>提出&quot;嵌入式重构&quot;方案</strong>：不要求独立 sprint，而是在每个 feature 旁边带着做 — Strangler Fig Pattern，逐步替换而不是大爆炸。</p>
+<p>4. <strong>找到盟友</strong>：先说服 TL 和 EM，再一起去 PM 谈。</p>
+<p>5. <strong>设置检查点</strong>：每两周 demo 一次进展，确保重构和 feature 同步推进。</p>
+
+<p><strong>Result（结果）:</strong></p>
+<p>PM 同意每个 sprint 留出 20% 的时间做&quot;连续改进&quot;。3 个月后，bug rate 降低了 45%，新 feature 交付速度提高了 30%。</p>
+
+<hr/>
+
+<h2>❌ Bad Answer vs ✅ Good Answer</h2>
+
+<p>❌ &quot;我告诉 PM 技术债很严重，但他们不听，所以我只能继续做 feature。&quot;</p>
+<p>→ 被动，无量化，无影响力。</p>
+
+<p>✅ &quot;我把技术债翻译成业务影响，提出嵌入式方案，找到共同利益点，推动渐进式改善。&quot;</p>
+<p>→ 主动、数据驱动、展示了跨职能影响力。</p>
+
+<hr/>
+
+<h2>Senior/Staff Tips</h2>
+
+<p>- <strong>数字是你的武器</strong>：开发速度、bug 率、oncall 频率 — 把技术问题量化成时间和金钱</p>
+<p>- <strong>Strangler Fig &gt; Big Bang</strong>：永远不要说&quot;我们要停工 3 个月重写&quot;</p>
+<p>- <strong>培养 PM 信任</strong>：先按时交付几个 feature，再提技术改进，你的话才有分量</p>
+<p>- <strong>写 ADR</strong>：把技术决定记录下来（Architecture Decision Records），未来有据可查</p>
+
+<hr/>
+
+<h2>Key Takeaways / 核心要点</h2>
+
+<p>1. 量化技术债 → 业务语言</p>
+<p>2. 嵌入式重构（Strangler Fig），不做大爆炸</p>
+<p>3. 先找盟友，再找决策者</p>
+<p>4. 用数据证明投资回报</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Martin Fowler: Strangler Fig Application](https://martinfowler.com/bliki/StranglerFigApplication.html)</p>
+<p>- [Google SRE Book: Managing Technical Debt](https://sre.google/workbook/managing-incidents/)</p>
+<p>- [Will Larson: Staff Engineer Book (Excerpt)](https://staffeng.com/guides/staff-projects)</p>
+
+<h2>🧒 ELI5</h2>
+<p>就像家里下水道堵了，你不能停水一个月大修，但可以每周修一段管道。先告诉大家&quot;不修就越来越慢&quot;，然后边住边修，才是成年人的方法。</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 143 | Expert Synthesis: Python Memory Model Deep Dive</h2>
+
+<p><strong>Python 内存模型与对象生命周期 — 从引用计数到 GC</strong></p>
+<p><strong>Python Memory Model &amp; Object Lifecycle — From Refcount to GC</strong></p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个长跑 Python 服务（Celery worker / FastAPI），上线几小时后内存稳步上涨。你打开 <code>top</code>，发现 RSS 只增不减。<strong>内存泄漏，还是正常的？</strong></p>
+
+<p>You deploy a long-running Python service. Hours later, memory steadily climbs. Is it a leak — or just Python being Python?</p>
+
+<hr/>
+
+<h2>Python 内存的三层模型 / Three-Layer Model</h2>
+
+<pre><code>
+Layer 1: Python 对象层 (PyObject)
+  └─ 每个对象有 ob_refcnt (引用计数)
+  └─ refcnt = 0 → 立即释放
+
+Layer 2: Python 内存分配器 (pymalloc)
+  └─ 小对象 (≤512B) → pymalloc arena
+  └─ 大对象 → malloc → OS
+
+Layer 3: OS 层
+  └─ Python 向 OS 申请内存 → 可能不归还
+  └─ RSS 上涨不代表泄漏！
+</code></pre>
+
+<p><strong>关键洞察</strong>：Python 释放了对象，但 pymalloc arena 不一定还给 OS。RSS 上升 ≠ 内存泄漏。</p>
+
+<hr/>
+
+<h2>引用计数 + 循环 GC / Refcount + Cyclic GC</h2>
+
+<pre><code>
+import gc
+import sys
+
+# 引用计数示例
+a = [1, 2, 3]
+print(sys.getrefcount(a))  # 2 (a + getrefcount 临时引用)
+
+b = a
+print(sys.getrefcount(a))  # 3
+
+del b
+print(sys.getrefcount(a))  # 2
+
+# 循环引用 — refcount 永不归零
+class Node:
+    def __init__(self):
+        self.next = None
+
+n1 = Node()
+n2 = Node()
+n1.next = n2
+n2.next = n1  # 循环引用！
+del n1, n2    # refcount 仍 &gt; 0，靠 GC 清理
+
+# 手动触发 GC
+gc.collect()  # 清理循环引用
+print(gc.get_count())  # (gen0, gen1, gen2) 各代计数
+</code></pre>
+
+<hr/>
+
+<h2>内存泄漏的真实原因 / Real Causes of Memory Leaks</h2>
+
+<pre><code>
+# ❌ 常见泄漏 1: 全局缓存无上限
+_cache = {}
+def get_user(user_id):
+    if user_id not in _cache:
+        _cache[user_id] = fetch_from_db(user_id)  # 永远增长！
+    return _cache[user_id]
+
+# ✅ 修复: 使用 LRU Cache
+from functools import lru_cache
+@lru_cache(maxsize=1000)
+def get_user(user_id):
+    return fetch_from_db(user_id)
+
+# ❌ 常见泄漏 2: 未关闭的资源
+def bad():
+    f = open(&quot;large_file.txt&quot;)
+    data = f.read()
+    # f 没关，但文件描述符泄漏
+    return data
+
+# ✅ 修复: context manager
+def good():
+    with open(&quot;large_file.txt&quot;) as f:
+        return f.read()
+
+# ❌ 常见泄漏 3: 线程局部变量
+import threading
+local = threading.local()
+def handler():
+    local.big_object = [0] * 10_000_000  # 每个线程都持有，不清理
+</code></pre>
+
+<hr/>
+
+<h2>诊断工具 / Diagnostic Tools</h2>
+
+<pre><code>
+# tracemalloc — 追踪内存分配来源
+import tracemalloc
+
+tracemalloc.start()
+# ... 运行你的代码 ...
+snapshot = tracemalloc.take_snapshot()
+top_stats = snapshot.statistics(&#x27;lineno&#x27;)
+for stat in top_stats[:3]:
+    print(stat)
+
+# objgraph — 可视化对象引用
+# pip install objgraph
+import objgraph
+objgraph.show_growth(limit=5)       # 增长最快的对象类型
+objgraph.show_backrefs(some_obj)    # 谁引用了这个对象
+</code></pre>
+
+<hr/>
+
+<h2>Senior 级别总结 / Senior Takeaways</h2>
+
+<p>| 现象 | 原因 | 解决 |</p>
+<p>|------|------|------|</p>
+<p>| RSS 缓慢增长 | pymalloc 持有 arena | 正常，用 <code>MALLOC_TRIM_THRESHOLD_</code> 调优 |</p>
+<p>| RSS 持续增长 | 真正的对象泄漏 | tracemalloc + objgraph 定位 |</p>
+<p>| CPU GC pause | 循环引用太多 | 减少循环引用，用 weakref |</p>
+<p>| 多进程内存高 | 每个进程有独立堆 | 用 copy-on-write 友好的数据结构 |</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Python Docs: gc module](https://docs.python.org/3/library/gc.html)</p>
+<p>- [Python Docs: tracemalloc](https://docs.python.org/3/library/tracemalloc.html)</p>
+<p>- [Real Python: Memory Management in Python](https://realpython.com/python-memory-management/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>Python 就像一个仓库工人，用完的箱子（对象）他会数有多少人还要用。没人要了就扔掉。但有时候两个箱子互相说&quot;我要等你&quot;，死锁了 — GC 是专门来解决这种死锁的清洁工。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 143 | News Roundup — October 27, 2026</h2>
+
+<hr/>
+
+<h2>本周 AI 大事件 / This Week in AI</h2>
+
+<hr/>
+
+<h3>🔬 Story 1: OpenAI 宣布 AI 完成三项科学重大突破</h3>
+
+<p><strong>OpenAI Claims Three Major Scientific Breakthroughs</strong></p>
+
+<p>10 月 26 日，OpenAI 宣布其 AI 模型在数学、物理和计算机科学领域完成了三项重大发现。</p>
+
+<p><strong>数学 / Math:</strong> AI 证明了&quot;局部光滑猜想&quot;（local smoothing conjecture）在所有维度上成立，并由此解决了著名的 Kakeya 猜想和 Stein&#x27;s restriction 猜想。证明通过了 Lean 形式化验证（10 月 19 日完成）。</p>
+
+<p><strong>物理 / Physics:</strong> AI 为四维时空中的某些相互作用量子场论（包括量子色动力学 QCD）给出了数学上严格的存在性证明，据报道这是理论物理数十年未解的难题。诺贝尔物理学奖得主 David Gross 正领衔一个专家组对相关成果进行独立审查。</p>
+
+<p><strong>背景：</strong> 在此之前，OpenAI 于 10 月 6 日在 GitHub 上公开了据报道 719 篇 AI 生成的数学论文，涉及黎曼猜想等未解问题的&quot;部分进展&quot;。</p>
+
+<p>来源：[OpenAI Blog](https://openai.com/index/building-scientific-understanding-with-academic-communities/) | [AA News](https://www.aa.com.tr/en/europe/openai-announces-3-ai-generated-discoveries-in-mathematics-computer-science-physics/4102636)</p>
+
+<hr/>
+
+<h3>⚡ Story 2: Anthropic 发布 Claude Haiku 5.5 — 90% 降价</h3>
+
+<p><strong>Anthropic Releases Claude Haiku 5.5 — Up to 90% Cost Reduction</strong></p>
+
+<p>10 月 7 日，Anthropic 发布了 Claude Haiku 5.5，这是 Claude 5.x 家族中定位高性价比的模型（同月还发布了 Opus 5.5 和 Sonnet 5.5）。</p>
+
+<p>关键特点：</p>
+<p>- 据报道 API 价格比前代 Haiku 4.5 低 75-90%</p>
+<p>- 据报道速度提升约 30%</p>
+<p>- 多模态支持（视觉 + 文本）</p>
+<p>- 在 computer-use 基准测试中表现提升</p>
+<p>- 可在 AWS、Google Cloud、Azure 上使用</p>
+
+<p><strong>工程视角</strong>：Haiku 5.5 主打&quot;高频、低成本&quot;场景，例如文档提取、代码注释、实时聊天回复 — 这类场景用 Opus 级别模型成本不可接受。</p>
+
+<p>来源：[Anthropic](https://www.anthropic.com/claude-haiku-5-5) | [MLQ.ai](https://mlq.ai/news/anthropic-launches-claude-haiku-55-with-90-lower-api-prices/)</p>
+
+<hr/>
+
+<h3>🤖 Story 3: 智能体 AI 爆发 — Gartner 预测 2030 年 50% 企业 IT 用 AI Agent</h3>
+
+<p><strong>Agentic AI Surge — Gartner Predicts 50% of Enterprise IT Operations Use AI Agents by 2030</strong></p>
+
+<p>Gartner 10 月发布报告，预测到 2030 年有 50% 的组织将在 IT 运营中部署能自主完成复杂任务的 AI Agent，而 2026 年这一比例接近于零。</p>
+
+<p>本月值得关注的 Agent 产品：</p>
+<p>- <strong>Microsoft Copilot</strong>：新增 &quot;Cowork&quot;（委派任务）、&quot;Code&quot;（构建应用）、&quot;Autopilot&quot;（后台 Agent）三大功能</p>
+<p>- <strong>Genspark Claw</strong>：持久化 AI 助手，可跨应用完成多步骤工作流</p>
+<p>- <strong>FTC 介入</strong>：美国联邦贸易委员会启动行业调查，审查自主 AI Agent 的潜在消费者风险</p>
+
+<p><strong>工程师需要关注什么：</strong> Agentic AI 对 API 设计提出新要求 — 幂等操作、明确的中止条件、审计日志，这些在传统 REST API 里往往是可选的，在 Agent 时代变成必须的。</p>
+
+<p>来源：[Gartner Press Release](https://www.gartner.com/en/newsroom/press-releases/2026-10-26-gartner-identifies-the-top-ai-trends-in-infrastructure-and-it-operations-for-2027) | [Emergent.sh roundup](https://emergent.sh/news/week-s-top-5-ai-stories-october-2026-roundup)</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>这周 AI 界发生了三件大事：一台 AI 解开了数学家几十年没解出的难题（但大人们还在核实是否真的对）；另一个 AI 变得更便宜更快了（像手机套餐降价）；还有一份报告说，再过几年会有一半的大公司用 AI 来自己管理自己的电脑系统。</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-10-26</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

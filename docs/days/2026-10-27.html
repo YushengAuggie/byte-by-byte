@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-10-27</title>
+  <meta name="description" content="byte-by-byte daily lessons for Tuesday, October 27, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Tuesday, October 27, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-10-27.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-10-26.html" style="color:var(--text2)">← 2026-10-26</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-10-27</span>
+    <h1>Tuesday, October 27, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-10-26.html" class="day-nav-btn">← 2026-10-26</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Expert Synthesis Day 143</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>🏗️ 系统设计 / System Design — Expert Synthesis Day 143</h1>
+
+<p><strong>高可用三角：限流 + 缓存 + 一致性 — 综合实战</strong></p>
+<p><strong>The HA Triangle: Rate Limiting + Caching + Consistency — Expert Synthesis</strong></p>
+
+<hr/>
+
+<h2>想象你是首席架构师 / Imagine You're the Principal Architect</h2>
+
+<p>你的 VP 说："我们 Black Friday 要扛 50x 流量，不能挂。"</p>
+
+<p>你脑海里立刻出现三个武器：<strong>限流、缓存、一致性策略</strong>。但真正的挑战不是每个独立用，而是<strong>三者如何协同，又如何相互冲突</strong>。</p>
+
+<p>Your VP says: "We can't go down on Black Friday — expect 50x traffic." Your three weapons: rate limiting, caching, and consistency. The real challenge is how they interact — and when they fight each other.</p>
+
+<hr/>
+
+<h2>ASCII 架构图</h2>
+
+<div class="diagram-block">Client
+  │
+  ▼
+[CDN / Edge Cache]  ← 静态资源 + HTML Shell
+  │
+  ▼
+[API Gateway]
+  ├─ Rate Limiter (Token Bucket / Sliding Window)
+  └─ Auth / JWT verify
+       │
+       ▼
+  [Application Layer]
+       ├─ Redis Cache (read-through)  ← 热点数据，TTL 5-60s
+       └─ DB (PostgreSQL / DynamoDB)
+            ├─ Read Replica ← 分流读流量
+            └─ Write Primary ← 强一致写</div>
+
+<hr/>
+
+<h2>三者协同：理想与现实 / The Ideal vs Reality</h2>
+
+<p><strong>限流（Rate Limiting）→ 保护后端</strong></p>
+<ul><li>Token Bucket：允许短时 burst，适合 API</li><li>Sliding Window：更公平，适合 per-user 限流</li><li>⚠️ 陷阱：分布式限流需要用 Redis Lua 脚本做原子操作，否则多实例会超限</li></ul>
+
+<p><strong>缓存（Caching）→ 降低延迟和 DB 压力</strong></p>
+<ul><li>Cache-aside（Lazy Load）：cache miss 才查 DB，简单但首次慢</li><li>Write-through：写 DB 同时更新缓存，一致性好但写慢</li><li>⚠️ 陷阱：Cache stampede — 热点 key 过期时几千请求同时穿透 → 用 mutex lock + 概率过期（jitter TTL）</li></ul>
+
+<p><strong>一致性（Consistency）→ 正确性保证</strong></p>
+<ul><li>读己所写（Read Your Writes）：90% 业务只需要这个，不需要全局强一致</li><li>最终一致（Eventual）：评论、点赞、浏览量 — 脏读无所谓</li><li>线性一致（Linearizable）：库存扣减、支付 — 必须用分布式锁或 CAS</li></ul>
+
+<hr/>
+
+<h2>真实冲突案例 / Real Conflicts</h2>
+
+<p><strong>案例：商品秒杀</strong></p>
+<div class="diagram-block">问题：10万人同时抢 1 个商品
+❌ 方案1：读缓存判断 → 超卖（缓存不一致）
+❌ 方案2：每次查 DB → DB 崩溃
+✅ 方案3：
+  - 限流：前端 + 网关削峰，只放 1000 QPS 进来
+  - Redis DECR 原子操作：库存 &gt; 0 才进入 DB
+  - DB 最终写入：用乐观锁 (version) 防止并发超卖</div>
+
+<hr/>
+
+<h2>常见错误 / Common Mistakes</h2>
+
+<div class="diagram-block">❌ 只做单层缓存，没有多级降级（CDN → Redis → DB）</div>
+<p>❌ 缓存 key 粒度太粗，一个 key 更新就让所有用户缓存失效（惊群）</p>
+<p>❌ 限流在 LB 上做，而不是在每个服务实例上做，导致实例间不均衡</p>
+
+<p>✅ <strong>Senior 答法</strong>：先问"这个数据的一致性要求是什么？"再决定缓存策略</p>
+
+<hr/>
+
+<h2>关键洞察 / Key Insight</h2>
+
+<blockquote><strong>限流 = 系统的免疫系统；缓存 = 系统的记忆；一致性 = 系统的诚信。三者失衡，系统必出问题。</strong></blockquote>
+<blockquote>Rate limiting is your immune system; caching is your memory; consistency is your integrity. Imbalance any one of them and the system breaks.</blockquote>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://docs.aws.amazon.com/whitepapers/latest/database-caching-strategies-using-redis/caching-patterns.html">AWS Architecture: Cache Strategies</a></li><li><a href="https://blog.cloudflare.com/traffic-spikes-and-ddos-protection/">Cloudflare: How we handle Black Friday traffic</a></li><li><a href="https://martinfowler.com/articles/patterns-of-distributed-systems/two-phase-locking.html">Martin Fowler: Patterns of Distributed Systems — Two-Phase Locking</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>超市收银台（限流）控制人流，仓库有备货（缓存）不用每次去总仓拿，账本（一致性）确保每笔买卖都记对。三件事都做好，超市才不会在促销日崩掉。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 143 | #62 Unique Paths [Medium] — 2-D Dynam...</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>💻 算法 / Algorithms — Day 143 | #62 Unique Paths [Medium] — 2-D Dynamic Programming</h1>
+
+<hr/>
+
+<h2>🧩 新模式 / New Pattern: 二维动态规划模式 (2-D Dynamic Programming)</h2>
+<p>📍 This block: 11 problems</p>
+
+<p><strong>什么时候用 / When to use:</strong> 网格路径、字符串匹配、背包问题 — 当两个维度的子问题都影响当前结果时</p>
+
+<p><strong>识别信号 / Signals:</strong> grid paths, edit distance, longest common subsequence, knapsack, matrix, "how many ways", "min cost across grid"</p>
+
+<p><strong>通用模版 / Template:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="dp = [[0] * (m+1) for _ in range(n+1)]&#10;for i in range(1, n+1):&#10;    for j in range(1, m+1):&#10;        dp[i][j] = TRANSITION(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])&#10;return dp[n][m]">Copy</button>
+  <pre><code class="language-python">dp = [[<span style="color:#56b6c2;">0</span>] * (m+<span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(n+<span style="color:#56b6c2;">1</span>)]
+<span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, n+<span style="color:#56b6c2;">1</span>):
+    <span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, m+<span style="color:#56b6c2;">1</span>):
+        dp[i][j] = TRANSITION(dp[i-<span style="color:#56b6c2;">1</span>][j], dp[i][j-<span style="color:#56b6c2;">1</span>], dp[i-<span style="color:#56b6c2;">1</span>][j-<span style="color:#56b6c2;">1</span>])
+<span style="color:#c678dd;">return</span> dp[n][m]</code></pre>
+</div>
+
+<p><strong>核心洞察 / Key Insight:</strong> 二维表格填充 — 画出表格手动填几格就能发现转移规律。先推导几个小例子，转移方程自然浮现。</p>
+
+<hr/>
+
+<h2>题目 / Problem</h2>
+
+<p>🔗 <a href="https://leetcode.com/problems/unique-paths/">LeetCode #62 - Unique Paths</a> 🟡 Medium</p>
+<p>📹 <a href="https://neetcode.io/problems/count-paths">NeetCode Solution</a></p>
+
+<p><strong>真实类比 / Real-world analogy:</strong>  </p>
+<p>想象你在 Google Maps 里从左上角走到右下角，只能向右或向下走。有多少条不同路线？这不只是数学游戏 — 机器人路径规划、包裹配送路由优化都用到同样的思路。</p>
+
+<p>Imagine you're in Google Maps, moving from top-left to bottom-right, only right or down. How many routes exist? This models robot path planning and delivery route optimization.</p>
+
+<hr/>
+
+<h2>映射到模版 / Map to Template</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="dp[i][j] = &quot;到达 (i,j) 的路径数&quot;&#10;&#10;转移：dp[i][j] = dp[i-1][j] + dp[i][j-1]&#10;     (从上面来) + (从左边来)&#10;&#10;Base case: dp[i][1] = 1, dp[1][j] = 1  (第一行/列只有一条路)">Copy</button>
+  <pre><code class="language-text">dp[i][j] = "到达 (i,j) 的路径数"
+
+转移：dp[i][j] = dp[i-1][j] + dp[i][j-1]
+     (从上面来) + (从左边来)
+
+Base case: dp[i][1] = 1, dp[1][j] = 1  (第一行/列只有一条路)</code></pre>
+</div>
+
+<p>手动填 3×3 表格:</p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="    c1  c2  c3&#10;r1 [ 1,  1,  1]&#10;r2 [ 1,  2,  3]&#10;r3 [ 1,  3,  6]">Copy</button>
+  <pre><code class="language-text">    c1  c2  c3
+r1 [ 1,  1,  1]
+r2 [ 1,  2,  3]
+r3 [ 1,  3,  6]</code></pre>
+</div>
+<p>规律立刻显现：每格 = 上面 + 左边。</p>
+
+<hr/>
+
+<h2>Python 解法 / Solution</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def uniquePaths(m: int, n: int) -&gt; int:&#10;    # dp[i][j] = number of paths to reach cell (i, j)&#10;    dp = [[1] * n for _ in range(m)]&#10;    &#10;    # First row and first col are all 1s (only one way to reach them)&#10;    for i in range(1, m):&#10;        for j in range(1, n):&#10;            dp[i][j] = dp[i-1][j] + dp[i][j-1]&#10;    &#10;    return dp[m-1][n-1]&#10;&#10;# Trace: m=3, n=3&#10;# Initial: [[1,1,1],[1,0,0],[1,0,0]]&#10;# i=1,j=1: dp[1][1] = dp[0][1]+dp[1][0] = 1+1 = 2&#10;# i=1,j=2: dp[1][2] = dp[0][2]+dp[1][1] = 1+2 = 3&#10;# i=2,j=1: dp[2][1] = dp[1][1]+dp[2][0] = 2+1 = 3&#10;# i=2,j=2: dp[2][2] = dp[1][2]+dp[2][1] = 3+3 = 6&#10;# Output: 6 ✓">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> uniquePaths(m: int, n: int) -&gt; int:
+    <span style="color:#5c6370;"># dp[i][j] = number of paths to reach cell (i, j)</span>
+    dp = [[<span style="color:#56b6c2;">1</span>] * n <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(m)]
+    
+    <span style="color:#5c6370;"># First row and first col are all 1s (only one way to reach them)</span>
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, m):
+        <span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, n):
+            dp[i][j] = dp[i-<span style="color:#56b6c2;">1</span>][j] + dp[i][j-<span style="color:#56b6c2;">1</span>]
+    
+    <span style="color:#c678dd;">return</span> dp[m-<span style="color:#56b6c2;">1</span>][n-<span style="color:#56b6c2;">1</span>]
+
+<span style="color:#5c6370;"># Trace: m=3, n=3</span>
+<span style="color:#5c6370;"># Initial: [[1,1,1],[1,0,0],[1,0,0]]</span>
+<span style="color:#5c6370;"># i=1,j=1: dp[1][1] = dp[0][1]+dp[1][0] = 1+1 = 2</span>
+<span style="color:#5c6370;"># i=1,j=2: dp[1][2] = dp[0][2]+dp[1][1] = 1+2 = 3</span>
+<span style="color:#5c6370;"># i=2,j=1: dp[2][1] = dp[1][1]+dp[2][0] = 2+1 = 3</span>
+<span style="color:#5c6370;"># i=2,j=2: dp[2][2] = dp[1][2]+dp[2][1] = 3+3 = 6</span>
+<span style="color:#5c6370;"># Output: 6 ✓</span></code></pre>
+</div>
+
+<p><strong>空间优化 / Space Optimization (O(n)):</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def uniquePaths(m: int, n: int) -&gt; int:&#10;    # Only need the previous row — rolling array trick&#10;    row = [1] * n&#10;    for i in range(1, m):&#10;        for j in range(1, n):&#10;            row[j] += row[j-1]  # row[j] = old row[j] + row[j-1]&#10;    return row[-1]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> uniquePaths(m: int, n: int) -&gt; int:
+    <span style="color:#5c6370;"># Only need the previous row — rolling array trick</span>
+    row = [<span style="color:#56b6c2;">1</span>] * n
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, m):
+        <span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, n):
+            row[j] += row[j-<span style="color:#56b6c2;">1</span>]  <span style="color:#5c6370;"># row[j] = old row[j] + row[j-1]</span>
+    <span style="color:#c678dd;">return</span> row[-<span style="color:#56b6c2;">1</span>]</code></pre>
+</div>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<ul><li>Time: O(m × n)</li><li>Space: O(m × n) → O(n) with rolling array</li></ul>
+
+<hr/>
+
+<h2>举一反三 / Connect the Pattern</h2>
+
+<p>本 block 11 题都是 2-D DP 的变体，转移方程会越来越复杂：</p>
+<ul><li><strong>明天 #1143 LCS</strong>: <code>dp[i][j] = dp[i-1][j-1]+1</code> if match, else <code>max(dp[i-1][j], dp[i][j-1])</code></li><li><strong>#72 Edit Distance</strong>: 三向转移 <code>min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+replace)</code></li><li><strong>#312 Burst Balloons</strong>: 区间 DP，枚举最后一个戳破的气球</li></ul>
+
+<p>每道题的突破口：<strong>先手绘一个小 case 的 dp 表格</strong>。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://leetcode.com/problems/unique-paths/">LeetCode #62 Official</a></li><li><a href="https://neetcode.io/problems/count-paths">NeetCode: Unique Paths Video</a></li><li><a href="https://cp-algorithms.com/dynamic_programming/dp-on-broken-profile.html">CP-Algorithms: DP on Grids</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>你在方格纸左上角，要走到右下角，只能往右或往下。每格的走法数 = 上面那格 + 左边那格的走法加起来。就像数叉路口有几条路汇进来。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 143 | Expert Synthesis</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>🗣️ 软技能 / Soft Skills — Day 143 | Expert Synthesis</h1>
+
+<p><strong>高级场景：你要重构一个核心系统，但没人给你时间</strong></p>
+<p><strong>Senior Scenario: You need to refactor a critical system but nobody will give you time</strong></p>
+
+<hr/>
+
+<h2>为什么这道题难 / Why This Question Is Hard</h2>
+
+<p>这不是一道普通的"怎么处理冲突"题。它考查的是：<strong>在没有授权的情况下，如何推动技术必要性与业务优先级之间的博弈</strong>。Staff+ 工程师每周都面对这个。</p>
+
+<p>This isn't a standard conflict question. It tests: <strong>how do you drive technical necessity against business priority without top-down authority?</strong> Staff+ engineers face this weekly.</p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<blockquote>"你发现核心支付服务有严重的技术债，任何新功能都要花 3x 时间。但 PM 说 Q3 有 5 个 feature 要上，没有时间重构。你怎么做？"</blockquote>
+
+<hr/>
+
+<h2>STAR Framework</h2>
+
+<p><strong>Situation（背景）:</strong>  </p>
+<p>在某次 sprint，我意识到我们的 checkout service 已经积累了 4 年的 spaghetti code — 没有单元测试，所有状态都耦合在一个 God Object 里，每次改动都要同时改 8 个文件。</p>
+
+<p><strong>Task（任务）:</strong>  </p>
+<p>我需要在不阻塞 Q3 roadmap 的情况下，让团队和 PM 认识到这个问题的代价，并争取到合理的重构时间。</p>
+
+<p><strong>Action（行动）:</strong></p>
+<ol><li><strong>量化技术债成本</strong>：我统计了过去 3 个月的 bug rate 和开发速度 — 每个新 feature 平均多花 40% 时间，有 60% 的 hotfix 来自这个模块。</li><li><strong>翻译成业务语言</strong>：不说"代码烂"，说"这模块每季度让我们少交付 2 个 feature"。</li><li><strong>提出"嵌入式重构"方案</strong>：不要求独立 sprint，而是在每个 feature 旁边带着做 — Strangler Fig Pattern，逐步替换而不是大爆炸。</li><li><strong>找到盟友</strong>：先说服 TL 和 EM，再一起去 PM 谈。</li><li><strong>设置检查点</strong>：每两周 demo 一次进展，确保重构和 feature 同步推进。</li></ol>
+
+<p><strong>Result（结果）:</strong>  </p>
+<p>PM 同意每个 sprint 留出 20% 的时间做"连续改进"。3 个月后，bug rate 降低了 45%，新 feature 交付速度提高了 30%。</p>
+
+<hr/>
+
+<h2>❌ Bad Answer vs ✅ Good Answer</h2>
+
+<p>❌ "我告诉 PM 技术债很严重，但他们不听，所以我只能继续做 feature。"  </p>
+<p>→ 被动，无量化，无影响力。</p>
+
+<p>✅ "我把技术债翻译成业务影响，提出嵌入式方案，找到共同利益点，推动渐进式改善。"  </p>
+<p>→ 主动、数据驱动、展示了跨职能影响力。</p>
+
+<hr/>
+
+<h2>Senior/Staff Tips</h2>
+
+<ul><li><strong>数字是你的武器</strong>：开发速度、bug 率、oncall 频率 — 把技术问题量化成时间和金钱</li><li><strong>Strangler Fig &gt; Big Bang</strong>：永远不要说"我们要停工 3 个月重写"</li><li><strong>培养 PM 信任</strong>：先按时交付几个 feature，再提技术改进，你的话才有分量</li><li><strong>写 ADR</strong>：把技术决定记录下来（Architecture Decision Records），未来有据可查</li></ul>
+
+<hr/>
+
+<h2>Key Takeaways / 核心要点</h2>
+
+<ol><li>量化技术债 → 业务语言</li><li>嵌入式重构（Strangler Fig），不做大爆炸</li><li>先找盟友，再找决策者</li><li>用数据证明投资回报</li></ol>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li><a href="https://martinfowler.com/bliki/StranglerFigApplication.html">Martin Fowler: Strangler Fig Application</a></li><li><a href="https://sre.google/workbook/managing-incidents/">Google SRE Book: Managing Technical Debt</a></li><li><a href="https://staffeng.com/guides/staff-projects">Will Larson: Staff Engineer Book (Excerpt)</a></li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>就像家里下水道堵了，你不能停水一个月大修，但可以每周修一段管道。先告诉大家"不修就越来越慢"，然后边住边修，才是成年人的方法。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 143 | News Roundup — October 27, 2026</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>🤖 AI — Day 143 | News Roundup — October 27, 2026</h1>
+
+<hr/>
+
+<h2>本周 AI 大事件 / This Week in AI</h2>
+
+<hr/>
+
+<h3>🔬 Story 1: OpenAI 宣布 AI 完成三项科学重大突破</h3>
+
+<p><strong>OpenAI Claims Three Major Scientific Breakthroughs</strong></p>
+
+<p>10 月 26 日，OpenAI 宣布其 AI 模型在数学、物理和计算机科学领域完成了三项重大发现。</p>
+
+<p><strong>数学 / Math:</strong> AI 证明了"局部光滑猜想"（local smoothing conjecture）在所有维度上成立，并由此解决了著名的 Kakeya 猜想和 Stein's restriction 猜想。证明通过了 Lean 形式化验证（10 月 19 日完成）。</p>
+
+<p><strong>物理 / Physics:</strong> AI 为四维时空中的某些相互作用量子场论（包括量子色动力学 QCD）给出了数学上严格的存在性证明，据报道这是理论物理数十年未解的难题。诺贝尔物理学奖得主 David Gross 正领衔一个专家组对相关成果进行独立审查。</p>
+
+<p><strong>背景：</strong> 在此之前，OpenAI 于 10 月 6 日在 GitHub 上公开了据报道 719 篇 AI 生成的数学论文，涉及黎曼猜想等未解问题的"部分进展"。</p>
+
+<p>来源：<a href="https://openai.com/index/building-scientific-understanding-with-academic-communities/">OpenAI Blog</a> | <a href="https://www.aa.com.tr/en/europe/openai-announces-3-ai-generated-discoveries-in-mathematics-computer-science-physics/4102636">AA News</a></p>
+
+<hr/>
+
+<h3>⚡ Story 2: Anthropic 发布 Claude Haiku 5.5 — 90% 降价</h3>
+
+<p><strong>Anthropic Releases Claude Haiku 5.5 — Up to 90% Cost Reduction</strong></p>
+
+<p>10 月 7 日，Anthropic 发布了 Claude Haiku 5.5，这是 Claude 5.x 家族中定位高性价比的模型（同月还发布了 Opus 5.5 和 Sonnet 5.5）。</p>
+
+<p>关键特点：</p>
+<ul><li>据报道 API 价格比前代 Haiku 4.5 低 75-90%</li><li>据报道速度提升约 30%</li><li>多模态支持（视觉 + 文本）</li><li>在 computer-use 基准测试中表现提升</li><li>可在 AWS、Google Cloud、Azure 上使用</li></ul>
+
+<p><strong>工程视角</strong>：Haiku 5.5 主打"高频、低成本"场景，例如文档提取、代码注释、实时聊天回复 — 这类场景用 Opus 级别模型成本不可接受。</p>
+
+<p>来源：<a href="https://www.anthropic.com/claude-haiku-5-5">Anthropic</a> | <a href="https://mlq.ai/news/anthropic-launches-claude-haiku-55-with-90-lower-api-prices/">MLQ.ai</a></p>
+
+<hr/>
+
+<h3>🤖 Story 3: 智能体 AI 爆发 — Gartner 预测 2030 年 50% 企业 IT 用 AI Agent</h3>
+
+<p><strong>Agentic AI Surge — Gartner Predicts 50% of Enterprise IT Operations Use AI Agents by 2030</strong></p>
+
+<p>Gartner 10 月发布报告，预测到 2030 年有 50% 的组织将在 IT 运营中部署能自主完成复杂任务的 AI Agent，而 2026 年这一比例接近于零。</p>
+
+<p>本月值得关注的 Agent 产品：</p>
+<ul><li><strong>Microsoft Copilot</strong>：新增 "Cowork"（委派任务）、"Code"（构建应用）、"Autopilot"（后台 Agent）三大功能</li><li><strong>Genspark Claw</strong>：持久化 AI 助手，可跨应用完成多步骤工作流</li><li><strong>FTC 介入</strong>：美国联邦贸易委员会启动行业调查，审查自主 AI Agent 的潜在消费者风险</li></ul>
+
+<p><strong>工程师需要关注什么：</strong> Agentic AI 对 API 设计提出新要求 — 幂等操作、明确的中止条件、审计日志，这些在传统 REST API 里往往是可选的，在 Agent 时代变成必须的。</p>
+
+<p>来源：<a href="https://www.gartner.com/en/newsroom/press-releases/2026-10-26-gartner-identifies-the-top-ai-trends-in-infrastructure-and-it-operations-for-2027">Gartner Press Release</a> | <a href="https://emergent.sh/news/week-s-top-5-ai-stories-october-2026-roundup">Emergent.sh roundup</a></p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+<p>这周 AI 界发生了三件大事：一台 AI 解开了数学家几十年没解出的难题（但大人们还在核实是否真的对）；另一个 AI 变得更便宜更快了（像手机套餐降价）；还有一份报告说，再过几年会有一半的大公司用 AI 来自己管理自己的电脑系统。</p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
