@@ -5,8 +5,92 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 01 Nov 2026 16:08:16 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 02 Nov 2026 16:06:58 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-02</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-02</guid>
+      <pubDate>Mon, 02 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Review</h1>
+<h2>🔄 复习日 / Review Day — Day 145</h2>
+<p><strong>Date:</strong> 2026-11-02 | <strong>Phase:</strong> Expert</p>
+
+<hr/>
+
+<p>📊 <strong>NeetCode: 112/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</strong></p>
+
+<hr/>
+
+<p>今天是复习日！回顾过去4天的内容。</p>
+<p>This is review day! Looking back at the last 4 days.</p>
+
+<p><strong>本周主题 / This Week&#x27;s Theme:</strong> 动态规划大复习 — 1D Knapsack → 2D Grid → 2D String DP</p>
+
+<hr/>
+
+<h3>📝 Quick Quiz — 3 Mini-Reviews</h3>
+
+<p><strong>Q1: [💻 Algorithms — 0/1 背包 / 0-1 Knapsack DP]</strong></p>
+
+<p>Partition Equal Subset Sum (#416): Given <code>nums = [1, 5, 11, 5]</code>, how do you transform this into a 0/1 knapsack problem? Why must you iterate the DP array <strong>backwards</strong>?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p>Target = <code>sum(nums) // 2 = 11</code>. Use a 1D boolean dp array where <code>dp[j] = True</code> means sum <code>j</code> is achievable. For each number, update <strong>right-to-left</strong>: <code>dp[j] = dp[j] or dp[j - num]</code>.</p>
+
+<p>Backwards traversal enforces the &quot;0/1&quot; constraint — each item can be used at most once. If you went forward, you&#x27;d reuse the same element multiple times (unbounded knapsack behavior). For <code>[1,5,11,5]</code>: <code>dp[11] = True</code> → partition <code>[11]</code> vs <code>[1,5,5]</code>. ✅</p>
+
+<p><strong>核心洞察 / Key Insight:</strong> 0/1 knapsack always iterates backwards; unbounded knapsack iterates forwards.</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q2: [💻 Algorithms — 2D Grid DP]</strong></p>
+
+<p>Unique Paths (#62): A robot moves on an <code>m×n</code> grid (only right or down). What is <code>dp[i][j]</code>? Write the transition. When does this DP approach beat the combinatorics formula <code>C(m+n-2, m-1)</code>?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><code>dp[i][j]</code> = number of unique paths to reach cell <code>(i, j)</code> from <code>(0, 0)</code>.</p>
+
+<p>Transition: <code>dp[i][j] = dp[i-1][j] + dp[i][j-1]</code> (paths from above + from left)</p>
+<p>Base case: <code>dp[0][j] = 1</code>, <code>dp[i][0] = 1</code> (only one way along any edge)</p>
+
+<p>The DP approach generalizes to <strong>Unique Paths II</strong> (with obstacles), where the formula breaks down. When <code>grid[i][j] == obstacle</code>, set <code>dp[i][j] = 0</code>. The combinatorics formula only works for the obstacle-free version.</p>
+
+<p><strong>核心洞察 / Key Insight:</strong> 2D grid DP: each cell depends only on top and left neighbors. First row/col are all 1s.</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p><strong>Q3: [💻 Algorithms — 2D String DP]</strong></p>
+
+<p>Both LCS (#1143) and Edit Distance (#72) use a 2D table on two strings. What does <code>dp[i][j]</code> mean in each? What&#x27;s the key difference in their transitions when characters <strong>don&#x27;t</strong> match?</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>LCS</strong> — <code>dp[i][j]</code> = length of longest common subsequence of <code>text1[:i]</code> and <code>text2[:j]</code></p>
+<p>- Match: <code>dp[i][j] = dp[i-1][j-1] + 1</code></p>
+<p>- No match: <code>dp[i][j] = max(dp[i-1][j], dp[i][j-1])</code> ← take the better of skipping one char from either string</p>
+
+<p><strong>Edit Distance</strong> — <code>dp[i][j]</code> = min operations to convert <code>word1[:i]</code> → <code>word2[:j]</code></p>
+<p>- Match: <code>dp[i][j] = dp[i-1][j-1]</code> (free — no operation needed)</p>
+<p>- No match: <code>dp[i][j] = 1 + min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])</code> ← delete, insert, or replace</p>
+
+<p>Same table shape, opposite objectives: LCS <strong>maximizes</strong> (common length), Edit Distance <strong>minimizes</strong> (operations). The <code>dp[i-1][j-1]</code> diagonal cell is the key shared structural element.</p>
+
+<p><strong>核心洞察 / Key Insight:</strong> 2D string DP always initializes: <code>dp[i][0] = i</code>, <code>dp[0][j] = j</code> (build from empty string).</p>
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<p>💡 <em>DP大法：把&quot;大问题&quot;拆成&quot;最小子问题&quot;，存储子答案，避免重复计算。</em></p>
+<p><em>DP mantra: Break into subproblems, cache subproblem answers, avoid recomputation.</em></p>
+
+<p>📅 明天继续新内容！Tomorrow back to new content!</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-01</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
