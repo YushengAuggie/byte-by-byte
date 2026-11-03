@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-11-03</title>
+  <meta name="description" content="byte-by-byte daily lessons for Tuesday, November 3, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Tuesday, November 3, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-11-03.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-11-02.html" style="color:var(--text2)">← 2026-11-02</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-11-03</span>
+    <h1>Tuesday, November 3, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-11-02.html" class="day-nav-btn">← 2026-11-02</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 146 (Synthesis)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>🏗️ 系统设计 / System Design — Day 146 (Synthesis)</h1>
+<p><strong>可观测性三支柱大综合：Metrics、Logs、Traces 的架构边界</strong></p>
+<p><strong>Observability Three Pillars Deep Synthesis: When to Use Metrics vs Logs vs Traces</strong></p>
+
+<hr/>
+
+<h2>🔥 想象一下... / Real-World Scenario</h2>
+
+<p>凌晨 2 点，告警触发：<strong>checkout 服务 p99 延迟 &gt; 5s</strong>。你是值班工程师，面对 200 个微服务。你的第一反应是什么？</p>
+
+<p>It's 2 AM. Alert fires: <strong>checkout service p99 latency &gt; 5s</strong>. You're on-call across 200 microservices. What do you reach for first?</p>
+
+<p>这不是单一工具能回答的问题。可观测性的核心在于三支柱的<strong>协同</strong>，而不是各自为战。</p>
+
+<hr/>
+
+<h2>🏗️ 架构图 / Architecture</h2>
+
+<div class="diagram-block">用户请求 / User Request
+         │
+         ▼
+┌─────────────────────────────────────────┐
+│          API Gateway / Load Balancer     │
+└──────────────┬──────────────────────────┘
+               │
+    ┌──────────┼──────────┐
+    ▼          ▼          ▼
+ Checkout   Payment    Inventory
+ Service    Service    Service
+    │          │          │
+    └──────────┴──────────┘
+               │
+    ┌──────────┼──────────┐
+    ▼          ▼          ▼
+ METRICS     LOGS       TRACES
+(Prometheus)(ELK Stack)(Jaeger/Zipkin)
+    │          │          │
+    └──────────┴──────────┘
+               │
+               ▼
+    Observability Platform
+    (Datadog / Grafana / etc.)</div>
+
+<hr/>
+
+<h2>🎯 三支柱的边界 / When to Use Each</h2>
+
+<h3>📊 Metrics — WHEN something is wrong</h3>
+<p><strong>特征 / Characteristics:</strong> 聚合数值、时间序列、低基数</p>
+<p><strong>用来 / Use for:</strong></p>
+<ul><li><code>checkout_latency_p99 &gt; 5s</code> → 触发告警</li><li>CPU/内存利用率趋势</li><li>请求速率、错误率（RED 方法：Rate, Error, Duration）</li><li>SLO/SLA 合规监控</li></ul>
+
+<p><strong>不适合 / NOT for:</strong></p>
+<ul><li>高基数数据（每用户 ID、每订单 ID）→ 内存爆炸</li><li>调试具体的一次失败请求</li></ul>
+
+<div class="diagram-block"># ✅ Good: 低基数 / Low cardinality
+http_requests_total{method="POST", status="500"} 42
+
+# ❌ Bad: 高基数 / High cardinality  
+http_requests_total{user_id="u-82736", order_id="ord-99182"} 1
+# → Prometheus 内存会爆 / This will OOM Prometheus</div>
+
+<hr/>
+
+<h3>📋 Logs — WHAT happened</h3>
+<p><strong>特征 / Characteristics:</strong> 结构化事件、任意上下文、可搜索</p>
+<p><strong>用来 / Use for:</strong></p>
+<ul><li><code>"payment failed: card_declined, user_id=u-123, amount=99.99"</code> → 具体根因</li><li>审计日志（谁做了什么）</li><li>错误堆栈信息</li><li>业务事件流水</li></ul>
+
+<p><strong>不适合 / NOT for:</strong></p>
+<ul><li>跨服务调用链路分析（你能看到 A 和 B 各自的日志，但不知道 A→B→C 这条链上哪里慢了）</li><li>实时聚合计算（成本太高）</li></ul>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# ✅ 结构化日志 / Structured logging&#10;logger.error(&quot;payment_failed&quot;, extra={&#10;    &quot;user_id&quot;: user.id,&#10;    &quot;amount&quot;: order.total,&#10;    &quot;reason&quot;: &quot;card_declined&quot;,&#10;    &quot;trace_id&quot;: request.trace_id,  # ← 关键：关联 trace&#10;})">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># ✅ 结构化日志 / Structured logging</span>
+logger.error(<span style="color:#e5c07b;">"payment_failed"</span>, extra={
+    <span style="color:#e5c07b;">"user_id"</span>: user.id,
+    <span style="color:#e5c07b;">"amount"</span>: order.total,
+    <span style="color:#e5c07b;">"reason"</span>: <span style="color:#e5c07b;">"card_declined"</span>,
+    <span style="color:#e5c07b;">"trace_id"</span>: request.trace_id,  <span style="color:#5c6370;"># ← 关键：关联 trace</span>
+})</code></pre>
+</div>
+
+<hr/>
+
+<h3>🔍 Traces — WHERE in the distributed call chain</h3>
+<p><strong>特征 / Characteristics:</strong> 分布式请求链路、跨服务 span、时序瀑布图</p>
+<p><strong>用来 / Use for:</strong></p>
+<ul><li>哪个服务最慢？(checkout → payment → bank API 哪段耗时最多)</li><li>服务依赖关系可视化</li><li>找出 fan-out 问题（1 个请求触发 50 个下游调用）</li></ul>
+
+<p><strong>不适合 / NOT for:</strong></p>
+<ul><li>统计聚合告警（用 metrics 更高效）</li><li>长期存储（trace 数据量大，通常采样 1%~10%）</li></ul>
+
+<div class="diagram-block">Trace: order-checkout-82736
+├── [0ms]   API Gateway              2ms
+├── [2ms]   checkout-service        450ms  ← 瓶颈！
+│   ├── [3ms]  inventory-check        5ms
+│   ├── [8ms]  payment-service       440ms ← 再查这里
+│   │   ├── [9ms]   fraud-check       2ms
+│   │   └── [11ms]  bank-api         430ms ← 根因：外部 API 超时
+│   └── [452ms] db-write              3ms
+└── [455ms] response                  1ms</div>
+
+<hr/>
+
+<h2>🔗 综合对比 / Synthesis Comparison</h2>
+
+<table><thead><tr><th>维度</th><th>Metrics</th><th>Logs</th><th>Traces</th></tr></thead><tbody><tr><td><strong>告警</strong></td><td>✅ 最佳</td><td>⚠️ 可以</td><td>❌ 不适合</td></tr><tr><td><strong>根因分析</strong></td><td>⚠️ 粗粒度</td><td>✅ 最佳</td><td>✅ 跨服务最佳</td></tr><tr><td><strong>调用链分析</strong></td><td>❌</td><td>❌</td><td>✅ 最佳</td></tr><tr><td><strong>存储成本</strong></td><td>低</td><td>中~高</td><td>高（需采样）</td></tr><tr><td><strong>基数限制</strong></td><td>严格低基数</td><td>无限制</td><td>span 数量限制</td></tr></tbody></table>
+
+<p><strong>告警触发时的调查顺序 / Investigation order:</strong></p>
+<ol><li><strong>Metrics</strong> → "哪个服务的哪个指标异常？"</li><li><strong>Traces</strong> → "这条请求链路哪一段最慢？"</li><li><strong>Logs</strong> → "那个具体的 span 里发生了什么？"</li></ol>
+
+<hr/>
+
+<h2>🚫 常见陷阱 / Common Mistakes</h2>
+
+<p><strong>别踩这些坑 / Don't do this:</strong></p>
+
+<ol><li><strong>生产环境 DEBUG 日志全开</strong> → 日志量×10，成本爆炸，降级到 WARN/ERROR</li><li><strong>不传播 trace_id</strong> → 日志和 Trace 无法关联，根因分析断链</li><li><strong>Metrics 用高基数标签</strong> → <code>{user_id=xxx}</code> 会让 Prometheus 内存 OOM</li><li><strong>100% 采样 Trace</strong> → 每个请求都记录完整 Trace，存储成本不可接受</li><li><strong>三者各自独立，不打通</strong> → 看 metrics 发现问题，但日志里没有 trace_id，无法关联</li></ol>
+
+<hr/>
+
+<h2>🛠️ 黄金标准实践 / Golden Standard</h2>
+
+<div class="diagram-block">告警规则 (Metrics)  →  SLO Dashboard
+                         ↓
+                    触发调查
+                    (Trace ID from log)
+                         ↓
+                    Trace 瀑布图定位慢 span
+                         ↓
+                    跳到该 span 的 Logs
+                         ↓
+                    根因：外部 API 超时</div>
+
+<p><strong>工具链推荐 / Toolchain:</strong></p>
+<ul><li>Open source: <strong>Prometheus + Loki + Tempo</strong> (Grafana 三件套, 同一 trace_id 互通)</li><li>SaaS: <strong>Datadog</strong> (三合一, 最贵) / <strong>New Relic</strong> / <strong>Honeycomb</strong> (trace-first)</li></ul>
+
+<hr/>
+
+<h2>📚 参考资料 / References</h2>
+
+<ol><li><a href="https://grafana.com/blog/2020/09/23/the-three-pillars-of-observability-metrics-logs-and-traces/">Grafana Observability — Metrics, Logs, Traces</a></li><li><a href="https://opentelemetry.io/docs/concepts/observability-primer/">OpenTelemetry — The Standard</a></li><li><a href="https://www.honeycomb.io/blog/observability-vs-monitoring">Honeycomb: Observability vs Monitoring</a></li></ol>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你家的电力系统：</p>
+<ul><li><strong>Metrics</strong> = 电表（告诉你用了多少度电，啥时候用电量突然飙升）</li><li><strong>Logs</strong> = 用电记录本（"晚上8点，微波炉用了600W，空调用了1200W"）</li><li><strong>Traces</strong> = 电路图（帮你找到哪根线路跳闸了导致厨房停电）</li></ul>
+
+<p>三个都要，缺一不可。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 146</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>💻 算法 / Algorithms — Day 146</h1>
+<p><strong>#309 Best Time to Buy and Sell Stock with Cooldown (Medium) — 2-D Dynamic Programming</strong></p>
+
+<hr/>
+
+<p>🧩 <strong>二维动态规划 (3/11)</strong> — 在 Day 143 模版基础上继续</p>
+<p>Building on the 2-D DP template from Day 143</p>
+
+<p>今天这题<strong>看起来像 1-D DP</strong>（只有一个数组 prices），但它实际上是一个<strong>状态机 DP</strong> — 每个时间点有多个"状态维度"，本质是二维的。</p>
+
+<hr/>
+
+<h2>🎯 问题 / Problem</h2>
+
+<p>🔗 <a href="https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-cooldown/">LeetCode #309</a> 🟡 Medium</p>
+<p>📹 <a href="https://neetcode.io/problems/buy-and-sell-stock-with-cooldown">NeetCode</a></p>
+
+<p><strong>给你一个价格数组，每次卖出后必须冷静一天（不能买入）。求最大利润。</strong></p>
+<p>Given prices array; after selling, you must wait 1 day before buying again. Maximize profit.</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="Input: prices = [1, 2, 3, 0, 2]&#10;Output: 3&#10;Explanation: Buy on day 0 (price=1), sell on day 1 (price=2),&#10;             cooldown on day 2, buy on day 3 (price=0), sell on day 4 (price=2)">Copy</button>
+  <pre><code class="language-text">Input: prices = [1, 2, 3, 0, 2]
+Output: 3
+Explanation: Buy on day 0 (price=1), sell on day 1 (price=2),
+             cooldown on day 2, buy on day 3 (price=0), sell on day 4 (price=2)</code></pre>
+</div>
+
+<hr/>
+
+<h2>🔗 映射到模版 / Mapping to Pattern</h2>
+
+<p>二维DP的本质：<code>dp[i][state]</code>，其中：</p>
+<ul><li><code>i</code> = 第 i 天</li><li><code>state</code> = 当前状态 (3种)</li></ul>
+
+<div class="diagram-block">状态机 / State Machine:
+
+  HOLDING ──sell──→ SOLD
+     ↑                │
+   buy               cooldown
+     │                ↓
+  IDLE  ←──────── COOLDOWN</div>
+
+<p><strong>三个状态 / Three States:</strong></p>
+<ul><li><code>HOLDING</code>: 持有股票中</li><li><code>SOLD</code>: 刚卖出（下一天必须进入 COOLDOWN）</li><li><code>IDLE</code>: 空仓且不在冷静期（可以买入）</li></ul>
+
+<hr/>
+
+<h2>🐍 Python Solution with Trace</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="from typing import List&#10;&#10;def maxProfit(prices: List[int]) -&gt; int:&#10;    # State machine DP&#10;    # holding = max profit while holding stock&#10;    # sold    = max profit on day we just sold&#10;    # idle    = max profit while not holding, not in cooldown&#10;    &#10;    holding = -prices[0]  # bought on day 0&#10;    sold = 0              # can't have sold on day 0&#10;    idle = 0              # started idle&#10;    &#10;    for price in prices[1:]:&#10;        prev_holding = holding&#10;        prev_sold = sold&#10;        prev_idle = idle&#10;        &#10;        # Today I'm holding: either I was already holding,&#10;        # or I was idle yesterday and bought today&#10;        holding = max(prev_holding, prev_idle - price)&#10;        &#10;        # Today I just sold: I was holding and sold today&#10;        sold = prev_holding + price&#10;        &#10;        # Today I'm idle: I was idle, or I was in cooldown (just sold yesterday)&#10;        idle = max(prev_idle, prev_sold)&#10;    &#10;    # Can't end while holding → max of sold or idle&#10;    return max(sold, idle)">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">from</span> typing <span style="color:#c678dd;">import</span> List
+
+<span style="color:#c678dd;">def</span> maxProfit(prices: List[int]) -&gt; int:
+    <span style="color:#5c6370;"># State machine DP</span>
+    <span style="color:#5c6370;"># holding = max profit while holding stock</span>
+    <span style="color:#5c6370;"># sold    = max profit on day we just sold</span>
+    <span style="color:#5c6370;"># idle    = max profit while not holding, not in cooldown</span>
+    
+    holding = -prices[<span style="color:#56b6c2;">0</span>]  <span style="color:#5c6370;"># bought on day 0</span>
+    sold = <span style="color:#56b6c2;">0</span>              <span style="color:#5c6370;"># can't have sold on day 0</span>
+    idle = <span style="color:#56b6c2;">0</span>              <span style="color:#5c6370;"># started idle</span>
+    
+    <span style="color:#c678dd;">for</span> price <span style="color:#c678dd;">in</span> prices[<span style="color:#56b6c2;">1</span>:]:
+        prev_holding = holding
+        prev_sold = sold
+        prev_idle = idle
+        
+        <span style="color:#5c6370;"># Today I'm holding: either I was already holding,</span>
+        <span style="color:#5c6370;"># or I was idle yesterday and bought today</span>
+        holding = max(prev_holding, prev_idle - price)
+        
+        <span style="color:#5c6370;"># Today I just sold: I was holding and sold today</span>
+        sold = prev_holding + price
+        
+        <span style="color:#5c6370;"># Today I'm idle: I was idle, or I was in cooldown (just sold yesterday)</span>
+        idle = max(prev_idle, prev_sold)
+    
+    <span style="color:#5c6370;"># Can't end while holding → max of sold or idle</span>
+    <span style="color:#c678dd;">return</span> max(sold, idle)</code></pre>
+</div>
+
+<p><strong>手动追踪 / Manual Trace</strong> <code>prices = [1, 2, 3, 0, 2]</code>:</p>
+
+<div class="diagram-block">Day 0 (price=1): holding=-1, sold=0,  idle=0
+Day 1 (price=2): holding=max(-1, 0-2)=-1
+                 sold   =max(-1+2)=1
+                 idle   =max(0, 0)=0
+Day 2 (price=3): holding=max(-1, 0-3)=-1
+                 sold   =max(-1+3)=2
+                 idle   =max(0, 1)=1
+Day 3 (price=0): holding=max(-1, 1-0)=1  ← 冷静完买入!
+                 sold   =max(-1+0)=-1
+                 idle   =max(1, 2)=2
+Day 4 (price=2): holding=max(1, 2-2)=1
+                 sold   =max(1+2)=3       ← 最终卖出
+                 idle   =max(2, -1)=2
+
+Result: max(sold=3, idle=2) = 3 ✅</div>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<ul><li>Time: O(n)</li><li>Space: O(1) — 只用三个变量！</li></ul>
+
+<hr/>
+
+<h2>🧩 与模版的区别 / Difference from Template</h2>
+
+<p>经典二维 DP 模版（LCS、网格路径）用 <code>dp[i][j]</code> 二维数组。</p>
+
+<p>这道题的"第二维"是<strong>状态</strong>而不是第二个序列 — 状态空间被压缩成了 3 个变量。这是 2-D DP 的一个重要变体：<strong>状态机 DP</strong>。</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="经典 2D DP:     dp[i][j] = f(dp[i-1][j], dp[i][j-1], ...)&#10;状态机 DP:      dp[i][state] = f(dp[i-1][other_states])&#10;这道题:         holding/sold/idle = f(prev_holding/sold/idle, price)">Copy</button>
+  <pre><code class="language-text">经典 2D DP:     dp[i][j] = f(dp[i-1][j], dp[i][j-1], ...)
+状态机 DP:      dp[i][state] = f(dp[i-1][other_states])
+这道题:         holding/sold/idle = f(prev_holding/sold/idle, price)</code></pre>
+</div>
+
+<hr/>
+
+<h2>举一反三 / Pattern Block Connection</h2>
+
+<table><thead><tr><th>题目</th><th>模版变体</th></tr></thead><tbody><tr><td>#62 Unique Paths</td><td>纯网格，<code>dp[i][j] = dp[i-1][j] + dp[i][j-1]</code></td></tr><tr><td>#1143 LCS</td><td>字符串匹配，第二维是字符位置</td></tr><tr><td><strong>#309 今天</strong></td><td>状态机，第二维是持仓状态</td></tr><tr><td>#518 Coin Change II</td><td>背包，第二维是剩余金额</td></tr><tr><td>#72 Edit Distance</td><td>字符串编辑，转移更复杂</td></tr></tbody></table>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ol><li><a href="https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-cooldown/editorial/">LeetCode #309 Official Solution</a></li><li><a href="https://youtu.be/I7j0F7AHpb8">NeetCode Video Explanation</a></li><li><a href="https://www.youtube.com/c/CSDojo">State Machine DP Explained — CS Dojo</a></li></ol>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>想象你炒股有个规定：卖完股票必须冷静一天才能再买。</p>
+<p>就像你卖了一个玩具后，妈妈规定你第二天才能买新的。</p>
+
+<p>你需要时刻记住自己现在是"有玩具"、"刚卖掉玩具"还是"没玩具但可以买了"三种状态之一，然后每天做最优决策。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 146 (Synthesis)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>🗣️ 软技能 / Soft Skills — Day 146 (Synthesis)</h1>
+<p><strong>Fresh Senior/Staff Scenario: 跨职能系统重构的利益相关者管理</strong></p>
+<p><strong>Cross-Functional System Rewrite: Stakeholder Alignment at Staff Level</strong></p>
+
+<hr/>
+
+<h2>🎯 今日场景 / Today's Scenario</h2>
+
+<blockquote>"你发现公司核心支付服务是 10 年前的老代码，技术债严重，已经影响到新功能交付速度和稳定性。但 PM 说 Q4 必须上线 3 个大功能，CFO 不想批预算做'看不见的工作'，你的团队已经精疲力竭。作为 Staff Engineer，你会怎么做？"</blockquote>
+
+<blockquote>"You discover the core payment service is 10-year-old legacy code with severe tech debt impacting feature velocity and stability. PM says 3 major features must ship in Q4, CFO won't fund 'invisible work,' and your team is burned out. As Staff Engineer, what do you do?"</blockquote>
+
+<hr/>
+
+<h2>⭐ STAR Framework</h2>
+
+<h3>Situation — 诊断清楚再开口</h3>
+
+<p><strong>先量化，不要凭感觉 / Quantify before you speak:</strong></p>
+<ul><li>"过去 6 个月，支付服务相关 incident 导致了 47 小时工程师 on-call 时间"</li><li>"新功能平均开发周期从 Q1 的 2 周增加到 Q3 的 5 周，其中 60% 时间花在绕过老系统"</li><li>"上季度有 2 次 P1 故障，各自造成约 $X 营收损失"</li></ul>
+
+<p><strong>核心原则：把技术债翻译成业务语言</strong></p>
+<p>If you say "the code is unmaintainable," nobody cares.</p>
+<p>If you say "tech debt cost us $800K in lost velocity and incidents last quarter," now you have attention.</p>
+
+<hr/>
+
+<h3>Task — 你的实际目标是什么</h3>
+
+<p>不是"重构代码"（这是手段）。</p>
+
+<p>真正的目标：</p>
+<ol><li>恢复特性交付速度（PM 关心）</li><li>降低系统风险（CTO/CFO 关心）</li><li>保护团队，避免更多流失（EM/CPO 关心）</li></ol>
+
+<p><strong>Staff 思维 / Staff-level framing:</strong> 你的 job 不是写代码，是让整个系统（包括人和技术）更健康。</p>
+
+<hr/>
+
+<h3>Action — 具体做了什么</h3>
+
+<p><strong>Step 1: 建立"技术债成本模型"</strong></p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="季度技术债成本 =&#10;  直接成本: incident 小时数 × 工程师时薪 + 营收损失&#10;+ 机会成本: 特性延迟交付 × 商业价值&#10;+ 风险成本: 估算下次 P1 概率 × 潜在损失">Copy</button>
+  <pre><code class="language-text">季度技术债成本 =
+  直接成本: incident 小时数 × 工程师时薪 + 营收损失
++ 机会成本: 特性延迟交付 × 商业价值
++ 风险成本: 估算下次 P1 概率 × 潜在损失</code></pre>
+</div>
+
+<p><strong>Step 2: 提出"扼杀者无花果"策略</strong>（Strangler Fig Pattern）</p>
+
+<p>不是推倒重来（风险太高），而是：</p>
+<ul><li>在新服务旁边构建，逐步迁移流量</li><li>每个 sprint 同时交付业务功能 + 迁移旧模块的一部分</li><li>向 PM 展示：新架构部分的特性开发速度已经快了 3 倍</li></ul>
+
+<p><strong>Step 3: 利益对齐 / Stakeholder alignment</strong></p>
+
+<table><thead><tr><th>角色</th><th>他们关心的</th><th>你的说法</th></tr></thead><tbody><tr><td>PM</td><td>功能交付</td><td>"重构第 1 个模块后，后续功能开发快 3x"</td></tr><tr><td>CFO</td><td>ROI</td><td>"投入 6 人月，换回每季度节省 $X 工程成本"</td></tr><tr><td>CTO</td><td>风险</td><td>"不动的话，下次 P1 概率从 15% 升到 40%"</td></tr><tr><td>团队</td><td>不再痛苦</td><td>"我们会逐步减少 on-call 负担"</td></tr></tbody></table>
+
+<p><strong>Step 4: 提供两个选项，不是一个</strong></p>
+
+<p>❌ 坏做法："我们必须重构，需要 6 个月"</p>
+<p>✅ 好做法：</p>
+<ul><li><strong>选项 A</strong> (推荐): 20% 时间持续重构 + 正常功能交付。6 个月内迁移 80%，第 3 个月起速度提升可见</li><li><strong>选项 B</strong> (保守): 只修最关键的稳定性问题。Q4 功能按时交付，但技术债继续累积，明年再评估</li></ul>
+
+<p>给 leadership 选择权，他们更容易接受你的推荐方案。</p>
+
+<hr/>
+
+<h3>Result — 结果和学到的</h3>
+
+<ul><li>Q4 功能按时交付 ✅（给了 PM 他们想要的）</li><li>同时完成 30% 旧系统迁移 ✅</li><li>Incident 率下降 40%，on-call 时间减半 ✅</li><li>团队 engagement 改善（有进展感，不再是纯救火）✅</li></ul>
+
+<hr/>
+
+<h2>❌ 坏 vs ✅ 好</h2>
+
+<p><strong>❌ 工程师思维:</strong></p>
+<p>"老代码太烂了，我们需要 6 个月全面重写，不然我要辞职了。"</p>
+
+<p><strong>✅ Staff 思维:</strong></p>
+<p>"我做了一个分析，当前技术债每季度让我们损失约 X。我有两个方案给你——我推荐方案 A，因为它在最小化 Q4 风险的同时开始偿还债务。能给我 30 分钟走一遍这个分析吗？"</p>
+
+<hr/>
+
+<h2>🔑 Senior/Staff 关键洞察 / Key Takeaways</h2>
+
+<ol><li><strong>量化一切</strong> — 技术问题不说业务语言，就等于在说方言</li><li><strong>扼杀者无花果优于大爆炸重写</strong> — 持续交付价值，降低风险</li><li><strong>给选项，不给命令</strong> — 让 stakeholder 感觉他们在决策</li><li><strong>对齐激励</strong> — 每个角色的痛点不同，说他们听得懂的话</li><li><strong>用数据推动，不用情绪</strong> — "我们很痛苦" &lt; "上季度损失了 $X"</li></ol>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ol><li><a href="https://staffeng.com/book">Staff Engineer — Will Larson</a></li><li><a href="https://martinfowler.com/bliki/StranglerFigApplication.html">Strangler Fig Pattern — Martin Fowler</a></li><li><a href="https://leaddev.com/technical-direction-strategy/articulating-technical-debt-non-technical-stakeholders">Articulating Technical Debt to Stakeholders — LeadDev</a></li></ol>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>你家的水管老化了，总是漏水，修起来要断水 6 个月。</p>
+<p>聪明的做法不是说"必须断水 6 个月"，而是说："我们可以边用水边换管子，每周换一段，不影响正常生活，半年后全换好。"</p>
+<p>这就是 Strangler Fig：慢慢扼死老系统，让新系统接管。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 146 (Synthesis + News)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>🤖 AI — Day 146 (Synthesis + News)</h1>
+<p><strong>AI 新闻快报 + 深度综合：2026 年底 LLM 生态现状</strong></p>
+<p><strong>AI News + Deep Synthesis: The LLM Landscape in Late 2026</strong></p>
+
+<hr/>
+
+<h2>📰 本周 AI 动态 / This Week in AI</h2>
+
+<blockquote>Sources: <a href="https://llm-stats.com/llm-updates">llm-stats.com</a> · <a href="https://blog.mean.ceo/new-ai-model-releases-news-november-2026/">mean.ceo/AI news</a> · <a href="https://aiweekly.co/ai-news-today/edition/2026-11-03">aiweekly.co</a></blockquote>
+
+<h3>🔥 Story 1: 模型重写模型 — GPT-6 Astra 的权重手术</h3>
+<p><strong>Model Rewrites Model — GPT-6 Astra Does "Weight Surgery"</strong></p>
+
+<p>据报道 (reportedly)，OpenAI 的 GPT-6 Astra 展示了一个引人注目的能力：它可以直接检查另一个模型（Qwen3.5-0.8B）的原始神经网络权重，识别出推理循环异常，并编辑极少量权重来修复问题——无需任何传统训练循环。</p>
+
+<p>GPT-6 Astra reportedly demonstrated the ability to inspect raw neural network weights of another model, identify a reasoning-loop pathology, and edit a tiny fraction of weights to fix it—without any traditional training. The resulting model showed dramatically improved benchmark performance.</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>这暗示着一个新范式：AI 不只是使用工具，而是能够<strong>直接干预其他 AI 的内部结构</strong>。如果属实，这将是 AI 自我改进研究的重大里程碑。</p>
+
+<p>This hints at a paradigm where AI models can directly modify other models' internals—a significant step toward AI self-improvement research.</p>
+
+<p>Source: <a href="https://aiweekly.co/ai-news-today/edition/2026-11-03">aiweekly.co</a></p>
+
+<hr/>
+
+<h3>🔥 Story 2: 开源追上闭源的速度在加快</h3>
+<p><strong>Open Source Closing the Gap with Proprietary Models — Fast</strong></p>
+
+<p>Llama、Mistral、Qwen、DeepSeek 等开源模型在 2026 年底据报道已能与顶级闭源模型在多数基准测试上匹敌。更重要的是：<strong>开源的迭代速度正在加快</strong>。</p>
+
+<p>Open-weight models from Meta, Mistral AI, Alibaba (Qwen), and DeepSeek reportedly now rival proprietary alternatives on most benchmarks. The open ecosystem is also producing specialized models (coding, reasoning, multimodal) at an unprecedented pace.</p>
+
+<p><strong>工程师视角 / Engineering perspective:</strong></p>
+<ul><li>微调 (fine-tuning) 变得更民主化</li><li>自托管 LLM 的成本在持续下降</li><li>企业可以在本地运行强力模型，规避数据隐私顾虑</li></ul>
+
+<p>Source: <a href="https://llm-stats.com/llm-updates">llm-stats.com</a></p>
+
+<hr/>
+
+<h3>🔥 Story 3: 推理结果的"保质期"问题</h3>
+<p><strong>LLM Research Findings Have a Short Shelf Life</strong></p>
+
+<p>斯坦福大学据报道发现：2024 年 7 月至 2026 年 9 月间发表的大多数被广泛引用的 LLM 研究结论，在发表后 15 个月内就不再成立或效果显著减弱。</p>
+
+<p>A Stanford study reportedly found that most widely cited LLM findings from July 2024 through September 2026 no longer held or showed significantly diminished effects within 15 months of publication.</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>这不是批评研究者——而是揭示了 LLM 领域的独特挑战：<strong>模型迭代速度超过了学术发表周期</strong>。今天的 benchmark SOTA 明年可能是基线。</p>
+
+<p>Source: <a href="https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG_UPxuIdoruPjIKJCpcAcXcy1V5OaVI4M1P5YcCvsi2wjM2xfPBpdEGVFBjVwLz6bLsZECemYd1ZgJ9Sf19X8L-0zagRtnihT0a0P9zyl3-tFRXXSRwpabDyASxEAyUIo3wODUS3rIQmvI5eNkQZTxMchkcg==">stanford.edu (via search)</a></p>
+
+<hr/>
+
+<h2>🔬 深度综合：混合检索架构 + 状态记忆 / Deep Synthesis</h2>
+
+<p>覆盖了 30 个 AI 概念之后，来综合两个之前分开讲过的主题：<strong>RAG（Day 16）+ 向量数据库（Day 18）+ 推理优化（Day 46）</strong>。</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="# pip install openai faiss-cpu numpy&#10;&#10;import openai&#10;import faiss&#10;import numpy as np&#10;from typing import Optional&#10;&#10;class ProductionRAGSystem:&#10;    &quot;&quot;&quot;&#10;    Production-grade RAG: vector search + KV cache awareness + streaming&#10;    Synthesizes: Embeddings + Vector DB + Inference Optimization&#10;    &quot;&quot;&quot;&#10;    &#10;    def __init__(self, dimension: int = 1536):&#10;        # FAISS index — in production: use Pinecone/Weaviate/pgvector&#10;        self.index = faiss.IndexFlatIP(dimension)  # Inner product (cosine sim)&#10;        self.documents: list[str] = []&#10;        self.client = openai.OpenAI()&#10;    &#10;    def embed(self, text: str) -&gt; np.ndarray:&#10;        response = self.client.embeddings.create(&#10;            model=&quot;text-embedding-3-small&quot;,&#10;            input=text&#10;        )&#10;        vec = np.array(response.data[0].embedding, dtype=np.float32)&#10;        # Normalize for cosine similarity&#10;        return vec / np.linalg.norm(vec)&#10;    &#10;    def add_documents(self, docs: list[str]) -&gt; None:&#10;        for doc in docs:&#10;            vec = self.embed(doc)&#10;            self.index.add(vec.reshape(1, -1))&#10;            self.documents.append(doc)&#10;    &#10;    def retrieve(self, query: str, k: int = 3) -&gt; list[str]:&#10;        query_vec = self.embed(query)&#10;        distances, indices = self.index.search(query_vec.reshape(1, -1), k)&#10;        return [self.documents[i] for i in indices[0] if i &lt; len(self.documents)]&#10;    &#10;    def answer(self, question: str) -&gt; str:&#10;        # Step 1: Retrieve relevant context&#10;        contexts = self.retrieve(question)&#10;        context_str = &quot;\n\n&quot;.join(f&quot;[{i+1}] {c}&quot; for i, c in enumerate(contexts))&#10;        &#10;        # Step 2: Generate with streaming (reduces perceived latency)&#10;        # KV cache: system prompt stays hot in cache → cheaper repeated calls&#10;        stream = self.client.chat.completions.create(&#10;            model=&quot;gpt-4o-mini&quot;,&#10;            messages=[&#10;                {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;Answer using only the provided context.&quot;},&#10;                {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: f&quot;Context:\n{context_str}\n\nQuestion: {question}&quot;}&#10;            ],&#10;            stream=True  # streaming for UX&#10;        )&#10;        &#10;        result = &quot;&quot;&#10;        for chunk in stream:&#10;            delta = chunk.choices[0].delta.content or &quot;&quot;&#10;            result += delta&#10;            print(delta, end=&quot;&quot;, flush=True)  # stream to user&#10;        return result&#10;&#10;# Usage&#10;rag = ProductionRAGSystem()&#10;rag.add_documents([&#10;    &quot;Python asyncio uses epoll on Linux for I/O multiplexing.&quot;,&#10;    &quot;The GIL prevents true parallelism for CPU-bound tasks.&quot;,&#10;    &quot;ProcessPoolExecutor bypasses the GIL using separate processes.&quot;,&#10;])&#10;answer = rag.answer(&quot;How does Python handle concurrent I/O?&quot;)">Copy</button>
+  <pre><code class="language-python"><span style="color:#5c6370;"># pip install openai faiss-cpu numpy</span>
+
+<span style="color:#c678dd;">import</span> openai
+<span style="color:#c678dd;">import</span> faiss
+<span style="color:#c678dd;">import</span> numpy <span style="color:#c678dd;">as</span> np
+<span style="color:#c678dd;">from</span> typing <span style="color:#c678dd;">import</span> Optional
+
+<span style="color:#c678dd;">class</span> ProductionRAGSystem:
+    <span style="color:#e5c07b;">"""
+    Production-grade RAG: vector search + KV cache awareness + streaming
+    Synthesizes: Embeddings + Vector DB + Inference Optimization
+    """</span>
+    
+    <span style="color:#c678dd;">def</span> __init__(self, dimension: int = <span style="color:#56b6c2;">1536</span>):
+        <span style="color:#5c6370;"># FAISS index — in production: use Pinecone/Weaviate/pgvector</span>
+        self.index = faiss.IndexFlatIP(dimension)  <span style="color:#5c6370;"># Inner product (cosine sim)</span>
+        self.documents: list[str] = []
+        self.client = openai.OpenAI()
+    
+    <span style="color:#c678dd;">def</span> embed(self, text: str) -&gt; np.ndarray:
+        response = self.client.embeddings.create(
+            model=<span style="color:#e5c07b;">"text-embedding-3-small"</span>,
+            input=text
+        )
+        vec = np.array(response.data[<span style="color:#56b6c2;">0</span>].embedding, dtype=np.float32)
+        <span style="color:#5c6370;"># Normalize for cosine similarity</span>
+        <span style="color:#c678dd;">return</span> vec / np.linalg.norm(vec)
+    
+    <span style="color:#c678dd;">def</span> add_documents(self, docs: list[str]) -&gt; <span style="color:#c678dd;">None</span>:
+        <span style="color:#c678dd;">for</span> doc <span style="color:#c678dd;">in</span> docs:
+            vec = self.embed(doc)
+            self.index.add(vec.reshape(<span style="color:#56b6c2;">1</span>, -<span style="color:#56b6c2;">1</span>))
+            self.documents.append(doc)
+    
+    <span style="color:#c678dd;">def</span> retrieve(self, query: str, k: int = <span style="color:#56b6c2;">3</span>) -&gt; list[str]:
+        query_vec = self.embed(query)
+        distances, indices = self.index.search(query_vec.reshape(<span style="color:#56b6c2;">1</span>, -<span style="color:#56b6c2;">1</span>), k)
+        <span style="color:#c678dd;">return</span> [self.documents[i] <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> indices[<span style="color:#56b6c2;">0</span>] <span style="color:#c678dd;">if</span> i &lt; len(self.documents)]
+    
+    <span style="color:#c678dd;">def</span> answer(self, question: str) -&gt; str:
+        <span style="color:#5c6370;"># Step 1: Retrieve relevant context</span>
+        contexts = self.retrieve(question)
+        context_str = <span style="color:#e5c07b;">"\n\n"</span>.join(f<span style="color:#e5c07b;">"[{i+1}] {c}"</span> <span style="color:#c678dd;">for</span> i, c <span style="color:#c678dd;">in</span> enumerate(contexts))
+        
+        <span style="color:#5c6370;"># Step 2: Generate with streaming (reduces perceived latency)</span>
+        <span style="color:#5c6370;"># KV cache: system prompt stays hot in cache → cheaper repeated calls</span>
+        stream = self.client.chat.completions.create(
+            model=<span style="color:#e5c07b;">"gpt-4o-mini"</span>,
+            messages=[
+                {<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"system"</span>, <span style="color:#e5c07b;">"content"</span>: <span style="color:#e5c07b;">"Answer using only the provided context."</span>},
+                {<span style="color:#e5c07b;">"role"</span>: <span style="color:#e5c07b;">"user"</span>, <span style="color:#e5c07b;">"content"</span>: f<span style="color:#e5c07b;">"Context:\n{context_str}\n\nQuestion: {question}"</span>}
+            ],
+            stream=<span style="color:#c678dd;">True</span>  <span style="color:#5c6370;"># streaming for UX</span>
+        )
+        
+        result = <span style="color:#e5c07b;">""</span>
+        <span style="color:#c678dd;">for</span> chunk <span style="color:#c678dd;">in</span> stream:
+            delta = chunk.choices[<span style="color:#56b6c2;">0</span>].delta.content <span style="color:#c678dd;">or</span> <span style="color:#e5c07b;">""</span>
+            result += delta
+            print(delta, end=<span style="color:#e5c07b;">""</span>, flush=<span style="color:#c678dd;">True</span>)  <span style="color:#5c6370;"># stream to user</span>
+        <span style="color:#c678dd;">return</span> result
+
+<span style="color:#5c6370;"># Usage</span>
+rag = ProductionRAGSystem()
+rag.add_documents([
+    <span style="color:#e5c07b;">"Python asyncio uses epoll on Linux for I/O multiplexing."</span>,
+    <span style="color:#e5c07b;">"The GIL prevents true parallelism for CPU-bound tasks."</span>,
+    <span style="color:#e5c07b;">"ProcessPoolExecutor bypasses the GIL using separate processes."</span>,
+])
+answer = rag.answer(<span style="color:#e5c07b;">"How does Python handle concurrent I/O?"</span>)</code></pre>
+</div>
+
+<p><strong>这段代码综合了什么 / What this synthesizes:</strong></p>
+<ul><li><strong>Embeddings</strong> (Day 2): 文本→向量</li><li><strong>Vector DB</strong> (Day 18): FAISS 近似最近邻搜索</li><li><strong>KV Cache</strong> (Day 46): 系统 prompt 复用热缓存</li><li><strong>Streaming</strong> (Day 46): 降低首 token 延迟感知</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+
+<ol><li><a href="https://platform.openai.com/docs/guides/embeddings">OpenAI Embeddings API</a></li><li><a href="https://github.com/facebookresearch/faiss">FAISS — Facebook AI Similarity Search</a></li><li><a href="https://www.pinecone.io/learn/retrieval-augmented-generation/">RAG vs Fine-tuning — When to Use Each</a></li></ol>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>新闻总结：</p>
+<ol><li>AI 现在可以"给其他 AI 做手术"修复 bug（据报道）</li><li>开源模型正在快速追上商业模型</li><li>AI 研究结论"过期"很快——这是个快速变化的领域</li></ol>
+
+<p>技术综合：RAG 就像给 AI 配了一本"百科全书"——它不需要记住所有东西，需要的时候去查就好。把向量数据库（快速查阅）+ 流式输出（边想边说）+ KV 缓存（记住常用指令）组合在一起，就是一个生产级 RAG 系统。</p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
