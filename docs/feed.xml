@@ -5,8 +5,743 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 03 Nov 2026 16:15:27 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 04 Nov 2026 16:15:56 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-04</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-04</guid>
+      <pubDate>Wed, 04 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 147</h2>
+
+<p><strong>架构选型决策树：从单体到微服务的演进路径</strong></p>
+<p><strong>Architecture Decision Tree: The Evolution from Monolith to Microservices</strong></p>
+
+<p><em>📊 Synthesis Day — Expert Level | 综合之前覆盖的所有架构主题</em></p>
+
+<hr/>
+
+<h2>想象你在设计... / The Scenario</h2>
+
+<p>你是某 500 人公司的 Staff Engineer。CEO 问你：&quot;我们该不该把单体拆成微服务？&quot;</p>
+
+<p>这不是一个技术问题——这是一个<strong>商业决策</strong>。正确答案取决于你所处的阶段。</p>
+
+<hr/>
+
+<h2>架构演进的四个阶段 / Four Stages of Architecture Evolution</h2>
+
+<pre><code>
+Stage 1: 单体起步                 Stage 2: 数据库成为瓶颈
+┌─────────────────────┐           ┌───────┐    ┌────────┐
+│   Monolith          │           │  App  │    │  App   │
+│   [All-in-one]      │   →       └───┬───┘    └───┬────┘
+│   Single DB         │               └──────┬──────┘
+└─────────────────────┘              ┌───────▼──────┐
+                                     │  DB Primary  │
+                                     │  + Replica(s)│
+                                     └──────────────┘
+
+Stage 3: 读写分离 + 缓存           Stage 4: 服务按业务边界拆分
+┌──────────────────────┐           ┌──────────┐  ┌──────────┐
+│  App                 │           │ Service A│  │ Service B│
+│  ↕ Redis Cache       │   →       └────┬─────┘  └────┬─────┘
+│  DB Primary (writes) │                │   Message    │
+│  DB Replica (reads)  │                └───► Queue ◄──┘
+└──────────────────────┘            ┌──────────────────┐
+(Day 6: Caching)                    │  DB per service  │
+(Day 7-8: Indexing/Replication)     │ (or shared+split)│
+                                    └──────────────────┘
+                                (Day 11: Consistent Hashing)
+                                (Day 12: CAP Theorem)
+</code></pre>
+
+<hr/>
+
+<h2>关键决策节点 / Key Decision Points</h2>
+
+<h3>🟢 何时保持单体 (Stay Monolith)</h3>
+<p>- 团队 &lt; 50 人，代码库可以在一个 IDE 里全部理解</p>
+<p>- 每个模块的负载相似，没有明显的性能热点</p>
+<p>- <strong>真实案例：Shopify、Stack Overflow 长期跑单体，业务仍然健康</strong></p>
+
+<h3>🟡 何时优先扩展数据库（不拆服务）</h3>
+<p>- 触发点：DB 成为瓶颈（监控 <code>slow_query_log</code>，p99 延迟上升）</p>
+<p>- 动作顺序：加索引 → 读写分离 → 引入缓存层 (Day 6, 7, 8)</p>
+<p>- <strong>这一步收益最大，架构代价最小，优先于微服务拆分</strong></p>
+
+<h3>🔴 何时真正需要微服务</h3>
+<p>- 不同模块有<strong>截然不同的扩展需求</strong>（搜索 vs 支付 vs 通知）</p>
+<p>- 不同团队需要<strong>独立部署节奏</strong>，部署耦合成为业务瓶颈</p>
+<p>- 触发点：不是&quot;感觉需要&quot;，是 oncall 告诉你哪个服务在拖累全局</p>
+
+<hr/>
+
+<h2>权衡对照表 / Tradeoff Matrix</h2>
+
+<p>| 选项 | 优势 | 代价 | 参考天 |</p>
+<p>|------|------|------|--------|</p>
+<p>| 单体 | 事务简单，调试容易 | 部署耦合，语言锁定 | Day 14 |</p>
+<p>| DB 读写分离 | 渐进可行，风险低 | 主从延迟 | Day 9 |</p>
+<p>| 加缓存层 | 降低 DB 压力 | 缓存失效逻辑复杂 | Day 6 |</p>
+<p>| 微服务 | 独立扩展/部署 | 网络延迟，分布式追踪复杂 | Day 14 |</p>
+<p>| Active-Active 多区域 | 极高可用性 | 最终一致性 (CAP) | Day 12, 54 |</p>
+
+<hr/>
+
+<h2>为什么这样设计？/ Key Insight</h2>
+
+<p><strong>核心原则：架构决策应该跟随组织规模，而不是超前于它。</strong></p>
+
+<p>Conway&#x27;s Law 说：系统的架构会镜像产生它的组织通信结构。</p>
+<p>- 团队还没分组？单体自然。</p>
+<p>- 团队按业务线分组？微服务自然。</p>
+<p>- 强行逆势而为 → 要么无人维护的服务，要么紧耦合的&quot;分布式单体&quot;。</p>
+
+<hr/>
+
+<h2>常见错误 / Common Mistakes</h2>
+
+<p>❌ <strong>&quot;Microservices-first&quot;</strong> — 未验证产品需求就开始拆分。Netflix 也是先跑了多年单体才拆的。</p>
+
+<p>❌ <strong>拆了服务没拆数据</strong> — 多个服务共享同一个 DB schema。这不是微服务，这是分布式单体，两套代价、一套收益。</p>
+
+<p>❌ <strong>跳过 Stage 2/3</strong> — 直接从单体跳到微服务，忽略了成本更低的数据库优化阶段。</p>
+
+<p>❌ <strong>忽略 Consistent Hashing (Day 11)</strong> — 水平扩展时缓存失效，命中率崩溃，流量全压到 DB。</p>
+
+<p>✅ <strong>正确姿势</strong>：Profile 真实瓶颈 → 最小化改动解决 → 验证效果 → 再下一步。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://martinfowler.com/articles/microservice-premium.html</p>
+<p>- https://shopify.engineering/deconstructing-monolith-designing-software-maximizes-developer-productivity</p>
+<p>- https://www.infoq.com/articles/microservices-when-to-avoid/</p>
+
+<h2>🧒 ELI5</h2>
+<p>就像开餐厅：刚开始你自己煮所有菜（单体）。生意大了先买一台洗碗机（缓存）、再加个帮厨（DB 副本）。规模再大了才雇专门的厨师负责不同菜系（微服务）。别刚开业就把厨房分成 20 个小隔间——服务员光跑来跑去菜就凉了。</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 147</h2>
+
+<p>🧩 <strong>二维动态规划模式 (4/11)</strong> — building on the template introduced earlier in this block</p>
+
+<p><strong>#518 Coin Change II</strong> 🟡 Medium</p>
+<p>- 🔗 https://leetcode.com/problems/coin-change-ii/</p>
+<p>- 📹 https://neetcode.io/problems/coin-change-ii</p>
+
+<hr/>
+
+<h2>模式回顾 / Pattern Recap (4th problem in block)</h2>
+
+<p>之前的题：</p>
+<p>- #62 Unique Paths → dp[i][j] = dp[i-1][j] + dp[i][j-1] （计数路径）</p>
+<p>- #1143 LCS → dp[i][j] = match ? dp[i-1][j-1]+1 : max(dp[i-1][j], dp[i][j-1])</p>
+<p>- #309 Stock Cooldown → 状态机 DP，<code>hold/sold/cooldown</code></p>
+
+<p><strong>今天的变化 / What&#x27;s different today:</strong></p>
+<p>Coin Change II 是<strong>无界背包（Unbounded Knapsack）</strong>——每枚硬币可以无限次使用。这不同于 LCS 的&quot;用完就没&quot;，也不同于 Unique Paths 的纯方向移动。关键区别：<code>dp[i][j-coins[i-1]]</code> 而非 <code>dp[i-1][j-coins[i-1]]</code>（允许重复用同一个物品）。</p>
+
+<hr/>
+
+<h2>现实类比 / Real-World Analogy</h2>
+
+<p>想象你去超市，只有 1 元、5 元、10 元的硬币，想凑出刚好 15 元。有多少种凑法？</p>
+
+<p>- [10, 5], [10, 1, 1, 1, 1, 1], [5, 5, 5], [5, 5, 1×5], ...</p>
+
+<p>Coin Change II 就是枚举所有这些组合数。</p>
+
+<hr/>
+
+<h2>问题 / Problem</h2>
+
+<p>给定硬币面额数组 <code>coins</code> 和目标金额 <code>amount</code>，返回凑出该金额的<strong>组合数</strong>（不计顺序）。</p>
+
+<pre><code>
+# Example
+coins = [1, 2, 5], amount = 5
+# Output: 4
+# [1,1,1,1,1], [1,1,1,2], [1,2,2], [5]
+</code></pre>
+
+<hr/>
+
+<h2>如何映射到模板 / Mapping to 2-D DP Template</h2>
+
+<pre><code>
+dp[i][j] = 用前 i 种硬币凑出金额 j 的组合数
+
+i → coins (行)
+j → amount 0..amount (列)
+
+状态转移：
+  不用 coin[i]: dp[i][j] = dp[i-1][j]
+  用 coin[i]:   dp[i][j] += dp[i][j - coin[i]]   ← 注意是 dp[i], 不是 dp[i-1]！
+                                                    ← 因为硬币可重复使用
+
+Base case: dp[i][0] = 1 (凑出 0 元只有一种方法：什么都不选)
+</code></pre>
+
+<hr/>
+
+<h2>Python 解法 + 追踪 / Solution with Trace</h2>
+
+<pre><code>
+def change(amount: int, coins: list[int]) -&gt; int:
+    # 2-D DP: dp[i][j] = ways using first i coins to make amount j
+    n = len(coins)
+    dp = [[0] * (amount + 1) for _ in range(n + 1)]
+    
+    # Base case: 0 ways using 0 coins, except amount=0
+    for i in range(n + 1):
+        dp[i][0] = 1  # 1 way to make 0: choose nothing
+    
+    for i in range(1, n + 1):
+        for j in range(1, amount + 1):
+            dp[i][j] = dp[i-1][j]  # don&#x27;t use coin[i-1]
+            if j &gt;= coins[i-1]:
+                dp[i][j] += dp[i][j - coins[i-1]]  # use coin[i-1] (reusable!)
+    
+    return dp[n][amount]
+
+# Trace: coins=[1,2,5], amount=5
+# dp[0]: [1, 0, 0, 0, 0, 0]   (0 coins, only j=0 is valid)
+# dp[1] (coin=1): [1, 1, 1, 1, 1, 1]  (all amounts via 1s)
+# dp[2] (coin=2): [1, 1, 2, 2, 3, 3]
+# dp[3] (coin=5): [1, 1, 2, 2, 3, 4]  ← dp[3][5] = dp[2][5] + dp[3][0] = 3+1 = 4 ✓
+</code></pre>
+
+<p><strong>空间优化（重要！）/ Space Optimization:</strong></p>
+
+<pre><code>
+def change(amount: int, coins: list[int]) -&gt; int:
+    # Optimize to O(amount) space
+    # Key: iterate coins outer, amount inner (ensures unbounded use)
+    dp = [0] * (amount + 1)
+    dp[0] = 1
+    
+    for coin in coins:
+        for j in range(coin, amount + 1):
+            dp[j] += dp[j - coin]
+    
+    return dp[amount]
+
+# Time: O(n * amount), Space: O(amount)
+# IMPORTANT: outer=coins, inner=amount → each coin counted unlimited times
+# If reversed: outer=amount, inner=coins → 0/1 knapsack (each coin once)
+</code></pre>
+
+<hr/>
+
+<h2>举一反三 / Connections in This Block</h2>
+
+<p>| 题目 | 与今天的联系 |</p>
+<p>|------|-------------|</p>
+<p>| #62 Unique Paths | 也是计数，但路径是单向的（只能右/下），无&quot;重复使用&quot; |</p>
+<p>| #1143 LCS | 匹配问题，dp[i][j] 取决于 dp[i-1][j-1]（用了就消耗） |</p>
+<p>| #309 Cooldown | 也是无限次操作，但用状态机建模而非背包 |</p>
+<p>| #494 Target Sum (next) | 0/1 背包的变体——每个数只能用一次，加 or 减 |</p>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+<p>- <strong>时间</strong>: O(n × amount) — 填满二维表</p>
+<p>- <strong>空间</strong>: O(amount) — 压缩为一维后</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://leetcode.com/problems/coin-change-ii/editorial/</p>
+<p>- https://neetcode.io/problems/coin-change-ii</p>
+<p>- https://cp-algorithms.com/dynamic_programming/knapsack.html</p>
+
+<h2>🧒 ELI5</h2>
+<p>你有 1 分、2 分、5 分的硬币，想用它们凑出 5 分，问有多少种方法。我们做一张表：行是&quot;我可以用的硬币种类&quot;，列是&quot;目标金额&quot;。从小到大填表——每格的答案 = &quot;不用这个硬币的方法数&quot; + &quot;用了这个硬币后剩余金额的方法数&quot;。因为硬币可以反复用，所以&quot;用了这个硬币&quot;是看同一行（不是上一行）。</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 147</h2>
+
+<p><strong>综合场景 / Synthesis Scenario — Senior/Staff Level</strong></p>
+
+<p><em>今天是综合日：跨越过去60道行为题，整合成一道复合题。</em></p>
+<p><em>Synthesis Day: combining themes across 60 behavioral questions.</em></p>
+
+<hr/>
+
+<h2>今日场景 / Scenario</h2>
+
+<p>&gt; <strong>&quot;你是一个新加入的 Staff Engineer，被要求 6 个月内将服务 P99 延迟从 800ms 降到 200ms，同时不能停服。技术团队对方向意见不一，产品要求不能 block 任何新功能。你如何推进？&quot;</strong></p>
+
+<p>这道题同时考察：决策（Day 1）、优先级（Day 12）、影响力（Day 1）、技术债（Day 16）、跨团队协作（Day 39）、压力沟通（Day 13）。</p>
+
+<hr/>
+
+<h2>STAR 框架拆解 / STAR Breakdown</h2>
+
+<h3>🌟 情境 / Situation</h3>
+<p>新来的 Staff，没有直接汇报关系，800ms p99 已影响转化率，但每个工程师对根因判断不同——有人说是 DB 慢查询，有人说是第三方 API，有人说是 N+1 请求。</p>
+
+<h3>📋 任务 / Task</h3>
+<p>在 <strong>6 个月内</strong> 将 p99 从 800ms → 200ms，同时：</p>
+<p>1. 不停服</p>
+<p>2. 不影响产品新功能交付</p>
+
+<h3>⚡ 行动 / Action</h3>
+
+<p><strong>Phase 1：用数据结束争论（第 1-2 周）</strong></p>
+<p>- 部署分布式追踪（Jaeger/Datadog APM），生成 flame graph</p>
+<p>- 画出 p95/p99/p999 分布曲线，找出是高频慢还是偶发极慢</p>
+<p>- 以事实说话，终止&quot;感觉是 DB&quot;之类的争论</p>
+
+<p><strong>Phase 2：找最大杠杆点（第 3-4 周）</strong></p>
+<p>- 发现 60% 延迟来自同一批 3 个端点，且都触发了 N+1 查询</p>
+<p>- 优先解决：不需要重架构，风险低，预估可改善 300-400ms</p>
+
+<p><strong>Phase 3：并行推进，不 block 产品（第 5-16 周）</strong></p>
+<p>- 把优化工作切成 2 周 sprint，每 sprint 一个可测量目标</p>
+<p>- 给产品团队每周一更新：&quot;本周 p99 降了 X ms，你们的功能 Y 我们协调好时间窗&quot;</p>
+<p>- 建立 feature flag — 优化版上线先灰度 5%，有问题立即回退</p>
+
+<p><strong>Phase 4：巩固与防退化（第 4-6 月）</strong></p>
+<p>- 在 CI 中加 performance regression test，新 PR 不能让 p99 回升</p>
+<p>- 写内部 RFC 记录决策，避免新人重踩同一个坑</p>
+
+<h3>📊 结果 / Result</h3>
+<p>5 个月时达标（p99: 190ms），产品零功能延期，团队形成了&quot;先量化再动手&quot;的文化共识。</p>
+
+<hr/>
+
+<h2>❌ 差答案 vs ✅ 好答案</h2>
+
+<p>| ❌ 常见失误 | ✅ 正确做法 |</p>
+<p>|------------|------------|</p>
+<p>| &quot;我重构了整个架构&quot; | 先用 observability 找根因，最小化改动 |</p>
+<p>| &quot;我说服大家用我的方案&quot; | 让数据说话，不是靠权威 |</p>
+<p>| &quot;要求产品暂停新功能 3 个月&quot; | 并行，feature flag，协商优先级 |</p>
+<p>| 只说技术，不说沟通 | 主动更新进度，建立信任 |</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分点 / Senior/Staff Tips</h2>
+
+<p>1. <strong>从 Staff 角度</strong>：你的价值不在于 code，在于解锁团队。如果你亲自改每一行 SQL，你没有杠杆。</p>
+<p>2. <strong>可逆 vs 不可逆决策</strong>（Day 63）：先做可逆的（加缓存、加索引），再做不可逆的（重架构）</p>
+<p>3. <strong>量化承诺</strong>：不说&quot;我会让它变快&quot;，说&quot;第 8 周 p99 目标是 500ms，我们每周对齐&quot;</p>
+<p>4. <strong>影响圈 vs 关注圈</strong>：产品要求不 block 功能是你的关注圈，怎么优化是你的影响圈，聚焦影响圈</p>
+
+<hr/>
+
+<h2>关键 Takeaways / Key Takeaways</h2>
+
+<p>- 用观测数据替代意见战</p>
+<p>- 分解大目标为可验证的小里程碑</p>
+<p>- 并行推进，用 feature flag 降风险</p>
+<p>- Staff 的价值 = 技术决策 × 组织影响力</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://www.staffeng.com/guides/what-do-staff-engineers-actually-do/</p>
+<p>- https://lethain.com/trunk-and-branches/</p>
+<p>- https://charity.wtf/2022/08/24/the-hierarchy-is-bullshit-and-bad-for-business/</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象你是新来的大厨，餐厅出菜很慢，老板叫你在 6 个月内把等待时间缩短 4 倍，而且不能停业。你不能随便乱改菜谱——先去厨房站一天，看哪个环节最慢（观测），再先解决最大的卡点（优先级），改的时候先在一张桌子试，没问题再推全厅（灰度）。</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 147</h2>
+
+<p><strong>综合深化：Python 性能分析与优化决策树</strong></p>
+<p><strong>Synthesis: Python Performance Profiling &amp; Optimization Decision Tree</strong></p>
+
+<p><em>综合日 — Expert Level | 跨越 asyncio、GIL、生成器、缓存等历史主题</em></p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<p>你收到报警：某个 Python 微服务 p99 突然升到 3 秒，CPU 长期打满。作为 Staff，你不能随便乱改——先诊断，再手术。</p>
+
+<hr/>
+
+<h2>诊断流程 / Diagnosis Flow</h2>
+
+<pre><code>
+High Latency / High CPU?
+        │
+        ▼
+  ① cProfile 找热点函数
+        │
+   CPU 密集？──────────► ② 检查 GIL (Day 54)
+        │                    ├─ IO 密集 → asyncio / threads
+        │                    └─ CPU 密集 → multiprocessing / C extension
+        │
+   内存暴涨？──────────► ③ memory_profiler + tracemalloc
+        │                    ├─ 大列表 → 改生成器 (Day 98)
+        │                    └─ 循环引用 → weakref / 手动 GC
+        │
+   DB / 外部 IO 慢？──► ④ 检查 N+1 (connection pooling, Day 78)
+                             └─ 检查是否用了 lru_cache (Day 101)
+</code></pre>
+
+<hr/>
+
+<h2>实战示例：用 cProfile + line_profiler 找热点 / Finding Hotspots</h2>
+
+<pre><code>
+# ─── Step 1: cProfile — find which FUNCTIONS are slow ───
+import cProfile
+import pstats
+
+with cProfile.Profile() as pr:
+    result = slow_function()
+
+stats = pstats.Stats(pr)
+stats.sort_stats(&quot;cumulative&quot;)
+stats.print_stats(10)  # top 10 slowest
+
+# Output example:
+# ncalls  tottime  percall  cumtime  percall  filename:lineno(function)
+# 100000    2.100    0.000    2.100    0.000  models.py:42(get_user)
+# ← N+1 query pattern: 100000 calls to get_user!
+</code></pre>
+
+<pre><code>
+# ─── Step 2: line_profiler — find which LINES are slow ───
+# pip install line_profiler
+
+@profile  # decorator added by kernprof
+def process_users(user_ids: list[int]):
+    results = []
+    for uid in user_ids:
+        user = db.get(uid)          # ← line 5: 95% time here (N+1!)
+        results.append(user.name)
+    return results
+
+# Run: kernprof -l -v script.py
+# Timer unit: 1e-06 s
+# Line 5:  950000 µs  95.0%  ← obvious N+1
+</code></pre>
+
+<hr/>
+
+<h2>修复模式对照 / Fix Patterns</h2>
+
+<pre><code>
+# ❌ Before: N+1 query
+def get_names_slow(user_ids):
+    return [db.get_user(uid).name for uid in user_ids]  # 100K DB calls
+
+# ✅ After: batch fetch
+def get_names_fast(user_ids):
+    users = db.get_users_bulk(user_ids)  # 1 DB call
+    return [u.name for u in users]
+
+# ─────────────────────────────────────────────────────────
+
+# ❌ Before: redundant computation in hot loop
+def compute_all(items):
+    for item in items:
+        threshold = expensive_config_load()  # called 10K times!
+        if item &gt; threshold:
+            process(item)
+
+# ✅ After: hoist out of loop + cache
+threshold = expensive_config_load()  # once
+for item in items:
+    if item &gt; threshold:
+        process(item)
+
+# ─────────────────────────────────────────────────────────
+
+# ❌ Before: materializing large list
+def get_all_events():
+    return [parse(line) for line in open(&quot;huge.log&quot;)]  # 10GB in RAM
+
+# ✅ After: generator (Day 98)
+def get_all_events():
+    for line in open(&quot;huge.log&quot;):
+        yield parse(line)  # constant memory
+</code></pre>
+
+<hr/>
+
+<h2>跨主题决策树 / Cross-Topic Decision Tree</h2>
+
+<pre><code>
+问题类型              历史主题              解法方向
+─────────────────────────────────────────────────────────
+IO 并发太低     →  asyncio (Day 48)    →  async/await + gather
+CPU 被 GIL 卡   →  GIL (Day 54)        →  multiprocessing
+大数据集内存    →  generators (Day 98)  →  yield, itertools
+重复计算        →  lru_cache (Day 101)  →  @cache, Redis
+外部服务调用慢  →  Retry (Day 79)       →  tenacity + circuit breaker
+N+1 DB 查询     →  Connection Pool (Day 78) → bulk fetch + eager load
+</code></pre>
+
+<hr/>
+
+<h2>一个容易忽略的性能陷阱 / Hidden Trap</h2>
+
+<pre><code>
+# Python 3.11+ 的 tracemalloc — 找内存泄漏
+import tracemalloc
+
+tracemalloc.start()
+
+# ... run your code ...
+
+snapshot = tracemalloc.take_snapshot()
+top_stats = snapshot.statistics(&#x27;lineno&#x27;)
+for stat in top_stats[:5]:
+    print(stat)
+
+# Output: path/to/file.py:42: size=84.3 MiB, count=1000000
+# ← 某行创建了100万个对象没释放
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://docs.python.org/3/library/profile.html</p>
+<p>- https://github.com/pyutils/line_profiler</p>
+<p>- https://docs.python.org/3/library/tracemalloc.html</p>
+
+<h2>🧒 ELI5</h2>
+<p>代码跑慢就像厨房出菜慢：先看哪个厨师最忙（cProfile），再看他每个动作花多久（line_profiler），然后看看是不是一直重复拿同一个调料（N+1/缓存问题），还是锅太小装不下食材（内存不足）。找到根因再动手，别随便换厨房。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 147</h2>
+
+<p><strong>AI 新闻速递 / AI News Roundup</strong></p>
+
+<p><em>Sources verified via web fetch — 2026-11-04</em></p>
+
+<hr/>
+
+<h2>📰 Story 1: AI 帮助发现重大安全漏洞，加速还是放大技术债？</h2>
+<h3>AI-Assisted Discovery of PHP2Shell — A Wake-Up Call</h3>
+
+<p><strong>来源 / Source:</strong> https://spectrum.ieee.org/ai-in-cybersecurity-php2shell-vulnerability (IEEE Spectrum, Nov 2026)</p>
+
+<p>AI 工具据报道协助安全研究员在 <strong>数周内</strong> 发现了 PHP 中一个潜伏多年的严重漏洞（PHP2Shell）。该漏洞据报道可被利用在 Wordpress、Drupal 等托管的服务器上执行任意代码，据报道影响了 NASA、Wikipedia 等网站。</p>
+
+<p>关键洞察：AI 放大了安全专家的能力，让&quot;0.1% 顶尖专家能做更多，低一档的人也能到达那个水准&quot;。但这是一把双刃剑——<strong>攻防两端都可以用 AI 加速</strong>。</p>
+
+<p>Anthropic 同期发布了形式验证（formal verification）工具，目标是用 LLM 生成补丁、再用 LLM 生成补丁正确性的证明，最后由非 LLM 的形式证明检查器来验证——因为&quot;LLM 会幻觉，不能信任 LLM 检查 LLM&quot;。</p>
+
+<p><strong>对你的意义 / Takeaway:</strong></p>
+<p>- 你的系统也有 40 年技术债。AI 让它们更快暴露。</p>
+<p>- 安全扫描工具（如 Semgrep + AI）已成为工程团队标配压力。</p>
+
+<hr/>
+
+<h2>📰 Story 2: Linux 跑 AI 推理，Nvidia RTX Spark 性能被加密固件锁死</h2>
+<h3>Nvidia RTX Spark on Linux: 5x Slower Due to Encrypted Firmware</h3>
+
+<p><strong>来源 / Source:</strong> https://www.mindstudio.ai/blog/linux-nvidia-rtx-spark-laptop (MindStudio, Nov 2026)</p>
+
+<p>Nvidia RTX Spark 笔记本（被定位为便携 AI 开发机，最高 128GB 统一内存）在 Linux 上推理速度据报道比 Windows 慢约 <strong>5 倍</strong>：</p>
+<p>- Windows: 据报道约 65 tokens/sec（GPT-OSS-120B）</p>
+<p>- Linux native: 据报道约 14 tokens/sec</p>
+
+<p>根因：固件的 GPU 功耗表被加密，只有 Windows 驱动能解密。Linux 内核无法读取，GPU 被锁在低频模式。WSL（Linux on Windows）是目前性能最接近 Windows 的妥协方案。</p>
+
+<p><strong>对你的意义 / Takeaway:</strong></p>
+<p>- 选 AI 开发硬件时，Linux 兼容性不是理所当然</p>
+<p>- &quot;Open Ecosystem&quot; 与 &quot;Proprietary Firmware&quot; 的矛盾在 AI 加速硬件领域仍然尖锐</p>
+
+<hr/>
+
+<h2>📰 Story 3: Gemini 据报道用个人聊天记录训练模型</h2>
+<h3>Gemini Reportedly Trains on Personal Chat History</h3>
+
+<p><strong>来源 / Source:</strong> https://news.ycombinator.com/item?id=50363461 (HN discussion, Nov 2026)</p>
+
+<p>HN 上有用户报告，Gemini 在个人账户（非 Workspace/企业账户）中，即使是付费订阅用户，其对话记录据报道仍被用于模型训练。该话题在 HN 获得了大量讨论。</p>
+
+<p>注：目前尚无 Google 官方声明确认或否认细节，相关信息来自用户报告和讨论，请以官方文档为准。</p>
+
+<p><strong>对你的意义 / Takeaway:</strong></p>
+<p>- 在 AI 工具中处理敏感代码、IP 时，务必确认数据使用条款</p>
+<p>- 企业环境应使用 Workspace/API 账户（通常不用于训练）</p>
+<p>- 这再次推动了本地部署（self-hosted）推理的需求</p>
+
+<hr/>
+
+<h2>🔗 本周 AI 主题串联 / This Week&#x27;s Thread</h2>
+
+<pre><code>
+PHP2Shell (安全) ──► AI 加速攻防两端 ──► 对手动代码审查的新要求
+RTX Spark Linux ───► 推理硬件生态 ──► 本地推理的现实门槛
+Gemini 训练数据 ──► 数据隐私 ──► 企业 AI 采购的 due diligence
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://spectrum.ieee.org/ai-in-cybersecurity-php2shell-vulnerability</p>
+<p>- https://www.mindstudio.ai/blog/linux-nvidia-rtx-spark-laptop</p>
+<p>- https://news.ycombinator.com/item?id=50363461</p>
+
+<h2>🧒 ELI5</h2>
+<p>这周 AI 新闻有三件事：①AI 帮安全专家两周找到了一个藏了多年的大漏洞——AI 能加速好人也能加速坏人；②买了最新 AI 笔记本却发现跑 Linux 只有 Windows 五分之一的速度，因为厂商把核心配置加密了；③有人发现 Gemini 可能在用你的聊天记录训练模型——工作里用 AI 工具要先看清楚数据条款。</p>
+
+<hr/>
+<h1>Frontend</h1>
+<h2>🎨 前端 / Frontend — Day 147</h2>
+
+<p><strong>React 性能综合：你真的需要 memo 吗？</strong></p>
+<p><strong>React Performance Synthesis: Do You Actually Need memo?</strong></p>
+
+<p><em>综合日 — Expert Level | 整合 Day 34/36 的 memoization 主题 + 实战决策框架</em></p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<p>你在做一个实时 dashboard，有 50 个 widget，每秒刷新数据。产品说&quot;感觉有点卡&quot;。你的第一反应是什么？</p>
+
+<p>错误答案：立刻给所有组件加 <code>React.memo</code>。</p>
+<p>正确答案：先<strong>量化</strong>，再<strong>精准优化</strong>。</p>
+
+<hr/>
+
+<h2>实战代码 / Code Snippet</h2>
+
+<pre><code>
+// ❌ 常见错误：memo 到处加，实际没有帮助
+const Widget = React.memo(({ data, onUpdate }) =&gt; {
+  return &lt;div onClick={() =&gt; onUpdate(data.id)}&gt;{data.value}&lt;/div&gt;;
+});
+
+// 问题：onUpdate 每次渲染都是新函数引用
+// React.memo 做的是浅比较，onUpdate 永远不等于上次的 onUpdate
+// 结果：memo 完全没用，还多了一层比较开销
+
+// ✅ 正确做法：memo + useCallback 配合
+const Dashboard = () =&gt; {
+  const [widgets, setWidgets] = useState(initialWidgets);
+  
+  // useCallback 稳定 onUpdate 的引用
+  const handleUpdate = useCallback((id: string) =&gt; {
+    setWidgets(prev =&gt; prev.map(w =&gt; w.id === id ? refresh(w) : w));
+  }, []); // deps: empty → stable reference
+
+  return (
+    &lt;&gt;
+      {widgets.map(w =&gt; (
+        &lt;Widget key={w.id} data={w} onUpdate={handleUpdate} /&gt;
+      ))}
+    &lt;/&gt;
+  );
+};
+
+const Widget = React.memo(({ data, onUpdate }: WidgetProps) =&gt; {
+  // Now memo works: data ref changes only when that widget&#x27;s data changes
+  // onUpdate ref is stable (from useCallback)
+  return &lt;div onClick={() =&gt; onUpdate(data.id)}&gt;{data.value}&lt;/div&gt;;
+});
+</code></pre>
+
+<hr/>
+
+<h2>猜猜输出 / Quiz</h2>
+
+<pre><code>
+const Parent = () =&gt; {
+  const [count, setCount] = useState(0);
+  const handler = () =&gt; console.log(&#x27;clicked&#x27;);
+  
+  return (
+    &lt;&gt;
+      &lt;button onClick={() =&gt; setCount(c =&gt; c + 1)}&gt;+&lt;/button&gt;
+      &lt;MemoChild onClick={handler} label=&quot;static&quot; /&gt;
+    &lt;/&gt;
+  );
+};
+
+const MemoChild = React.memo(({ onClick, label }) =&gt; {
+  console.log(&#x27;MemoChild rendered&#x27;);
+  return &lt;button onClick={onClick}&gt;{label}&lt;/button&gt;;
+});
+</code></pre>
+
+<p>点击 <code>+</code> 按钮后，<code>MemoChild rendered</code> 会打印吗？</p>
+
+<p><strong>A.</strong> 不会，因为用了 React.memo</p>
+<p><strong>B.</strong> 会，因为 <code>handler</code> 每次是新函数引用</p>
+<p><strong>C.</strong> 不会，因为 <code>label</code> 没变</p>
+<p><strong>D.</strong> 会，因为父组件状态改变了</p>
+
+<p>&lt;details&gt;&lt;summary&gt;显示答案 / Show Answer&lt;/summary&gt;</p>
+
+<p><strong>答案：B</strong> — 会打印。</p>
+
+<p><code>handler</code> 在每次 Parent 渲染时都是全新的函数对象（引用不同）。React.memo 做浅比较，发现 <code>onClick</code> prop 变了，就会重新渲染 MemoChild。</p>
+
+<p><strong>修复</strong>：<code>const handler = useCallback(() =&gt; console.log(&#x27;clicked&#x27;), []);</code></p>
+
+<p>&lt;/details&gt;</p>
+
+<hr/>
+
+<h2>❌ vs ✅ 对照 / Common Mistakes</h2>
+
+<p>| ❌ 误区 | ✅ 正确 |</p>
+<p>|---------|--------|</p>
+<p>| memo 随手加 | 先 Profile（React DevTools Profiler）再加 |</p>
+<p>| memo 不配 useCallback | 两者配合才有效果 |</p>
+<p>| useMemo 缓存简单计算 | useMemo 适合 &gt;1ms 的计算，简单值不值得 |</p>
+<p>| 以为 memo 能解决所有卡顿 | Context value 变化会绕过 memo！ |</p>
+
+<hr/>
+
+<h2>何时用 / 何时不用 / Decision Framework</h2>
+
+<pre><code>
+应该用 memo 的场景:
+✅ 组件渲染耗时 &gt;1ms（Profile 确认）
+✅ 父组件高频更新但子组件 props 很少变化
+✅ 子组件有复杂子树（列表中的列表）
+
+不需要 memo 的场景:
+❌ 组件本身渲染很快（&lt;0.1ms）
+❌ Props 每次都会变（如 new Date()、inline object）
+❌ 只是感觉应该加（要有数据支撑！）
+
+Context 的特殊问题:
+⚠️ 任何消费了 Context 的组件，当 Context value 变化时
+   会重新渲染，即使有 memo
+解决：拆分 Context / 用 useMemo 稳定 value
+</code></pre>
+
+<hr/>
+
+<h2>写入 Quiz / Quiz JSON</h2>
+
+<pre><code>
+{&quot;question&quot;:&quot;Why does React.memo fail to prevent re-renders when a parent passes an inline arrow function as a prop?&quot;,&quot;options&quot;:[&quot;React.memo only works with class components&quot;,&quot;Arrow functions create a new reference on every render, so shallow comparison detects a change&quot;,&quot;React.memo requires all props to be primitives&quot;,&quot;The child component must also use useCallback&quot;],&quot;correct_index&quot;:1}
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://react.dev/reference/react/memo</p>
+<p>- https://react.dev/reference/react/useCallback</p>
+<p>- https://kentcdodds.com/blog/usememo-and-usecallback</p>
+
+<h2>🧒 ELI5</h2>
+<p><code>React.memo</code> 就像收快递时签收记录——&quot;如果包裹内容没变，我就不拆开&quot;。但如果快递员每次都换一个新袋子装同样的东西，签收系统就以为每次都是新包裹。<code>useCallback</code> 的作用就是保证每次递送用同一个袋子，这样 <code>memo</code> 才真正有效。</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-03</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
