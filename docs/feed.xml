@@ -5,8 +5,800 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 04 Nov 2026 16:15:56 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 05 Nov 2026 16:21:06 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-05</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-05</guid>
+      <pubDate>Thu, 05 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>Day 148 — System Design Synthesis: 分布式一致性全景对比</h2>
+
+<p>&gt; <strong>综合深化 / Expert Synthesis</strong> — Day 148</p>
+
+<hr/>
+
+<p>🏗️ <strong>系统设计综合 / System Design Synthesis</strong></p>
+
+<h2>主题：分布式状态管理三大范式对比</h2>
+<h3>Distributed State Management: Consensus vs CRDT vs Event Sourcing</h3>
+
+<hr/>
+
+<h3>场景设定 / The Problem Space</h3>
+
+<p>想象你在构建一个<strong>全球协作工具</strong>（类似 Notion + Figma 合体）：</p>
+<p>- 多个数据中心，每个都要能写入</p>
+<p>- 网络分区时系统不能停止工作</p>
+<p>- 最终所有节点的数据要一致</p>
+
+<p>Imagine building a <strong>global collaborative tool</strong>: multi-region writes, partition tolerance, eventual consistency. Three architectures compete for this problem — and each makes a radically different bet.</p>
+
+<hr/>
+
+<h3>范式一：强共识 / Strong Consensus (Raft/Paxos)</h3>
+
+<pre><code>
+          ┌─────────────┐
+          │   Leader    │◄──── All writes go here
+          │  (Primary)  │
+          └──────┬──────┘
+                 │ Replicate (majority quorum)
+        ┌────────┼────────┐
+        ▼        ▼        ▼
+   Follower1  Follower2  Follower3
+   (US-East)  (EU-West)  (AP-South)
+
+Write: Leader → 2/3 followers acknowledge → Commit
+Read: From leader (linearizable) or any (stale)
+</code></pre>
+
+<p><strong>适用场景 / When to use:</strong></p>
+<p>- 金融交易、分布式锁（etcd、ZooKeeper）</p>
+<p>- 需要严格线性一致性的场景</p>
+<p>- Financial transactions, distributed locks, config coordination</p>
+
+<p><strong>代价 / The cost:</strong></p>
+<p>- 跨大洲写延迟 = 网络 RTT（~100-200ms）</p>
+<p>- Leader 成为瓶颈</p>
+<p>- Leader failure → 选举暂停（typically 150-300ms）</p>
+
+<hr/>
+
+<h3>范式二：CRDT（无冲突复制数据类型）</h3>
+<h3>Conflict-free Replicated Data Types</h3>
+
+<pre><code>
+   Region A          Region B          Region C
+  ┌──────────┐      ┌──────────┐      ┌──────────┐
+  │ Counter=5│      │ Counter=3│      │ Counter=7│
+  │ (+2 ops) │      │ (+1 ops) │      │ (+3 ops) │
+  └────┬─────┘      └────┬─────┘      └────┬─────┘
+       │                 │                 │
+       └─────────────────┼─────────────────┘
+                    Merge: max or union
+                    Final: Counter=15 ✅
+</code></pre>
+
+<p><strong>CRDT 的魔法 / The magic:</strong></p>
+<pre><code>
+# G-Counter CRDT: each node only increments its own slot
+state = {&quot;node_a&quot;: 0, &quot;node_b&quot;: 0, &quot;node_c&quot;: 0}
+
+def increment(node_id):
+    state[node_id] += 1
+
+def merge(remote_state):
+    # Take max of each node&#x27;s counter — always safe to merge
+    for node, count in remote_state.items():
+        state[node] = max(state.get(node, 0), count)
+
+def value():
+    return sum(state.values())
+
+# No coordination needed! Any order of merges gives same result.
+</code></pre>
+
+<p><strong>适用场景:</strong> 协同编辑（Figma、文档光标位置）、购物车、点赞计数、在线状态</p>
+<p><strong>局限:</strong> 复杂数据结构难以建模为 CRDT；某些操作天然不可交换（如&quot;先删后加&quot; vs &quot;先加后删&quot;）</p>
+
+<hr/>
+
+<h3>范式三：事件溯源 + 最终一致性</h3>
+<h3>Event Sourcing + Eventual Consistency</h3>
+
+<pre><code>
+  User Action
+      │
+      ▼
+  Event Log (immutable, append-only)
+  ┌────────────────────────────────────────┐
+  │ t1: UserCreated{id:123}               │
+  │ t2: ItemAdded{id:123, item:&quot;book&quot;}    │
+  │ t3: ItemRemoved{id:123, item:&quot;book&quot;}  │
+  │ t4: OrderPlaced{id:123, total:29.99}  │
+  └────────────────────────────────────────┘
+      │
+      ▼ Fan-out (async, best-effort)
+  ┌──────────┐  ┌──────────┐  ┌──────────┐
+  │ Orders   │  │Analytics │  │ Search   │
+  │ DB       │  │ DB       │  │ Index    │
+  └──────────┘  └──────────┘  └──────────┘
+  (may lag     (may lag        (may lag
+   100ms)       1s)            500ms)
+</code></pre>
+
+<p><strong>适用场景:</strong> 审计日志、复杂领域（电商、银行）、需要时间旅行查询</p>
+<p><strong>代价:</strong> 读取需重放事件（慢），schema 演进复杂，eventual consistency 对某些场景不可接受</p>
+
+<hr/>
+
+<h3>三大范式权衡矩阵 / Decision Matrix</h3>
+
+<p>| 维度 | 强共识 | CRDT | 事件溯源 |</p>
+<p>|------|--------|------|----------|</p>
+<p>| <strong>一致性</strong> | 线性 | 最终 | 最终 |</p>
+<p>| <strong>写可用性</strong> | 需 Leader | 全部节点 | 全部节点 |</p>
+<p>| <strong>写延迟</strong> | 高（RTT） | 低 | 低 |</p>
+<p>| <strong>冲突解决</strong> | 无冲突（串行化） | 数学保证 | 业务逻辑 |</p>
+<p>| <strong>复杂度</strong> | 中（运维） | 高（设计） | 高（事件设计） |</p>
+<p>| <strong>典型系统</strong> | etcd, CockroachDB | Riak, Automerge | Kafka+ES, Axon |</p>
+
+<hr/>
+
+<h3>实战决策树 / Decision Tree</h3>
+
+<pre><code>
+需要严格线性一致性？（金融/锁）
+  → YES: 强共识 (Raft)
+
+数据是多方并发编辑（协作类）？
+  → YES: CRDT
+
+需要完整审计历史/时间旅行查询？
+  → YES: Event Sourcing
+
+多写多读，容忍短暂不一致？
+  → Leaderless Replication (Cassandra) + read repair
+</code></pre>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p><strong>强共识</strong> = 一个人（Leader）说了算，大家都要等他点头才能继续，慢但不会出错。</p>
+<p><strong>CRDT</strong> = 大家都可以改，但只能&quot;加&quot;不能&quot;减&quot;（或用数学魔法让合并永远安全）。</p>
+<p><strong>事件溯源</strong> = 不记录当前状态，只记录所有发生过的事，随时重播历史。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://raft.github.io/ — Raft consensus algorithm visualization</p>
+<p>- https://crdt.tech/ — CRDT reference implementations and papers</p>
+<p>- https://martinfowler.com/eaaDev/EventSourcing.html — Event Sourcing explained</p>
+<p>- https://www.cs.cornell.edu/projects/ladis2009/talks/dean-keynote-ladis2009.pdf — Google&#x27;s distributed systems lessons</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>Day 148 — Algorithms: #494 Target Sum (Medium) — 2-D DP</h2>
+
+<p>&gt; 🧩 <strong>二维动态规划 (5/11)</strong> — building on the template from earlier in this block</p>
+
+<hr/>
+
+<p>💻 <strong>算法 / Algorithms</strong></p>
+
+<p>🔗 [LeetCode #494 Target Sum](https://leetcode.com/problems/target-sum/) 🟡 Medium</p>
+<p>📹 [NeetCode Video](https://neetcode.io/problems/target-sum)</p>
+
+<hr/>
+
+<h2>🧩 二维DP模式回顾 (5/11) — Pattern Context</h2>
+
+<p><strong>本块已学:</strong> Unique Paths → LCS → Stock Cooldown → Coin Change II → <strong>Target Sum (今天)</strong></p>
+<p><strong>接下来:</strong> Interleaving String → Edit Distance → Longest Increasing Path → Distinct Subsequences → Burst Balloons → Regex Matching</p>
+
+<p>今天这题<strong>表面是回溯，实质是背包</strong>。关键在识别转化。</p>
+
+<hr/>
+
+<h2>真实类比 / Real-World Analogy</h2>
+
+<p>想象你有一台<strong>旧式弹球机</strong>，有 N 个钉子，每个钉子让球向左（-1）或向右（+1）偏移。</p>
+<p>球从顶部落下，你能控制每个钉子的方向，目标是让最终偏移量等于 target。问有多少种路线？</p>
+
+<p>Imagine a pinball machine with N pegs. Each peg deflects the ball left (subtract) or right (add). How many paths lead to the target score?</p>
+
+<hr/>
+
+<h2>问题描述</h2>
+
+<pre><code>
+nums = [1, 1, 1, 1, 1], target = 3
+Add &#x27;+&#x27; or &#x27;-&#x27; before each number.
+
++1+1+1+1-1 = 3  ✓
++1+1+1-1+1 = 3  ✓
++1+1-1+1+1 = 3  ✓
++1-1+1+1+1 = 3  ✓
+-1+1+1+1+1 = 3  ✓
+
+Answer: 5
+</code></pre>
+
+<hr/>
+
+<h2>暴力解 → 数学转化 → 2D DP</h2>
+
+<h3>暴力: O(2^n) DFS — 太慢</h3>
+<pre><code>
+def findTargetSumWays_brute(nums, target):
+    def dfs(i, curr_sum):
+        if i == len(nums):
+            return 1 if curr_sum == target else 0
+        return dfs(i+1, curr_sum + nums[i]) + dfs(i+1, curr_sum - nums[i])
+    return dfs(0, 0)
+</code></pre>
+
+<h3>关键洞察 / Mathematical Transform</h3>
+
+<p>设所有加号的数字之和为 P，减号的数字之和为 Q。</p>
+<p>- P + Q = total_sum</p>
+<p>- P - Q = target</p>
+<p>- 因此 <strong>P = (total_sum + target) / 2</strong></p>
+
+<p>问题转化为：<strong>从 nums 中选出若干数字，使其和恰好等于 P = (total_sum + target) / 2</strong></p>
+<p>这正是 Coin Change II 的变体！</p>
+
+<pre><code>
+total_sum = 5, target = 3
+P = (5 + 3) / 2 = 4
+
+How many subsets of [1,1,1,1,1] sum to 4?
+[1,1,1,1], [1,1,1,1], [1,1,1,1], [1,1,1,1], [1,1,1,1] → 5 ways ✓
+</code></pre>
+
+<hr/>
+
+<h2>2D DP 解法 — 映射到模版</h2>
+
+<pre><code>
+def findTargetSumWays(nums: list[int], target: int) -&gt; int:
+    total = sum(nums)
+    
+    # Edge cases: no valid partition exists
+    if (total + target) % 2 != 0:
+        return 0
+    if abs(target) &gt; total:
+        return 0
+    
+    # subset_sum = (total + target) // 2
+    # Count subsets of nums that sum to subset_sum
+    subset_sum = (total + target) // 2
+    n = len(nums)
+    
+    # dp[i][j] = number of ways to pick from nums[0..i-1] summing to j
+    # Maps to 2D DP template: dp[n+1][subset_sum+1]
+    dp = [[0] * (subset_sum + 1) for _ in range(n + 1)]
+    dp[0][0] = 1  # base: 0 items, sum 0 → 1 way (pick nothing)
+    
+    for i in range(1, n + 1):
+        num = nums[i - 1]
+        for j in range(subset_sum + 1):
+            # Don&#x27;t take nums[i-1]
+            dp[i][j] = dp[i-1][j]
+            # Take nums[i-1] (if feasible)
+            if j &gt;= num:
+                dp[i][j] += dp[i-1][j - num]
+    
+    return dp[n][subset_sum]
+
+# Trace: nums=[1,1,1,1,1], target=3, subset_sum=4
+#
+# dp table (rows=items 0-5, cols=sum 0-4):
+#
+#      0  1  2  3  4
+#  0:  1  0  0  0  0   (no items)
+#  1:  1  1  0  0  0   (consider num=1)
+#  2:  1  2  1  0  0   (consider num=1)
+#  3:  1  3  3  1  0   (consider num=1)
+#  4:  1  4  6  4  1   (consider num=1)
+#  5:  1  5 10 10  5   (consider num=1)
+#
+# dp[5][4] = 5 ✅
+</code></pre>
+
+<hr/>
+
+<h2>空间优化 — 1D 滚动数组</h2>
+
+<pre><code>
+def findTargetSumWays_optimized(nums: list[int], target: int) -&gt; int:
+    total = sum(nums)
+    if (total + target) % 2 != 0 or abs(target) &gt; total:
+        return 0
+    
+    s = (total + target) // 2
+    dp = [0] * (s + 1)
+    dp[0] = 1
+    
+    for num in nums:
+        # Traverse RIGHT to LEFT to avoid using same item twice
+        for j in range(s, num - 1, -1):
+            dp[j] += dp[j - num]
+    
+    return dp[s]
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(n × subset_sum) — much better than O(2^n)</p>
+<p>- Space: O(subset_sum) with 1D optimization</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p>| 问题 | 变体特征 | 关键区别 |</p>
+<p>|------|----------|----------|</p>
+<p>| Coin Change II (#518) | 无限取，求方案数 | 正序遍历 |</p>
+<p>| <strong>Target Sum (#494)</strong> | 每数取一次，+/- | 数学转化为子集和 |</p>
+<p>| Partition Equal Subset (#416) | 每数取一次，能否？ | dp[j] = bool |</p>
+<p>| Ones and Zeroes (#474) | 二维容量背包 | dp[m][n] |</p>
+
+<p><strong>模式识别信号:</strong> &quot;每个元素选或不选&quot; + &quot;计数&quot; = 01背包求方案数</p>
+
+<hr/>
+
+<h2>🧒 ELI5</h2>
+
+<p>把 nums 分成两堆，一堆加起来，一堆减掉。</p>
+<p>目标是让差值等于 target。</p>
+<p>数学变换发现：只需要数出&quot;和等于某个特定值的子集数量&quot;。</p>
+<p>这和 Coin Change II 是同一类问题，只不过每个硬币只能用一次。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://leetcode.com/problems/target-sum/ — Problem statement</p>
+<p>- https://neetcode.io/problems/target-sum — NeetCode walkthrough</p>
+<p>- https://en.wikipedia.org/wiki/Subset_sum_problem — Subset sum problem background</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>Day 148 — Soft Skills Synthesis: 工程师晋升的隐形护城河</h2>
+
+<p>&gt; <strong>综合深化 / Expert Synthesis</strong> — Day 148</p>
+
+<hr/>
+
+<p>🗣️ <strong>软技能综合 / Soft Skills Synthesis</strong></p>
+
+<h2>主题：Senior → Staff 晋升的四个隐形门槛</h2>
+<h3>The Four Invisible Gates Between Senior and Staff Engineer</h3>
+
+<hr/>
+
+<h3>背景 / The Gap Nobody Tells You About</h3>
+
+<p>很多优秀的 Senior Engineer 发现自己在晋升 Staff 的路上卡了很久。</p>
+<p>技术能力足够，但总是差一口气。</p>
+
+<p>Many excellent Senior Engineers find themselves stuck at the Staff level for years. Technical skills are fine — but something&#x27;s missing.</p>
+
+<p>这四个门槛，大多数人没人告诉你：</p>
+
+<hr/>
+
+<h3>门槛一：从&quot;解决问题&quot;到&quot;定义问题&quot;</h3>
+<h3>Gate 1: Problem Solver → Problem Definer</h3>
+
+<p><strong>Senior 思维:</strong> &quot;你告诉我要做什么，我来把它做好。&quot;</p>
+<p><strong>Staff 思维:</strong> &quot;让我先确认我们在解决正确的问题。&quot;</p>
+
+<p><strong>典型场景:</strong></p>
+<p>- 产品说：&quot;我们要优化这个 API 的延迟&quot;</p>
+<p>- Senior: 立刻开始 profiling，优化代码</p>
+<p>- Staff: &quot;为什么？用户在哪个场景下感受到慢？是 p99 还是 p50？延迟改善对业务指标有多大影响？有没有更高优先级的问题？&quot;</p>
+
+<p><strong>如何展示这个能力:</strong></p>
+<p>&gt; &quot;在我开始之前，我想确认问题定义。这个请求背后的假设是 X，但数据显示 Y。我建议我们先用一天做个快速验证，再决定是否投入完整的两周。&quot;</p>
+
+<hr/>
+
+<h3>门槛二：影响力的范围</h3>
+<h3>Gate 2: Team Impact → Organization Impact</h3>
+
+<p><strong>Senior</strong> 在自己的团队里有很强的影响力。</p>
+<p><strong>Staff</strong> 的影响力要跨越团队边界。</p>
+
+<p><strong>具体体现:</strong></p>
+<p>- 写 RFC 被其他团队采纳</p>
+<p>- 发现跨团队的重复造轮子，推动标准化</p>
+<p>- 在没有汇报关系的情况下推动其他团队改变行为</p>
+
+<p><strong>STAR 框架回答模版:</strong></p>
+<pre><code>
+Situation: 三个团队各自在做监控告警，互不兼容
+Task: 我需要在没有权力的情况下推动标准化
+Action:
+  - 先做调研，量化当前成本（3支团队 × 各2周 = 6工程师周浪费）
+  - 找到每个团队真正关心的点（A队关心alert noise，B队关心oncall负担）
+  - 提案聚焦在共同收益，不是&quot;听我的&quot;
+  - 做出 MVP 让第一个团队迁移，降低其他团队的感知风险
+Result: 6个月内3支团队都迁移，每季度节省 ~4工程师周
+</code></pre>
+
+<hr/>
+
+<h3>门槛三：技术视野的时间跨度</h3>
+<h3>Gate 3: Quarter-View → Multi-Year Horizon</h3>
+
+<p>Senior 通常想的是&quot;这个季度怎么做好&quot;。</p>
+<p>Staff 要能看到&quot;18个月后，这个决定会把我们带到哪里&quot;。</p>
+
+<p><strong>面试中如何体现:</strong></p>
+<p>❌ &quot;我们选择了 Kafka 因为它处理高吞吐量很好。&quot;</p>
+<p>✅ &quot;我们选择了 Kafka，权衡了三个维度：</p>
+<p>1. 现在的问题（高吞吐 OK）</p>
+<p>2. 18个月后的问题（数据量×10x，我们提前规划了分区策略）</p>
+<p>3. 如果选错了，逃生路线是什么（abstraction layer 让我们可以换）&quot;</p>
+
+<hr/>
+
+<h3>门槛四：处理模糊性而不陷入瘫痪</h3>
+<h3>Gate 4: Clarity Seeker → Ambiguity Navigator</h3>
+
+<p>Senior 倾向于等待需求清晰后再行动。</p>
+<p>Staff 能在 30% 信息下做出合理决策，并在行进中调整。</p>
+
+<p><strong>实用框架 / Practical Framework:</strong></p>
+<pre><code>
+当遇到极度模糊的项目时:
+1. 列出你知道的 (Known)
+2. 列出你不知道的关键问题 (Critical Unknowns)
+3. 为每个 Unknown 设计最小验证实验
+4. 给出&quot;如果假设X成立，我们做A；如果X不成立，我们做B&quot;
+5. 定期 checkpoint 重新校准
+
+不是&quot;告诉我答案再做&quot;
+而是&quot;我先做这个小实验，下周告诉你结果&quot;
+</code></pre>
+
+<hr/>
+
+<h3>自测清单 / Self-Assessment</h3>
+
+<p>过去6个月，你有没有：</p>
+<p>- [ ] 主动重新定义过一个被错误定义的需求？</p>
+<p>- [ ] 推动过至少一个<strong>你没有汇报关系</strong>的团队做出改变？</p>
+<p>- [ ] 为某个系统写过超过12个月的技术演进计划？</p>
+<p>- [ ] 在信息不完整时做出过有意义的技术决策？</p>
+
+<p>如果有3个以上，你已经在 Staff 路上了。</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>Senior 工程师像一个技术超强的施工队长：你给我图纸，我来建。</p>
+<p>Staff 工程师像一个建筑师：等等，这个设计图合理吗？我们真的需要这栋楼吗？我来重新看看需求。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://staffeng.com/guides/staff-archetypes — Staff Engineer archetypes</p>
+<p>- https://lethain.com/staff-engineer/ — Will Larson&#x27;s Staff Engineer book</p>
+<p>- https://www.developing.dev/p/the-staff-engineer-path — Staff Engineer career path breakdown</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Day 148 — Python Craft Synthesis: CPython 对象模型深挖</h2>
+
+<p>&gt; <strong>综合深化 / Expert Synthesis</strong> — Day 148</p>
+
+<hr/>
+
+<p>🐍 <strong>Python Craft 综合 / Python Craft Synthesis</strong></p>
+
+<h2>主题：CPython 对象内存布局 — 你以为你懂 Python 对象，但你不一定真懂</h2>
+<h3>CPython Object Memory Layout: What&#x27;s Actually in Memory</h3>
+
+<hr/>
+
+<h3>引子 / The Setup</h3>
+
+<pre><code>
+import sys
+x = 1
+print(sys.getsizeof(x))  # 28 bytes on 64-bit Python
+
+# A C int is 4 bytes. Why does Python use 28 bytes for the number 1?
+</code></pre>
+
+<p>这不只是个趣味问题。理解这个，你就理解了 Python 的内存开销、GC 行为、和为什么某些优化有效。</p>
+
+<hr/>
+
+<h3>PyObject 结构 / The PyObject Struct</h3>
+
+<p>CPython 中每个 Python 对象在内存里都是一个 C struct：</p>
+
+<pre><code>
+// Objects/object.h — simplified
+typedef struct _object {
+    Py_ssize_t ob_refcnt;   // 8 bytes — reference count for GC
+    PyTypeObject *ob_type;  // 8 bytes — pointer to type object (e.g., &lt;class &#x27;int&#x27;&gt;)
+} PyObject;
+
+// For integers (PyLongObject):
+typedef struct {
+    PyObject ob_base;       // 16 bytes header
+    Py_ssize_t ob_size;     // 8 bytes — number of &quot;digits&quot; (for big ints)
+    digit ob_digit[1];      // 4 bytes — actual value storage
+    // + padding = 28 bytes total
+} PyLongObject;
+</code></pre>
+
+<p><strong>可视化内存布局 / Memory Layout:</strong></p>
+
+<pre><code>
+Address  Content
+──────────────────────────────────────────
+0x1000   [refcnt: 8 bytes]   ← how many references point here
+0x1008   [ob_type: 8 bytes]  ← pointer to int type object
+0x1010   [ob_size: 8 bytes]  ← 1 (one 30-bit digit needed)
+0x1018   [ob_digit: 4 bytes] ← actual value: 1
+         [padding: 4 bytes]
+──────────────────────────────────────────
+Total: 28 bytes for the number 1
+</code></pre>
+
+<hr/>
+
+<h3>引用计数实战 / Reference Counting in Action</h3>
+
+<pre><code>
+import ctypes
+
+def ref_count(obj):
+    &quot;&quot;&quot;Get reference count of an object.&quot;&quot;&quot;
+    return ctypes.c_long.from_address(id(obj)).value
+
+x = [1, 2, 3]
+print(ref_count(x))   # 1 (just x)
+
+y = x
+print(ref_count(x))   # 2 (x and y)
+
+del y
+print(ref_count(x))   # 1 (only x)
+
+# When refcount hits 0, CPython immediately frees the memory
+# (no waiting for GC cycle, unlike Java/Go)
+</code></pre>
+
+<hr/>
+
+<h3>小整数缓存 / Integer Interning</h3>
+
+<pre><code>
+# CPython pre-allocates integers from -5 to 256
+a = 100
+b = 100
+print(a is b)  # True — same object in memory!
+
+a = 1000
+b = 1000
+print(a is b)  # False — different objects
+
+# Why -5 to 256? Historical accident + common use cases
+# This is why you should use == not is for integer comparison
+</code></pre>
+
+<pre><code>
+# Visualize the cache
+import sys
+cached_ids = set()
+for i in range(-5, 257):
+    x = i
+    y = i
+    if id(x) == id(y):
+        cached_ids.add(i)
+        
+print(f&quot;Cached integers: {min(cached_ids)} to {max(cached_ids)}&quot;)
+# Cached integers: -5 to 256
+</code></pre>
+
+<hr/>
+
+<h3>字符串驻留 / String Interning</h3>
+
+<pre><code>
+# CPython interns strings that look like identifiers
+a = &quot;hello&quot;
+b = &quot;hello&quot;
+print(a is b)  # True (interned)
+
+a = &quot;hello world&quot;  # has a space
+b = &quot;hello world&quot;
+print(a is b)  # False (not interned — depends on CPython version/context)
+
+# Explicit interning
+import sys
+a = sys.intern(&quot;hello world&quot;)
+b = sys.intern(&quot;hello world&quot;)
+print(a is b)  # True — now same object
+</code></pre>
+
+<hr/>
+
+<h3>为什么这对你的代码有影响 / Why This Matters for Your Code</h3>
+
+<pre><code>
+# BAD: creating millions of Python int objects
+def sum_squares_slow(n):
+    result = 0
+    for i in range(n):        # range() is lazy, OK
+        result += i * i       # creates temp int objects constantly
+    return result
+
+# BETTER: use numpy — stores actual C integers, no PyObject overhead
+import numpy as np
+def sum_squares_fast(n):
+    arr = np.arange(n, dtype=np.int64)  # 8 bytes/element, no refcount overhead
+    return np.sum(arr * arr)
+
+# Benchmark
+import timeit
+n = 1_000_000
+slow = timeit.timeit(lambda: sum_squares_slow(n), number=10)
+fast = timeit.timeit(lambda: sum_squares_fast(n), number=10)
+print(f&quot;Pure Python: {slow:.2f}s | NumPy: {fast:.2f}s&quot;)
+# Pure Python: ~2.5s | NumPy: ~0.02s — 100x difference
+</code></pre>
+
+<hr/>
+
+<h3>__slots__ — 砍掉 __dict__ 开销 / Eliminating __dict__ Overhead</h3>
+
+<pre><code>
+import sys
+
+class WithDict:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+class WithSlots:
+    __slots__ = [&#x27;x&#x27;, &#x27;y&#x27;]
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+d = WithDict(1, 2)
+s = WithSlots(1, 2)
+
+print(sys.getsizeof(d))              # ~56 bytes
+print(sys.getsizeof(d.__dict__))     # ~296 bytes — the hidden cost!
+print(sys.getsizeof(s))              # ~48 bytes — no __dict__, much smaller
+
+# At 1M objects:
+# WithDict:  ~336 MB
+# WithSlots: ~46 MB — 7x smaller
+</code></pre>
+
+<hr/>
+
+<h3>深度总结 / Key Takeaways</h3>
+
+<p>1. <strong>每个 Python 对象 = C struct header + 数据</strong> — 开销远大于原始类型</p>
+<p>2. <strong>引用计数是主要 GC 机制</strong> — 循环引用由 generational GC 处理</p>
+<p>3. <strong>小整数和某些字符串被缓存</strong> — <code>is</code> 有时为 True 是实现细节，不要依赖</p>
+<p>4. <strong>性能关键路径:</strong> 用 numpy/array/struct 代替 Python 对象列表</p>
+<p>5. <strong>内存关键路径:</strong> 用 <code>__slots__</code> 消除 <code>__dict__</code> 开销</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>Python 对象就像一张便利贴：正面写着&quot;有几个人在用这张纸&quot;（引用计数）和&quot;这是什么类型&quot;（类型指针），背面才是真正的数据（比如数字 1）。</p>
+<p>所以存个数字 1，你需要一整张便利贴，而不只是写个&quot;1&quot;在纸上。这就是 Python 比 C 慢和占内存的根本原因。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://realpython.com/python-memory-management/ — Python memory management deep dive</p>
+<p>- https://docs.python.org/3/c-api/structures.html — CPython object structures (official)</p>
+<p>- https://jakevdp.github.io/blog/2014/05/09/why-python-is-slow/ — Why Python is slow (classic post)</p>
+<p>- https://docs.python.org/3/reference/datamodel.html#slots — __slots__ documentation</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>Day 148 — AI: News Roundup — November 2026</h2>
+
+<p>&gt; 🤖 <strong>AI 新闻速递 / AI News Roundup</strong> — Day 148 · 2026-11-05</p>
+
+<hr/>
+
+<h2>本周 AI 大事件 / This Week in AI</h2>
+
+<hr/>
+
+<h3>1. 模型军备竞赛加速：GPT-6 系列和 Gemini 4 登场</h3>
+<h3>The Model Race Accelerates: GPT-6 and Gemini 4 Arrive</h3>
+
+<p><strong>Source:</strong> https://blog.mean.ceo/new-ai-model-releases-news-november-2026/</p>
+
+<p>OpenAI 在 10 月底连续发布了 <strong>GPT-6 Rosalind</strong>（10/29）和 <strong>GPT-6.1 Terra</strong>（10/25）。据报道，GPT-6.1 Terra 专为高吞吐量任务优化，价格比前代降低约一半。</p>
+
+<p>Google 推出了 <strong>Gemini 4 Carbon</strong>（下一代旗舰）和 <strong>Gemini 4 Argon</strong>（已 GA）。</p>
+
+<p>Anthropic 于 10/7 发布了 <strong>Claude Haiku 5.5</strong>，成本据报道大幅下降的同时推理能力提升。</p>
+
+<p>OpenAI released <strong>GPT-6 Rosalind</strong> (Oct 29) and <strong>GPT-6.1 Terra</strong> (Oct 25); Terra reportedly costs half the price of its predecessor. Google launched <strong>Gemini 4 Carbon</strong> as its next flagship. Anthropic shipped <strong>Claude Haiku 5.5</strong> with reportedly lower cost and stronger reasoning.</p>
+
+<p><strong>工程师视角:</strong> 推理成本持续暴跌意味着以前&quot;太贵&quot;的 AI 功能现在变得可行了。重新评估你6个月前搁置的 AI 功能。</p>
+
+<hr/>
+
+<h3>2. AI 能审视自己的想法吗？</h3>
+<h3>Can AI Introspect Its Own Thoughts?</h3>
+
+<p><strong>Source:</strong> https://www.quantamagazine.org/new-research-tests-whether-ai-models-know-their-own-thoughts-20261104/</p>
+
+<p>Quanta Magazine 报道了关于 LLM <strong>自省能力</strong>的最新研究——模型是否真的&quot;知道&quot;自己在想什么？研究人员在探索直接向模型注入&quot;思维&quot;的方法。</p>
+
+<p>Research published via Quanta Magazine probes whether LLMs can genuinely introspect on their internal states, with methods to inject &quot;thoughts&quot; directly into models. This has implications for <strong>interpretability</strong> and <strong>steering</strong> AI behavior.</p>
+
+<p><strong>为什么重要:</strong> 如果模型能可靠地报告自己的内部状态，调试 AI 行为将从&quot;黑箱猜测&quot;变为更系统的工程问题。</p>
+
+<hr/>
+
+<h3>3. Transformer 之后：新架构的崛起</h3>
+<h3>Beyond Transformers: New Architectures Rising</h3>
+
+<p><strong>Source:</strong> https://medium.com/@aftab001x/the-end-of-llms-as-we-know-them-why-2026-marks-the-beginning-of-ais-next-architecture-revolution-902ee29484f7</p>
+
+<p>业界讨论的几个后 Transformer 架构正在获得关注：</p>
+
+<p>Several post-Transformer architectures are gaining traction:</p>
+
+<p>| 架构 | 特点 |</p>
+<p>|------|------|</p>
+<p>| <strong>Mamba (SSM)</strong> | 线性时间序列处理，无 attention 二次方开销 |</p>
+<p>| <strong>JEPA</strong> | LeCun 推崇的联合嵌入预测架构 |</p>
+<p>| <strong>Diffusion for Text</strong> | 将图像生成范式移植到文本 |</p>
+<p>| <strong>Titans (Memory-Augmented)</strong> | 外部记忆模块增强 |</p>
+
+<p>预测：未来 2-3 年可能是 Transformer + 新架构混合体的时代，而不是单一架构统治。</p>
+
+<hr/>
+
+<h3>本周数字 / Numbers of the Week</h3>
+
+<p>- 🌍 2026 年已发布 LLM 模型：数百个（来源：llm-stats.com）</p>
+<p>- 💰 推理成本：据报道持续下降，部分模型 API 价格同比降幅显著</p>
+<p>- 🇨🇳 中国模型：据报道 DeepSeek V4.1、Kimi K3.1 Pro、Qwen 3.6、GLM 5.3 持续追赶（reportedly）</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>这个月 AI 圈发生了什么？</p>
+<p>- 各大公司发布了更新更便宜的模型（军备竞赛）</p>
+<p>- 研究人员在问&quot;AI 真的知道自己在想什么吗？&quot;</p>
+<p>- 科学家开始质疑 Transformer 是不是 AI 的终极形态</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://blog.mean.ceo/new-ai-model-releases-news-november-2026/ — Model releases Nov 2026</p>
+<p>- https://www.quantamagazine.org/new-research-tests-whether-ai-models-know-their-own-thoughts-20261104/ — LLM introspection research</p>
+<p>- https://llm-stats.com/ai-trends — AI trends dashboard</p>
+<p>- https://medium.com/@aftab001x/the-end-of-llms-as-we-know-them-why-2026-marks-the-beginning-of-ais-next-architecture-revolution-902ee29484f7 — Post-Transformer architectures</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-04</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
