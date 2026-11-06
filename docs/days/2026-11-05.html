@@ -783,7 +783,7 @@ footer {
   <div class="nav-links">
     <a href="../archive.html">← Archive</a>
     <a href="2026-11-04.html" style="color:var(--text2)">← 2026-11-04</a>
-    
+    <a href="2026-11-06.html" style="color:var(--text2)">2026-11-06 →</a>
   </div>
 </nav>
 
@@ -792,12 +792,12 @@ footer {
     <span class="day-badge">📅 2026-11-05</span>
     <h1>Thursday, November 5, 2026</h1>
     <div class="page-header-meta">
-      <span>4 sections</span>
+      <span>5 sections</span>
       <span>~15 min read</span>
       <span>🌏 Bilingual 中/EN</span>
     </div>
     <div class="nav-days">
-      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-frontend" class="nav-day-btn">🎨 Frontend</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
     </div>
   </div>
 </div>
@@ -806,7 +806,7 @@ footer {
   <div class="day-nav">
     <a href="2026-11-04.html" class="day-nav-btn">← 2026-11-04</a>
     <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
-    <span></span>
+    <a href="2026-11-06.html" class="day-nav-btn">2026-11-06 →</a>
   </div>
 
   
@@ -1277,6 +1277,213 @@ Result: 6个月内3支团队都迁移，每季度节省 ~4工程师周</code></p
 
 <h3>📚 References</h3>
 <ul><li>https://staffeng.com/guides/staff-archetypes — Staff Engineer archetypes</li><li>https://lethain.com/staff-engineer/ — Will Larson's Staff Engineer book</li><li>https://www.developing.dev/p/the-staff-engineer-path — Staff Engineer career path breakdown</li></ul>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-frontend">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-frontend" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🎨</span>
+        <div>
+          <div class="section-header-title">🎨 Frontend</div>
+          <div class="section-header-sub">Day 148 — Frontend: State Management — Zustand vs Redux vs Context</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-frontend">
+        <h1>Day 148 — Frontend: State Management — Zustand vs Redux vs Context</h1>
+
+<blockquote>🎨 <strong>前端 / Frontend</strong> — Day 148 · Architecture · Week 8</blockquote>
+
+<hr/>
+
+<p>🎨 <strong>前端 / Frontend</strong></p>
+
+<p><strong>State Management — Zustand vs Redux vs Context</strong></p>
+<p><strong>状态管理选型：什么场景用哪个</strong></p>
+
+<hr/>
+
+<h2>真实场景 / Real Scenario</h2>
+
+<p>你在做一个 <strong>dashboard 应用</strong>，有用户信息、通知计数、购物车、主题设置等多个全局状态。</p>
+<p>团队里有人说"用 Context 就行"，有人说"必须 Redux"，有人推荐 Zustand。</p>
+<p>谁说得对？</p>
+
+<p>You're building a dashboard with user info, notification count, cart, and theme settings. The team debates: Context vs Redux vs Zustand. Who's right?</p>
+
+<hr/>
+
+<h2>三种方案对比 / The Three Approaches</h2>
+
+<h3>1. React Context — 原生，但有陷阱</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// ❌ 常见错误: 把所有状态放一个 Context&#10;const AppContext = createContext({});&#10;&#10;function AppProvider({ children }) {&#10;  const [user, setUser] = useState(null);&#10;  const [cart, setCart] = useState([]);&#10;  const [theme, setTheme] = useState('light');&#10;  const [notifications, setNotifications] = useState([]);&#10;&#10;  // 问题: 任何一个状态变化，所有消费者都会重渲染！&#10;  return (&#10;    &lt;AppContext.Provider value={{ user, cart, theme, notifications }}&gt;&#10;      {children}&#10;    &lt;/AppContext.Provider&gt;&#10;  );&#10;}&#10;&#10;// ✅ 正确: 拆分 Context，最小化重渲染范围&#10;const UserContext = createContext(null);&#10;const CartContext = createContext(null);&#10;const ThemeContext = createContext(null);">Copy</button>
+  <pre><code class="language-tsx">// ❌ 常见错误: 把所有状态放一个 Context
+const AppContext = createContext({});
+
+function AppProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [theme, setTheme] = useState('light');
+  const [notifications, setNotifications] = useState([]);
+
+  // 问题: 任何一个状态变化，所有消费者都会重渲染！
+  return (
+    &lt;AppContext.Provider value={{ user, cart, theme, notifications }}&gt;
+      {children}
+    &lt;/AppContext.Provider&gt;
+  );
+}
+
+// ✅ 正确: 拆分 Context，最小化重渲染范围
+const UserContext = createContext(null);
+const CartContext = createContext(null);
+const ThemeContext = createContext(null);</code></pre>
+</div>
+
+<p><strong>Context 的真相:</strong> Context 不是状态管理库，它是<strong>数据传递机制</strong>。</p>
+<p>频繁变化的状态放 Context 会导致整棵子树重渲染，性能杀手。</p>
+
+<hr/>
+
+<h3>2. Zustand — 现代轻量首选</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import { create } from 'zustand';&#10;&#10;interface CartStore {&#10;  items: CartItem[];&#10;  total: number;&#10;  addItem: (item: CartItem) =&gt; void;&#10;  removeItem: (id: string) =&gt; void;&#10;}&#10;&#10;const useCartStore = create&lt;CartStore&gt;((set) =&gt; ({&#10;  items: [],&#10;  total: 0,&#10;&#10;  addItem: (item) =&gt;&#10;    set((state) =&gt; ({&#10;      items: [...state.items, item],&#10;      total: state.total + item.price,&#10;    })),&#10;&#10;  removeItem: (id) =&gt;&#10;    set((state) =&gt; {&#10;      const items = state.items.filter((i) =&gt; i.id !== id);&#10;      return { items, total: items.reduce((sum, i) =&gt; sum + i.price, 0) };&#10;    }),&#10;}));&#10;&#10;// ✅ 组件只订阅需要的切片 — 避免无关重渲染&#10;function CartIcon() {&#10;  // Only re-renders when items.length changes&#10;  const count = useCartStore((state) =&gt; state.items.length);&#10;  return &lt;Badge count={count} /&gt;;&#10;}&#10;&#10;function CartTotal() {&#10;  // Only re-renders when total changes&#10;  const total = useCartStore((state) =&gt; state.total);&#10;  return &lt;span&gt;${total.toFixed(2)}&lt;/span&gt;;&#10;}">Copy</button>
+  <pre><code class="language-tsx">import { create } from 'zustand';
+
+interface CartStore {
+  items: CartItem[];
+  total: number;
+  addItem: (item: CartItem) =&gt; void;
+  removeItem: (id: string) =&gt; void;
+}
+
+const useCartStore = create&lt;CartStore&gt;((set) =&gt; ({
+  items: [],
+  total: 0,
+
+  addItem: (item) =&gt;
+    set((state) =&gt; ({
+      items: [...state.items, item],
+      total: state.total + item.price,
+    })),
+
+  removeItem: (id) =&gt;
+    set((state) =&gt; {
+      const items = state.items.filter((i) =&gt; i.id !== id);
+      return { items, total: items.reduce((sum, i) =&gt; sum + i.price, 0) };
+    }),
+}));
+
+// ✅ 组件只订阅需要的切片 — 避免无关重渲染
+function CartIcon() {
+  // Only re-renders when items.length changes
+  const count = useCartStore((state) =&gt; state.items.length);
+  return &lt;Badge count={count} /&gt;;
+}
+
+function CartTotal() {
+  // Only re-renders when total changes
+  const total = useCartStore((state) =&gt; state.total);
+  return &lt;span&gt;${total.toFixed(2)}&lt;/span&gt;;
+}</code></pre>
+</div>
+
+<p><strong>为什么 Zustand 好用:</strong></p>
+<ul><li>无 Provider 包裹</li><li>Selector 精确订阅，避免无效渲染</li><li>TypeScript 支持一流</li><li>Bundle size 极小 (~1KB)</li></ul>
+
+<hr/>
+
+<h3>3. Redux Toolkit — 大型团队 / 复杂业务</h3>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="import { createSlice, configureStore } from '@reduxjs/toolkit';&#10;&#10;const cartSlice = createSlice({&#10;  name: 'cart',&#10;  initialState: { items: [] as CartItem[], total: 0 },&#10;  reducers: {&#10;    addItem: (state, action) =&gt; {&#10;      state.items.push(action.payload); // Immer: direct mutation is OK&#10;      state.total += action.payload.price;&#10;    },&#10;    removeItem: (state, action) =&gt; {&#10;      state.items = state.items.filter((i) =&gt; i.id !== action.payload);&#10;      state.total = state.items.reduce((s, i) =&gt; s + i.price, 0);&#10;    },&#10;  },&#10;});&#10;&#10;// 优势: 内置 devtools + time-travel, middleware, 严格单向数据流&#10;// 代价: 模板代码多，概念多 (action/reducer/selector/thunk)">Copy</button>
+  <pre><code class="language-tsx">import { createSlice, configureStore } from '@reduxjs/toolkit';
+
+const cartSlice = createSlice({
+  name: 'cart',
+  initialState: { items: [] as CartItem[], total: 0 },
+  reducers: {
+    addItem: (state, action) =&gt; {
+      state.items.push(action.payload); // Immer: direct mutation is OK
+      state.total += action.payload.price;
+    },
+    removeItem: (state, action) =&gt; {
+      state.items = state.items.filter((i) =&gt; i.id !== action.payload);
+      state.total = state.items.reduce((s, i) =&gt; s + i.price, 0);
+    },
+  },
+});
+
+// 优势: 内置 devtools + time-travel, middleware, 严格单向数据流
+// 代价: 模板代码多，概念多 (action/reducer/selector/thunk)</code></pre>
+</div>
+
+<hr/>
+
+<h2>猜猜输出 / Guess the Output</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="const useStore = create&lt;{ count: number; inc: () =&gt; void }&gt;((set) =&gt; ({&#10;  count: 0,&#10;  inc: () =&gt; set((state) =&gt; ({ count: state.count + 1 })),&#10;}));&#10;&#10;function Counter() {&#10;  const count = useStore((state) =&gt; state.count);&#10;  const inc = useStore((state) =&gt; state.inc);&#10;  console.log('render');&#10;  return &lt;button onClick={inc}&gt;{count}&lt;/button&gt;;&#10;}">Copy</button>
+  <pre><code class="language-tsx">const useStore = create&lt;{ count: number; inc: () =&gt; void }&gt;((set) =&gt; ({
+  count: 0,
+  inc: () =&gt; set((state) =&gt; ({ count: state.count + 1 })),
+}));
+
+function Counter() {
+  const count = useStore((state) =&gt; state.count);
+  const inc = useStore((state) =&gt; state.inc);
+  console.log('render');
+  return &lt;button onClick={inc}&gt;{count}&lt;/button&gt;;
+}</code></pre>
+</div>
+
+<p>点击按钮 3 次，<code>console.log</code> 一共输出几次？</p>
+
+<p>A) 1 次（只有初始渲染）</p>
+<p>B) 3 次（只有点击触发）</p>
+<p>C) 4 次（初始 1 次 + 点击 3 次）</p>
+<p>D) 6 次（两个 selector 各触发）</p>
+
+<p><strong>答案: C — 4 次</strong></p>
+<p>初始渲染 1 次，每次点击 count 变化触发 1 次，共 4 次。</p>
+<p><code>inc</code> 是稳定引用（不变），不会额外触发重渲染。</p>
+
+<hr/>
+
+<h2>❌ vs ✅ 决策框架</h2>
+
+<table><thead><tr><th>场景</th><th>推荐方案</th><th>理由</th></tr></thead><tbody><tr><td>主题 / 语言 (低频变化)</td><td>Context</td><td>简单，无需库</td></tr><tr><td>购物车 / 用户信息 (中频)</td><td><strong>Zustand</strong></td><td>轻量，selector 优化</td></tr><tr><td>服务器数据 (API 响应)</td><td><strong>React Query / SWR</strong></td><td>缓存、loading、refetch 全包</td></tr><tr><td>大型企业多团队</td><td>Redux Toolkit</td><td>可预测，devtools，规范强</td></tr></tbody></table>
+
+<p><strong>黄金法则 / Golden Rule:</strong></p>
+<blockquote>服务器状态 → React Query/SWR</blockquote>
+<blockquote>客户端全局状态 → Zustand</blockquote>
+<blockquote>低频数据传递 → Context</blockquote>
+<blockquote>Redux: 团队规模或状态复杂度真正需要时再引入</blockquote>
+
+<p><strong>千万别这样做 / What NOT to do:</strong></p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="// ❌ 用 Redux 存 API 数据（重复造轮子）&#10;dispatch(fetchUserData()); // 手写 loading/error/cache&#10;&#10;// ✅ 用 React Query（专业工具做专业事）&#10;const { data, isLoading } = useQuery(['user'], fetchUser);">Copy</button>
+  <pre><code class="language-tsx">// ❌ 用 Redux 存 API 数据（重复造轮子）
+dispatch(fetchUserData()); // 手写 loading/error/cache
+
+// ✅ 用 React Query（专业工具做专业事）
+const { data, isLoading } = useQuery(['user'], fetchUser);</code></pre>
+</div>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://zustand-demo.pmnd.rs/ — Zustand 官方文档与示例</li><li>https://redux-toolkit.js.org/introduction/getting-started — Redux Toolkit 入门</li><li>https://react.dev/learn/scaling-up-with-reducer-and-context — React Context 最佳实践</li><li>https://tkdodo.eu/blog/react-query-as-a-state-manager — 为什么服务器状态需要单独处理</li></ul>
+
+<h2>🧒 ELI5</h2>
+
+<p>把状态管理想象成你家的收纳系统：</p>
+<ul><li><strong>Context</strong> = 家里的公共桌子，随手放，但人一多就乱</li><li><strong>Zustand</strong> = 整洁的小收纳盒，每样东西有固定位置，找起来快</li><li><strong>Redux</strong> = 严格标签化的文件柜，大家庭 / 公司适用</li><li><strong>React Query</strong> = 专门放"从外面带回来的东西"的区域（外卖 = API 数据）</li></ul>
+
+<p>小项目用收纳盒（Zustand），大公司用文件柜（Redux），外卖另放（React Query）。</p>
 
       </div>
     </div>
