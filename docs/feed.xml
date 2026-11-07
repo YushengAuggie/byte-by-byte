@@ -5,8 +5,366 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 06 Nov 2026 16:17:11 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 07 Nov 2026 16:30:46 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-07</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-07</guid>
+      <pubDate>Sat, 07 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: 区间 DP — Burst Balloons LC #312 (18 min read)</strong></p>
+<p>📊 NeetCode: 116/150 · SysDesign: 60/60 · Behavioral: 60/60 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 6-day streak! 🎉 Day 150 — Milestone!</p>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/burst-balloons/</p>
+<p>📹 NeetCode: https://neetcode.io/problems/burst-balloons</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>戳气球是区间动态规划（Interval DP）的经典代表，也是 LeetCode Hard 中口碑最好的&quot;顿悟题&quot;之一。它难在代码之前——在于一个反直觉的逆向转化：<strong>不是想第一个戳哪个，而是想最后一个戳哪个</strong>。一旦接受这个视角，整道题瞬间变得清晰。区间 DP 是高级 DP 的核心模式，掌握它你就能解 Matrix Chain Multiplication、Strange Printer、Zuma Game 等一系列难题。</p>
+
+<p><strong>English:</strong></p>
+<p>Burst Balloons is the canonical Interval DP problem and one of LeetCode Hard&#x27;s most celebrated &quot;aha&quot; moments. It&#x27;s hard not because the code is long, but because of a counterintuitive reversal: <strong>instead of asking &quot;which balloon do I burst first?&quot;, ask &quot;which balloon do I burst last?&quot;</strong> Once that flip clicks, the whole problem unfolds cleanly. Interval DP is a critical advanced pattern that unlocks a whole family of seemingly intractable problems.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>为什么暴力解不行 / Why Brute Force Fails</h3>
+
+<p><strong>中文：</strong></p>
+<p>最直觉的做法是枚举所有戳气球的顺序。n 个气球 → n! 种顺序。即使 n=10 就是 3,628,800 种；n=500 完全不可行。</p>
+
+<p>递归 + 记忆化的第一直觉是：定义 <code>dp[i][j]</code> = 在区间 [i, j] 内能获得的最大金币。但这里有个致命缺陷：<strong>戳掉气球 k 之后，k 的左右邻居会成为新邻居</strong>，这意味着左子问题 [i, k-1] 和右子问题 [k+1, j] 共享了一个动态变化的边界——子问题之间相互依赖，无法独立求解，记忆化无法工作。</p>
+
+<p><strong>English:</strong></p>
+<p>The intuitive approach enumerates all burst orderings: n balloons → n! orderings. Even n=10 gives 3.6M; n=500 is completely infeasible.</p>
+
+<p>The first memoization instinct: define <code>dp[i][j]</code> = max coins in range [i, j]. But there&#x27;s a fatal flaw: <strong>bursting balloon k makes its left and right neighbors adjacent</strong>. This means left subproblem [i, k-1] and right subproblem [k+1, j] share a dynamically changing boundary — subproblems depend on each other. Memoization breaks.</p>
+
+<h3>区间 DP 的核心逆转 / The Key Reversal</h3>
+
+<p><strong>中文：</strong></p>
+<p>解题的钥匙是这个思维翻转：</p>
+
+<p>&gt; <strong>不问&quot;先戳哪个&quot;，而问&quot;最后戳哪个&quot;。</strong></p>
+
+<p>定义 <code>dp[i][j]</code> = 在<strong>开区间</strong> (i, j) 内戳破所有气球能获得的最大金币（i 和 j 本身是边界哨兵，不被戳破）。</p>
+
+<p>假设气球 k 是区间 (i, j) 中<strong>最后一个被戳破的</strong>：</p>
+
+<p>- 戳破 k 之前，区间 (i, k) 和 (k, j) 里的气球都已经消失</p>
+<p>- 此刻 k 的左邻居是 i，右邻居是 j（它们是边界，始终存在）</p>
+<p>- 戳破 k 的收益 = <code>nums[i] × nums[k] × nums[j]</code></p>
+<p>- 总收益 = <code>dp[i][k] + nums[i] × nums[k] × nums[j] + dp[k][j]</code></p>
+
+<p>子问题现在是真正独立的！求解 dp[i][k] 时，边界是 i 和 k，不受 k 右边的影响。</p>
+
+<p><strong>English:</strong></p>
+<p>The key is this mental flip:</p>
+
+<p>&gt; <strong>Don&#x27;t ask &quot;which to burst first&quot; — ask &quot;which to burst last.&quot;</strong></p>
+
+<p>Define <code>dp[i][j]</code> = max coins from bursting all balloons in the OPEN interval (i, j), where i and j are sentinel boundaries that never get burst.</p>
+
+<p>If balloon k is the <strong>last one burst</strong> in interval (i, j):</p>
+
+<p>- Before bursting k, all balloons in (i, k) and (k, j) are already gone</p>
+<p>- At the moment of bursting k, its only neighbors are the fixed sentinels i and j</p>
+<p>- Coins from bursting k = <code>nums[i] × nums[k] × nums[j]</code></p>
+<p>- Total = <code>dp[i][k] + nums[i] × nums[k] × nums[j] + dp[k][j]</code></p>
+
+<p>Subproblems are now truly independent — solving dp[i][k] uses fixed boundaries i and k, unaffected by anything to the right.</p>
+
+<h3>状态转移方程 / Recurrence</h3>
+
+<pre><code>
+dp[i][j] = max over all k in (i, j) of:
+    dp[i][k] + nums[i] × nums[k] × nums[j] + dp[k][j]
+
+Base case: dp[i][j] = 0 when j - i &lt; 2  (no balloons in the interval)
+Answer: dp[0][n+1]  (full padded array, open interval)
+</code></pre>
+
+<p><strong>遍历顺序 (Traversal Order):</strong> 短区间先算，长区间后算（bottom-up by interval length）。</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>完整代码 / Full Implementation</h3>
+
+<pre><code>
+from typing import List
+
+def maxCoins(nums: List[int]) -&gt; int:
+    # Step 1: Add sentinel boundaries (value 1 on both sides)
+    # This avoids checking array bounds when the &quot;last balloon&quot; has no neighbors
+    nums = [1] + nums + [1]
+    n = len(nums)  # Now n = original_len + 2
+
+    # Step 2: Initialize DP table
+    # dp[i][j] = max coins from bursting all balloons in OPEN interval (i, j)
+    # i and j themselves are never burst — they&#x27;re the &quot;surviving&quot; boundaries
+    dp = [[0] * n for _ in range(n)]
+
+    # Step 3: Fill by increasing interval length
+    # length = j - i; minimum interval with one balloon inside has length = 2
+    for length in range(2, n):
+        for left in range(0, n - length):
+            right = left + length
+
+            # Step 4: Try each k as the LAST balloon burst in (left, right)
+            for k in range(left + 1, right):
+                # At the moment k is burst:
+                #   - (left, k) is already empty  → contributes dp[left][k]
+                #   - (k, right) is already empty → contributes dp[k][right]
+                #   - k sees left and right as neighbors → nums[left] * nums[k] * nums[right]
+                coins = (dp[left][k]
+                         + nums[left] * nums[k] * nums[right]
+                         + dp[k][right])
+                dp[left][right] = max(dp[left][right], coins)
+
+    # Step 5: Answer is entire array (open interval from sentinel 0 to sentinel n-1)
+    return dp[0][n - 1]
+</code></pre>
+
+<h3>手动追踪 / Manual Trace</h3>
+
+<p>Input: <code>nums = [3, 1, 5, 8]</code></p>
+<p>Padded: <code>[1, 3, 1, 5, 8, 1]</code> → indices 0–5, n=6</p>
+
+<p><strong>DP table layout (open intervals, showing non-zero entries):</strong></p>
+
+<pre><code>
+      0    1    2    3    4    5
+  0 [ 0    0    3   30  159  167 ]
+  1 [ 0    0    0   15  135   ?  ]
+  2 [ 0    0    0    0   40   48 ]
+  3 [ 0    0    0    0    0   40 ]
+  4 [ 0    0    0    0    0    0 ]
+  5 [ 0    0    0    0    0    0 ]
+</code></pre>
+
+<p><strong>Length-2 intervals (one balloon inside):</strong></p>
+<p>- <code>dp[0][2]</code>: k=1 → 0 + 1×3×1 + 0 = <strong>3</strong></p>
+<p>- <code>dp[1][3]</code>: k=2 → 0 + 3×1×5 + 0 = <strong>15</strong></p>
+<p>- <code>dp[2][4]</code>: k=3 → 0 + 1×5×8 + 0 = <strong>40</strong></p>
+<p>- <code>dp[3][5]</code>: k=4 → 0 + 5×8×1 + 0 = <strong>40</strong></p>
+
+<p><strong>Length-3 intervals:</strong></p>
+<p>- <code>dp[0][3]</code>: k=1: 0+1×3×5+15=<strong>30</strong> | k=2: 3+1×1×5+0=8 → <strong>30</strong></p>
+<p>- <code>dp[1][4]</code>: k=2: 0+3×1×8+40=64 | k=3: 15+3×5×8+0=<strong>135</strong> → <strong>135</strong></p>
+<p>- <code>dp[2][5]</code>: k=3: 0+1×5×1+40=45 | k=4: 40+1×8×1+0=<strong>48</strong> → <strong>48</strong></p>
+
+<p><strong>Length-4 intervals:</strong></p>
+<p>- <code>dp[0][4]</code>:</p>
+<p>- k=1: 0+1×3×8+135=<strong>159</strong></p>
+<p>- k=2: 3+1×1×8+40=51</p>
+<p>- k=3: 30+1×5×8+0=70</p>
+<p>→ <strong>159</strong></p>
+
+<p><strong>Length-5 (full interval <code>dp[0][5]</code>):</strong></p>
+<p>- k=1: 0+1×3×1+48=51</p>
+<p>- k=2: 3+1×1×1+48=52</p>
+<p>- k=3: 30+1×5×1+40=75</p>
+<p>- k=4: 159+1×8×1+0=<strong>167</strong></p>
+<p>→ <strong>167</strong> ✓</p>
+
+<h3>可选：重建最优戳气球顺序 / Reconstructing the Optimal Order</h3>
+
+<pre><code>
+def maxCoins_with_path(nums: List[int]) -&gt; tuple:
+    nums = [1] + nums + [1]
+    n = len(nums)
+    dp = [[0] * n for _ in range(n)]
+    # choice[i][j] = which k was last burst in interval (i, j)
+    choice = [[0] * n for _ in range(n)]
+
+    for length in range(2, n):
+        for left in range(0, n - length):
+            right = left + length
+            for k in range(left + 1, right):
+                coins = dp[left][k] + nums[left] * nums[k] * nums[right] + dp[k][right]
+                if coins &gt; dp[left][right]:
+                    dp[left][right] = coins
+                    choice[left][right] = k  # record the optimal last balloon
+
+    def reconstruct(left, right):
+        &quot;&quot;&quot;Returns list of balloon indices burst in optimal order (last to first recursively).&quot;&quot;&quot;
+        if left + 1 &gt;= right:
+            return []
+        k = choice[left][right]
+        # Recursively: burst left sub-interval first, then right, then k
+        return reconstruct(left, k) + reconstruct(k, right) + [k]
+
+    order = reconstruct(0, n - 1)
+    return dp[0][n - 1], [i - 1 for i in order]  # adjust for 0-indexed original array
+</code></pre>
+
+<h3>复杂度 / Complexity</h3>
+
+<p>| Metric | Value | Notes |</p>
+<p>|--------|-------|-------|</p>
+<p>| Time | O(n³) | 3 nested loops: length × left × k |</p>
+<p>| Space | O(n²) | DP table; O(n²) intervals to store |</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<h3>陷阱一：开区间 vs 闭区间 / Open vs Closed Interval</h3>
+
+<p><strong>中文：</strong> <code>dp[i][j]</code> 表示的是<strong>开区间</strong> (i, j)，i 和 j 本身不在这个区间里，不会被戳破。许多人误以为包含端点，导致重复计算或错误索引。</p>
+
+<p><strong>English:</strong> <code>dp[i][j]</code> covers the OPEN interval (i, j). Balloons at index i and j are boundaries — never burst in this subproblem. Confusing this causes double-counting.</p>
+
+<pre><code>
+# WRONG (common mistake): iterating k including boundaries
+for k in range(left, right + 1):   # includes left and right — wrong!
+
+# CORRECT: k is strictly between left and right
+for k in range(left + 1, right):   # open interval, excludes boundaries
+</code></pre>
+
+<h3>陷阱二：遍历顺序 / Traversal Order</h3>
+
+<pre><code>
+# WRONG: iterating by (i, j) pairs in any order
+# dp[i][k] and dp[k][j] may not be filled when you need them
+
+# CORRECT: always iterate by length (small intervals before large)
+for length in range(2, n):         # length-2 before length-3 before...
+    for left in range(0, n - length):
+        right = left + length
+</code></pre>
+
+<h3>陷阱三：哨兵值必须是 1 / Sentinels Must Be 1</h3>
+
+<p><strong>中文：</strong> 哨兵为 1，是因为戳最后一个气球时，哨兵会作为它的邻居参与计算：<code>1 × nums[k] × 1</code>。若哨兵设为 0，所有收益都会变成 0。</p>
+
+<p><strong>English:</strong> Sentinels are 1 because when you burst the very last balloon in the entire array, it sees sentinels as both neighbors: <code>1 × nums[k] × 1</code>. Setting sentinels to 0 makes all coins 0.</p>
+
+<h3>陷阱四：单气球输入 / Single Balloon Edge Case</h3>
+
+<pre><code>
+# nums = [5] → padded = [1, 5, 1]
+# dp[0][2]: k=1 → 0 + 1×5×1 + 0 = 5
+# Returns 5 ✓
+</code></pre>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<h3>区间 DP 的家族 / The Interval DP Family</h3>
+
+<p><strong>中文：</strong> 区间 DP 有一个统一的心智模型：&quot;把区间 (i, j) 的最后一步固定为 k，然后递归两侧子区间。&quot; 掌握这个模型后，以下问题迎刃而解：</p>
+
+<p><strong>English:</strong> Interval DP has a unified mental model: &quot;fix the last operation in interval (i, j) as k, recurse on both sides.&quot; With this model, the following problems become tractable:</p>
+
+<p>| Problem | Interval Meaning | &quot;Last k&quot; Is... |</p>
+<p>|---------|-----------------|----------------|</p>
+<p>| Burst Balloons (LC #312) | balloons in (i, j) | last balloon burst |</p>
+<p>| Matrix Chain Multiply | matrices i..j | last multiplication split |</p>
+<p>| Strange Printer (LC #664) | characters i..j | last print operation |</p>
+<p>| Zuma Game (LC #488) | balls i..j | last group removed |</p>
+<p>| Minimum Cost to Merge Stones (LC #1000) | stones i..j | last merge |</p>
+
+<h3>工程中的实际场景 / Production Engineering</h3>
+
+<p><strong>数据库查询优化 (Database Query Planning)</strong></p>
+<p>Join ordering is a classic interval DP problem: given tables T₁, T₂, ..., Tₙ, find the optimal order of joins. PostgreSQL&#x27;s planner solves small join counts exactly with DP, falling back to greedy for large n.</p>
+
+<p><strong>编译器代码生成 (Compiler IR Optimization)</strong></p>
+<p>Optimal parenthesization for expression trees — same matrix-chain structure — appears in register allocation and instruction scheduling.</p>
+
+<p><strong>为什么后端工程师需要懂区间 DP / Why Backend Engineers Need This</strong></p>
+
+<p><strong>中文：</strong> 在系统设计面试中，你可能遇到&quot;如何优化 N 表 Join 顺序？&quot;或&quot;如何批量合并日志段？&quot;这类问题。能识别出&quot;这是区间 DP 的结构&quot;并说出 O(n³) 的思路，会让面试官印象深刻。更重要的是，&quot;把复杂问题转化为有清晰边界的子问题&quot;这种思维方式，在架构设计中无处不在。</p>
+
+<p><strong>English:</strong> In system design interviews, you might encounter &quot;how would you optimize N-table join ordering?&quot; or &quot;how do you batch merge log segments?&quot; Recognizing the interval DP structure and citing O(n³) shows deep algorithmic intuition. More broadly, the skill of <strong>decomposing complex problems into independent subproblems with clean boundaries</strong> is fundamental to good architecture.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>Q1: Walk me through your approach to this problem.</strong></p>
+
+<p>&gt; &quot;I&#x27;d start with brute force — try all orderings, O(n!), clearly too slow. Then try memoization: dp[i][j] = max coins in range [i, j]. But the problem is when you burst balloon k, its neighbors change, so subproblems aren&#x27;t independent — memoization doesn&#x27;t work cleanly. The key insight is reversing: instead of asking which to burst first, ask which to burst <em>last</em> in an interval. If k is the last balloon burst in open interval (i, j), then i and j are fixed boundaries at that moment, giving coins = nums[i] × nums[k] × nums[j] + dp[i][k] + dp[k][j]. Now subproblems are independent. O(n³) time, O(n²) space.&quot;</p>
+
+<p><strong>Q2: Why does &quot;last burst&quot; give independent subproblems but &quot;first burst&quot; doesn&#x27;t?</strong></p>
+
+<p>&gt; &quot;With &#x27;first burst&#x27;: bursting k immediately merges its left and right contexts — the left sub-interval now has a new right neighbor (the right of k), coupling the two halves. With &#x27;last burst&#x27;: we declare k off-limits until everything else in (i, j) is gone. The boundary of each sub-interval [i, k] and [k, j] is fixed and never changes — true independence.&quot;</p>
+
+<p><strong>Q3: Can we do better than O(n³)?</strong></p>
+
+<p>&gt; &quot;There are O(n²) distinct intervals and each must be computed, so O(n²) is a lower bound on space. For time, there&#x27;s no known better algorithm for this exact problem. In practice, with n ≤ 500 (LeetCode&#x27;s constraint), O(n³) = 125M operations — fast enough. If n were larger, you&#x27;d need approximations or problem-specific heuristics.&quot;</p>
+
+<p><strong>Q4: How do you handle the edge case where the array has a single element?</strong></p>
+
+<p>&gt; &quot;With sentinels: padded = [1, x, 1]. dp[0][2] with k=1 gives 1 × x × 1 = x. Returns x correctly. No special handling needed — the sentinel approach naturally handles all edge cases.&quot;</p>
+
+<p><strong>Q5: Name two problems that use the same Interval DP pattern.</strong></p>
+
+<p>&gt; &quot;1. <strong>Strange Printer (LC #664)</strong>: minimize turns to print a string. dp[i][j] = min turns for s[i..j]; fix the <em>last</em> character group printed in the interval. 2. <strong>Minimum Cost to Merge Stones (LC #1000)</strong>: repeatedly merge adjacent stones; dp[i][j] = min cost to reduce stones[i..j] to as few piles as possible. Both use the same &#x27;fix the last operation, recurse both sides&#x27; structure.&quot;</p>
+
+<hr/>
+
+<h2>总结 / Summary</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>| 关键点 | 内容 |</p>
+<p>|--------|------|</p>
+<p>| 核心逆转 | &quot;最后戳哪个&quot; 而非 &quot;先戳哪个&quot; |</p>
+<p>| 为什么有效 | 最后一个被戳破时，边界是固定的 → 子问题独立 |</p>
+<p>| 遍历顺序 | 按区间长度从小到大 |</p>
+<p>| 边界处理 | 添加值为 1 的哨兵节点 |</p>
+<p>| 时间复杂度 | O(n³) |</p>
+<p>| 空间复杂度 | O(n²) |</p>
+<p>| 适用模式 | 任何&quot;在区间内选最后操作&quot;的问题 |</p>
+
+<p><strong>English:</strong></p>
+
+<p>The mental model for Interval DP is deceptively simple once internalized: <strong>fix the last action, not the first.</strong> This transforms a problem with exponential state dependency into one with clean, nested independent subproblems. Burst Balloons is the hardest and most instructive example of this pattern — if you can solve it from scratch, you&#x27;ve unlocked the full family.</p>
+
+<p>🔗 LeetCode #312: https://leetcode.com/problems/burst-balloons/</p>
+<p>📹 NeetCode walkthrough: https://neetcode.io/problems/burst-balloons</p>
+<p>📖 Related: Strange Printer (LC #664), Matrix Chain (classic), Minimum Cost to Merge Stones (LC #1000)</p>
+
+<hr/>
+<h1>Review</h1>
+<h2>🎉 复习日 / Review Day — Day 150 — MILESTONE!</h2>
+<p><strong>Date:</strong> 2026-11-07 | <strong>Phase:</strong> Expert</p>
+
+<hr/>
+
+<p>📊 <strong>NeetCode: 116/150 · SysDesign: 60/60 · Behavioral: 60/60 · Frontend: 37/50 · AI: 30/30</strong></p>
+
+<p>🔥 <strong>Day 150 — 5 months in!</strong> 今天是里程碑复习日 + 周六深度讲解双合一。</p>
+
+<hr/>
+
+<p>今天是第 150 天！回顾过去一周的动态规划主题。</p>
+<p>Day 150 milestone! This week&#x27;s theme: 2D DP on strings.</p>
+
+<p><strong>本周主题 / This Week&#x27;s Theme:</strong> 二维字符串 DP — Interleaving String, Target Sum, Coin Change II</p>
+
+<h3>Quick Recap</h3>
+
+<p>- <strong>Day 146</strong> — Best Time to Buy and Sell Stock with Cooldown: state machine DP</p>
+<p>- <strong>Day 147</strong> — Coin Change II: unbounded knapsack (forward iteration)</p>
+<p>- <strong>Day 148</strong> — Target Sum: +/-assignment, count of ways → transform to knapsack</p>
+<p>- <strong>Day 149</strong> — Interleaving String: 2D DP, dp[i][j] = s1[:i]+s2[:j] forms s3[:i+j]</p>
+
+<p><strong>今日深度讲解 / Today&#x27;s Deep Dive:</strong> 区间 DP — Burst Balloons (LC #312)</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-06</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
