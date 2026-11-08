@@ -5,8 +5,179 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 07 Nov 2026 16:30:46 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 08 Nov 2026 16:10:08 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-08</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-08</guid>
+      <pubDate>Sun, 08 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 35 (10 min read)</strong></p>
+<p>📊 NeetCode: 116/150 · SysDesign: 60/60 · Behavioral: 60/60 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 6-day streak!</p>
+
+<hr/>
+
+<h2>🗓️ This Week&#x27;s Journey / 本周回顾</h2>
+
+<p>| 日期 | 主题 |</p>
+<p>|------|------|</p>
+<p>| <strong>周一 11/3 — Day 146</strong> | 可观测性三支柱 · 状态机DP · Strangler Fig重构策略 · asyncio原理 |</p>
+<p>| <strong>周二 11/4 — Day 147</strong> | 单体→微服务决策树 · 无界背包 · React.memo陷阱 · Python性能诊断 |</p>
+<p>| <strong>周三 11/5 — Day 148</strong> | 分布式一致性三范式 · 背包数学变换 · Senior→Staff隐形门槛 · Zustand vs Redux |</p>
+<p>| <strong>周四 11/6 — Day 149</strong> | 一致性层级全谱 · 二维字符串DP · 技术债高管辩论 · Python服务完整工具链 |</p>
+<p>| <strong>周五/六 11/7 — Day 150</strong> | 🎉 里程碑！5个月收官 · 区间DP深度讲解 (Burst Balloons #312) |</p>
+
+<hr/>
+
+<h2>🧠 System Design: Key Takeaways / 系统设计要点</h2>
+
+<p>本周系统设计进入<strong>综合收官阶段</strong>（systemDesignIndex 60/60 — 全部完成！），三个主题深度关联：</p>
+
+<p><strong>1. 可观测性三支柱（Day 146）</strong></p>
+<p>Metrics → 告警（&quot;什么出问题了&quot;），Traces → 定位（&quot;哪条链路慢&quot;），Logs → 根因（&quot;具体发生了什么&quot;）。关键：三者必须通过 <code>trace_id</code> 打通，否则只有两条腿的凳子。调查顺序永远是：Metrics → Traces → Logs。</p>
+
+<p><strong>2. 架构选型决策树（Day 147）</strong></p>
+<p>核心结论：Conway&#x27;s Law 比技术能力更决定架构。单体→读写分离→缓存→微服务，是有序演进，不是跨越。Shopify、Stack Overflow 用单体撑过了多年高增长。微服务的真实门槛是&quot;不同团队需要独立部署节奏&quot;，不是&quot;感觉该拆了&quot;。</p>
+
+<p><strong>3. 分布式一致性三范式 + 一致性层级（Day 148–149）</strong></p>
+<p>强共识（Raft/etcd）= 线性一致，高延迟；CRDT = 无冲突合并，天生适合协作编辑；Event Sourcing = 完整历史，适合金融审计。分层使用：账户余额用 Postgres，展示用 Redis，操作日志用 Kafka——这才是生产级架构思维。</p>
+
+<p><strong>三者连接：</strong> 可观测性帮你诊断分布式系统的一致性问题；架构演进决定了你在哪个层级上运用哪种一致性保证。</p>
+
+<hr/>
+
+<h2>💻 Algorithms: Patterns Mastered / 算法模式总结</h2>
+
+<p>本周完成 <strong>二维动态规划（2-D DP）</strong> 模式的核心部分（共 11 题中的第 3–7 题）：</p>
+
+<p><strong>🎯 状态机 DP — Best Time to Buy Sell with Cooldown (#309)</strong></p>
+<p>关键洞察：<code>dp[i][state]</code> 而非 <code>dp[i][j]</code>，三个状态（holding/sold/idle）压缩为三个变量。每次状态转移要用 <code>prev_*</code> 避免覆盖。复杂度 O(n) 时间 O(1) 空间。</p>
+
+<p><strong>🎯 无界背包 — Coin Change II (#518)</strong></p>
+<p>核心区别：正序遍历 amount（允许重复使用），vs 01背包的逆序遍历。外层 coin，内层 amount = 每枚硬币无限次。</p>
+
+<p><strong>🎯 数学变换 + 01背包 — Target Sum (#494)</strong></p>
+<p>最大亮点：暴力 O(2^n) → 数学转化 → <code>P = (total + target) / 2</code> → 转化为子集和计数问题。逆序遍历 = 每个数只用一次。</p>
+
+<p><strong>🎯 双序列字符串 DP — Interleaving String (#97)</strong></p>
+<p><code>dp[i][j]</code> = s1 前 i 个 + s2 前 j 个能否构成 s3 前 i+j 个。新增维度：转移时需比较字符是否匹配 s3。</p>
+
+<p><strong>🎯 区间 DP — Burst Balloons (#312) [Deep Dive]</strong></p>
+<p>本周最精彩的&quot;顿悟题&quot;：<strong>不问先戳哪个，问最后戳哪个</strong>。开区间 (i,j) 中最后一个被戳破的气球 k，两侧边界固定 → 子问题真正独立。遍历顺序：按区间长度从小到大。</p>
+
+<p><strong>共同规律：</strong> 2-D DP 的本质是&quot;两个维度的状态追踪&quot;——可以是两个序列（LCS/Interleaving），也可以是序列+状态（Cooldown），也可以是序列+容量（背包），也可以是区间两端（Burst Balloons）。</p>
+
+<hr/>
+
+<h2>🗣️ Soft Skills: What to Practice / 软技能练习重点</h2>
+
+<p>本周软技能进入 <strong>Staff+ 综合阶段</strong>（behavioralIndex 60/60 — 全部完成！），三大主题：</p>
+
+<p><strong>本周涵盖场景：</strong></p>
+<p>- 核心支付服务技术债重构 + 跨职能利益相关者对齐（Strangler Fig + 量化成本）</p>
+<p>- P99 延迟 800ms→200ms 的 6 个月改善计划（观测优先，并行推进）</p>
+<p>- Senior→Staff 的四个隐形门槛（问题定义/组织影响力/多年视野/模糊性导航）</p>
+<p>- 技术债 vs 新功能的高管辩论（三方案框架 + ROI 翻译）</p>
+
+<p><strong>哪些需要继续练习：</strong></p>
+
+<p>1. <strong>量化一切</strong> — &quot;技术债每季度损失 X 工程师周&quot;比&quot;代码很烂&quot;有力 100 倍。练习：下次讨论技术决策时，先花 30 分钟做数据量化再开口。</p>
+
+<p>2. <strong>提供三个选项</strong> — 不要只带解决方案，带方案矩阵。每个选项附上 trade-off 和你的推荐理由，让 leadership 感觉在决策而非被安排。</p>
+
+<p>3. <strong>Staff 影响力模式</strong> — 推动没有汇报关系的团队改变。下次机会：找一个跨团队的重复造轮子场景，主动推动标准化，用 RFC 而非会议。</p>
+
+<hr/>
+
+<h2>🎨 Frontend: Concepts to Lock In / 前端知识巩固</h2>
+
+<p>本周前端聚焦两大主题（frontendIndex 37/50）：</p>
+
+<p><strong>React 性能（Day 147）</strong></p>
+<p>核心原则：先用 React DevTools Profiler 量化，再加 <code>React.memo</code>。<code>memo</code> 不配 <code>useCallback</code> = 无效；Context 变化会绕过 <code>memo</code>（最容易踩的坑）。</p>
+
+<p>✅ 自测：以下场景 <code>React.memo</code> 有效吗？</p>
+<p>- 父组件每次传 <code>() =&gt; console.log(&#x27;click&#x27;)</code> 作为 prop → <strong>无效</strong>（需加 <code>useCallback</code>）</p>
+<p>- 子组件消费了一个频繁变化的 Context → <strong>无效</strong>（需拆分 Context）</p>
+<p>- 父组件状态变化但子组件 props 不变 + 用了 <code>useCallback</code> → <strong>有效</strong></p>
+
+<p><strong>状态管理选型（Day 148）</strong></p>
+<p>决策框架：服务器状态 → React Query；客户端全局状态 → Zustand；低频数据传递 → Context；大型多团队企业 → Redux Toolkit。不要用 Redux 存 API 数据，不要用 Context 存高频变化的状态。</p>
+
+<hr/>
+
+<h2>🤖 AI: What Stuck / AI 知识点</h2>
+
+<p>本周 AI 模块全部完成（aiTopicIndex 30/30 🎉），最重要的综合 + 新闻要点：</p>
+
+<p><strong>技术综合（Day 146）：</strong> RAG 生产级实现 = Embeddings + FAISS 向量检索 + KV Cache 复用 + Streaming 输出。这是目前最主流的&quot;给 LLM 加外挂知识&quot;的方式。</p>
+
+<p><strong>本周 AI 新闻亮点（均带&quot;据报道&quot;限定）：</strong></p>
+
+<p>- <strong>GPT-6 Astra 据报道能直接编辑另一个模型的权重</strong>（Day 146）——暗示 AI 自我改进的新范式。据报道。</p>
+<p>- <strong>模型军备竞赛加速</strong>（Day 147）：GPT-6 Rosalind/Terra、Gemini 4 Carbon/Argon、Claude Haiku 5.5 集中发布；推理成本持续暴跌。</p>
+<p>- <strong>GPT-6 Cyber 据报道专攻漏洞挖掘</strong>（Day 149），在 Linux、Firefox 等软件中识别数千个漏洞——AI 安全攻防同步加速。</p>
+<p>- <strong>Anthropic IPO 遇冷</strong>（Day 149）：$1.5T 估值遭投资者质疑，运营仍亏损。</p>
+<p>- <strong>Stanford 研究据报道：LLM 论文结论平均 15 个月内失效</strong>（Day 146）——AI 领域的独特挑战：模型迭代速度超过学术发表周期。</p>
+
+<hr/>
+
+<h2>⚠️ What to Review / 需要复习的内容</h2>
+
+<p><strong>算法弱点：</strong></p>
+<p>- 区间 DP 的遍历顺序（按区间长度从小到大）在代码实现时容易写错——默写一遍 Burst Balloons 的外层循环</p>
+<p>- 01背包 vs 无界背包的关键区别：逆序 vs 正序遍历 amount。默写前不看题</p>
+
+<p><strong>系统设计：</strong></p>
+<p>- 可观测性三支柱的边界案例：什么时候 Metrics 不够（高基数），什么时候 Logs 不够（跨服务链路），写出各自的 anti-patterns</p>
+<p>- CRDT 的局限性：什么操作无法建模为 CRDT？（非交换操作，如先删后加 vs 先加后删）</p>
+
+<p><strong>前端：</strong></p>
+<p>- Context value 绑定稳定引用（<code>useMemo</code>）避免绕过 memo——写一个示例</p>
+<p>- Zustand selector 最小化订阅——能徒手写出基础的 store + selector 模式</p>
+
+<p><strong>软技能：</strong></p>
+<p>- 量化技术债的模板公式还不够熟练——练习用真实场景套入（直接成本 + 机会成本 + 风险成本）</p>
+
+<hr/>
+
+<h2>🏆 Win of the Week / 本周亮点</h2>
+
+<p>🎉 <strong>Day 150 — 5 个月里程碑达成！</strong></p>
+
+<p>从 Day 1 的 Client-Server 基础，到今天完成 SysDesign（60/60）、Behavioral（60/60）、AI（30/30）三个维度的全覆盖，掌握了区间 DP 这道 Hard 题的核心&quot;顿悟&quot;……</p>
+
+<p>5 个月前你打开第一道题，今天你能不看提示地推导出 Burst Balloons 的状态转移方程。这不是线性进步——这是真正的积累。</p>
+
+<p><strong>The real win:</strong> 你建立了一套把技术复杂度翻译成业务语言的思维框架。这才是 Staff+ 面试的真正护城河。</p>
+
+<hr/>
+
+<h2>🎯 Next Week Preview / 下周预告</h2>
+
+<p>基于当前进度（Day 151 起，2-D DP 模式继续），预计下周涵盖：</p>
+
+<p><strong>算法（2-D DP 收尾，进入新模式）：</strong></p>
+<p>- Edit Distance (#72) — 字符串编辑距离，经典 DP 双串</p>
+<p>- Longest Increasing Path in Matrix (#329) — 矩阵 DP + DFS + 记忆化</p>
+<p>- Distinct Subsequences (#115) — 子序列计数，01背包变体</p>
+<p>- Regex Matching (#10) — 通配符 DP，难度跃升至 Hard</p>
+
+<p><strong>前端（继续 frontendIndex 37→约40/50）：</strong></p>
+<p>- 继续前端进阶主题</p>
+
+<p><strong>系统设计 + Behavioral + AI：</strong></p>
+<p>- 三个维度已满，预计进入综合复习和模拟面试场景</p>
+
+<p>💡 <strong>重点关注：</strong> Edit Distance 是最经典的二维 DP 之一，也是 Regex Matching 的基础。先把 Edit Distance 的四种转移（相等/替换/插入/删除）背到手熟，再挑战 Regex。</p>
+
+<hr/>
+
+<p><em>Generated: 2026-11-08 | Week 35 of 150-day journey</em></p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-07</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
