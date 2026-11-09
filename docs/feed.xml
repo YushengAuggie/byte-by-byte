@@ -5,8 +5,630 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sun, 08 Nov 2026 16:10:08 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 09 Nov 2026 16:30:53 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-09</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-09</guid>
+      <pubDate>Mon, 09 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 151 (Synthesis)</h2>
+
+<p>&gt; <strong>综合深化 / Expert Synthesis:</strong> 60个系统设计话题全部完成。今天深入对比——分布式一致性模型全景图。</p>
+
+<hr/>
+
+<h2>分布式系统一致性模型深度对比 — From Redis to Spanner</h2>
+
+<h3>想象你在设计...</h3>
+
+<p>你是技术负责人，面对三个不同的存储选型问题：</p>
+<p>1. 用户 session — 丢数据无所谓，速度第一</p>
+<p>2. 库存扣减 — 超卖一次损失巨大</p>
+<p>3. 全球用户档案 — 需要跨区域读写、强一致</p>
+
+<p>这三个场景需要完全不同的一致性模型。</p>
+
+<hr/>
+
+<h3>一致性模型谱系 (Consistency Spectrum)</h3>
+
+<pre><code>
+Weak          Eventual         Strong         Linearizable
+  |               |               |                |
+Redis Cache   Cassandra      DynamoDB          Spanner
+(no sync)    (tunable)      (single-key)     (global txn)
+
+← 延迟低、可用高                      延迟高、可用受限 →
+</code></pre>
+
+<p><strong>四种核心模型:</strong></p>
+
+<p><strong>1. Weak Consistency (弱一致)</strong></p>
+<p>- 写完不保证立刻可读</p>
+<p>- 典型: CPU Cache, Redis (默认)</p>
+<p>- 场景: 限流计数器、view count，错一点无所谓</p>
+
+<p><strong>2. Eventual Consistency (最终一致)</strong></p>
+<p>- 最终收敛，不保证何时</p>
+<p>- 典型: Cassandra, DynamoDB (eventually consistent reads), DNS</p>
+<p>- 场景: 社交 feed、用户 profile、购物车</p>
+
+<p><strong>3. Strong Consistency (强一致)</strong></p>
+<p>- 读到最新写入</p>
+<p>- 典型: DynamoDB (strongly consistent reads), RDBMS (single node)</p>
+<p>- 场景: 账户余额、读-改-写需要串行化</p>
+
+<p><strong>4. Linearizability / External Consistency</strong></p>
+<p>- 所有操作有全局时间顺序，像单机一样</p>
+<p>- 典型: Google Spanner (TrueTime API), etcd, ZooKeeper</p>
+<p>- 场景: 分布式锁、金融转账跨行、分布式 CAS</p>
+
+<hr/>
+
+<h3>为什么这样设计？关键权衡</h3>
+
+<p><strong>CAP vs PACELC:</strong></p>
+<p>- CAP 只描述分区时的选择 (CP or AP)</p>
+<p>- PACELC 补充了正常运行时的选择: 延迟 vs 一致性</p>
+<p>- 真实系统更多是 PACELC 问题，网络分区是小概率事件</p>
+
+<p><strong>Cassandra 的 Quorum 魔法:</strong></p>
+<pre><code>
+W + R &gt; N → 保证至少一个节点重叠 → 读到最新写
+
+N=3, W=2, R=2 → 强一致 (but slower)
+N=3, W=1, R=1 → 弱一致 (but fast)
+N=3, W=1, R=3 → read-heavy strong (rarely used)
+</code></pre>
+
+<p><strong>Spanner 的 TrueTime:</strong></p>
+<p>Google 用 GPS + 原子钟，把时间不确定性压到 &lt;7ms，然后等待这个窗口再提交事务 → 全球 linearizable 但有延迟代价。</p>
+
+<hr/>
+
+<h3>别踩这个坑 (Common Mistakes)</h3>
+
+<p>❌ <strong>误区1:</strong> &quot;我们用 Cassandra，所以要强一致就全设 W=N, R=N&quot;</p>
+<p>→ 性能断崖。真正需要强一致的数据应该换 DB，不要强拧 Cassandra。</p>
+
+<p>❌ <strong>误区2:</strong> &quot;微服务间用最终一致性，加个重试就好了&quot;</p>
+<p>→ 没有幂等性设计的重试 = 数据翻倍。Outbox Pattern + idempotency key 是标配。</p>
+
+<p>❌ <strong>误区3:</strong> 分布式锁用 Redis SETNX 就够了</p>
+<p>→ Redis 故障转移窗口内锁会失效。高风险场景用 Redlock 或直接 etcd。</p>
+
+<hr/>
+
+<h3>选型决策框架</h3>
+
+<p>| 需求 | 推荐 | 原因 |</p>
+<p>|------|------|------|</p>
+<p>| 高吞吐写、跨区读 | Cassandra | Tunable consistency |</p>
+<p>| 低延迟 K-V + 强一致单 key | DynamoDB | Per-key atomic ops |</p>
+<p>| 分布式事务、全球一致 | Spanner/CockroachDB | TrueTime / HLC |</p>
+<p>| 分布式锁/选主 | etcd/ZooKeeper | Raft-based linearizable |</p>
+<p>| 缓存/速率限制 | Redis | Who cares about consistency here |</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://jepsen.io/consistency — Consistency models interactive guide</p>
+<p>- https://cloud.google.com/spanner/docs/true-time-external-consistency — Spanner TrueTime</p>
+<p>- https://www.allthingsdistributed.com/2008/12/eventually_consistent.html — Werner Vogels on eventual consistency</p>
+<p>- https://martinfowler.com/articles/patterns-of-distributed-systems/two-phase-commit.html — 2PC patterns</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象你家有三个人共用同一个银行账户：妈妈、爸爸、你。</p>
+<p>- <strong>弱一致</strong> = 各自记小本子，偶尔对一下，可能有人多花了钱</p>
+<p>- <strong>最终一致</strong> = 每晚同步一次，白天可能有出入，但第二天一定对齐</p>
+<p>- <strong>强一致</strong> = 每次花钱都要打电话给全家人确认，慢但不会超支</p>
+<p>- <strong>Linearizable</strong> = 全家人都在同一个房间，一个人买东西所有人立刻知道</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 117: Edit Distance (Medium) — #72</h2>
+
+<p>🧩 <strong>二维动态规划模式 (7/11)</strong> — building on the 2-D DP template from earlier in this block</p>
+
+<hr/>
+
+<h2>#72 Edit Distance — 编辑距离</h2>
+
+<p>🔗 https://leetcode.com/problems/edit-distance/</p>
+<p>🟡 Medium</p>
+<p>📹 https://www.neetcode.io/problems/edit-distance</p>
+
+<hr/>
+
+<h3>现实类比 / Real-World Analogy</h3>
+
+<p>想象你在做<strong>拼写检查器</strong>。用户输入 &quot;horse&quot;，正确词是 &quot;ros&quot;。</p>
+<p>你需要计算最少几步操作（插入、删除、替换）把一个词变成另一个词。</p>
+<p>这就是编辑距离，Git diff、DNA 序列比对、搜索纠错都用这个。</p>
+
+<p><em>Imagine building a spell checker: user typed &quot;horse&quot;, correct is &quot;ros&quot;. How many insert/delete/replace operations to transform one to the other? That&#x27;s edit distance — used in Git diff, DNA alignment, search autocomplete.</em></p>
+
+<hr/>
+
+<h3>问题定义</h3>
+
+<pre><code>
+Input: word1 = &quot;horse&quot;, word2 = &quot;ros&quot;
+Output: 3
+
+Explanation:
+horse → rorse (replace h→r)
+rorse → rose  (delete r)
+rose  → ros   (delete e)
+</code></pre>
+
+<p>操作代价: insert=1, delete=1, replace=1</p>
+
+<hr/>
+
+<h3>映射到2-D DP模板</h3>
+
+<pre><code>
+# Template:
+# dp = [[0] * (m+1) for _ in range(n+1)]
+# for i in range(1, n+1):
+#     for j in range(1, m+1):
+#         dp[i][j] = TRANSITION(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])
+
+# For Edit Distance:
+# dp[i][j] = min edit distance between word1[:i] and word2[:j]
+</code></pre>
+
+<p><strong>State:</strong> <code>dp[i][j]</code> = minimum operations to convert <code>word1[:i]</code> → <code>word2[:j]</code></p>
+
+<p><strong>Base cases:</strong></p>
+<p>- <code>dp[0][j] = j</code> (insert j chars from empty string)</p>
+<p>- <code>dp[i][0] = i</code> (delete i chars to reach empty string)</p>
+
+<p><strong>Transition (这就是关键):</strong></p>
+<pre><code>
+if word1[i-1] == word2[j-1]:
+    dp[i][j] = dp[i-1][j-1]          # 字符相同，不需要操作
+else:
+    dp[i][j] = 1 + min(
+        dp[i-1][j],    # delete from word1
+        dp[i][j-1],    # insert into word1
+        dp[i-1][j-1]   # replace
+    )
+</code></pre>
+
+<hr/>
+
+<h3>完整解法 + 手动追踪</h3>
+
+<pre><code>
+def minDistance(word1: str, word2: str) -&gt; int:
+    n, m = len(word1), len(word2)
+    
+    # Build dp table with base cases
+    dp = [[0] * (m + 1) for _ in range(n + 1)]
+    
+    # Base cases: empty string transformations
+    for i in range(n + 1):
+        dp[i][0] = i  # delete all chars from word1
+    for j in range(m + 1):
+        dp[0][j] = j  # insert all chars from word2
+    
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            if word1[i-1] == word2[j-1]:
+                dp[i][j] = dp[i-1][j-1]  # free diagonal move
+            else:
+                dp[i][j] = 1 + min(
+                    dp[i-1][j],    # delete
+                    dp[i][j-1],    # insert
+                    dp[i-1][j-1]   # replace
+                )
+    
+    return dp[n][m]
+</code></pre>
+
+<p><strong>追踪 &quot;horse&quot; → &quot;ros&quot;:</strong></p>
+<pre><code>
+    &quot;&quot;  r  o  s
+&quot;&quot;   0  1  2  3
+h    1  1  2  3
+o    2  2  1  2
+r    3  2  2  2
+s    4  3  3  2
+e    5  4  4  3   ← answer: 3
+</code></pre>
+
+<p>画出这个表格，每个格子只看三个方向（上、左、左上），立刻就懂转移规律。</p>
+
+<p><strong>Complexity:</strong> Time O(n×m), Space O(n×m) → can optimize to O(m) with rolling array</p>
+
+<hr/>
+
+<h3>空间优化 (Space O(m))</h3>
+
+<pre><code>
+def minDistance(word1: str, word2: str) -&gt; int:
+    m = len(word2)
+    prev = list(range(m + 1))  # prev row
+    
+    for i, c1 in enumerate(word1, 1):
+        curr = [i] + [0] * m
+        for j, c2 in enumerate(word2, 1):
+            if c1 == c2:
+                curr[j] = prev[j-1]
+            else:
+                curr[j] = 1 + min(prev[j], curr[j-1], prev[j-1])
+        prev = curr
+    
+    return prev[m]
+</code></pre>
+
+<hr/>
+
+<h3>举一反三 — 本 Block 的其他2-D DP</h3>
+
+<p>| 题目 | dp[i][j] 含义 | 转移特点 |</p>
+<p>|------|---------------|----------|</p>
+<p>| #1143 LCS | 前i个和前j个的最长公共子序列 | 相同char时+1 |</p>
+<p>| <strong>#72 Edit Distance</strong> | word1[:i]→word2[:j]的最少操作 | 3向min |</p>
+<p>| #97 Interleaving String | s1[:i]+s2[:j]能否构成s3[:i+j] | 布尔OR |</p>
+<p>| #115 Distinct Subsequences | s[:i]中有几个t[:j]的子序列 | 叠加计数 |</p>
+
+<p><strong>通用技巧:</strong> 所有字符串匹配类2-D DP，先在纸上画一个3×3的小表格手动填，转移方程一眼就出来。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://leetcode.com/problems/edit-distance/ — Problem statement</p>
+<p>- https://www.neetcode.io/problems/edit-distance — NeetCode video walkthrough</p>
+<p>- https://en.wikipedia.org/wiki/Levenshtein_distance — Levenshtein distance (history and applications)</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象你在玩文字拼图游戏，规则是每次只能做三件事：加一个字母、删一个字母、换一个字母。</p>
+<p>DP 就是: 先解决小问题（空字符串变成小单词），然后把答案存在表格里，</p>
+<p>用已有的答案推出新的答案，不用从头重新算。</p>
+
+<hr/>
+
+<p><strong>Quiz:</strong></p>
+<pre><code>
+{&quot;question&quot;:&quot;Edit Distance的空间复杂度优化后是?&quot;,&quot;options&quot;:[&quot;O(n*m)&quot;,&quot;O(n+m)&quot;,&quot;O(m)&quot;,&quot;O(1)&quot;],&quot;correct_index&quot;:2}
+</code></pre>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 151 (Synthesis)</h2>
+
+<p>&gt; <strong>综合深化 / Expert Synthesis:</strong> 60道行为面试题全部完成。今天综合演练——在技术面试中应对多维压力场景。</p>
+
+<hr/>
+
+<h2>场景题: 技术领导者的困境 — 当速度、质量、团队情绪三角失衡</h2>
+
+<p><strong>Senior/Staff-Level Scenario:</strong></p>
+
+<p>&gt; &quot;你接手了一个关键项目：上线日期是六周后，但你发现现有架构设计有严重的技术债，推上线后六个月内必然出现生产故障。团队士气已经很低（之前的 lead 刚离职），产品和高管都在期待按时交付。你怎么做？&quot;</p>
+
+<hr/>
+
+<h3>为什么这道题难</h3>
+
+<p>这不是一道只有一个答案的题。面试官在考察：</p>
+<p>1. <strong>你是否能识别真正的风险</strong>（不只是说&quot;有技术债&quot;）</p>
+<p>2. <strong>你是否懂得如何争取资源/时间</strong>（不是直接对抗）</p>
+<p>3. <strong>你如何管理向上和向下的关系</strong></p>
+
+<hr/>
+
+<h3>STAR 分解框架</h3>
+
+<p><strong>Situation (情境):</strong></p>
+<p>描述清楚背景复杂度。不要说&quot;有技术债&quot;，要说具体的：</p>
+<p>&gt; &quot;架构中有一个单点 DB，在当前设计下，DAU 超过 50k 时会出现锁竞争，而产品上线后第一周预计 DAU 就会达到 80k。&quot;</p>
+
+<p><strong>Task (任务):</strong></p>
+<p>明确你的角色和约束：</p>
+<p>&gt; &quot;我是唯一了解底层架构的 senior engineer，同时还要带两个 junior 成员。&quot;</p>
+
+<p><strong>Action (行动) — 这是核心，展开讲:</strong></p>
+
+<p>1. <strong>量化风险，不要模糊</strong> — 写一页技术风险文档，包括：触发条件、预期影响（故障率/用户影响）、修复时间。数字比&quot;可能会有问题&quot;有力得多。</p>
+
+<p>2. <strong>提供选项，不是问题</strong> — 不要只来汇报&quot;我们有麻烦&quot;，要带三个选项：</p>
+<p>- Option A: 按期上线（接受技术风险，提供监控+回滚方案）</p>
+<p>- Option B: 延期 2 周修复核心风险点（什么要改，什么不动）</p>
+<p>- Option C: 全量重构（成本/收益不合算，排除）</p>
+
+<p>3. <strong>赢得团队信任</strong> — 在团队里坦诚技术债的现状，不要 sugarcoat，但也要给出清晰的计划让大家有方向感。&quot;我们知道哪里有问题，我们有计划&quot;比&quot;别担心&quot;更安心。</p>
+
+<p>4. <strong>向上对齐</strong> — 和 PM/高管 1:1，用业务语言沟通风险：&quot;如果按期上线，我们 70% 的概率在 Q2 会有一次重大故障，影响 X 用户，修复需要 Y 工程师周。延期 2 周能把这个概率降到 15%。你来决定。&quot;</p>
+
+<p><strong>Result (结果):</strong></p>
+<p>描述最终结果，以及 <strong>你学到了什么</strong>：</p>
+<p>&gt; &quot;最终选择了 Option B，延期 2 周，上线后稳定运行。团队信任度提升——大家知道技术问题会被如实沟通，不被掩盖。&quot;</p>
+
+<hr/>
+
+<h3>❌ Bad vs ✅ Good</h3>
+
+<p>| ❌ 踩雷 | ✅ 加分 |</p>
+<p>|---------|---------|</p>
+<p>| &quot;我告诉他们有技术债，但他们不听&quot; | &quot;我量化了风险，给了三个选项让他们选&quot; |</p>
+<p>| &quot;我们团队决定延期&quot; | &quot;我起草了风险分析文档，推动了对话&quot; |</p>
+<p>| &quot;最终按时上线了&quot; | &quot;最终选择了延期 2 周，并说清楚了权衡&quot; |</p>
+<p>| &quot;我很担心质量&quot; | &quot;我建立了监控 + 回滚方案，把上线风险降低到可接受范围&quot; |</p>
+
+<hr/>
+
+<h3>Senior/Staff Tips</h3>
+
+<p>- <strong>Staff level 的核心能力：把技术风险转化为业务语言</strong>。&quot;锁竞争&quot;对 PM 没意义，&quot;上线后两个月内 20% 的用户会遇到超时&quot;有意义。</p>
+<p>- <strong>永远带着方案来</strong>，不要只来汇报问题。这是区分 IC 和领导力的关键信号。</p>
+<p>- <strong>团队士气管理：透明 &gt; 乐观</strong>。Junior 工程师知道有技术债时，真正让他们不安的是&quot;领导知道但不说&quot;。</p>
+
+<hr/>
+
+<h3>Key Takeaways</h3>
+
+<p>1. 量化技术风险，用业务语言表达</p>
+<p>2. 给选项，让决策者选，而不是单方面决定</p>
+<p>3. 向下透明，向上提方案</p>
+<p>4. 把困境变成建立信任的机会</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://www.staffeng.com/guides/work-on-what-matters — Staff Eng: work on what matters</p>
+<p>- https://lethain.com/setting-engineering-org-values/ — Engineering values &amp; decision making</p>
+<p>- https://www.amazon.com/Managers-Path-Leaders-Navigating-Growth/dp/1491973897 — The Manager&#x27;s Path (Camille Fournier)</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象你发现了学校报告里有个大错误，但报告明天就要交。</p>
+<p>聪明的做法不是偷偷改掉，也不是大哭大闹说&quot;全错了&quot;——</p>
+<p>而是去找老师说：&quot;这里有个问题，我有三个方案，你来选。&quot;</p>
+<p>这就是 senior 的处理方式：把问题变成决策，而不是让别人解决你的焦虑。</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 151 (Synthesis)</h2>
+
+<p>&gt; <strong>综合深化 / Expert Synthesis:</strong> 50个 Python Craft 话题全部完成。今天深度对比——Python 异步编程的三个时代。</p>
+
+<hr/>
+
+<h2>Python 并发模型全景：threading vs multiprocessing vs asyncio — 最终决战</h2>
+
+<p>50个话题学完了，今天把所有并发相关知识串成一张清晰的决策图。</p>
+
+<hr/>
+
+<h3>三种模型的本质区别</h3>
+
+<pre><code>
+threading           multiprocessing        asyncio
+    |                      |                  |
+共享内存             独立内存空间            单线程事件循环
+OS线程调度           OS进程调度             协作式调度
+受 GIL 限制          绕过 GIL              无 GIL 问题
+I/O密集型OK          CPU密集型OK           I/O密集型最优
+</code></pre>
+
+<p><strong>GIL 的本质:</strong> CPython 在任意时刻只允许一个线程执行 Python 字节码。</p>
+<p>- threading: 多线程，但 GIL 让 CPU 密集任务无法真正并行</p>
+<p>- multiprocessing: 多进程，每个进程有自己的 GIL，真正并行</p>
+<p>- asyncio: 单线程，根本不需要 GIL，通过协作式切换避免竞争</p>
+
+<hr/>
+
+<h3>决策树（收藏这个）</h3>
+
+<pre><code>
+任务类型是什么?
+    │
+    ├── I/O 密集 (网络、文件、DB)
+    │       │
+    │       ├── 需要高并发 (&gt;1000 connections)?
+    │       │       └── asyncio + aiohttp/asyncpg ✅
+    │       │
+    │       └── 普通并发 (&lt;100)?
+    │               └── ThreadPoolExecutor ✅
+    │
+    └── CPU 密集 (数学运算、图像处理、ML推理)
+            │
+            ├── 任务可分片?
+            │       └── ProcessPoolExecutor / multiprocessing.Pool ✅
+            │
+            └── NumPy/Pandas?
+                    └── 它们释放 GIL，threading 也行 ✅
+</code></pre>
+
+<hr/>
+
+<h3>实战代码对比: 抓取100个 URL</h3>
+
+<pre><code>
+import asyncio
+import aiohttp
+import time
+from concurrent.futures import ThreadPoolExecutor
+import requests
+
+URLS = [f&quot;https://httpbin.org/delay/0.1&quot; for _ in range(20)]
+
+# ---- Method 1: Sequential (baseline) ----
+def fetch_sequential():
+    results = [requests.get(url).status_code for url in URLS]
+    return results
+# ~2+ seconds for 20 requests
+
+# ---- Method 2: ThreadPoolExecutor ----
+def fetch_threaded():
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        results = list(pool.map(lambda u: requests.get(u).status_code, URLS))
+    return results
+# ~0.3 seconds — 10x speedup
+
+# ---- Method 3: asyncio (best for I/O) ----
+async def fetch_one(session, url):
+    async with session.get(url) as resp:
+        return resp.status
+
+async def fetch_async():
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_one(session, url) for url in URLS]
+        return await asyncio.gather(*tasks)
+# ~0.15 seconds — 20x speedup, lower memory than threading
+</code></pre>
+
+<hr/>
+
+<h3>asyncio 的隐藏陷阱（高频面试点）</h3>
+
+<pre><code>
+# ❌ 常见错误: 在 async 函数里用同步阻塞调用
+async def bad():
+    import time
+    time.sleep(1)  # 阻塞整个事件循环！所有协程都卡住
+    
+# ✅ 正确: 使用 asyncio.sleep 或在 executor 中运行同步代码
+async def good():
+    await asyncio.sleep(1)  # 释放控制权，其他协程可以运行
+
+async def good_sync():
+    loop = asyncio.get_event_loop()
+    # 把 CPU 密集或阻塞操作放到线程池
+    result = await loop.run_in_executor(None, blocking_function)
+</code></pre>
+
+<p><strong>关键理解:</strong> <code>async/await</code> 只是语法糖，本质是在单线程中的协作式切换。</p>
+<p>你不能在异步代码里混同步阻塞，就像你不能在协程里睡觉。</p>
+
+<hr/>
+
+<h3>Python 3.12+ 的新变化: Sub-Interpreters</h3>
+
+<p>Python 3.12 开始引入 per-interpreter GIL，允许多个解释器各有独立 GIL 运行在同一进程内。这是继 asyncio 后最重要的并发进化。</p>
+
+<pre><code>
+# 未来的写法 (PEP 684, Python 3.12+)
+import _interpreters  # experimental API
+# Eventually: 在同一进程内真正并行运行 Python 代码
+# 内存隔离比 threading，但比 multiprocessing 轻量
+</code></pre>
+
+<hr/>
+
+<h3>面试考点速记</h3>
+
+<p>| 问题 | 答案 |</p>
+<p>|------|------|</p>
+<p>| GIL 是什么? | CPython 全局解释器锁，保护内存管理 |</p>
+<p>| threading 能做 CPU 并行吗? | 不能（GIL），但 I/O 可以 |</p>
+<p>| asyncio 用几个线程? | 1个（事件循环线程），可以配合 executor |</p>
+<p>| 1000个 DB 连接用什么? | asyncio + asyncpg/aiomysql |</p>
+<p>| 图像批量处理用什么? | ProcessPoolExecutor |</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://docs.python.org/3/library/asyncio.html — asyncio official docs</p>
+<p>- https://realpython.com/async-io-python/ — Real Python asyncio guide</p>
+<p>- https://www.youtube.com/watch?v=X7vBbelRXn0 — Python GIL explained (David Beazley)</p>
+<p>- https://peps.python.org/pep-0703/ — PEP 703: Making the GIL Optional</p>
+
+<h3>🧒 ELI5</h3>
+<p>三种并发就像餐厅的三种服务模式：</p>
+<p>- <strong>threading</strong>: 多个服务员，但厨房只有一把刀（GIL），还是得排队切菜</p>
+<p>- <strong>multiprocessing</strong>: 开多家分店，每家都有自己的厨房，真的独立</p>
+<p>- <strong>asyncio</strong>: 一个超级服务员，同时照顾所有桌，趁客人看菜单的时候去给别桌倒水</p>
+<p>大多数后端服务是&quot;等网络&quot;，所以 asyncio 那个超级服务员最高效。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 151: News Roundup</h2>
+
+<p>&gt; <strong>来源声明:</strong> 以下新闻均来自本次 web 搜索（blog.google, OpenAI, Bloomberg, 2026-11-09）。具体数字标注 &quot;据报道&quot; 表示来自转载，未经原始数据直接验证。</p>
+
+<hr/>
+
+<h2>📰 本周 AI 新闻三条 / This Week in AI</h2>
+
+<hr/>
+
+<h3>🔧 1. Google 发布第八代 AI 芯片两款新型号</h3>
+
+<p><strong>来源:</strong> https://blog.google/innovation-and-ai/infrastructure-and-cloud/global-network/tpu-8i-max-and-8tx/</p>
+
+<p>Google 宣布推出 TPU 8tx 和 8i Max 两款新型 AI 芯片。TPU 8tx 专为政府机构和受监管企业的<strong>保密计算（confidential computing）</strong>设计，而 8i Max 则面向需要<strong>大上下文窗口</strong>的 AI 应用。</p>
+
+<p>加上今年 4 月已发布的 TPU 8t 和 8i，Google 在 2026 年内共推出了四款第八代 TPU。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>- 保密计算 TPU 是 Google 攻占政务云和金融云市场的关键武器</p>
+<p>- 大上下文窗口需求驱动专用硬件——通用芯片内存带宽不够</p>
+<p>- 芯片迭代速度加快，AI 算力&quot;军备竞赛&quot;在硬件层持续升温</p>
+
+<p><em>Google announced two new eighth-gen AI chips: TPU 8tx for confidential computing and 8i Max for large context window AI applications, bringing their 2026 TPU lineup to four variants.</em></p>
+
+<hr/>
+
+<h3>🔒 2. OpenAI AI 模型在 Linux 内核中发现据报道 948 个安全漏洞</h3>
+
+<p><strong>来源:</strong> https://openai.com/index/a-thousand-fewer-paths-to-root/</p>
+
+<p>OpenAI 表示，使用其即将发布的网络安全模型，自主扫描了截至 2026 年 10 月中旬的 Linux 内核代码，据报道发现了 948 个本地权限提升（local privilege escalation）漏洞，并为这些漏洞生成了补丁，经人工研究员审查。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>- AI 做安全扫描从&quot;辅助工具&quot;升级为&quot;自主发现&quot;——质变</p>
+<p>- 若属实，这是 AI 对开源基础设施最大规模的安全贡献之一</p>
+<p>- 也引发讨论：同样的模型能不能被攻击者用来&quot;找漏洞不补漏洞&quot;？</p>
+
+<p><em>OpenAI claims its upcoming cyber model autonomously found reportedly 948 Linux kernel privilege escalation vulnerabilities and generated patches, reviewed by human researchers.</em></p>
+
+<hr/>
+
+<h3>☁️ 3. 微软据报道正在&quot;收缩&quot;与 Oracle 的云 AI 协议</h3>
+
+<p><strong>来源:</strong> https://www.bloomberg.com/news/articles/2026-11-06/microsoft-is-winding-down-oracle-deal-to-rent-ai-cloud-capacity</p>
+
+<p>Bloomberg 报道，微软正在重新考虑从 Oracle 等&quot;新云&quot;（neocloud）租用服务器容量的协议，据报道已停止使用其 2023 年与 Oracle 签订合同中的部分算力。原因是 Oracle 提供的算力使用的是较旧的 Nvidia 芯片，对微软而言价值下降。</p>
+
+<p><strong>为什么重要 / Why it matters:</strong></p>
+<p>- 新一代 AI 芯片更新速度快，旧芯片的租用价值快速贬值</p>
+<p>- 微软自建算力能力增强，减少对外部云的依赖</p>
+<p>- &quot;AI 算力泡沫&quot;的讨论再起：大量 neocloud 的商业模式面临考验</p>
+
+<p><em>Bloomberg reports Microsoft is winding down cloud capacity rentals from Oracle, reportedly due to older Nvidia chips becoming less useful as Microsoft builds its own infrastructure.</em></p>
+
+<hr/>
+
+<h3>💡 工程师视角 / Engineer&#x27;s Take</h3>
+
+<p>这三条新闻连起来看，有一个主题：<strong>算力基础设施的快速迭代正在重塑整个 AI 供应链</strong>。</p>
+
+<p>- 硬件：Google 一年四款 TPU，芯片代差缩短到数月</p>
+<p>- 安全：AI 自主做安全扫描，从工具变成主体</p>
+<p>- 商业：旧芯片租约快速贬值，neocloud 商业模式承压</p>
+
+<p>如果你在做 AI 基础设施相关工作，今年最重要的判断是：<strong>买还是租算力，租谁的，租多久。</strong></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://blog.google/innovation-and-ai/infrastructure-and-cloud/global-network/tpu-8i-max-and-8tx/ — Google TPU 8tx &amp; 8i Max</p>
+<p>- https://openai.com/index/a-thousand-fewer-paths-to-root/ — OpenAI Linux kernel security scan</p>
+<p>- https://www.bloomberg.com/news/articles/2026-11-06/microsoft-is-winding-down-oracle-deal-to-rent-ai-cloud-capacity — Microsoft/Oracle deal wind-down</p>
+
+<h3>🧒 ELI5</h3>
+<p>想象 AI 公司都在比赛谁有更厉害的超级计算机：</p>
+<p>Google 造了新型号的&quot;超级大脑芯片&quot;；OpenAI 让 AI 帮 Linux 找安全漏洞，据说发现了将近 1000 个；</p>
+<p>而微软觉得它租的旧芯片不够好用了，正在退租。</p>
+<p>总结：AI 的&quot;硬件赛道&quot;比软件迭代还快，昨天的高端芯片今天可能已经是过时库存。</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-08</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
