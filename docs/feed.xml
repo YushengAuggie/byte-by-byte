@@ -5,8 +5,531 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 09 Nov 2026 16:30:53 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 10 Nov 2026 16:11:34 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-10</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-10</guid>
+      <pubDate>Tue, 10 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>混沌工程与韧性架构 — 系统容错能力的构建框架</h2>
+
+<p>&gt; Day 152 | System Design Synthesis | 2026-11-10</p>
+
+<hr/>
+
+<p>🏗️ <strong>系统设计 / System Design</strong> <em>(3 min)</em></p>
+
+<p><strong>混沌工程：主动破坏以验证系统韧性</strong></p>
+<p><strong>Chaos Engineering: Breaking Things Deliberately to Build Resilient Systems</strong></p>
+
+<hr/>
+
+<h3>想象你在设计...</h3>
+
+<p>你是 Netflix 的 Sr. Engineer。你的分布式系统覆盖 3 个 AWS Region，每天处理数十亿请求。问题不是&quot;会不会出故障&quot;，而是&quot;出故障时能不能自愈&quot;。</p>
+
+<p><em>You&#x27;re a Sr. Engineer at Netflix. Your distributed system spans 3 AWS regions, handling billions of requests daily. The question isn&#x27;t &quot;will it fail&quot; but &quot;will it recover on its own.&quot;</em></p>
+
+<hr/>
+
+<h3>混沌工程流程 / Chaos Engineering Pipeline</h3>
+
+<pre><code>
+     ┌─────────────────────────────────────────┐
+     │         Chaos Engineering Loop          │
+     └─────────────────────────────────────────┘
+              │
+     ┌────────▼────────┐
+     │  Define Steady  │  ← e.g., p99 latency &lt; 100ms,
+     │  State Baseline │    error rate &lt; 0.1%
+     └────────┬────────┘
+              │
+     ┌────────▼────────┐
+     │ Hypothesize     │  ← &quot;Even if Pod X dies,
+     │ Resilience      │    steady state holds&quot;
+     └────────┬────────┘
+              │
+     ┌────────▼────────┐
+     │ Inject Failure  │  ← Chaos Monkey (Pod kill)
+     │ (small blast    │    Chaos Kong (AZ outage)
+     │  radius first)  │    Chaos Gorilla (Region)
+     └────────┬────────┘
+              │
+     ┌────────▼────────┐
+     │ Observe &amp;       │  ← Datadog metrics (Day 42)
+     │ Measure Impact  │    Jaeger traces (Day 68)
+     └────────┬────────┘
+              │
+     ┌────────▼────────┐
+     │ Fix Gaps /      │  ← Circuit breaker (Day 81),
+     │ Update Runbooks │    retry with backoff (Day 79)
+     └─────────────────┘
+</code></pre>
+
+<hr/>
+
+<h3>为什么这样设计 / Key Tradeoffs</h3>
+
+<p>| 原则 | 说明 |</p>
+<p>|------|------|</p>
+<p>| <strong>Blast Radius</strong> | 从单个 Pod 开始，逐步扩大到 AZ → Region。从不在 Production 全量注入。 |</p>
+<p>| <strong>Steady State First</strong> | 没有基线指标，就没有验证。先跑 A/B testing (Day 56) 建基线。 |</p>
+<p>| <strong>Automate in CI/CD</strong> | 把混沌实验嵌入 Pipeline，让韧性测试像单元测试一样常态化。 |</p>
+
+<hr/>
+
+<h3>别踩这个坑 / Common Mistakes</h3>
+
+<p>❌ <strong>直接在 Production 全量注入</strong> — 先在 Staging 验证，再逐步升级</p>
+<p>❌ <strong>没有自动回滚</strong> — 混沌实验必须有 kill switch</p>
+<p>❌ <strong>只测单节点</strong> — 级联故障（Cascading Failure）才是真正的敌人</p>
+<p>❌ <strong>孤立实验</strong> — 混沌工程要结合 On-call Runbook，否则只是制造事故</p>
+
+<hr/>
+
+<h3>知识连接 / Synthesis Map</h3>
+
+<p>本主题综合了我们之前覆盖的多个系统：</p>
+<p>- <strong>监控告警</strong> (Day 42) — 需要 Datadog/Prometheus 观测稳态</p>
+<p>- <strong>分布式追踪</strong> (Day 68) — Jaeger traces 帮助定位级联故障根因</p>
+<p>- <strong>熔断器</strong> (Day 81) — Circuit Breaker 是混沌实验中最常发现缺失的模式</p>
+<p>- <strong>A/B 测试平台</strong> (Day 56) — 稳态基线定义需要实验框架支撑</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>混沌工程就像消防演练——你不能等真正着火才知道逃生路线在哪。主动&quot;点火&quot;，找出哪些地方没有灭火器。</p>
+
+<p><em>Chaos engineering is like fire drills — you don&#x27;t wait for a real fire to find out your exits are blocked. Set small fires intentionally to find the gaps.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- https://principlesofchaos.org — The official Chaos Engineering principles</p>
+<p>- https://netflixtechblog.com/the-netflix-simian-army-16e57fbab116 — Netflix Simian Army original post</p>
+<p>- https://github.com/Netflix/chaosmonkey — Open source Chaos Monkey</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>#329 Longest Increasing Path in a Matrix — 2-D DP + Memoization</h2>
+
+<p>&gt; Day 152 | Algorithms | 2026-11-10 | Hard 🔴</p>
+
+<hr/>
+
+<p>💻 <strong>算法 / Algorithms</strong> <em>(4 min)</em></p>
+
+<p>🧩 <strong>二维动态规划模式 (8/11)</strong> — building on the template from Days 101-151</p>
+
+<hr/>
+
+<h3>今天的变奏 / Today&#x27;s Variation</h3>
+
+<p>标准 2-D DP 从左上到右下填表。今天的问题打破了这一规律：<strong>路径方向不固定</strong>，任意上下左右移动，只要值严格递增。这迫使我们使用 <strong>DFS + 记忆化（自顶向下 DP）</strong> 代替自底向上填表。</p>
+
+<p><em>Standard 2-D DP fills a table top-left to bottom-right. Today&#x27;s problem breaks that: direction is unconstrained — move any of 4 directions as long as values strictly increase. This forces <strong>DFS + Memoization (top-down DP)</strong> instead of bottom-up.</em></p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+
+<p>- LeetCode: https://leetcode.com/problems/longest-increasing-path-in-a-matrix/ 🔴 Hard</p>
+<p>- NeetCode: https://neetcode.io/problems/longest-increasing-path-in-a-matrix</p>
+
+<hr/>
+
+<h3>真实类比 / Real-World Analogy</h3>
+
+<p>想象地形图上的水流：水只往更低的地方流，找出最长的水流路径。每个格子就是一个海拔高度。</p>
+
+<p><em>Imagine water flow on a terrain map: water only flows downhill. Find the longest path water can travel. Each cell is an elevation.</em></p>
+
+<hr/>
+
+<h3>模板映射 / Map to Pattern Template</h3>
+
+<pre><code>
+标准 Bottom-Up 模板:         今天的变奏:
+──────────────────────       ──────────────────────────
+dp = 2D table               memo = 2D table (lazy)
+Fill left→right, top→down   Fill on-demand via DFS
+dp[i][j] = f(neighbors)     dfs(r, c) = 1 + max(dfs(nr, nc))
+                                         for valid neighbors
+</code></pre>
+
+<p><strong>关键区别 / Key Difference:</strong></p>
+<p>- 标准 DP: 明确的状态转移顺序（拓扑顺序已知）</p>
+<p>- 今天: 拓扑顺序<strong>不明确</strong> → 用 DFS 自动探索，memo 避免重复计算</p>
+
+<hr/>
+
+<h3>Python 解法 / Solution</h3>
+
+<pre><code>
+from functools import lru_cache
+from typing import List
+
+def longestIncreasingPath(matrix: List[List[int]]) -&gt; int:
+    if not matrix or not matrix[0]:
+        return 0
+    
+    rows, cols = len(matrix), len(matrix[0])
+    DIRS = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    
+    @lru_cache(maxsize=None)
+    def dfs(r: int, c: int) -&gt; int:
+        # Returns the longest increasing path starting at (r, c)
+        best = 1  # path of just this cell
+        for dr, dc in DIRS:
+            nr, nc = r + dr, c + dc
+            if (0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols
+                    and matrix[nr][nc] &gt; matrix[r][c]):
+                best = max(best, 1 + dfs(nr, nc))
+        return best
+    
+    # Try every cell as a starting point
+    return max(dfs(r, c) for r in range(rows) for c in range(cols))
+
+# --- Trace Example ---
+# matrix = [
+#   [9, 9, 4],
+#   [6, 6, 8],
+#   [2, 1, 1]
+# ]
+# dfs(2,1): neighbors where val &gt; 1 → (2,0)=2 and (1,1)=6
+#   dfs(2,0): neighbors where val &gt; 2 → (1,0)=6
+#     dfs(1,0): neighbors where val &gt; 6 → (0,0)=9, (0,1)=9
+#       dfs(0,0)=1, dfs(0,1)=1  → dfs(1,0)=2
+#     dfs(2,0) = 1 + dfs(1,0) = 3
+#   dfs(1,1): neighbors where val &gt; 6 → (1,2)=8
+#     dfs(1,2): neighbors where val &gt; 8 → none → dfs(1,2)=1
+#     dfs(1,1) = 2
+#   dfs(2,1) = 1 + max(dfs(2,0)=3, dfs(1,1)=2) = 4  ← longest
+# Answer: 4, path: 1→2→6→9 starting at (2,1)
+</code></pre>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(m × n) — 每个格子只计算一次</p>
+<p>- Space: O(m × n) — memo table + recursion stack</p>
+
+<hr/>
+
+<h3>举一反三 / Connect the Pattern Block</h3>
+
+<p>| 问题 | 变奏点 |</p>
+<p>|------|--------|</p>
+<p>| <strong>#62 Unique Paths</strong> | Bottom-up, 1 direction only |</p>
+<p>| <strong>#1143 LCS</strong> | 2 strings, <code>dp[i][j]</code> depends on <code>dp[i-1][j-1]</code> |</p>
+<p>| <strong>#72 Edit Distance</strong> | 3 choices at each cell |</p>
+<p>| <strong>今天 #329</strong> | 4 directions, DFS-first, memo |</p>
+<p>| <strong>下一题 #115 Distinct Subsequences</strong> | 1D subproblem extended to 2D |</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>你在爬山，但只能往更高的地方走。从每个起点出发，找到最长的爬山路。已经算过的起点，用小本本记着，下次直接查，不用重新爬。</p>
+
+<p><em>You&#x27;re hiking but can only go uphill. Start from every point, find the longest uphill path. Write down results in a notebook so you never hike the same path twice.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- https://leetcode.com/problems/longest-increasing-path-in-a-matrix/ — Problem statement</p>
+<p>- https://neetcode.io/problems/longest-increasing-path-in-a-matrix — Video walkthrough</p>
+<p>- https://cp-algorithms.com/dynamic_programming/dp-on-directed-acyclic-graphs.html — DP on DAGs</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>跨时区远程团队的工程领导力 — Behavioral Synthesis</h2>
+
+<p>&gt; Day 152 | Soft Skills Synthesis | 2026-11-10</p>
+
+<hr/>
+
+<p>🗣️ <strong>软技能 / Soft Skills</strong> <em>(2 min)</em></p>
+
+<p><strong>场景：你如何在没有直接汇报关系的情况下，推动跨时区团队完成一个关键迁移？</strong></p>
+<p><strong>Scenario: How do you drive a critical migration across time zones without direct authority?</strong></p>
+
+<hr/>
+
+<h3>为什么这个问题很难 / Why This Is Hard</h3>
+
+<p>Staff+ Engineer 的核心挑战不是写代码，而是<strong>影响力乘以覆盖面</strong>。当团队跨越 PST / EST / CST / IST 四个时区，异步沟通成为主要工作模式，传统的&quot;开个会搞定&quot;已经失效。</p>
+
+<p><em>The core challenge at Staff+ isn&#x27;t coding — it&#x27;s influence times coverage. Across 4 time zones, async is the primary work mode. &quot;Call a meeting&quot; no longer works.</em></p>
+
+<hr/>
+
+<h3>STAR 拆解 / STAR Breakdown</h3>
+
+<p><strong>Situation:</strong> 公司决定将核心服务从 Python 2 迁移到 Python 3（或类似的大型迁移），需要协调 5 个团队、3 个时区、约 40 名工程师。</p>
+
+<p><strong>Task:</strong> 你是 Tech Lead，没有直接管理权，但需要在 Q3 前完成迁移，同时不中断业务。</p>
+
+<p><strong>Action:</strong></p>
+<p>1. <strong>写清 RFC（Request for Comments）</strong> — 把迁移计划写成文档，允许异步评论，把&quot;会议&quot;的讨论密度转移到文字</p>
+<p>2. <strong>定义 clear contract</strong> — 每个团队需要完成什么，截止时间是什么，验收标准是什么（可测量！）</p>
+<p>3. <strong>建立可视化进度板</strong> — 公开进度 dashboard，让 Blockers 自然浮现，不需要追着问</p>
+<p>4. <strong>异步 Office Hours</strong> — 每个 Working Session 录屏发 Slack，覆盖不同时区的人</p>
+<p>5. <strong>庆祝小里程碑</strong> — 每个团队完成自己的迁移就公开表扬，建立正向飞轮</p>
+
+<p><strong>Result:</strong> 迁移提前 2 周完成，零 P0 事故，5 个团队的 Eng Lead 都在 Retro 里提到&quot;这是他们经历过最顺的跨团队项目&quot;。</p>
+
+<hr/>
+
+<h3>❌ 常见错误 vs ✅ 正确做法</h3>
+
+<p>| | 做法 |</p>
+<p>|--|------|</p>
+<p>| ❌ | &quot;我每周开一个 1-hour All-Hands 同步进度&quot; |</p>
+<p>| ✅ | 用 written status update + Loom 视频替代会议，会议留给决策，不用于同步 |</p>
+<p>| ❌ | &quot;我直接 escalate 给他们的 manager&quot; |</p>
+<p>| ✅ | 先在公开 channel 明确 Blocker，给 48h 响应窗口，再私下沟通，最后才 escalate |</p>
+
+<hr/>
+
+<h3>Senior/Staff 提示 / Tips</h3>
+
+<p>- <strong>默认异步，例外同步</strong> — 同步会议的机会成本极高，只用于高带宽决策</p>
+<p>- <strong>让数据说话</strong> — &quot;你们团队的 migration progress 是 30%，平均是 60%&quot; 比&quot;你们进度慢了&quot;有效 10 倍</p>
+<p>- <strong>Build in public</strong> — 公开的进度让团队自我施压，减少你的追踪工作</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>想象你是运动会裁判，不能替运动员跑步，但可以设计赛道、挂计分牌、给每圈加油。好的 Tech Lead 就是这个裁判。</p>
+
+<p><em>Think of yourself as a race organizer, not a runner. You design the track, display the scoreboard, and cheer each lap. That&#x27;s the Tech Lead role.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- https://staffeng.com/guides/work-on-what-matters — Will Larson on Staff Engineering priorities</p>
+<p>- https://lethain.com/staff-engineer-archetypes/ — Staff engineer archetypes</p>
+<p>- https://www.amazon.com/Staff-Engineer-Leadership-beyond-management/dp/1736417916 — Staff Engineer book</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Python 内存模型深度解析 — 对象、引用、垃圾回收的完整图景</h2>
+
+<p>&gt; Day 152 | Python Craft Synthesis | 2026-11-10</p>
+
+<hr/>
+
+<p>🐍 <strong>Python 工坊 / Python Craft</strong> <em>(2 min)</em></p>
+
+<p><strong>综合主题：Python 对象模型 + 垃圾回收 + 内存陷阱</strong></p>
+<p><strong>Synthesis: Python Object Model + GC + Memory Gotchas</strong></p>
+
+<hr/>
+
+<h3>一切皆对象，但不是你想的那样 / Everything Is an Object, But Not How You Think</h3>
+
+<pre><code>
+import sys
+import gc
+
+# --- 1. Reference Counting (Day 73 revisit) ---
+a = [1, 2, 3]
+b = a          # refcount = 2
+print(sys.getrefcount(a))  # 3 (getrefcount itself holds a temp ref)
+
+del b          # refcount → 2 (getrefcount arg + a)
+del a          # refcount → 0 → CPython frees immediately
+
+# --- 2. Circular Reference — Where refcount FAILS ---
+class Node:
+    def __init__(self):
+        self.ref = None
+
+x = Node()
+y = Node()
+x.ref = y     # y refcount = 2
+y.ref = x     # x refcount = 2
+
+del x         # x refcount = 1, NOT 0 — leaked!
+del y         # y refcount = 1, NOT 0 — leaked!
+# CPython&#x27;s generational GC (Day 73) detects this cycle
+gc.collect()  # force cycle collection
+print(gc.garbage)  # [] if __del__ not defined
+
+# --- 3. Small Integer Interning ---
+a = 256
+b = 256
+print(a is b)  # True — CPython caches -5..256
+
+a = 257
+b = 257
+print(a is b)  # False in most cases (implementation-dependent)
+# ✅ Always use == for value comparison, never `is` for non-singletons
+
+# --- 4. String Interning (関键面试坑) ---
+s1 = &quot;hello&quot;
+s2 = &quot;hello&quot;
+print(s1 is s2)   # True — compile-time interning
+
+s3 = &quot;hello world&quot;
+s4 = &quot;hello world&quot;
+print(s3 is s4)   # True if compile-time constant, False at runtime
+
+s5 = &quot;hello&quot; + &quot; world&quot;
+s6 = &quot;hello&quot; + &quot; world&quot;
+print(s5 is s6)   # True — CPython constant-folds literal concatenation at compile time!
+
+# ⚠️ Only truly dynamic (runtime) concat avoids interning:
+def concat(a, b): return a + b
+s7, s8 = concat(&quot;hello&quot;, &quot; world&quot;), concat(&quot;hello&quot;, &quot; world&quot;)
+print(s7 is s8)   # False — genuinely runtime, no interning
+
+# --- 5. __slots__ — Eliminating __dict__ Overhead ---
+class RegularPoint:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+class SlottedPoint:
+    __slots__ = (&#x27;x&#x27;, &#x27;y&#x27;)
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+import tracemalloc
+tracemalloc.start()
+points_regular = [RegularPoint(i, i) for i in range(100_000)]
+snap1 = tracemalloc.take_snapshot()
+
+tracemalloc.clear_traces()
+points_slotted = [SlottedPoint(i, i) for i in range(100_000)]
+snap2 = tracemalloc.take_snapshot()
+
+# Slotted uses ~3x less memory — critical for large data structures
+</code></pre>
+
+<hr/>
+
+<h3>知识综合 / Synthesis Map</h3>
+
+<p>| 主题 | 今天的连接 |</p>
+<p>|------|-----------|</p>
+<p>| 引用计数 (Day 73) | 循环引用如何绕过它 |</p>
+<p>| 垃圾回收 (Day 73) | 分代 GC 填补引用计数的漏洞 |</p>
+<p>| dataclasses (Day 99) | <code>__slots__</code> + dataclass = 内存高效的数据容器 |</p>
+<p>| 序列化 (Day 102) | 内存模型决定 pickle 能/不能序列化什么 |</p>
+<p>| GIL (Day 54) | GIL 与引用计数的关系：保护 refcount 操作原子性 |</p>
+
+<hr/>
+
+<h3>常见坑 / Common Gotchas</h3>
+
+<pre><code>
+# ❌ Mutable default argument — classic Python gotcha
+def append_to(element, to=[]):  # `to` created ONCE at function definition
+    to.append(element)
+    return to
+
+print(append_to(1))  # [1]
+print(append_to(2))  # [1, 2] ← NOT [2]!
+
+# ✅ Correct: use None sentinel
+def append_to(element, to=None):
+    if to is None:
+        to = []
+    to.append(element)
+    return to
+</code></pre>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>Python 变量不是盒子，是便利贴。每个对象是一个盒子，变量是贴在盒子上的标签。<code>del x</code> 只是撕掉标签，不是砸碎盒子。当一个盒子上没有任何标签，Python 才回收它。</p>
+
+<p><em>Python variables aren&#x27;t boxes, they&#x27;re sticky notes. Objects are boxes; variables are labels attached to them. <code>del x</code> removes the label, not the box. Python recycles the box only when it has zero labels.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- https://docs.python.org/3/c-api/refcounts.html — CPython reference counting internals</p>
+<p>- https://devguide.python.org/internals/garbage-collector/ — Python GC deep dive</p>
+<p>- https://wiki.python.org/moin/PythonSpeed/PerformanceTips#Use___slots__ — __slots__ performance</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>AI 新闻快报 — 2026年10月/11月重大动态</h2>
+
+<p>&gt; Day 152 | AI News | 2026-11-10</p>
+
+<hr/>
+
+<p>🤖 <strong>AI 动态 / AI News</strong> <em>(2 min)</em></p>
+
+<hr/>
+
+<h3>📰 本周重大新闻 / Major Stories This Week</h3>
+
+<p><strong>1. OpenAI 发布 GPT-6.1 Terra 与 GPT-6 Rosalind</strong></p>
+
+<p>OpenAI 于 10 月 26 日推出 GPT-6.1 Terra，聚焦视觉推理、电脑操控和专业任务，已在 ChatGPT Work、Codex 及 API 中上线。10 月 30 日，面向生命科学研究者的 GPT-6 Rosalind Research 也随之发布。</p>
+
+<p>OpenAI launched GPT-6.1 Terra on Oct 26, focusing on visual reasoning and computer use. GPT-6 Rosalind Research followed on Oct 30, targeting approved life-sciences researchers.</p>
+
+<p>📎 Source: https://aiedgeinsights.com/ai-news-november-4-2026-major-ai-developments/</p>
+
+<hr/>
+
+<p><strong>2. Anthropic 申请 IPO，季度营收据报接近 170 亿美元</strong></p>
+
+<p>Anthropic 正式提交上市文件，据报道季度营收接近 170 亿美元。同月，Claude 的 coding agent 功能获得了跨 session 的记忆能力，可在长期项目中保留学习内容。</p>
+
+<p>Anthropic filed to go public, with quarterly revenue reportedly nearing $17 billion. Claude&#x27;s coding agent also gained persistent memory across sessions.</p>
+
+<p>📎 Source: https://www.ptechpartners.com/2026/11/03/october-2026-ai-news-roundup-revenue-vs-compute/</p>
+
+<hr/>
+
+<p><strong>3. AI 安全警告：Geoffrey Hinton 称可能&quot;本不该有 AI&quot;</strong></p>
+
+<p>&quot;AI 教父&quot; Geoffrey Hinton 公开警告，AI 可能在未来一年内引发金融系统或电网大规模中断事件，并呼吁强制性的前沿模型测试与国际监管标准。</p>
+
+<p>Geoffrey Hinton warned AI could trigger a large-scale system blackout within a year, calling for mandatory frontier model testing and intergovernmental standards.</p>
+
+<p>📎 Source: https://www.theguardian.com/uk-news/2026/nov/03/ai-godfather-geoffrey-hinton-better-off-without-ai</p>
+
+<hr/>
+
+<h3>工程师视角 / Engineer&#x27;s Take</h3>
+
+<p>作为工程师，这三条新闻背后有一个共同主题：<strong>能力和风险在同步加速</strong>。GPT-6 和 Claude 的新功能意味着 AI agent 已经可以独立执行长期任务；而 Hinton 的警告提醒我们，这些 agent 的安全边界还远未清晰。</p>
+
+<p><em>As engineers, there&#x27;s one thread connecting these three stories: capability and risk are accelerating in lockstep. GPT-6 and Claude&#x27;s new features mean AI agents can now run long-horizon tasks autonomously; Hinton&#x27;s warning reminds us the safety boundaries of these agents remain unclear.</em></p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>AI 变得越来越聪明，赚的钱也越来越多，但管它的规则还没跟上。就像汽车速度越来越快，但红绿灯还没升级。</p>
+
+<p><em>AI is getting smarter and making more money, but the rules governing it haven&#x27;t caught up — like cars getting faster while traffic lights stay the same.</em></p>
+
+<hr/>
+
+<h3>📚 References</h3>
+
+<p>- https://aiedgeinsights.com/ai-news-november-4-2026-major-ai-developments/ — AI Edge Insights Nov 2026</p>
+<p>- https://www.ptechpartners.com/2026/11/03/october-2026-ai-news-roundup-revenue-vs-compute/ — October AI roundup</p>
+<p>- https://www.theguardian.com/uk-news/2026/nov/03/ai-godfather-geoffrey-hinton-better-off-without-ai — Hinton warning (The Guardian)</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-09</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
