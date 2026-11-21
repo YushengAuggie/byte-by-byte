@@ -5,8 +5,543 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 10 Nov 2026 16:11:34 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 21 Nov 2026 04:36:21 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-20</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-20</guid>
+      <pubDate>Fri, 20 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 153 (Synthesis)</h2>
+<p><strong>分布式事务模式全比较：SAGA vs 2PC vs Outbox Pattern</strong></p>
+
+<hr/>
+
+<h2>想象你在设计…</h2>
+
+<p>你在构建一个电商平台（像我们 Day 38 设计的 Stripe 支付系统 + Day 36 的 E-Commerce Platform）。用户下单时需要同时：</p>
+<p>1. 扣减库存</p>
+<p>2. 创建订单</p>
+<p>3. 扣款</p>
+<p>4. 发送确认邮件</p>
+
+<p>这四步分布在四个不同的微服务上。任何一步失败都需要回滚。<strong>如何保证分布式事务的一致性？</strong></p>
+
+<hr/>
+
+<h2>ASCII 架构对比</h2>
+
+<pre><code>
+         ┌─────────────────────────────────────────────────────┐
+         │              分布式事务三大模式                        │
+         └─────────────────────────────────────────────────────┘
+
+2PC (Two-Phase Commit):
+  Coordinator ──→ Phase 1: &quot;准备好了吗?&quot; ──→ [ServiceA, ServiceB, ServiceC]
+  Coordinator ←── Phase 1 Response: &quot;YES&quot; ←── [all vote]
+  Coordinator ──→ Phase 2: &quot;提交!&quot; ──→ [ServiceA, ServiceB, ServiceC]
+  ⚠️ 协调者宕机 = 所有参与者阻塞
+
+SAGA (Choreography):
+  OrderService ──→ [event: OrderCreated]
+       ↓
+  InventoryService ──→ [event: InventoryReserved]
+       ↓
+  PaymentService ──→ [event: PaymentFailed]
+       ↓
+  InventoryService ←── [compensate: ReleaseInventory]  ← 补偿事务
+  OrderService ←── [compensate: CancelOrder]
+
+Transactional Outbox:
+  ┌──────────────┐    ┌────────────────┐    ┌──────────────┐
+  │   Service DB  │    │  Outbox Table  │    │  Message Bus │
+  │ order: saved  │ ── │ event: pending │ ──→│  Kafka/SQS   │
+  │ (same TX)     │    │ (atomic write) │    │              │
+  └──────────────┘    └────────────────┘    └──────────────┘
+  CDC (Debezium) or polling pulls outbox → publishes events
+</code></pre>
+
+<hr/>
+
+<h2>为什么这样设计？关键权衡</h2>
+
+<p>| 模式 | 一致性 | 可用性 | 复杂度 | 适用场景 |</p>
+<p>|------|--------|--------|--------|----------|</p>
+<p>| <strong>2PC</strong> | 强一致性 | ❌ 低（协调者是单点） | 中等 | 金融核心账本、跨库同一数据中心 |</p>
+<p>| <strong>SAGA</strong> | 最终一致性 | ✅ 高 | 高（需补偿逻辑） | 微服务、跨服务工作流 |</p>
+<p>| <strong>Outbox</strong> | 至少一次 | ✅ 高 | 中等 | 保证&quot;事件一定发出去&quot; |</p>
+
+<p><strong>核心原则</strong>：CAP 定理（Day 12）告诉我们，分布式系统无法同时保证 C + A + P。SAGA 选择 AP，2PC 选择 CP。</p>
+
+<hr/>
+
+<h2>常见错误 / 别踩这个坑</h2>
+
+<p>❌ <strong>误用 2PC 于跨数据中心场景</strong>：网络延迟 + 协调者宕机 = 全系统阻塞。2PC 只适合同一数据中心的强一致需求。</p>
+
+<p>❌ <strong>SAGA 忘记幂等补偿</strong>：补偿事务可能执行多次（网络重试）。每个补偿操作必须是幂等的。</p>
+
+<p>❌ <strong>Outbox 不清理</strong>：Outbox 表会无限增长。���要在事件确认发出后及时删除或归档记录。</p>
+
+<p>✅ <strong>现实选择</strong>：Stripe 用 Outbox + Idempotency Keys；Uber 用 SAGA + Cadence/Temporal workflow engine（我们 Day 41 讨论过 Distributed Task Queue）。</p>
+
+<hr/>
+
+<h2>深度连接：与之前内容的联系</h2>
+
+<p>- <strong>Day 13 消息队列</strong>：SAGA 的编排依赖 Kafka/SQS 可靠传递</p>
+<p>- <strong>Day 38 支付系统</strong>：Stripe 使用幂等 Key + Outbox 保证支付事件不丢失</p>
+<p>- <strong>Day 47 Raft/Paxos</strong>：2PC 的协调者可以用 Raft 实现 HA</p>
+<p>- <strong>Day 63 分布式锁</strong>：SAGA 补偿期间需要锁防止并发冲突</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://microservices.io/patterns/data/saga.html</p>
+<p>- https://microservices.io/patterns/data/transactional-outbox.html</p>
+<p>- https://martin.kleppmann.com/2015/09/26/transactions-at-various-levels-of-consistency.html</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象你和朋友合伙买礼物。<strong>2PC</strong> 是：你问所有人&quot;有钱吗？&quot;等大家都说有才付款，但如果你（协调人）突然失联，大家都傻等着。<strong>SAGA</strong> 是：每人先付自己那份，如果中途有人没钱，之前付了的人各自退款。<strong>Outbox</strong> 是：先把&quot;我要给你发钱&quot;这个承诺写在纸上压在枕头下，确保即使中途断网，这个承诺也不会丢。</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 153</h2>
+<h2>#115 Distinct Subsequences [Hard] — 2-D Dynamic Programming (9/11)</h2>
+
+<p>🧩 <strong>二维动态规划模式 (9/11)</strong> — 延续 Day 149 (Interleaving String) 的模版</p>
+
+<hr/>
+
+<h2>🔗 Links</h2>
+<p>- LeetCode: https://leetcode.com/problems/distinct-subsequences/ 🔴 Hard</p>
+<p>- NeetCode: https://neetcode.io/problems/count-subsequences</p>
+
+<hr/>
+
+<h2>现实类比 / Real-world Analogy</h2>
+
+<p>想象你在做文本搜索：给定一份长文档 <code>s</code> 和一个关键词 <code>t</code>，问关键词以<strong>子序列</strong>形式出现在文档里多少次（字符可以不连续，但顺序不变）。这就是 Distinct Subsequences 的核心——计算<strong>路径数量</strong>，而非判断是否存在。</p>
+
+<hr/>
+
+<h2>问题定义</h2>
+
+<p>给定字符串 <code>s</code> 和 <code>t</code>，计算 <code>s</code> 的子序列中有多少个等于 <code>t</code>。</p>
+
+<pre><code>
+s = &quot;rabbbit&quot;, t = &quot;rabbit&quot;
+输出: 3
+(三种方式选取 rabbit，对应三个不同的 &#x27;b&#x27; 被跳过)
+</code></pre>
+
+<hr/>
+
+<h2>映射到模版 / Map to Template</h2>
+
+<p>这是<strong>计数型</strong> 2D DP，不同于之前的：</p>
+<p>- Day 141 Edit Distance → <strong>最小代价</strong></p>
+<p>- Day 148 Target Sum → <strong>组合计数</strong>（1D 背包）</p>
+<p>- Day 149 Interleaving String → <strong>可行性判断</strong></p>
+
+<p>今天：<code>dp[i][j]</code> = s 的前 i 个字符中，t 的前 j 个字符作为子序列出现的次数。</p>
+
+<p><strong>转移规律（画表格找）：</strong></p>
+
+<pre><code>
+     &quot;&quot;  r  a  b  b  i  t       ← t (j轴)
+&quot;&quot;    1  0  0  0  0  0  0
+r     1  1  0  0  0  0  0
+a     1  1  1  0  0  0  0
+b     1  1  1  1  0  0  0
+b     1  1  1  2  1  0  0
+b     1  1  1  3  3  0  0
+i     1  1  1  3  3  3  0
+t     1  1  1  3  3  3  3   ← 答案!
+</code></pre>
+
+<p>规律：</p>
+<p>- <code>s[i] == t[j]</code>：既可以&quot;用 s[i] 匹配 t[j]&quot;(<code>dp[i-1][j-1]</code>)，也可以&quot;跳过 s[i]&quot;(<code>dp[i-1][j]</code>)</p>
+<p>→ <code>dp[i][j] = dp[i-1][j-1] + dp[i-1][j]</code></p>
+<p>- <code>s[i] != t[j]</code>：只能跳过 s[i]</p>
+<p>→ <code>dp[i][j] = dp[i-1][j]</code></p>
+
+<hr/>
+
+<h2>Python 解法 + 执行追踪</h2>
+
+<pre><code>
+def num_distinct(s: str, t: str) -&gt; int:
+    m, n = len(s), len(t)
+    
+    # dp[i][j] = count of t[:j] in s[:i] as subsequence
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    
+    # Base: empty t is a subsequence of any s prefix (1 way)
+    for i in range(m + 1):
+        dp[i][0] = 1
+    
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            # Always carry forward: skip s[i-1]
+            dp[i][j] = dp[i-1][j]
+            # If chars match, also add paths that USE s[i-1]
+            if s[i-1] == t[j-1]:
+                dp[i][j] += dp[i-1][j-1]
+    
+    return dp[m][n]
+
+# Trace: s=&quot;rabbbit&quot;, t=&quot;rabbit&quot;
+# After filling: dp[7][6] = 3  ✓
+</code></pre>
+
+<p><strong>空间优化</strong>（O(n) 滚动数组）：</p>
+<pre><code>
+def num_distinct_optimized(s: str, t: str) -&gt; int:
+    n = len(t)
+    dp = [0] * (n + 1)
+    dp[0] = 1  # empty t base case
+    
+    for ch in s:
+        # Traverse RIGHT TO LEFT to avoid using updated values
+        for j in range(n, 0, -1):
+            if ch == t[j-1]:
+                dp[j] += dp[j-1]
+    
+    return dp[n]
+</code></pre>
+
+<p><strong>复杂度</strong>：Time O(m×n)，Space O(m×n) → 优化后 O(n)</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<p>| 题目 | DP 类型 | 转移核心 |</p>
+<p>|------|---------|----------|</p>
+<p>| Edit Distance (#72) | 最小代价 | min(insert, delete, replace) |</p>
+<p>| Interleaving String (#97) | 可行性 | OR 操作 |</p>
+<p>| <strong>Distinct Subsequences (#115)</strong> | <strong>计数</strong> | <strong>加法累积</strong> |</p>
+<p>| Burst Balloons (#312) ← 下一题 | 区间 DP | 区间分割 |</p>
+
+<p><strong>关键区别</strong>：当 DP 问&quot;有多少种方式&quot;时，转移用<strong>加法</strong>；问&quot;能否&quot;时用<strong>OR</strong>；问&quot;最优&quot;时用<strong>min/max</strong>。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://leetcode.com/problems/distinct-subsequences/editorial/</p>
+<p>- https://neetcode.io/solutions/distinct-subsequences</p>
+<p>- https://cp-algorithms.com/dynamic_programming/subsequence_counting.html</p>
+
+<h2>🧒 ELI5</h2>
+<p>你有一堆字母积木 &quot;rabbbit&quot;，想从里面挑出 &quot;rabbit&quot; 的顺序排列。每次挑可以跳过一些积木，但顺序不能变。问一共有几种挑法。表格帮你数清楚每个位置&quot;之前有多少种合法选法&quot;，最后格子里的数字就是答案。</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 153 (Synthesis)</h2>
+<p><strong>Staff-Level Scenario: 你的团队欠了三年技术债，新 CTO 要求 6 个月内清零</strong></p>
+
+<hr/>
+
+<h2>场景设定</h2>
+
+<p>&gt; 新 CTO 刚上任，宣布要在 Q2 结束前&quot;清掉所有技术债&quot;。你是 Staff Engineer，负责一个有 300 万行代码的核心服务，里面有未迁移的 Python 2 代码、循环依赖的模块、以及一堆没有测试的关键路径。你怎么做？</p>
+
+<p>这道题综合了我们覆盖过的多个主题：<strong>技术债处理（Day 16）、优先级排序（Day 12）、向上管理（Day 3）、跨团队对齐（Day 14）</strong>。</p>
+
+<hr/>
+
+<h2>STAR 框架拆解</h2>
+
+<h3>Situation — 建立共同语言</h3>
+<p>技术债不是一个技术问题，它是一个<strong>沟通问题</strong>。先量化：</p>
+<p>- 把债务分类：安全风险 / 稳定性风险 / 开发速度阻碍</p>
+<p>- 用业务语言翻译：&quot;Python 2 EOL 意味着 CVE 无人修补&quot;</p>
+<p>- 建立&quot;债务登记册&quot;（Debt Registry），每条记录关联业务影响</p>
+
+<h3>Task — 重新定义目标</h3>
+<p>❌ 坏目标：<strong>&quot;6 个月清零技术债&quot;</strong>（不可能，会制造恐慌）</p>
+<p>✅ 好目标：<strong>&quot;6 个月内消除 TOP 3 高风险债务，并建立不再累积新债的机制&quot;</strong></p>
+
+<p>向 CTO push back，但要带数据和替代方案。</p>
+
+<h3>Action — 执行框架</h3>
+
+<pre><code>
+Week 1-2: 审计 + 分级
+  → 高风险（安全/稳定性）: 立即行动
+  → 中风险（开发速度）: 季度计划
+  → 低风险（代码质量）: 随机结对处理
+
+Month 1-2: 并行战略
+  → 新功能：50% 时间
+  → 技术债：30% 时间 (固定 budget, 不 cancel)
+  → 防新债：20% 时间 (lint rules, PR 模版, ADR)
+
+Month 3-6: 进度可视化
+  → 每两周向 CTO 汇报：已消除的业务风险 (not &quot;lines fixed&quot;)
+  → 建立&quot;债务燃烧图&quot; Burndown Chart
+</code></pre>
+
+<h3>Result — 预期成果</h3>
+
+<p>不要承诺&quot;全部清零&quot;，而是承诺：</p>
+<p>1. <strong>安全债务</strong>：100% 消除（Python 2 迁移完成）</p>
+<p>2. <strong>稳定性债务</strong>：关键路径测试覆盖率 &gt;80%</p>
+<p>3. <strong>流程</strong>：PR 中不引入新的 P0/P1 级债务</p>
+
+<hr/>
+
+<h2>❌ 坏答案 vs ✅ 好答案</h2>
+
+<p>| | 答法 |</p>
+<p>|-|------|</p>
+<p>| ❌ | &quot;我们按 CTO 要求，全力以赴 6 个月冲刺清零！&quot; |</p>
+<p>| ❌ | &quot;技术债太多了，6 个月根本不可能，这个目标不合理。&quot; |</p>
+<p>| ✅ | &quot;我理解紧迫感。让我在这周做完审计，带着数据回来，我们一起定一个既能控风险又不停止业务交付的计划。&quot; |</p>
+
+<hr/>
+
+<h2>Senior/Staff 加分点</h2>
+
+<p>- <strong>用 ADR (Architecture Decision Records) 防新债</strong>：每个架构决策留记录，避免同样的债务再犯</p>
+<p>- <strong>把技术债变成可见资产</strong>：在 roadmap 上展示，让 PM 也参与优先级排序</p>
+<p>- <strong>教团队识别债务</strong>：Code Review checklist 里加入&quot;这会产生技术债吗？&quot;</p>
+
+<hr/>
+
+<h2>关键提炼</h2>
+
+<p>1. <strong>先审计后承诺</strong>：没有数据的计划是空谈</p>
+<p>2. <strong>用业务语言</strong>：CTO 关心风险和速度，不关心代码行数</p>
+<p>3. <strong>固定 budget，不 cancel</strong>：技术债时间被随意取消是债务积累的根源</p>
+<p>4. <strong>建机制而非做一次性清理</strong>：真正的解法是不再产生新债</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://martinfowler.com/bliki/TechnicalDebtQuadrant.html</p>
+<p>- https://www.thoughtworks.com/insights/articles/managing-technical-debt</p>
+<p>- https://architectelevator.com/architecture/technical-debt/</p>
+
+<h2>🧒 ELI5</h2>
+<p>技术债就像信用卡债。新 CTO 说&quot;6 个月还清&quot;。聪明的 Staff Engineer 会说：&quot;我们先看看欠了多少、利率多少，把高利贷先还了，同时设置自动还款防止继续刷卡，而不是所有收入都拿去还债导致生活停摆。&quot;</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 153 (Synthesis)</h2>
+<p><strong>深度：Python 内存模型 + 对象生命周期全景图</strong></p>
+
+<hr/>
+
+<h2>综合主题</h2>
+
+<p>我们覆盖过 GIL（Day 54）、垃圾回收（Day 73）、描述符（Day 68）、元类（Day 69）。今天串联成一张完整的<strong>对象生命周期地图</strong>：从创建到销毁，Python 在内存里做了什么？</p>
+
+<hr/>
+
+<h2>Python 对象生命周期全景</h2>
+
+<pre><code>
+创建阶段:
+  MyClass()
+    → type.__call__()
+    → MyClass.__new__()   ← 分配内存 (PyObject_Malloc)
+    → MyClass.__init__()  ← 初始化状态
+    → 引用计数 refcount = 1
+
+存活阶段:
+  x = obj    → refcount = 2
+  del x      → refcount = 1
+  func(obj)  → refcount 临时 +1，调用结束 -1
+
+销毁阶段:
+  refcount → 0
+    → __del__() 调用 (finalizer)
+    → PyObject_Free() 释放内存
+  
+  循环引用:
+    a.ref = b; b.ref = a → 两个 refcount 永远 ≥ 1
+    → 分代 GC (gc module) 检测并清理
+</code></pre>
+
+<hr/>
+
+<h2>运行示例：追踪对象生命</h2>
+
+<pre><code>
+import sys
+import gc
+
+class Tracked:
+    def __init__(self, name):
+        self.name = name
+        print(f&quot;[CREATE] {name}&quot;)
+    
+    def __del__(self):
+        # Note: __del__ not guaranteed to be called on interpreter shutdown
+        print(f&quot;[DESTROY] {self.name}&quot;)
+
+# --- 引用计数演示 ---
+a = Tracked(&quot;Alpha&quot;)           # refcount = 1
+print(sys.getrefcount(a))      # 2 (getrefcount itself adds 1 temp ref)
+
+b = a                          # refcount = 2
+del a                          # refcount = 1, NOT destroyed yet
+del b                          # refcount = 0, DESTROY now
+
+# --- 循环引用演示 ---
+class Node:
+    def __init__(self, name):
+        self.name = name
+        self.next = None
+
+n1 = Node(&quot;n1&quot;)
+n2 = Node(&quot;n2&quot;)
+n1.next = n2   # n2 refcount = 2
+n2.next = n1   # n1 refcount = 2
+del n1         # n1 refcount = 1 (still alive via n2.next)
+del n2         # n2 refcount = 1 (still alive via n1.next)
+# Both are leaked! Manual GC:
+collected = gc.collect()
+print(f&quot;GC collected {collected} objects&quot;)  # GC collected 2 objects
+
+# --- 分代 GC 参数 ---
+# gc.get_threshold() → (700, 10, 10)
+# Gen 0: 新对象，每 700 次分配触发一次
+# Gen 1: Gen 0 幸存者，每 10 次 Gen 0 触发一次
+# Gen 2: 长期对象，每 10 次 Gen 1 触发一次
+print(gc.get_threshold())  # (700, 10, 10)
+</code></pre>
+
+<hr/>
+
+<h2>实战：weakref 打破循环引用</h2>
+
+<pre><code>
+import weakref
+
+class Cache:
+    def __init__(self):
+        # Strong ref: prevents GC
+        # self._items = {}
+        
+        # Weak ref: allows GC when no other references exist
+        self._items = weakref.WeakValueDictionary()
+    
+    def set(self, key, value):
+        self._items[key] = value
+    
+    def get(self, key):
+        return self._items.get(key)  # Returns None if GC&#x27;d
+
+cache = Cache()
+obj = SomeExpensiveObject()
+cache.set(&quot;key&quot;, obj)
+del obj  # Cache doesn&#x27;t prevent GC → memory freed
+</code></pre>
+
+<hr/>
+
+<h2>性能陷阱 + 最佳实践</h2>
+
+<p>| 场景 | ❌ 问题 | ✅ 修复 |</p>
+<p>|------|---------|---------|</p>
+<p>| 大量临时对象 | GC 压力大，STW pause | 用对象池 / <code>__slots__</code> |</p>
+<p>| 循环引用 | 内存泄漏 | weakref 或重构依赖方向 |</p>
+<p>| <code>__del__</code> 依赖顺序 | 不可靠（解释器退出时顺序无保证） | 用 <code>contextlib.closing</code> 或 with 语句 |</p>
+<p>| 长期运行服务 | Gen 2 积累，GC pause 变长 | <code>gc.freeze()</code> 冻结稳定对象到 Gen 2 |</p>
+
+<pre><code>
+# Production tip: freeze long-lived objects to avoid GC overhead
+# (Used by Instagram to reduce GC pause by ~10%)
+import gc
+gc.collect()   # Force collect before freeze
+gc.freeze()    # Move all current objects to permanent generation
+</code></pre>
+
+<hr/>
+
+<h2>连接之前的知识</h2>
+
+<p>- <strong>GIL（Day 54）</strong>：GIL 保护引用计数操作是原子的，refcount++ 不会 race condition</p>
+<p>- <strong>垃圾回收（Day 73）</strong>：分代 GC 只处理循环引用，refcount 处理其余</p>
+<p>- <strong>描述符（Day 68）</strong>：<code>__get__/__set__</code> 触发时对象已经存活（refcount ≥ 1）</p>
+<p>- <strong>元类（Day 69）</strong>：<code>type.__call__</code> 控制 <code>__new__</code> + <code>__init__</code> 的调用顺序</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://devguide.python.org/internals/garbage-collector/</p>
+<p>- https://instagram-engineering.com/dismissing-python-garbage-collection-at-instagram-4dca40b29172</p>
+<p>- https://docs.python.org/3/library/gc.html</p>
+
+<h2>🧒 ELI5</h2>
+<p>Python 追踪每个对象被多少个变量&quot;指向&quot;。指向数变成 0，对象立刻被删除——就像一个蜡烛，所有人都松手它就熄灭。但如果两个蜡烛互相抓住对方，就算没人拿着它们也不会熄灭——这就是循环引用，需要专门的&quot;循环检测员&quot;（GC）来打破。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 153 (News Roundup)</h2>
+<p><strong>本周 AI 大事件 / This Week in AI — Nov 16-20, 2026</strong></p>
+
+<hr/>
+
+<h2>📰 Story 1: Anthropic IPO — 史上最大 AI 上市</h2>
+
+<p>Anthropic 于 11 月 18 日完成定价，11 月 19 日在纳斯达克以代码 <strong>ANT</strong> 正式上市。据报道季度收入接近 170 亿美元，算力承诺高达约 8950 亿美元。这是 AI 领域迄今规模最大的 IPO。</p>
+
+<p><strong>为什么重要？</strong> 这标志着 AI 从&quot;风险投资烧钱&quot;阶段进入&quot;公开市场问责&quot;阶段——现在 Anthropic 需要向股东证明盈利，而不仅仅是技术领先。</p>
+
+<p>📌 Source: https://medium.com/@davidakpovi/ai-news-week-of-november-16-22-2026-1b46b38585cd</p>
+
+<hr/>
+
+<h2>📰 Story 2: Google Gemini 4 Neon 发布</h2>
+
+<p>Google 于 11 月 18 日推出 <strong>Gemini 4 Neon</strong>，定位为&quot;高级推理 + 低成本执行&quot;的结合体。同日，面向开发者的 <strong>Gemini 4 Carbon</strong>（专注代码、调试、安全分析）正式 GA。</p>
+
+<p><strong>工程视角</strong>：Gemini 4 Carbon 的安全分析能力直接瞄准代码审查市场——这对 GitHub Copilot 和 Cursor 是直接竞争压力。</p>
+
+<p>📌 Source: https://joinaiweek.com/blog/ai-news-roundup-november-2026</p>
+
+<hr/>
+
+<h2>📰 Story 3: Jensen Huang 离开 Nvidia，CFO 接任</h2>
+
+<p>据报道，Nvidia CEO Jensen Huang 于 11 月 12 日辞职，CFO Colette Kress 出任临时 CEO。Nvidia 是整个 AI 基础设施的核心供应商，这一领导层变动在行业内引发广泛关注。</p>
+
+<p><strong>思考</strong>：AI 算力供应链的稳定性比模型本身更重要——没有 GPU，模型训练无从谈起。</p>
+
+<p>📌 Source: https://spaqi.net/news/ai-news-roundup-2026-11-16.html</p>
+
+<hr/>
+
+<h2>📰 Story 4: AI 合规大限将至 — EU AI Act 12 月执行</h2>
+
+<p>欧盟 AI 法案关键条款将于 <strong>12 月 2 日</strong> 开始执行，包括禁止 AI 生成非自愿性深度伪造内容（Deepfakes）和儿童性虐待材料。这是全球首个对生成式 AI 进行强制规范的法律框架。</p>
+
+<p><strong>对开发者的影响</strong>：在欧盟运营的 AI 产品需要在 12 月前完成合规审计，否则面临高额罚款。</p>
+
+<p>📌 Source: https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-november-2026</p>
+
+<hr/>
+
+<h2>💡 本周趋势</h2>
+
+<p>&gt; <strong>&quot;Agentic Revolution&quot;</strong> 正在加速：AI 不再只是回答问题，而是自主规划、使用工具、执行多步任务。OpenAI、Anthropic、Google 都在全力押注 Agent 架构。对后端工程师来说，理解 Agent 的 Tool Use 和 Orchestration 将成为核心技能。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- https://medium.com/@davidakpovi/ai-news-week-of-november-16-22-2026-1b46b38585cd</p>
+<p>- https://joinaiweek.com/blog/ai-news-roundup-november-2026</p>
+<p>- https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-november-2026</p>
+
+<h2>🧒 ELI5</h2>
+<p>这周 AI 界发生了什么：一家做 AI 聊天机器人的公司（Anthropic）去股票市场&quot;募资&quot;了，就像公司上市卖股票；Google 出了新版 AI 助手；做 AI 芯片的 Nvidia 换了老板；欧洲开始立法说 AI 不能做某些坏事了。AI 世界变化比你更新手机还快。</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-10</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>

@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>byte-by-byte — 2026-11-20</title>
+  <meta name="description" content="byte-by-byte daily lessons for Friday, November 20, 2026: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:title" content="byte-by-byte — Friday, November 20, 2026" />
+  <meta property="og:description" content="Daily bilingual tech lessons: system design, algorithms, soft skills, Python craft, AI." />
+  <meta property="og:url" content="https://yushengauggie.github.io/byte-by-byte/days/2026-11-20.html" />
+  <style>
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e2a;
+  --border: #2e2e3e;
+  --text: #e8e8f0;
+  --text2: #c0bdd8;
+  --accent: #7c5cfc;
+  --accent2: #a78bfa;
+  --accent3: #c4b5fd;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f7ff; --bg2: #ffffff; --bg3: #f0eeff;
+    --border: #d8d4ee; --text: #1a1a2e; --text2: #444466;
+    --accent: #5b35e0; --accent2: #6d46f5; --accent3: #7c5cfc;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.75;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { color: var(--accent3); text-decoration: underline; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,19,0.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center;
+  justify-content: space-between; height: 56px;
+}
+@media (prefers-color-scheme: light) { nav { background: rgba(248,247,255,0.92); } }
+.nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--accent3); }
+.nav-links { display: flex; gap: 20px; font-size: 0.88rem; }
+.nav-links a { color: var(--text2); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a0a3e 0%, #0f0f20 60%);
+  padding: 48px 24px 40px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-inner { max-width: 800px; margin: 0 auto; }
+.day-badge {
+  display: inline-block;
+  background: var(--accent); color: white;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px;
+  color: #ffffff;
+}
+.page-header-meta { color: #d4d0e8; font-size: 0.9rem; }
+.page-header-meta span { margin-right: 16px; }
+
+.nav-days {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-day-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-day-btn:hover, .nav-day-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: white; text-decoration: none;
+}
+
+main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.section-block {
+  margin-bottom: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #2a1a5e, #1a1a3e);
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  /* Rendered as a <button> for keyboard accessibility — reset button chrome */
+  width: 100%; border: none; text-align: left; font-family: inherit; color: inherit;
+}
+.section-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (prefers-color-scheme: light) {
+  .section-header { background: linear-gradient(135deg, #e8e0ff, #f0eeff); }
+}
+.section-header-icon { font-size: 1.5rem; }
+.section-header-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+.section-header-sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.section-header-chevron {
+  margin-left: auto; font-size: 0.9rem; color: var(--text2);
+  transition: transform 0.2s;
+}
+.section-header.open .section-header-chevron { transform: rotate(180deg); }
+
+.section-content {
+  padding: 24px;
+  display: none;
+}
+.section-content.open { display: block; }
+
+/* Markdown rendering */
+.section-content h1, .section-content h2, .section-content h3 {
+  font-weight: 700; margin: 20px 0 10px;
+  color: var(--text);
+}
+.section-content h1 { font-size: 1.2rem; }
+.section-content h2 { font-size: 1.05rem; }
+.section-content h3 { font-size: 0.95rem; }
+.section-content p { margin-bottom: 12px; font-size: 0.93rem; color: var(--text); }
+.section-content ul, .section-content ol {
+  margin: 8px 0 12px 20px; font-size: 0.93rem; color: var(--text);
+}
+.section-content li { margin-bottom: 4px; color: var(--text); }
+.section-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px; margin: 12px 0;
+  background: var(--bg3); border-radius: 0 8px 8px 0;
+  color: var(--text2); font-style: italic;
+}
+.section-content strong { color: var(--text); font-weight: 700; }
+.section-content em { color: var(--text2); }
+
+.section-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 12px;
+}
+.section-content th, .section-content td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.section-content th {
+  background: #667eea;
+  color: white;
+  font-weight: 700;
+}
+.section-content td {
+  color: var(--text);
+}
+.section-content tbody tr:nth-child(even) {
+  background: rgba(124, 92, 252, 0.08);
+}
+
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: #d6d6ee;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.code-block pre {
+  background: #09090f;
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem; line-height: 1.65; margin: 12px 0;
+  color: #e8e8f0;
+}
+@media (prefers-color-scheme: light) { .code-block pre { background: #1e1b2e; color: #e8e8f0; } }
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+  color: var(--accent3);
+}
+.code-block pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+.diagram-block {
+  background: #1a1a2e;
+  border-left: 4px solid var(--accent);
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #e8e8f0;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+@media (prefers-color-scheme: light) { .diagram-block { background: #1e1b2e; } }
+
+.live-demo {
+  margin: 12px 0 20px;
+  padding: 16px;
+  background: #f8f7ff;
+  border: 1px solid #ddd8fa;
+  border-radius: 12px;
+  color: #1a1a2e;
+}
+.live-demo-label {
+  color: #555;
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.live-demo-canvas {
+  overflow-x: auto;
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-card h3 {
+  margin: 0 0 12px;
+}
+.trace-steps {
+  display: grid;
+  gap: 10px;
+}
+.trace-step {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 10, 18, 0.34);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent3);
+}
+.trace-step-body {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #dfe5ff;
+}
+
+.flow-chart {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 36px rgba(0,0,0,0.16);
+}
+.flow-node-browser { background: linear-gradient(135deg, rgba(59,130,246,0.24), rgba(37,99,235,0.08)); }
+.flow-node-cache { background: linear-gradient(135deg, rgba(34,197,94,0.24), rgba(22,163,74,0.08)); }
+.flow-node-resolver { background: linear-gradient(135deg, rgba(249,115,22,0.24), rgba(234,88,12,0.08)); }
+.flow-node-root { background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(185,28,28,0.08)); }
+.flow-node-tld { background: linear-gradient(135deg, rgba(168,85,247,0.24), rgba(126,34,206,0.08)); }
+.flow-node-authoritative { background: linear-gradient(135deg, rgba(20,184,166,0.24), rgba(13,148,136,0.08)); }
+.flow-node-return { background: linear-gradient(135deg, rgba(124,92,252,0.24), rgba(96,165,250,0.08)); }
+.flow-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,18,0.48);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.flow-copy {
+  min-width: 0;
+}
+.flow-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f5f3ff;
+}
+.flow-subtitle {
+  color: rgba(232,232,240,0.78);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.flow-arrow {
+  width: 2px;
+  height: 28px;
+  margin: -4px auto -2px;
+  background: linear-gradient(180deg, rgba(124,92,252,0.2), rgba(124,92,252,0.9));
+  position: relative;
+}
+.flow-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid var(--accent3);
+}
+
+.sequence-diagram {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(17,24,39,0.82));
+}
+.sequence-grid {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 64px minmax(88px, 1fr);
+  gap: 14px 10px;
+  align-items: center;
+}
+.seq-party {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+}
+.seq-party.server { text-align: right; }
+.seq-line {
+  grid-column: 2;
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(196,181,253,0.18), rgba(196,181,253,0.82));
+}
+.seq-event {
+  display: contents;
+}
+.seq-label {
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.seq-label.right {
+  text-align: right;
+}
+.seq-arrow {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent2);
+}
+.seq-arrow.syn { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.seq-arrow.syn-ack { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.seq-arrow.ack { background: linear-gradient(90deg, #34d399, #22c55e); }
+.seq-arrow.right::after,
+.seq-arrow.left::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.seq-arrow.right::after {
+  right: -1px;
+  border-left: 12px solid currentColor;
+}
+.seq-arrow.left::before {
+  left: -1px;
+  border-right: 12px solid currentColor;
+}
+.seq-arrow.syn { color: #38bdf8; }
+.seq-arrow.syn-ack { color: #fb7185; }
+.seq-arrow.ack { color: #22c55e; }
+.seq-est {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(34,197,94,0.18), rgba(16,185,129,0.34));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #d1fae5;
+}
+
+.playground {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(55,48,163,0.2));
+}
+.playground h3,
+.attention-card h3 {
+  margin: 0 0 10px;
+}
+.playground-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.playground-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text2);
+}
+.playground-controls select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(15,15,19,0.95);
+  color: var(--text);
+}
+.playground-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.playground-canvas,
+.playground-compare {
+  background: rgba(9,9,15,0.68);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+.playground-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text2);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.playground-demo {
+  min-height: 200px;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(255,255,255,0.02);
+}
+.playground-box,
+.compare-box {
+  border-radius: 12px;
+  min-width: 56px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.playground-box.a,
+.compare-box.a { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.playground-box.b,
+.compare-box.b { background: linear-gradient(135deg, #f472b6, #db2777); }
+.playground-box.c,
+.compare-box.c { background: linear-gradient(135deg, #34d399, #059669); }
+.playground-demo.column .playground-box {
+  width: 100%;
+}
+.playground-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.compare-scenario {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+}
+.compare-row {
+  display: flex;
+  gap: 10px;
+}
+.compare-scenario p {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.compare-box {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.attention-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(88,28,135,0.28), rgba(17,24,39,0.88));
+}
+.heatmap-wrap {
+  overflow-x: auto;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 6px;
+  width: max-content;
+  min-width: 100%;
+}
+.heatmap th,
+.heatmap td {
+  border: none;
+  padding: 0;
+}
+.heatmap-axis {
+  font-size: 0.74rem;
+  color: var(--text2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.heatmap-axis.row-label {
+  text-align: right;
+  padding-right: 10px;
+}
+.heatmap-cell {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+}
+
+.trace-card {
+  margin: 18px 0 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.14), rgba(96,165,250,0.08));
+}
+.trace-visual {
+  display: grid;
+  gap: 14px;
+}
+.trace-step {
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(10, 10, 18, 0.42);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.trace-step-index {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  box-shadow: 0 10px 24px rgba(124,92,252,0.35);
+}
+.trace-step-copy {
+  display: grid;
+  gap: 10px;
+}
+.trace-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trace-step-label {
+  font-size: 0.84rem;
+}
+.trace-step-note {
+  font-size: 0.84rem;
+  color: var(--text2);
+}
+.hash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 10px;
+}
+.hash-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+}
+.hash-box.active {
+  border-color: rgba(124,92,252,0.9);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.45), 0 0 18px rgba(124,92,252,0.28);
+}
+.hash-box.done {
+  border-color: rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.08);
+}
+.hash-key {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.hash-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.hash-status {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+hr {
+  border: none; border-top: 1px solid var(--border); margin: 20px 0;
+}
+
+.day-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+}
+.day-nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.day-nav-btn:hover {
+  border-color: var(--accent); color: var(--text); text-decoration: none;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 24px; text-align: center;
+  color: var(--text2); font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  main { padding: 20px 12px 60px; }
+
+  /* Mobile typography — bigger, more readable */
+  .section-content p,
+  .section-content li,
+  .section-content blockquote { font-size: 1rem; line-height: 1.7; }
+  .section-content h1 { font-size: 1.25rem; }
+  .section-content h2 { font-size: 1.1rem; }
+  .section-content h3 { font-size: 1rem; }
+
+  /* Section padding */
+  .section-content { padding: 16px; }
+  .section-header { padding: 14px 16px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .section-content table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .section-content th, .section-content td { padding: 8px 10px; font-size: 0.85rem; min-width: 100px; }
+
+  /* Code blocks */
+  .code-block pre { font-size: 0.8rem; padding: 14px 12px; padding-top: 42px; }
+  .copy-btn { top: 8px; right: 8px; padding: 4px 10px; font-size: 0.7rem; }
+
+  /* Cards and visual components */
+  .trace-step { grid-template-columns: 1fr; padding: 12px; }
+  .trace-card, .playground, .attention-card, .sequence-diagram { padding: 14px; border-radius: 14px; }
+
+  .flow-node { grid-template-columns: 1fr; padding: 12px 14px; }
+  .flow-badge { width: 32px; height: 32px; font-size: 0.8rem; }
+  .flow-title { font-size: 0.9rem; }
+  .flow-subtitle { font-size: 0.8rem; }
+  .flow-arrow { height: 20px; }
+
+  .sequence-grid {
+    grid-template-columns: minmax(64px, 1fr) 32px minmax(64px, 1fr);
+    gap: 10px 6px;
+  }
+  .seq-party { font-size: 0.75rem; }
+  .seq-label { font-size: 0.75rem; }
+
+  .playground-controls,
+  .playground-stage,
+  .playground-compare-grid { grid-template-columns: 1fr; }
+  .playground-demo { min-height: 140px; }
+  .playground-controls select { padding: 10px; font-size: 0.9rem; }
+
+  .heatmap-cell { width: 32px; height: 32px; border-radius: 6px; }
+  .heatmap-axis { font-size: 0.65rem; padding: 4px; }
+
+  .hash-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; }
+  .hash-box { padding: 8px; min-height: 60px; }
+  .hash-key { font-size: 0.7rem; }
+  .hash-value { font-size: 1rem; }
+
+  /* Nav day chips */
+  .nav-day-btn { padding: 8px 14px; font-size: 0.82rem; min-height: 44px; }
+  .nav-days { gap: 6px; }
+
+  /* Page header */
+  .page-header { padding: 32px 16px 28px; }
+  .page-header h1 { font-size: 1.4rem; }
+  .page-header-meta { font-size: 0.85rem; }
+
+  /* Diagram blocks */
+  .diagram-block { font-size: 0.75rem; padding: 12px; overflow-x: auto; }
+
+  /* Light mode mobile fixes */
+  @media (prefers-color-scheme: light) {
+    .section-content p, .section-content li { color: #222; }
+    .section-content h1, .section-content h2, .section-content h3 { color: #1a1a2e; }
+    .section-content strong { color: #111; }
+    .section-content em { color: #444; }
+    .section-content blockquote { color: #333; }
+    .section-header { background: linear-gradient(135deg, #e8e4ff, #d8d4ff); }
+    .section-header-title { color: #1a1a2e; }
+    .section-header-sub { color: #444466; }
+    .page-header { background: linear-gradient(135deg, #5b35e0, #3a1e9e); }
+    .flow-node { border-color: rgba(0,0,0,0.1); }
+    .trace-card, .playground, .attention-card, .sequence-diagram {
+      border-color: rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, rgba(248,247,255,0.98), rgba(240,238,255,0.95));
+    }
+    .trace-step, .hash-box, .compare-scenario {
+      background: rgba(0,0,0,0.03);
+      border-color: rgba(0,0,0,0.08);
+    }
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-brand">🧠 byte-by-byte</a>
+  <div class="nav-links">
+    <a href="../archive.html">← Archive</a>
+    <a href="2026-11-10.html" style="color:var(--text2)">← 2026-11-10</a>
+    
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="day-badge">📅 2026-11-20</span>
+    <h1>Friday, November 20, 2026</h1>
+    <div class="page-header-meta">
+      <span>4 sections</span>
+      <span>~15 min read</span>
+      <span>🌏 Bilingual 中/EN</span>
+    </div>
+    <div class="nav-days">
+      <a href="#section-system-design" class="nav-day-btn">🏗️ System Design</a> <a href="#section-algorithms" class="nav-day-btn">💻 Algorithms</a> <a href="#section-soft-skills" class="nav-day-btn">🗣️ Soft Skills</a> <a href="#section-ai" class="nav-day-btn">🤖 AI</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="day-nav">
+    <a href="2026-11-10.html" class="day-nav-btn">← 2026-11-10</a>
+    <a href="../archive.html" class="day-nav-btn">📂 All Days</a>
+    <span></span>
+  </div>
+
+  
+    <div class="section-block" id="section-system-design">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-system-design" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🏗️</span>
+        <div>
+          <div class="section-header-title">🏗️ System Design</div>
+          <div class="section-header-sub">🏗️ 系统设计 / System Design — Day 153 (Synthesis)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-system-design">
+        <h1>🏗️ 系统设计 / System Design — Day 153 (Synthesis)</h1>
+<p><strong>分布式事务模式全比较：SAGA vs 2PC vs Outbox Pattern</strong></p>
+
+<hr/>
+
+<h2>想象你在设计…</h2>
+
+<p>你在构建一个电商平台（像我们 Day 38 设计的 Stripe 支付系统 + Day 36 的 E-Commerce Platform）。用户下单时需要同时：</p>
+<ol><li>扣减库存</li><li>创建订单</li><li>扣款</li><li>发送确认邮件</li></ol>
+
+<p>这四步分布在四个不同的微服务上。任何一步失败都需要回滚。<strong>如何保证分布式事务的一致性？</strong></p>
+
+<hr/>
+
+<h2>ASCII 架构对比</h2>
+
+<div class="diagram-block">         ┌─────────────────────────────────────────────────────┐
+         │              分布式事务三大模式                        │
+         └─────────────────────────────────────────────────────┘
+
+2PC (Two-Phase Commit):
+  Coordinator ──→ Phase 1: "准备好了吗?" ──→ [ServiceA, ServiceB, ServiceC]
+  Coordinator ←── Phase 1 Response: "YES" ←── [all vote]
+  Coordinator ──→ Phase 2: "提交!" ──→ [ServiceA, ServiceB, ServiceC]
+  ⚠️ 协调者宕机 = 所有参与者阻塞
+
+SAGA (Choreography):
+  OrderService ──→ [event: OrderCreated]
+       ↓
+  InventoryService ──→ [event: InventoryReserved]
+       ↓
+  PaymentService ──→ [event: PaymentFailed]
+       ↓
+  InventoryService ←── [compensate: ReleaseInventory]  ← 补偿事务
+  OrderService ←── [compensate: CancelOrder]
+
+Transactional Outbox:
+  ┌──────────────┐    ┌────────────────┐    ┌──────────────┐
+  │   Service DB  │    │  Outbox Table  │    │  Message Bus │
+  │ order: saved  │ ── │ event: pending │ ──→│  Kafka/SQS   │
+  │ (same TX)     │    │ (atomic write) │    │              │
+  └──────────────┘    └────────────────┘    └──────────────┘
+  CDC (Debezium) or polling pulls outbox → publishes events</div>
+
+<hr/>
+
+<h2>为什么这样设计？关键权衡</h2>
+
+<table><thead><tr><th>模式</th><th>一致性</th><th>可用性</th><th>复杂度</th><th>适用场景</th></tr></thead><tbody><tr><td><strong>2PC</strong></td><td>强一致性</td><td>❌ 低（协调者是单点）</td><td>中等</td><td>金融核心账本、跨库同一数据中心</td></tr><tr><td><strong>SAGA</strong></td><td>最终一致性</td><td>✅ 高</td><td>高（需补偿逻辑）</td><td>微服务、跨服务工作流</td></tr><tr><td><strong>Outbox</strong></td><td>至少一次</td><td>✅ 高</td><td>中等</td><td>保证"事件一定发出去"</td></tr></tbody></table>
+
+<p><strong>核心原则</strong>：CAP 定理（Day 12）告诉我们，分布式系统无法同时保证 C + A + P。SAGA 选择 AP，2PC 选择 CP。</p>
+
+<hr/>
+
+<h2>常见错误 / 别踩这个坑</h2>
+
+<p>❌ <strong>误用 2PC 于跨数据中心场景</strong>：网络延迟 + 协调者宕机 = 全系统阻塞。2PC 只适合同一数据中心的强一致需求。</p>
+
+<p>❌ <strong>SAGA 忘记幂等补偿</strong>：补偿事务可能执行多次（网络重试）。每个补偿操作必须是幂等的。</p>
+
+<p>❌ <strong>Outbox 不清理</strong>：Outbox 表会无限增长。���要在事件确认发出后及时删除或归档记录。</p>
+
+<p>✅ <strong>现实选择</strong>：Stripe 用 Outbox + Idempotency Keys；Uber 用 SAGA + Cadence/Temporal workflow engine（我们 Day 41 讨论过 Distributed Task Queue）。</p>
+
+<hr/>
+
+<h2>深度连接：与之前内容的联系</h2>
+
+<ul><li><strong>Day 13 消息队列</strong>：SAGA 的编排依赖 Kafka/SQS 可靠传递</li><li><strong>Day 38 支付系统</strong>：Stripe 使用幂等 Key + Outbox 保证支付事件不丢失</li><li><strong>Day 47 Raft/Paxos</strong>：2PC 的协调者可以用 Raft 实现 HA</li><li><strong>Day 63 分布式锁</strong>：SAGA 补偿期间需要锁防止并发冲突</li></ul>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://microservices.io/patterns/data/saga.html</li><li>https://microservices.io/patterns/data/transactional-outbox.html</li><li>https://martin.kleppmann.com/2015/09/26/transactions-at-various-levels-of-consistency.html</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>想象你和朋友合伙买礼物。<strong>2PC</strong> 是：你问所有人"有钱吗？"等大家都说有才付款，但如果你（协调人）突然失联，大家都傻等着。<strong>SAGA</strong> 是：每人先付自己那份，如果中途有人没钱，之前付了的人各自退款。<strong>Outbox</strong> 是：先把"我要给你发钱"这个承诺写在纸上压在枕头下，确保即使中途断网，这个承诺也不会丢。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-algorithms">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-algorithms" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">💻</span>
+        <div>
+          <div class="section-header-title">💻 Algorithms</div>
+          <div class="section-header-sub">💻 算法 / Algorithms — Day 153</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-algorithms">
+        <h1>💻 算法 / Algorithms — Day 153</h1>
+<h2>#115 Distinct Subsequences [Hard] — 2-D Dynamic Programming (9/11)</h2>
+
+<p>🧩 <strong>二维动态规划模式 (9/11)</strong> — 延续 Day 149 (Interleaving String) 的模版</p>
+
+<hr/>
+
+<h2>🔗 Links</h2>
+<ul><li>LeetCode: https://leetcode.com/problems/distinct-subsequences/ 🔴 Hard</li><li>NeetCode: https://neetcode.io/problems/count-subsequences</li></ul>
+
+<hr/>
+
+<h2>现实类比 / Real-world Analogy</h2>
+
+<p>想象你在做文本搜索：给定一份长文档 <code>s</code> 和一个关键词 <code>t</code>，问关键词以<strong>子序列</strong>形式出现在文档里多少次（字符可以不连续，但顺序不变）。这就是 Distinct Subsequences 的核心——计算<strong>路径数量</strong>，而非判断是否存在。</p>
+
+<hr/>
+
+<h2>问题定义</h2>
+
+<p>给定字符串 <code>s</code> 和 <code>t</code>，计算 <code>s</code> 的子序列中有多少个等于 <code>t</code>。</p>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="s = &quot;rabbbit&quot;, t = &quot;rabbit&quot;&#10;输出: 3&#10;(三种方式选取 rabbit，对应三个不同的 'b' 被跳过)">Copy</button>
+  <pre><code class="language-text">s = "rabbbit", t = "rabbit"
+输出: 3
+(三种方式选取 rabbit，对应三个不同的 'b' 被跳过)</code></pre>
+</div>
+
+<hr/>
+
+<h2>映射到模版 / Map to Template</h2>
+
+<p>这是<strong>计数型</strong> 2D DP，不同于之前的：</p>
+<ul><li>Day 141 Edit Distance → <strong>最小代价</strong></li><li>Day 148 Target Sum → <strong>组合计数</strong>（1D 背包）</li><li>Day 149 Interleaving String → <strong>可行性判断</strong></li></ul>
+
+<p>今天：<code>dp[i][j]</code> = s 的前 i 个字符中，t 的前 j 个字符作为子序列出现的次数。</p>
+
+<p><strong>转移规律（画表格找）：</strong></p>
+
+<div class="diagram-block">     ""  r  a  b  b  i  t       ← t (j轴)
+""    1  0  0  0  0  0  0
+r     1  1  0  0  0  0  0
+a     1  1  1  0  0  0  0
+b     1  1  1  1  0  0  0
+b     1  1  1  2  1  0  0
+b     1  1  1  3  3  0  0
+i     1  1  1  3  3  3  0
+t     1  1  1  3  3  3  3   ← 答案!</div>
+
+<p>规律：</p>
+<ul><li><code>s[i] == t[j]</code>：既可以"用 s[i] 匹配 t[j]"(<code>dp[i-1][j-1]</code>)，也可以"跳过 s[i]"(<code>dp[i-1][j]</code>)</li></ul>
+<p>  → <code>dp[i][j] = dp[i-1][j-1] + dp[i-1][j]</code></p>
+<ul><li><code>s[i] != t[j]</code>：只能跳过 s[i]</li></ul>
+<p>  → <code>dp[i][j] = dp[i-1][j]</code></p>
+
+<hr/>
+
+<h2>Python 解法 + 执行追踪</h2>
+
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def num_distinct(s: str, t: str) -&gt; int:&#10;    m, n = len(s), len(t)&#10;    &#10;    # dp[i][j] = count of t[:j] in s[:i] as subsequence&#10;    dp = [[0] * (n + 1) for _ in range(m + 1)]&#10;    &#10;    # Base: empty t is a subsequence of any s prefix (1 way)&#10;    for i in range(m + 1):&#10;        dp[i][0] = 1&#10;    &#10;    for i in range(1, m + 1):&#10;        for j in range(1, n + 1):&#10;            # Always carry forward: skip s[i-1]&#10;            dp[i][j] = dp[i-1][j]&#10;            # If chars match, also add paths that USE s[i-1]&#10;            if s[i-1] == t[j-1]:&#10;                dp[i][j] += dp[i-1][j-1]&#10;    &#10;    return dp[m][n]&#10;&#10;# Trace: s=&quot;rabbbit&quot;, t=&quot;rabbit&quot;&#10;# After filling: dp[7][6] = 3  ✓">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> num_distinct(s: str, t: str) -&gt; int:
+    m, n = len(s), len(t)
+    
+    <span style="color:#5c6370;"># dp[i][j] = count of t[:j] in s[:i] as subsequence</span>
+    dp = [[<span style="color:#56b6c2;">0</span>] * (n + <span style="color:#56b6c2;">1</span>) <span style="color:#c678dd;">for</span> _ <span style="color:#c678dd;">in</span> range(m + <span style="color:#56b6c2;">1</span>)]
+    
+    <span style="color:#5c6370;"># Base: empty t is a subsequence of any s prefix (1 way)</span>
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(m + <span style="color:#56b6c2;">1</span>):
+        dp[i][<span style="color:#56b6c2;">0</span>] = <span style="color:#56b6c2;">1</span>
+    
+    <span style="color:#c678dd;">for</span> i <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, m + <span style="color:#56b6c2;">1</span>):
+        <span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(<span style="color:#56b6c2;">1</span>, n + <span style="color:#56b6c2;">1</span>):
+            <span style="color:#5c6370;"># Always carry forward: skip s[i-1]</span>
+            dp[i][j] = dp[i-<span style="color:#56b6c2;">1</span>][j]
+            <span style="color:#5c6370;"># If chars match, also add paths that USE s[i-1]</span>
+            <span style="color:#c678dd;">if</span> s[i-<span style="color:#56b6c2;">1</span>] == t[j-<span style="color:#56b6c2;">1</span>]:
+                dp[i][j] += dp[i-<span style="color:#56b6c2;">1</span>][j-<span style="color:#56b6c2;">1</span>]
+    
+    <span style="color:#c678dd;">return</span> dp[m][n]
+
+<span style="color:#5c6370;"># Trace: s="rabbbit", t="rabbit"</span>
+<span style="color:#5c6370;"># After filling: dp[7][6] = 3  ✓</span></code></pre>
+</div>
+
+<p><strong>空间优化</strong>（O(n) 滚动数组）：</p>
+<div class="code-block">
+  <button class="copy-btn" type="button" data-copy="def num_distinct_optimized(s: str, t: str) -&gt; int:&#10;    n = len(t)&#10;    dp = [0] * (n + 1)&#10;    dp[0] = 1  # empty t base case&#10;    &#10;    for ch in s:&#10;        # Traverse RIGHT TO LEFT to avoid using updated values&#10;        for j in range(n, 0, -1):&#10;            if ch == t[j-1]:&#10;                dp[j] += dp[j-1]&#10;    &#10;    return dp[n]">Copy</button>
+  <pre><code class="language-python"><span style="color:#c678dd;">def</span> num_distinct_optimized(s: str, t: str) -&gt; int:
+    n = len(t)
+    dp = [<span style="color:#56b6c2;">0</span>] * (n + <span style="color:#56b6c2;">1</span>)
+    dp[<span style="color:#56b6c2;">0</span>] = <span style="color:#56b6c2;">1</span>  <span style="color:#5c6370;"># empty t base case</span>
+    
+    <span style="color:#c678dd;">for</span> ch <span style="color:#c678dd;">in</span> s:
+        <span style="color:#5c6370;"># Traverse RIGHT TO LEFT to avoid using updated values</span>
+        <span style="color:#c678dd;">for</span> j <span style="color:#c678dd;">in</span> range(n, <span style="color:#56b6c2;">0</span>, -<span style="color:#56b6c2;">1</span>):
+            <span style="color:#c678dd;">if</span> ch == t[j-<span style="color:#56b6c2;">1</span>]:
+                dp[j] += dp[j-<span style="color:#56b6c2;">1</span>]
+    
+    <span style="color:#c678dd;">return</span> dp[n]</code></pre>
+</div>
+
+<p><strong>复杂度</strong>：Time O(m×n)，Space O(m×n) → 优化后 O(n)</p>
+
+<hr/>
+
+<h2>举一反三 / Pattern Connections</h2>
+
+<table><thead><tr><th>题目</th><th>DP 类型</th><th>转移核心</th></tr></thead><tbody><tr><td>Edit Distance (#72)</td><td>最小代价</td><td>min(insert, delete, replace)</td></tr><tr><td>Interleaving String (#97)</td><td>可行性</td><td>OR 操作</td></tr><tr><td><strong>Distinct Subsequences (#115)</strong></td><td><strong>计数</strong></td><td><strong>加法累积</strong></td></tr><tr><td>Burst Balloons (#312) ← 下一题</td><td>区间 DP</td><td>区间分割</td></tr></tbody></table>
+
+<p><strong>关键区别</strong>：当 DP 问"有多少种方式"时，转移用<strong>加法</strong>；问"能否"时用<strong>OR</strong>；问"最优"时用<strong>min/max</strong>。</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://leetcode.com/problems/distinct-subsequences/editorial/</li><li>https://neetcode.io/solutions/distinct-subsequences</li><li>https://cp-algorithms.com/dynamic_programming/subsequence_counting.html</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>你有一堆字母积木 "rabbbit"，想从里面挑出 "rabbit" 的顺序排列。每次挑可以跳过一些积木，但顺序不能变。问一共有几种挑法。表格帮你数清楚每个位置"之前有多少种合法选法"，最后格子里的数字就是答案。</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-soft-skills">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-soft-skills" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🗣️</span>
+        <div>
+          <div class="section-header-title">🗣️ Soft Skills</div>
+          <div class="section-header-sub">🗣️ 软技能 / Soft Skills — Day 153 (Synthesis)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-soft-skills">
+        <h1>🗣️ 软技能 / Soft Skills — Day 153 (Synthesis)</h1>
+<p><strong>Staff-Level Scenario: 你的团队欠了三年技术债，新 CTO 要求 6 个月内清零</strong></p>
+
+<hr/>
+
+<h2>场景设定</h2>
+
+<blockquote>新 CTO 刚上任，宣布要在 Q2 结束前"清掉所有技术债"。你是 Staff Engineer，负责一个有 300 万行代码的核心服务，里面有未迁移的 Python 2 代码、循环依赖的模块、以及一堆没有测试的关键路径。你怎么做？</blockquote>
+
+<p>这道题综合了我们覆盖过的多个主题：<strong>技术债处理（Day 16）、优先级排序（Day 12）、向上管理（Day 3）、跨团队对齐（Day 14）</strong>。</p>
+
+<hr/>
+
+<h2>STAR 框架拆解</h2>
+
+<h3>Situation — 建立共同语言</h3>
+<p>技术债不是一个技术问题，它是一个<strong>沟通问题</strong>。先量化：</p>
+<ul><li>把债务分类：安全风险 / 稳定性风险 / 开发速度阻碍</li><li>用业务语言翻译："Python 2 EOL 意味着 CVE 无人修补"</li><li>建立"债务登记册"（Debt Registry），每条记录关联业务影响</li></ul>
+
+<h3>Task — 重新定义目标</h3>
+<p>❌ 坏目标：<strong>"6 个月清零技术债"</strong>（不可能，会制造恐慌）</p>
+<p>✅ 好目标：<strong>"6 个月内消除 TOP 3 高风险债务，并建立不再累积新债的机制"</strong></p>
+
+<p>向 CTO push back，但要带数据和替代方案。</p>
+
+<h3>Action — 执行框架</h3>
+
+<div class="diagram-block">Week 1-2: 审计 + 分级
+  → 高风险（安全/稳定性）: 立即行动
+  → 中风险（开发速度）: 季度计划
+  → 低风险（代码质量）: 随机结对处理
+
+Month 1-2: 并行战略
+  → 新功能：50% 时间
+  → 技术债：30% 时间 (固定 budget, 不 cancel)
+  → 防新债：20% 时间 (lint rules, PR 模版, ADR)
+
+Month 3-6: 进度可视化
+  → 每两周向 CTO 汇报：已消除的业务风险 (not "lines fixed")
+  → 建立"债务燃烧图" Burndown Chart</div>
+
+<h3>Result — 预期成果</h3>
+
+<p>不要承诺"全部清零"，而是承诺：</p>
+<ol><li><strong>安全债务</strong>：100% 消除（Python 2 迁移完成）</li><li><strong>稳定性债务</strong>：关键路径测试覆盖率 &gt;80%</li><li><strong>流程</strong>：PR 中不引入新的 P0/P1 级债务</li></ol>
+
+<hr/>
+
+<h2>❌ 坏答案 vs ✅ 好答案</h2>
+
+<table><thead><tr><th></th><th>答法</th></tr></thead><tbody><tr><td>❌</td><td>"我们按 CTO 要求，全力以赴 6 个月冲刺清零！"</td></tr><tr><td>❌</td><td>"技术债太多了，6 个月根本不可能，这个目标不合理。"</td></tr><tr><td>✅</td><td>"我理解紧迫感。让我在这周做完审计，带着数据回来，我们一起定一个既能控风险又不停止业务交付的计划。"</td></tr></tbody></table>
+
+<hr/>
+
+<h2>Senior/Staff 加分点</h2>
+
+<ul><li><strong>用 ADR (Architecture Decision Records) 防新债</strong>：每个架构决策留记录，避免同样的债务再犯</li><li><strong>把技术债变成可见资产</strong>：在 roadmap 上展示，让 PM 也参与优先级排序</li><li><strong>教团队识别债务</strong>：Code Review checklist 里加入"这会产生技术债吗？"</li></ul>
+
+<hr/>
+
+<h2>关键提炼</h2>
+
+<ol><li><strong>先审计后承诺</strong>：没有数据的计划是空谈</li><li><strong>用业务语言</strong>：CTO 关心风险和速度，不关心代码行数</li><li><strong>固定 budget，不 cancel</strong>：技术债时间被随意取消是债务积累的根源</li><li><strong>建机制而非做一次性清理</strong>：真正的解法是不再产生新债</li></ol>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://martinfowler.com/bliki/TechnicalDebtQuadrant.html</li><li>https://www.thoughtworks.com/insights/articles/managing-technical-debt</li><li>https://architectelevator.com/architecture/technical-debt/</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>技术债就像信用卡债。新 CTO 说"6 个月还清"。聪明的 Staff Engineer 会说："我们先看看欠了多少、利率多少，把高利贷先还了，同时设置自动还款防止继续刷卡，而不是所有收入都拿去还债导致生活停摆。"</p>
+
+      </div>
+    </div>
+    <div class="section-block" id="section-ai">
+      <button type="button" class="section-header open" aria-expanded="true" aria-controls="content-ai" onclick="toggleSection(this)">
+        <span class="section-header-icon" aria-hidden="true">🤖</span>
+        <div>
+          <div class="section-header-title">🤖 AI</div>
+          <div class="section-header-sub">🤖 AI — Day 153 (News Roundup)</div>
+        </div>
+        <span class="section-header-chevron" aria-hidden="true">▼</span>
+      </button>
+      <div class="section-content open" id="content-ai">
+        <h1>🤖 AI — Day 153 (News Roundup)</h1>
+<p><strong>本周 AI 大事件 / This Week in AI — Nov 16-20, 2026</strong></p>
+
+<hr/>
+
+<h2>📰 Story 1: Anthropic IPO — 史上最大 AI 上市</h2>
+
+<p>Anthropic 于 11 月 18 日完成定价，11 月 19 日在纳斯达克以代码 <strong>ANT</strong> 正式上市。据报道季度收入接近 170 亿美元，算力承诺高达约 8950 亿美元。这是 AI 领域迄今规模最大的 IPO。</p>
+
+<p><strong>为什么重要？</strong> 这标志着 AI 从"风险投资烧钱"阶段进入"公开市场问责"阶段——现在 Anthropic 需要向股东证明盈利，而不仅仅是技术领先。</p>
+
+<p>📌 Source: https://medium.com/@davidakpovi/ai-news-week-of-november-16-22-2026-1b46b38585cd</p>
+
+<hr/>
+
+<h2>📰 Story 2: Google Gemini 4 Neon 发布</h2>
+
+<p>Google 于 11 月 18 日推出 <strong>Gemini 4 Neon</strong>，定位为"高级推理 + 低成本执行"的结合体。同日，面向开发者的 <strong>Gemini 4 Carbon</strong>（专注代码、调试、安全分析）正式 GA。</p>
+
+<p><strong>工程视角</strong>：Gemini 4 Carbon 的安全分析能力直接瞄准代码审查市场——这对 GitHub Copilot 和 Cursor 是直接竞争压力。</p>
+
+<p>📌 Source: https://joinaiweek.com/blog/ai-news-roundup-november-2026</p>
+
+<hr/>
+
+<h2>📰 Story 3: Jensen Huang 离开 Nvidia，CFO 接任</h2>
+
+<p>据报道，Nvidia CEO Jensen Huang 于 11 月 12 日辞职，CFO Colette Kress 出任临时 CEO。Nvidia 是整个 AI 基础设施的核心供应商，这一领导层变动在行业内引发广泛关注。</p>
+
+<p><strong>思考</strong>：AI 算力供应链的稳定性比模型本身更重要——没有 GPU，模型训练无从谈起。</p>
+
+<p>📌 Source: https://spaqi.net/news/ai-news-roundup-2026-11-16.html</p>
+
+<hr/>
+
+<h2>📰 Story 4: AI 合规大限将至 — EU AI Act 12 月执行</h2>
+
+<p>欧盟 AI 法案关键条款将于 <strong>12 月 2 日</strong> 开始执行，包括禁止 AI 生成非自愿性深度伪造内容（Deepfakes）和儿童性虐待材料。这是全球首个对生成式 AI 进行强制规范的法律框架。</p>
+
+<p><strong>对开发者的影响</strong>：在欧盟运营的 AI 产品需要在 12 月前完成合规审计，否则面临高额罚款。</p>
+
+<p>📌 Source: https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-november-2026</p>
+
+<hr/>
+
+<h2>💡 本周趋势</h2>
+
+<blockquote><strong>"Agentic Revolution"</strong> 正在加速：AI 不再只是回答问题，而是自主规划、使用工具、执行多步任务。OpenAI、Anthropic、Google 都在全力押注 Agent 架构。对后端工程师来说，理解 Agent 的 Tool Use 和 Orchestration 将成为核心技能。</blockquote>
+
+<hr/>
+
+<h2>📚 References</h2>
+<ul><li>https://medium.com/@davidakpovi/ai-news-week-of-november-16-22-2026-1b46b38585cd</li><li>https://joinaiweek.com/blog/ai-news-roundup-november-2026</li><li>https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-november-2026</li></ul>
+
+<h2>🧒 ELI5</h2>
+<p>这周 AI 界发生了什么：一家做 AI 聊天机器人的公司（Anthropic）去股票市场"募资"了，就像公司上市卖股票；Google 出了新版 AI 助手；做 AI 芯片的 Nvidia 换了老板；欧洲开始立法说 AI 不能做某些坏事了。AI 世界变化比你更新手机还快。</p>
+
+      </div>
+    </div>
+</main>
+
+<footer>
+  <a href="../archive.html">← Back to Archive</a> ·
+  <a href="../index.html">byte-by-byte home</a> ·
+  <a href="https://github.com/YushengAuggie/byte-by-byte">GitHub</a>
+  <br/><br/>
+  <span style="opacity:0.5; font-size:0.8rem;">
+    A little bit every day. A lot over time. 🧠 · MIT License
+  </span>
+</footer>
+
+<script>
+function toggleSection(header) {
+  const isOpen = header.classList.toggle('open');
+  header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+document.querySelectorAll('.copy-btn').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const text = button.getAttribute('data-copy').replace(/&#10;/g, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    } catch (err) {
+      button.textContent = 'Failed';
+      setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+    }
+  });
+});
+
+document.querySelectorAll('[data-flexbox-playground]').forEach((playground) => {
+  const demo = playground.querySelector('[data-playground-demo]');
+  const controls = playground.querySelectorAll('[data-control]');
+  const applyState = () => {
+    const direction = playground.querySelector('[data-control="flex-direction"]').value;
+    demo.style.justifyContent = playground.querySelector('[data-control="justify-content"]').value;
+    demo.style.alignItems = playground.querySelector('[data-control="align-items"]').value;
+    demo.style.flexDirection = direction;
+    demo.classList.toggle('column', direction === 'column');
+  };
+  controls.forEach((control) => control.addEventListener('change', applyState));
+  applyState();
+});
+</script>
+
+</body>
+</html>
