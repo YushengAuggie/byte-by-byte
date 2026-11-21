@@ -1230,3 +1230,25 @@ _Report-only run — no code changes made._
 
 ### Notes
 - `openclaw cron list --json` emits an nvm/Node version warning on stdout when the wrong Node is active (v25.6.1); harmless once `nvm use 24` is sourced. No action needed.
+
+## 2026-11-20 Optimization Run
+
+### Issues Found
+- **P0 CRITICAL — 9-day delivery gap (Nov 11–19).** Pipeline stopped after Day 152 (2026-11-10) and did not resume until Day 153 (2026-11-20). Evidence:
+  - `state.json` currentDay advanced only 152→153 across 10 calendar days (should be +10).
+  - `email-send-log.json` has NO entries for 2026-11-11 through 2026-11-19 (jumps Nov 10 → Nov 20).
+  - No `Day N` git commits between 2026-11-10 08:11 and 2026-11-20 20:36.
+  - All byte-by-byte cron jobs currently report `enabled=true status=ok` with no `lastError`, so the stoppage was NOT a cron-level error at inspection time — likely the host/gateway was offline or cron scheduler was not running during that window. Needs manual confirmation of host uptime Nov 11–19.
+- **P1 Quality:** None detected. Day 153 generated 5 sections (system-design, algorithms, python-craft, soft-skills, ai) and delivered to 1 recipient.
+- **P2 Maintenance:**
+  - The Step-0 7-day delivery check uses the system `/Library/Frameworks` Python 3.7 whose `date.today()` does not match the simulated run date, so it flagged all 7 days (including the real Nov 20 send) as MISSED. The check is unreliable — should read the max date key from `email-send-log.json` instead of `date.today()`.
+  - `openclaw cron list --json` requires `nvm use 24` first; default alias is Node 25 and the raw CLI prints a version-error banner to stdout that breaks naive JSON parsing. Prepend `source ~/.nvm/nvm.sh && nvm use 24` in Step 0.
+
+### Metrics
+- Delivery rate (7d, Nov 14–20): 1/7 (only 2026-11-20 delivered; 14–19 missed).
+- Full gap: 9 consecutive missed days (Nov 11–19).
+- Cron errors: none reported at inspection (all 8 byte-by-byte jobs status=ok).
+- State: currentDay=153, lastSentDate=2026-11-20, lastReviewDay=150; indices advancing normally.
+
+### Action needed (manual)
+- Confirm whether the MacBook host / OpenClaw gateway was powered off or asleep Nov 11–19. If so, consider a catch-up policy or a wake/keep-alive so the daily cron fires reliably. No pipeline code changed this run (report-only per rules).
