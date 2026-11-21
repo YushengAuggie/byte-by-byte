@@ -5,7 +5,7 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 21 Nov 2026 04:36:21 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 21 Nov 2026 04:40:03 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
     <item>
       <title>byte-by-byte — 2026-11-20</title>
@@ -489,7 +489,7 @@ gc.freeze()    # Move all current objects to permanent generation
 
 <h2>📰 Story 1: Anthropic IPO — 史上最大 AI 上市</h2>
 
-<p>Anthropic 于 11 月 18 日完成定价，11 月 19 日在纳斯达克以代码 <strong>ANT</strong> 正式上市。据报道季度收入接近 170 亿美元，算力承诺高达约 8950 亿美元。这是 AI 领域迄今规模最大的 IPO。</p>
+<p>Anthropic 于 11 月 18 日完成定价，11 月 19 日在纳斯达克以代码 <strong>ANT</strong> 正式上市。据 SEC 文件披露，其 2026 年前九个月收入达 332 亿美元。这是 AI 领域迄今规模最大的 IPO。</p>
 
 <p><strong>为什么重要？</strong> 这标志着 AI 从&quot;风险投资烧钱&quot;阶段进入&quot;公开市场问责&quot;阶段——现在 Anthropic 需要向股东证明盈利，而不仅仅是技术领先。</p>
 
@@ -497,9 +497,9 @@ gc.freeze()    # Move all current objects to permanent generation
 
 <hr/>
 
-<h2>📰 Story 2: Google Gemini 4 Neon 发布</h2>
+<h2>📰 Story 2: Google Gemini 4 Carbon 正式 GA</h2>
 
-<p>Google 于 11 月 18 日推出 <strong>Gemini 4 Neon</strong>，定位为&quot;高级推理 + 低成本执行&quot;的结合体。同日，面向开发者的 <strong>Gemini 4 Carbon</strong>（专注代码、调试、安全分析）正式 GA。</p>
+<p>Google 于 11 月 10 日将 <strong>Gemini 4 Carbon</strong> 向开发者、企业及 Google AI Ultra 订阅用户全面开放。该模型在网络安全防御方面完成了两周预览后正式 GA，定位为&quot;复杂技术工作 + 长任务 Agent&quot;的旗舰模型。</p>
 
 <p><strong>工程视角</strong>：Gemini 4 Carbon 的安全分析能力直接瞄准代码审查市场——这对 GitHub Copilot 和 Cursor 是直接竞争压力。</p>
 
@@ -509,11 +509,11 @@ gc.freeze()    # Move all current objects to permanent generation
 
 <h2>📰 Story 3: Jensen Huang 离开 Nvidia，CFO 接任</h2>
 
-<p>据报道，Nvidia CEO Jensen Huang 于 11 月 12 日辞职，CFO Colette Kress 出任临时 CEO。Nvidia 是整个 AI 基础设施的核心供应商，这一领导层变动在行业内引发广泛关注。</p>
+<p>Nvidia CEO Jensen Huang 于 11 月 12 日辞职，CFO Colette Kress 出任临时 CEO。Nvidia 是整个 AI 基础设施的核心供应商，这一领导层变动在行业内引发广泛关注。</p>
 
 <p><strong>思考</strong>：AI 算力供应链的稳定性比模型本身更重要——没有 GPU，模型训练无从谈起。</p>
 
-<p>📌 Source: https://spaqi.net/news/ai-news-roundup-2026-11-16.html</p>
+<p>📌 Source: https://joinaiweek.com/blog/ai-news-roundup-november-2026</p>
 
 <hr/>
 
@@ -539,7 +539,557 @@ gc.freeze()    # Move all current objects to permanent generation
 <p>- https://www.riskinfo.ai/post/ai-insights-key-global-developments-in-november-2026</p>
 
 <h2>🧒 ELI5</h2>
-<p>这周 AI 界发生了什么：一家做 AI 聊天机器人的公司（Anthropic）去股票市场&quot;募资&quot;了，就像公司上市卖股票；Google 出了新版 AI 助手；做 AI 芯片的 Nvidia 换了老板；欧洲开始立法说 AI 不能做某些坏事了。AI 世界变化比你更新手机还快。</p>
+<p>这周 AI 界发生了什么：一家做 AI 聊天机器人的公司（Anthropic）去股票市场&quot;募资&quot;了，就像公司上市卖股票；Google 出了新版 AI 助手 Gemini 4 Carbon；做 AI 芯片的 Nvidia 换了老板；欧洲开始立法说 AI 不能做某些坏事了。AI 世界变化比你更新手机还快。</p>
+
+<hr/>
+<h1>Deepdive</h1>
+<h2>🔬 Saturday Deep Dive: Distinct Subsequences — 不同子序列 (18 min read)</h2>
+
+<p>📊 NeetCode: 119/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+
+<p>🔗 [LeetCode #115](https://leetcode.com/problems/distinct-subsequences/) · 📹 [NeetCode Video](https://neetcode.io/problems/count-subsequences)</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>这道题问的是：字符串 <code>s</code> 中，有多少种不同的方式可以通过删除某些字符（不改变顺序）来得到字符串 <code>t</code>？</p>
+
+<p>这是 2D 动态规划的经典题，也是这个模式最难的题之一。它考察你是否真正理解&quot;二维 DP 的状态定义&quot;，以及如何从&quot;两个字符串的前缀&quot;来建立转移方程。</p>
+
+<p>面试中出现这道题，说明面试官在测试你的 DP 功底。大多数人一遇到 Hard DP 就慌，但只要你能<strong>画出 dp 表格并手动填几格</strong>，转移方程就会自己浮现。</p>
+
+<p><strong>English:</strong></p>
+<p>Given strings <code>s</code> and <code>t</code>, count the number of distinct subsequences of <code>s</code> that equal <code>t</code>. A subsequence is formed by deleting characters without changing order.</p>
+
+<p>This is one of the canonical Hard 2D DP problems. It tests whether you understand how to define state over <em>two string prefixes</em> and derive a recurrence from first principles.</p>
+
+<p>The pattern here: <strong>if the current characters match, you have a choice; if they don&#x27;t, you have no choice.</strong> That binary intuition drives the whole solution.</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<h3>什么是子序列计数？/ What Are We Counting?</h3>
+
+<p><strong>中文：</strong></p>
+<p>先明确问题的结构。给定 <code>s = &quot;rabbbit&quot;</code>, <code>t = &quot;rabbit&quot;</code>，答案是 3。为什么？因为 <code>s</code> 里有三个 <code>b</code>，你可以选择删掉任意一个 <code>b</code> 来得到 <code>t</code>。</p>
+
+<p>关键洞察：<strong>我们不是在找一个答案，而是在统计所有可能的&quot;选法&quot;的数量。</strong> 这就是为什么要用 DP 而不是递归搜索（虽然 DP 的本质是记忆化递归）。</p>
+
+<p><strong>English:</strong></p>
+<p>Example: <code>s = &quot;rabbbit&quot;</code>, <code>t = &quot;rabbit&quot;</code> → 3.</p>
+<p>There are three <code>b</code>s in <code>s</code>; you can drop any one of them to form <code>t</code>. Each choice gives a distinct way.</p>
+
+<p>Key insight: <strong>We&#x27;re not finding one path — we&#x27;re counting all valid paths.</strong> That&#x27;s what forces us toward DP.</p>
+
+<hr/>
+
+<h3>DP 状态定义 / State Definition</h3>
+
+<p><strong>中文：</strong></p>
+<p>定义 <code>dp[i][j]</code> = 用 <code>s</code> 的前 <code>i</code> 个字符，能组成 <code>t</code> 的前 <code>j</code> 个字符的方案数。</p>
+
+<p>最终答案是 <code>dp[len(s)][len(t)]</code>。</p>
+
+<p><strong>English:</strong></p>
+<p>Define <code>dp[i][j]</code> = number of ways to form <code>t[0..j-1]</code> using <code>s[0..i-1]</code>.</p>
+
+<p>Final answer: <code>dp[len(s)][len(t)]</code>.</p>
+
+<hr/>
+
+<h3>转移方程 / Recurrence</h3>
+
+<p><strong>中文：</strong></p>
+<p>分两种情况讨论：</p>
+
+<p>1. <strong><code>s[i-1] != t[j-1]</code>（当前字符不匹配）：</strong></p>
+<p>- <code>s[i-1]</code> 只能被跳过，不能用来匹配 <code>t[j-1]</code></p>
+<p>- 所以 <code>dp[i][j] = dp[i-1][j]</code>（跳过 <code>s[i-1]</code>，问题规模缩小）</p>
+
+<p>2. <strong><code>s[i-1] == t[j-1]</code>（当前字符匹配）：</strong></p>
+<p>- <strong>选项 A：</strong> 用 <code>s[i-1]</code> 来匹配 <code>t[j-1]</code> → 贡献 <code>dp[i-1][j-1]</code> 种方案</p>
+<p>- <strong>选项 B：</strong> 跳过 <code>s[i-1]</code>，不用它匹配 → 贡献 <code>dp[i-1][j]</code> 种方案</p>
+<p>- 两种选法互不影响，所以相加：<code>dp[i][j] = dp[i-1][j-1] + dp[i-1][j]</code></p>
+
+<p><strong>English:</strong></p>
+
+<p>1. <strong><code>s[i-1] != t[j-1]</code>:</strong> We must skip <code>s[i-1]</code>.</p>
+<p>→ <code>dp[i][j] = dp[i-1][j]</code></p>
+
+<p>2. <strong><code>s[i-1] == t[j-1]</code>:</strong> Two independent choices:</p>
+<p>- Use <code>s[i-1]</code> to match <code>t[j-1]</code>: contributes <code>dp[i-1][j-1]</code></p>
+<p>- Skip <code>s[i-1]</code> anyway: contributes <code>dp[i-1][j]</code></p>
+<p>→ <code>dp[i][j] = dp[i-1][j-1] + dp[i-1][j]</code></p>
+
+<hr/>
+
+<h3>边界条件 / Base Cases</h3>
+
+<p><strong>中文：</strong></p>
+<p>- <code>dp[i][0] = 1</code>：用 <code>s</code> 的任何前缀都能组成空字符串 <code>t</code>，恰好 1 种方式（什么都不选）。</p>
+<p>- <code>dp[0][j] = 0</code>（j &gt; 0）：用空字符串 <code>s</code> 无法组成非空 <code>t</code>。</p>
+
+<p><strong>English:</strong></p>
+<p>- <code>dp[i][0] = 1</code> for all <code>i</code>: empty target is always achievable (delete everything).</p>
+<p>- <code>dp[0][j] = 0</code> for <code>j &gt; 0</code>: can&#x27;t form non-empty target from empty source.</p>
+
+<hr/>
+
+<h3>心智模型 / Mental Model</h3>
+
+<p><strong>中文：</strong></p>
+<p>把 dp 表格想象成一张地图。左上角是起点（空 s，空 t），右下角是终点（完整 s，完整 t）。每一步你只能向右（扩展 s）移动。当字符匹配时，你可以&quot;斜着走&quot;（消耗 s 和 t 各一个字符），也可以继续往右走（跳过 s 中的这个字符）。答案就是从起点到终点所有路径的数量。</p>
+
+<p><strong>English:</strong></p>
+<p>Think of the DP table as a grid. Start top-left (empty s, empty t), end bottom-right (full s, full t). You always move down one row (advance in <code>s</code>). When chars match, you can also absorb one char of <code>t</code> (diagonal move). The answer counts all valid paths to the bottom-right.</p>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Step 1: 手动画表格 / Hand-Trace the Table</h3>
+
+<pre><code>
+s = &quot;babgbag&quot;, t = &quot;bag&quot;
+
+      &quot;&quot;  b  a  g
+  &quot;&quot;   1  0  0  0
+  b    1  1  0  0
+  a    1  1  1  0
+  b    1  2  1  0
+  g    1  2  1  1
+  b    1  3  1  1
+  a    1  3  4  1
+  g    1  3  4  5
+</code></pre>
+
+<p><strong>中文解释：</strong></p>
+<p>- <code>dp[3][1]</code>（s=&quot;bab&quot;, t=&quot;b&quot;）= 2：<code>s</code> 里有两个 <code>b</code>，各自都能匹配 <code>t[0]</code>。</p>
+<p>- <code>dp[6][2]</code>（s=&quot;babgba&quot;, t=&quot;ba&quot;）= 4：有 4 种方式取 &quot;ba&quot;。</p>
+<p>- 最终 <code>dp[7][3]</code> = 5，就是答案。</p>
+
+<p><strong>English explanation:</strong></p>
+<p>- <code>dp[3][1]</code> = 2: two <code>b</code>s in &quot;bab&quot; can each serve as the match for <code>t[0]=&#x27;b&#x27;</code>.</p>
+<p>- <code>dp[6][2]</code> = 4: four ways to pick &quot;ba&quot; from &quot;babgba&quot;.</p>
+<p>- Final answer <code>dp[7][3]</code> = 5.</p>
+
+<hr/>
+
+<h3>Step 2: O(m×n) Space 完整实现 / Full O(m×n) Solution</h3>
+
+<pre><code>
+def numDistinct(s: str, t: str) -&gt; int:
+    m, n = len(s), len(t)
+    
+    # dp[i][j] = ways to form t[0..j-1] from s[0..i-1]
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    
+    # Base case: empty t can be formed from any prefix of s in exactly 1 way
+    for i in range(m + 1):
+        dp[i][0] = 1
+    
+    # Fill the table row by row (advance through s)
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            # Always carry forward the &quot;skip s[i-1]&quot; option
+            dp[i][j] = dp[i-1][j]
+            
+            # If characters match, also add the &quot;use s[i-1]&quot; option
+            if s[i-1] == t[j-1]:
+                dp[i][j] += dp[i-1][j-1]
+    
+    return dp[m][n]
+</code></pre>
+
+<p><strong>时间复杂度 / Time:</strong> O(m × n)</p>
+<p><strong>空间复杂度 / Space:</strong> O(m × n)</p>
+
+<hr/>
+
+<h3>Step 3: O(n) Space 优化 / Space-Optimized Solution</h3>
+
+<p><strong>中文：</strong></p>
+<p>注意到 <code>dp[i][j]</code> 只依赖 <code>dp[i-1][j]</code> 和 <code>dp[i-1][j-1]</code>，即上一行。可以用一维数组滚动更新，把空间压缩到 O(n)。</p>
+
+<p><strong>关键点：</strong> 必须从右往左更新，否则 <code>dp[j-1]</code> 会被提前覆盖（和 0/1 背包的滚动数组一样）。</p>
+
+<p><strong>English:</strong></p>
+<p><code>dp[i][j]</code> only depends on the previous row. Use a 1D rolling array.</p>
+
+<p><strong>Critical:</strong> Iterate <code>j</code> <strong>right to left</strong> to avoid using already-updated values (same trick as 0/1 Knapsack).</p>
+
+<pre><code>
+def numDistinct_optimized(s: str, t: str) -&gt; int:
+    m, n = len(s), len(t)
+    
+    # dp[j] = ways to form t[0..j-1] using s seen so far
+    dp = [0] * (n + 1)
+    dp[0] = 1  # empty t: always 1 way
+    
+    for i in range(m):                   # advance through s
+        # Iterate RIGHT TO LEFT to avoid overwriting dp[j-1] before we use it
+        for j in range(n, 0, -1):
+            if s[i] == t[j-1]:
+                dp[j] += dp[j-1]         # match: add the &quot;use s[i]&quot; contribution
+            # else: dp[j] stays (carry forward &quot;skip s[i]&quot; — already there)
+    
+    return dp[n]
+</code></pre>
+
+<p><strong>时间复杂度 / Time:</strong> O(m × n)</p>
+<p><strong>空间复杂度 / Space:</strong> O(n) ← one row only</p>
+
+<hr/>
+
+<h3>Step 4: 记忆化递归版本（自顶向下）/ Top-Down Memoization</h3>
+
+<p><strong>中文：</strong></p>
+<p>如果你在面试中思路卡住，先写递归版本是完全合理的。自顶向下往往更容易写对，然后再优化。</p>
+
+<p><strong>English:</strong></p>
+<p>If you&#x27;re stuck, start with top-down. It maps more naturally to the problem definition.</p>
+
+<pre><code>
+from functools import lru_cache
+
+def numDistinct_memo(s: str, t: str) -&gt; int:
+    
+    @lru_cache(maxsize=None)
+    def dp(i: int, j: int) -&gt; int:
+        # Base cases
+        if j == 0:
+            return 1          # empty t: matched successfully
+        if i == 0:
+            return 0          # ran out of s but t still has chars
+        
+        # Always try skipping s[i-1]
+        result = dp(i - 1, j)
+        
+        # If match, also try using s[i-1]
+        if s[i-1] == t[j-1]:
+            result += dp(i - 1, j - 1)
+        
+        return result
+    
+    return dp(len(s), len(t))
+</code></pre>
+
+<hr/>
+
+<h3>Step 5: 验证手工示例 / Verify by Hand</h3>
+
+<pre><code>
+numDistinct(&quot;rabbbit&quot;, &quot;rabbit&quot;) → 3
+
+      &quot;&quot;  r  a  b  b  i  t
+  &quot;&quot;   1  0  0  0  0  0  0
+  r    1  1  0  0  0  0  0
+  a    1  1  1  0  0  0  0
+  b    1  1  1  1  0  0  0
+  b    1  1  1  2  1  0  0
+  b    1  1  1  3  3  0  0
+  i    1  1  1  3  3  3  0
+  t    1  1  1  3  3  3  3   ← answer = 3 ✓
+</code></pre>
+
+<p><strong>中文：</strong> <code>s</code> 里有三个 <code>b</code>，每个都可以是被&quot;跳过&quot;的那个 <code>b</code>，对应 dp 表里 <code>b</code> 行的累积增长。</p>
+
+<p><strong>English:</strong> Each extra <code>b</code> in <code>s</code> accumulates in the DP table, corresponding to the three ways to choose which <code>b</code> to drop.</p>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>1. <strong><code>t</code> 比 <code>s</code> 长</strong> → 不可能有子序列，答案为 0。DP 自然处理（dp 表格里 <code>j &gt; i</code> 的格子始终为 0）。</p>
+
+<p>2. <strong><code>s == t</code></strong> → 恰好 1 种方式（不删任何字符），dp 对角线自然产生结果 1。</p>
+
+<p>3. <strong><code>t</code> 为空字符串</strong> → 返回 1（由 <code>dp[i][0] = 1</code> 保证）。</p>
+
+<p>4. <strong>数字溢出</strong> → 答案可能非常大（指数级）。Python 自动大整数，Java/C++ 注意用 <code>long</code>。</p>
+
+<p>5. <strong>滚动数组方向错误</strong> → 如果从左往右更新 1D dp，<code>dp[j-1]</code> 已经包含了当前行的更新，会重复计算同一个 <code>s[i]</code> 匹配多次。<strong>必须从右往左！</strong></p>
+
+<p><strong>English:</strong></p>
+
+<p>1. <strong><code>len(t) &gt; len(s)</code></strong> → impossible; answer is 0. The DP handles this naturally.</p>
+
+<p>2. <strong><code>s == t</code></strong> → exactly 1 way. The diagonal fills correctly.</p>
+
+<p>3. <strong>Empty <code>t</code></strong> → returns 1 by the base case <code>dp[i][0] = 1</code>.</p>
+
+<p>4. <strong>Integer overflow</strong> → results can be astronomical. Python is fine; Java/C++ use <code>long</code>.</p>
+
+<p>5. <strong>Wrong iteration direction in space-optimized version</strong> → iterating left-to-right lets <code>dp[j-1]</code> reflect the current row, causing a single <code>s[i]</code> to match <code>t[j-1]</code> multiple times. Always iterate <strong>right to left</strong>.</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+<p>&quot;不同子序列计数&quot;这个模式在现实工程中有几个直接对应：</p>
+
+<p>1. <strong>基因序列分析 / Bioinformatics:</strong> 统计 DNA 序列 <code>s</code> 中有多少种方式包含某个特征序列 <code>t</code>（例如限制性内切酶识别位点）。这是生物信息学里的核心问题。</p>
+
+<p>2. <strong>自动补全评分 / Autocomplete Ranking:</strong> 判断用户输入 <code>t</code> 和候选词 <code>s</code> 的&quot;模糊匹配&quot;质量时，子序列计数可以作为相关性得分的一部分。</p>
+
+<p>3. <strong>代码相似度检测 / Code Similarity:</strong> 检测一段代码片段是否被另一段&quot;抄袭&quot;但做了删减，子序列方案数可以衡量结构相似性。</p>
+
+<p>4. <strong>NLP 中的序列对齐:</strong> 在某些对齐模型里，统计一个句子生成另一个句子的所有对齐方式，本质上就是子序列计数。</p>
+
+<p><strong>English:</strong></p>
+
+<p>1. <strong>Bioinformatics:</strong> Counting how many ways a DNA sequence contains a specific motif (enzyme recognition site) is exactly this problem.</p>
+
+<p>2. <strong>Fuzzy autocomplete scoring:</strong> Subsequence count is a natural similarity signal — more ways to embed the query means higher relevance.</p>
+
+<p>3. <strong>Plagiarism detection:</strong> Measuring how many ways a code fragment can be &quot;derived&quot; from another by deletion.</p>
+
+<p>4. <strong>NLP sequence alignment:</strong> Some generative alignment models count all ways to produce a target sequence from a source, which reduces to this DP.</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>场景设定 / Scenario:</strong></p>
+<p>你在 Meta/Google 的面试中，面试官给出这道题。以下是 5 个典型追问。</p>
+
+<hr/>
+
+<p><strong>Q1: 你怎么想到用 DP 的？/ How did you identify this as a DP problem?</strong></p>
+
+<p><strong>A:</strong></p>
+<p>中文：这道题有两个信号：(1) 求&quot;方案数&quot;而不是&quot;是否存在&quot;——凡是计数都要想 DP；(2) 两个字符串的关系，且没有明显的贪心策略——这是 2D DP 的强信号。</p>
+
+<p>English: Two signals: (1) Counting rather than existence — counting problems almost always use DP. (2) Two strings with no obvious greedy — that&#x27;s a 2D DP flag. I define state over all pairs of prefixes.</p>
+
+<hr/>
+
+<p><strong>Q2: 能进一步优化空间吗？/ Can you optimize space further?</strong></p>
+
+<p><strong>A:</strong></p>
+<p>中文：可以把 2D dp 压缩到 1D，从 O(mn) 降到 O(n)（n 是 <code>t</code> 的长度）。关键是从右往左更新，防止当前行的值影响自身的计算。理论上无法再压缩——因为你至少需要保存一行的所有状态。</p>
+
+<p>English: Yes, 1D rolling array brings it from O(mn) to O(n). No further reduction is possible — you need at least one full row of <code>t</code>&#x27;s states to compute the next row.</p>
+
+<hr/>
+
+<p><strong>Q3: 如果 s 和 t 都很长（比如各 1000 字符），有没有更快的算法？/ What if s and t are very long?</strong></p>
+
+<p><strong>A:</strong></p>
+<p>中文：O(mn) 是这类问题的理论下界（需要遍历所有 (i,j) 对）。但实践中，如果字母表很小（比如只有 4 个 DNA 碱基），可以用 bit-parallel 技巧把内层循环向量化，获得常数因子加速。对于极长字符串，也可以分块计算或用矩阵乘法在某些特殊情况下加速。</p>
+
+<p>English: O(mn) is essentially optimal for the general case — you must examine all (i,j) pairs. With a small alphabet (e.g., DNA with 4 chars), bit-parallel tricks can vectorize the inner loop. For astronomical inputs you&#x27;d use blocking or approximation algorithms.</p>
+
+<hr/>
+
+<p><strong>Q4: 转移方程里为什么不匹配时也要保留 dp[i-1][j]？/ Why do we always carry dp[i-1][j] even when characters match?</strong></p>
+
+<p><strong>A:</strong></p>
+<p>中文：因为即使 <code>s[i-1]</code> 和 <code>t[j-1]</code> 相同，你仍然可以选择<strong>不用</strong>这个 <code>s[i-1]</code> 来匹配——把它跳过，让后面的字符去匹配。这是子序列的本质：每个 <code>s</code> 中的字符你可以用也可以不用。<code>dp[i-1][j]</code> 代表的就是&quot;跳过 <code>s[i-1]</code>，用前 <code>i-1</code> 个字符匹配完整 <code>t[0..j-1]</code>&quot;的方案数。</p>
+
+<p>English: Even when <code>s[i-1] == t[j-1]</code>, we&#x27;re not <em>forced</em> to use that character. We can skip it and use a later occurrence. <code>dp[i-1][j]</code> captures all ways to match <code>t[0..j-1]</code> without consuming <code>s[i-1]</code>. Both choices are independent so we sum them.</p>
+
+<hr/>
+
+<p><strong>Q5: 和 Edit Distance (#72) 有什么区别？它们的 DP 结构相似在哪？/ How does this compare to Edit Distance?</strong></p>
+
+<p><strong>A:</strong></p>
+<p>中文：两者都是 2D DP，都在 <code>s[i-1] == t[j-1]</code> 时使用对角线转移 <code>dp[i-1][j-1]</code>。区别在于操作集：Edit Distance 允许插入、删除、替换（取三者最小值）；而 Distinct Subsequences 只允许删除（从 <code>s</code> 中删字符），且求的是方案数而不是最小代价。可以把 Distinct Subsequences 看作&quot;只有删除操作的 Edit Distance 计数版&quot;。</p>
+
+<p>English: Both are 2D DP with diagonal transition when characters match. The difference: Edit Distance minimizes over insert/delete/replace; Distinct Subsequences <em>counts</em> over delete-only operations. DS is effectively &quot;Edit Distance restricted to deletion, counting instead of minimizing.&quot;</p>
+
+<hr/>
+
+<h2>🧠 Summary / 总结</h2>
+
+<p>| | |</p>
+<p>|---|---|</p>
+<p>| <strong>Pattern / 模式</strong> | 2D Dynamic Programming |</p>
+<p>| <strong>State / 状态</strong> | <code>dp[i][j]</code> = ways to form <code>t[0..j-1]</code> from <code>s[0..i-1]</code> |</p>
+<p>| <strong>Recurrence / 转移</strong> | Match: <code>dp[i-1][j-1] + dp[i-1][j]</code>; No match: <code>dp[i-1][j]</code> |</p>
+<p>| <strong>Base case / 边界</strong> | <code>dp[i][0] = 1</code>, <code>dp[0][j&gt;0] = 0</code> |</p>
+<p>| <strong>Time / 时间</strong> | O(m × n) |</p>
+<p>| <strong>Space / 空间</strong> | O(m × n) → O(n) with rolling array |</p>
+<p>| <strong>Key gotcha / 易错点</strong> | Rolling array must iterate <strong>right to left</strong> |</p>
+
+<p><strong>核心直觉 / Core Intuition:</strong></p>
+<p>&gt; 字符匹配时，你有选择；字符不匹配时，你没有选择。有选择时，两条路都加上。</p>
+<p>&gt;</p>
+<p>&gt; When chars match, you have a choice — sum both paths. When they don&#x27;t, you have no choice — carry forward.</p>
+
+<hr/>
+<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 36 (10 min read)</strong></p>
+<p>📊 NeetCode: 119/150 · SysDesign: 60/60 · Behavioral: 60/60 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 1-day streak（本周 3 天内容，中间有空缺）</p>
+
+<hr/>
+
+<h2>🗓️ 本周回顾 / This Week&#x27;s Journey</h2>
+
+<p><strong>本周共完成 3 天内容（Day 151–153），中间有约 10 天空缺。</strong></p>
+<p><em>3 days of content this week (Days 151–153), with a ~10-day gap in the middle.</em></p>
+
+<p>- <strong>周日 Nov 9（Day 151）：</strong> Edit Distance (#72) + 分布式一致性模型全景 + AI 算力动态 + 技术债领导力场景 + Python 并发三大模型终极对决</p>
+<p>- <strong>周一 Nov 10（Day 152）：</strong> Longest Increasing Path in Matrix (#329) + 混沌工程与韧性架构 + GPT-6/Anthropic 营收/Hinton 警告 + 跨时区工程领导力 + Python 内存模型深度解析</p>
+<p>- <strong>周五 Nov 20（Day 153）：</strong> Distinct Subsequences (#115) + SAGA vs 2PC vs Outbox Pattern + Anthropic 正式上市/Gemini 4 Neon/Jensen Huang 离职 + 技术债 CTO 场景 + Python 对象生命周期完整图景</p>
+
+<hr/>
+
+<h2>🧠 系统设计要点 / System Design: Key Takeaways</h2>
+
+<p><strong>本周主题：分布式系统如何处理不确定性——一致性、韧性、事务。</strong></p>
+<p><em>Theme: How distributed systems handle uncertainty — consistency, resilience, transactions.</em></p>
+
+<p><strong>核心三个概念 / Top 3 Concepts:</strong></p>
+
+<p><strong>1. 一致性谱系 (Consistency Spectrum)</strong></p>
+<p>从 Weak（Redis）→ Eventual（Cassandra）→ Strong（DynamoDB 强一致读）→ Linearizable（Spanner/etcd）。</p>
+<p>关键决策维度不是 CAP，而是 PACELC——正常运行时，你选择延迟还是一致性？</p>
+<p><em>The key decision isn&#x27;t just CAP but PACELC: when partitions aren&#x27;t happening, do you optimize for latency or consistency?</em></p>
+
+<p><strong>2. 混沌工程 (Chaos Engineering)</strong></p>
+<p>&quot;主动破坏以验证自愈能力&quot;。流程：定义稳态基线 → 假设韧性 → 注入故障（从单 Pod 到 AZ 到 Region 递进） → 观测影响 → 修复并固化到 Runbook。没有基线就没有验证。</p>
+<p><em>Chaos Monkey (pod) → Chaos Kong (AZ) → Chaos Gorilla (region). Start small, expand blast radius only after validating at smaller scope.</em></p>
+
+<p><strong>3. 分布式事务三大模式</strong></p>
+<p>2PC 保强一致但协调者是单点；SAGA 高可用但需要幂等补偿事务；Outbox 保证&quot;事件一定被发出去&quot;。</p>
+<p>Stripe → Outbox + Idempotency Keys；Uber → SAGA + Temporal。</p>
+<p><em>2PC = strong consistency but coordinator is SPOF. SAGA = high availability but every compensation must be idempotent. Outbox = guarantee event delivery without 2PC overhead.</em></p>
+
+<p><strong>连接点</strong>：这三个话题构成&quot;分布式系统应对不确定性&quot;的完整闭环——一致性模型定义目标，混沌工程测试韧性，分布式事务保障原子操作。</p>
+
+<hr/>
+
+<h2>💻 算法模式总结 / Algorithms: Patterns Mastered</h2>
+
+<p><strong>本周继续 2-D DP 专题（进度 7/11 → 9/11），连克三道 Hard 题。</strong></p>
+<p><em>Continued 2-D DP block (7/11 → 9/11), three consecutive Hard problems.</em></p>
+
+<p>| 题目 | DP 类型 | 关键洞察 |</p>
+<p>|------|---------|---------|</p>
+<p>| <strong>Edit Distance (#72)</strong> | 最小代价 / Min Cost | 3 方向 min：删除、插入、替换；画 5×5 表格手动追踪一次就懂 |</p>
+<p>| <strong>Longest Increasing Path (#329)</strong> | DFS + 记忆化 / Top-down | 拓扑顺序不固定 → 用自顶向下 DP；<code>@lru_cache</code> 一行解决记忆化 |</p>
+<p>| <strong>Distinct Subsequences (#115)</strong> | 计数 / Count | 转移用加法累积，不是 min/max；<code>dp[i][j] += dp[i-1][j-1]</code> when match |</p>
+
+<p><strong>核心规律（背下来）/ Core Rule:</strong></p>
+<p>- 问&quot;最少操作&quot; → <strong>min</strong>（Edit Distance）</p>
+<p>- 问&quot;能否实现&quot; → <strong>OR</strong>（Interleaving String）</p>
+<p>- 问&quot;多少种方式&quot; → <strong>加法</strong>（Distinct Subsequences、Coin Change II）</p>
+
+<p>这条规律覆盖了 2D DP 90% 的转移判断。</p>
+
+<hr/>
+
+<h2>🗣️ 软技能练习重点 / Soft Skills: What to Practice</h2>
+
+<p><strong>本周两个 Staff-Level 高难度压力场景，核心都是同一个能力：向上 push back 但带数据和方案。</strong></p>
+<p><em>Two high-pressure Staff-level scenarios, both requiring the same core skill: push back upward with data and alternatives.</em></p>
+
+<p><strong>场景 1：技术债 vs 交付时间线</strong></p>
+<p>量化技术风险（不是&quot;有债务&quot;，是&quot;DAU 超 50k 就会锁竞争导致 20% 超时&quot;）→ 给三个选项 → 用业务语言汇报 → 让决策者选。</p>
+<p><em>Key move: translate technical risk to business impact, then give options — not problems.</em></p>
+
+<p><strong>场景 2：新 CTO 要求 6 个月清零技术债</strong></p>
+<p>❌ 不要承诺全部清零；✅ 重新定义目标：消除 TOP 3 高风险债务 + 建立&quot;不再产生新债&quot;的机制。先审计后承诺，建债务登记册，固定技术债预算（30%）且不可随意取消。</p>
+<p><em>The real answer isn&#x27;t &quot;clear all debt&quot; — it&#x27;s &quot;eliminate the highest-risk debt and build a system that stops accumulating new debt.&quot;</em></p>
+
+<p><strong>需要重点练习 / Practice Focus:</strong></p>
+<p>用业务语言量化技术风险的能力。在镜子前练习：&quot;如果我们按期上线，Q2 有 70% 概率出现重大故障，影响 X 用户，修复需要 Y 工程师周。延期 2 周能把这个概率降到 15%。&quot;</p>
+
+<hr/>
+
+<h2>🎨 前端知识巩固 / Frontend: Concepts to Lock In</h2>
+
+<p><strong>本周无新 Frontend 内容，进度保持 37/50。</strong></p>
+<p><em>No new frontend content this week; progress holds at 37/50.</em></p>
+
+<p>下一个 Frontend 专题：<strong>JavaScript 核心内功</strong></p>
+<p>- Promises、async/await — 异步控制流</p>
+<p>- Event Loop — Microtasks、Macrotasks、requestAnimationFrame</p>
+<p>- Prototypes &amp; <code>this</code> — JS 对象的真实运作方式</p>
+
+<p><strong>快速自检 / Quick Self-Check:</strong></p>
+<p>能口述 Microtask Queue 和 Macrotask Queue 的执行顺序差异吗？能解释 <code>this</code> 在箭头函数和普通函数中的区别吗？如果含糊，这是下周最值得巩固的点。</p>
+
+<hr/>
+
+<h2>🤖 AI 知识点 / AI: What Stuck</h2>
+
+<p>&gt; <strong>注意：本节所有财务数字和人事变动均标注&quot;据报道&quot;，来源为新闻报道，未经原始数据直接验证。</strong></p>
+<p>&gt; <em>All financial figures and personnel changes in this section are from reported news sources.</em></p>
+
+<p><strong>本周 AI 大事件（三天三波新闻，行业剧变）：</strong></p>
+
+<p><strong>1. Anthropic 正式上市（代码 ANT / NASDAQ）</strong></p>
+<p>季度营收据报道接近 170 亿美元，算力承诺据报道约 8950 亿美元。AI 从&quot;风险投资烧钱&quot;阶段正式进入&quot;公开市场问责&quot;时代——现在需要向股东证明盈利。</p>
+
+<p><strong>2. Google Gemini 4 Neon + Carbon</strong></p>
+<p>Neon 定位&quot;高推理低成本&quot;；Carbon 专攻代码、调试、安全分析，对 GitHub Copilot 和 Cursor 形成直接竞争压力。</p>
+
+<p><strong>3. Jensen Huang 据报道离开 Nvidia，CFO 接任</strong></p>
+<p>AI 算力供应链的稳定性比模型本身更重要——没有 GPU，模型训练无从谈起。这次领导层变动值得持续关注。</p>
+
+<p><strong>4. EU AI Act 12 月执行</strong></p>
+<p>禁止 AI 生成非自愿性深度伪造和儿童性虐待材料。欧盟运营的 AI 产品需在 12 月前完成合规审计。</p>
+
+<p><strong>工程师最重要的 takeaway:</strong></p>
+<p>&gt; <strong>&quot;Agentic Revolution&quot; 正在加速。</strong> AI 不再只是回答问题，而是自主规划、使用工具、执行多步长期任务。Tool Use + Orchestration 是后端工程师的下一个核心技能。</p>
+
+<p><em>The shift from &quot;AI as Q&amp;A&quot; to &quot;AI as autonomous agent&quot; is the most important architectural change to understand right now.</em></p>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<p><strong>按优先级排序 / Prioritized:</strong></p>
+
+<p>1. <strong>SAGA 补偿事务必须幂等</strong> — 补偿操作可能因网络重试而多次执行。面试中最容易漏掉的细节：每个补偿操作都需要 idempotency key。</p>
+<p><em>SAGA compensation transactions can run multiple times due to retries — idempotency is non-negotiable.</em></p>
+
+<p>2. <strong>DFS + 记忆化 vs 自底向上 DP 的选择时机</strong> — 什么时候用 top-down？答：当拓扑顺序不明确时（如 Longest Increasing Path）。能手写 <code>@lru_cache</code> 版本吗？</p>
+<p><em>Use top-down DP when topological order isn&#x27;t known in advance.</em></p>
+
+<p>3. <strong>Cassandra Quorum 计算</strong> — W + R &gt; N 保证强一致。N=3, W=2, R=2 → 强一致但较慢；N=3, W=1, R=1 → 高性能弱一致。这个公式在系统设计面试里出现频率极高。</p>
+<p><em>W + R &gt; N guarantees strong consistency. Know the tradeoffs for different W/R combos.</em></p>
+
+<p>4. <strong>Python asyncio 核心陷阱</strong> — <code>time.sleep()</code> 在 async 函数里会阻塞整个事件循环；必须用 <code>asyncio.sleep()</code> 或 <code>loop.run_in_executor()</code>。</p>
+<p><em>Calling synchronous blocking code inside async functions blocks the entire event loop — this is a classic interview gotcha.</em></p>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p><strong>2D DP 专题 7→9/11：连续三道 Hard，三种不同转移模式全部掌握！</strong></p>
+
+<p>Edit Distance（最小代价）、Longest Increasing Path（DFS 记忆化变奏）、Distinct Subsequences（计数累积）——这三道题覆盖了 2D DP 最核心的三种思路。从现在起，看到字符串/矩阵/路径类 DP，第一步就能判断：这是求最优、判断可行性，还是数路径数量？这个判断能力就是 Hard 题破题的关键。</p>
+
+<p><em>Three back-to-back Hard 2D DPs, three distinct transition patterns. The judgment &quot;am I minimizing, checking feasibility, or counting?&quot; is now a reflex — that&#x27;s the real win.</em></p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p><strong>算法（当前 119/150）：</strong></p>
+<p>- 2D DP 最后 2 道题收尾（Burst Balloons 区间 DP 变奏，Regular Expression Matching）</p>
+<p>- 然后进入 Greedy 专题（Jump Game, Gas Station, Hand of Straights 等）</p>
+
+<p><strong>系统设计：</strong> 60/60 全部完成 ✅ — 进入综合巩固演练</p>
+
+<p><strong>Python Craft：</strong> 50/50 全部完成 ✅ — 进入 Expert Synthesis 阶段</p>
+
+<p><strong>Frontend（37/50）：</strong> JavaScript 核心内功专题开始</p>
+<p>- Promises &amp; async/await — 异步控制流</p>
+<p>- Event Loop — Microtask vs Macrotask 执行顺序</p>
+<p>- Prototypes &amp; <code>this</code> — JS 对象的底层运作</p>
+
+<p><strong>总体状态：</strong> 已完成 SysDesign、Behavioral、AI、Python Craft 四个模块。最后冲刺阶段：NeetCode 还剩 31 题，Frontend 还剩 13 个话题。</p>
 ]]></description>
     </item>
     <item>
