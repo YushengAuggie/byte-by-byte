@@ -5,8 +5,130 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Sat, 21 Nov 2026 16:30:45 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 22 Nov 2026 16:11:16 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-22</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-22</guid>
+      <pubDate>Sun, 22 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Week Review</h1>
+<p>📅 <strong>Week in Review — Week 47 (10 min read)</strong></p>
+<p>📊 NeetCode: 119/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 2-day streak!</p>
+
+<hr/>
+
+<h2>🗓️ 本周回顾 / This Week&#x27;s Journey</h2>
+
+<p><strong>本周共完成 2 天内容（Day 153–154），周一至周四为休息日。</strong></p>
+<p><em>2 days of content this week (Days 153–154), Monday–Thursday were rest days.</em></p>
+
+<p>- <strong>周五 Nov 20（Day 153）：</strong> Distinct Subsequences (#115) · SAGA vs 2PC vs Outbox Pattern · Anthropic IPO 等 AI 大事件 · 技术债 CTO 场景 · Python 对象生命周期完整图景</p>
+<p>- <strong>周六 Nov 21（Day 154 · Deep Dive）：</strong> Burst Balloons (#312) — 区间 DP 反向思维完全精讲（18 min）</p>
+
+<hr/>
+
+<h2>🧠 系统设计要点 / System Design: Key Takeaways</h2>
+
+<p><strong>本周主题：分布式事务——如何在微服务间保证一致性。</strong></p>
+<p><em>This week&#x27;s theme: distributed transactions — ensuring consistency across microservices.</em></p>
+
+<p><strong>三大模式对比 / Three Patterns Compared：</strong></p>
+
+<p>1. <strong>2PC（两阶段提交）</strong>：强一致性，但协调者是单点故障；适合同数据中心的金融核心账本。<em>Strong consistency, but coordinator = single point of failure; best for same-datacenter financial ledgers.</em></p>
+<p>2. <strong>SAGA（补偿事务）</strong>：最终一致性，高可用，每步操作失败后执行补偿逻辑（必须幂等）。<em>Eventual consistency, high availability; compensating transactions must be idempotent.</em></p>
+<p>3. <strong>Outbox Pattern</strong>：在同一本地事务内原子写入 DB + Outbox 表，CDC（如 Debezium）异步拉取发布——保证&quot;事件一定发出去&quot;。<em>Atomic write to DB + Outbox table in one local transaction; CDC asynchronously publishes — guarantees at-least-once event delivery.</em></p>
+
+<p><strong>贯穿线 / The Thread：</strong> 这三种模式都是 CAP 定理的实践体现——没有一种方案能同时保证强一致性 + 高可用 + 分区容错。Stripe 用 Outbox + 幂等 Key，Uber 用 SAGA + Temporal。<em>All three patterns are CAP theorem in practice. Choose based on consistency vs. availability trade-off. Stripe uses Outbox + Idempotency Keys; Uber uses SAGA + Temporal.</em></p>
+
+<hr/>
+
+<h2>💻 算法模式总结 / Algorithms: Patterns Mastered</h2>
+
+<p><strong>本周模式：二维 DP 收官 — 计数型 DP + 区间 DP</strong></p>
+<p><em>This week&#x27;s pattern: 2D DP finale — Counting DP + Interval DP</em></p>
+
+<h3>Distinct Subsequences (#115) — 计数型 2D DP</h3>
+<p>- <strong>核心洞见</strong>：<code>dp[i][j]</code> = s 前 i 字符中 t 前 j 字符作为子序列出现的次数。字符匹配时，既可&quot;用&quot;也可&quot;跳过&quot;，两条路径相加。<em>Key insight: when characters match, choices accumulate via addition (count paths); when they don&#x27;t, only carry forward.</em></p>
+<p>- <strong>与其他 2D DP 的区别</strong>：Edit Distance → 最小代价（min）；Interleaving String → 可行性（OR）；Distinct Subsequences → 计数（加法）。<em>2D DP variants: minimize = min(), feasibility = OR, count = sum().</em></p>
+
+<h3>Burst Balloons (#312) — 区间 DP（Deep Dive）</h3>
+<p>- <strong>核心反转</strong>：不问&quot;先戳哪个&quot;，而问&quot;<strong>最后</strong>戳哪个&quot;。当气球 k 是区间 (i,j) 内最后被戳破的，它的左右邻居就固定为边界值 <code>nums[i]</code> 和 <code>nums[j]</code>，子问题独立。<em>The mental flip: think about which balloon to pop LAST, not first. The last balloon&#x27;s neighbors are fixed = the interval boundaries, making subproblems truly independent.</em></p>
+<p>- <strong>模版</strong>：<code>dp[i][j] = max(dp[i][k] + nums[i]<em>nums[k]</em>nums[j] + dp[k][j])</code> — 枚举 k 作为区间内最后一个气球。按区间长度从小到大填表。<em>Fill order: interval length 2 → n+1. Complexity: O(n³) time, O(n²) space.</em></p>
+<p>- <strong>推广</strong>：合并石子、矩阵链乘法、SQL join ordering 优化器——凡是&quot;区间内寻找最优分割&quot;都是这个模式。<em>Generalizes to Stone Merge, Matrix Chain Multiplication, SQL query planner join ordering.</em></p>
+
+<hr/>
+
+<h2>🗣️ 软技能练习重点 / Soft Skills: What to Practice</h2>
+
+<p><strong>本周场景：Staff Engineer 应对&quot;6 个月清零技术债&quot;的 CTO 要求。</strong></p>
+<p><em>This week: Staff Engineer navigating a new CTO&#x27;s demand to eliminate all tech debt in 6 months.</em></p>
+
+<p><strong>关键框架 / Key Framework：</strong></p>
+<p>1. <strong>先审计后承诺</strong>：用债务登记册量化，按安全/稳定性/开发速度三类分级。<em>Audit first, commit second: use a Debt Registry with business-impact classification.</em></p>
+<p>2. <strong>重定义目标</strong>：把&quot;6 个月清零&quot;推回成&quot;消除 TOP 3 高风险债务 + 建立不再累积新债的机制&quot;。<em>Reframe: not &quot;zero tech debt&quot; but &quot;eliminate top 3 risks + build mechanisms to prevent new debt.&quot;</em></p>
+<p>3. <strong>用业务语言</strong>：CTO 关心风险和速度，不关心代码行数。把&quot;Python 2 未迁移&quot;翻译成&quot;CVE 无人修补&quot;。<em>Translate for executives: code facts → business risk. &quot;Python 2 EOL&quot; = &quot;unpatched CVEs.&quot;</em></p>
+<p>4. <strong>固定 budget</strong>：技术债时间被随意取消是债务积累根源——30% 时间不 cancel。<em>Fixed allocation: debt work never gets canceled mid-sprint. 30% locked.</em></p>
+
+<p><strong>需要练习 / Practice Needed：</strong> 在压力下如何向上 push back——带数据、带替代方案、带时间表。这是 Staff 和 Senior 的核心分水岭。<em>How to push back upward under pressure — with data, alternative plans, and timelines. This is the Staff vs. Senior divide.</em></p>
+
+<hr/>
+
+<h2>🎨 前端：本周无新内容 / Frontend: No New Content This Week</h2>
+
+<p>前端指数维持在 37/50。下周继续推进 Frontend 部分。</p>
+<p><em>Frontend index remains 37/50. Expected to advance next week.</em></p>
+
+<hr/>
+
+<h2>🤖 AI 知识点 / AI: What Stuck</h2>
+
+<p><strong>本周为 AI News Roundup 日。以下均来自新闻报道，据报道：</strong></p>
+<p><em>This was a news day. All items below are reported news — 据报道 (as reported):</em></p>
+
+<p>1. <strong>据报道：Anthropic 完成 IPO（代码 ANT）</strong>——据报道其 2026 前九个月收入 332 亿美元。标志着 AI 进入&quot;公开市场问责&quot;阶段。<em>Anthropic reportedly went public (ticker ANT); reportedly $33.2B revenue in first 9 months of 2026. Marks AI&#x27;s entry into public-market accountability.</em></p>
+<p>2. <strong>据报道：Google Gemini 4 Carbon 正式 GA</strong>——定位&quot;复杂技术工作 + 长任务 Agent&quot;，据报道对 Copilot/Cursor 形成直接竞争。<em>Gemini 4 Carbon reportedly GA; positioned for complex technical work and long-horizon agents.</em></p>
+<p>3. <strong>据报道：Jensen Huang 辞去 Nvidia CEO 职位</strong>——CFO Colette Kress 出任临时 CEO。<em>Jensen Huang reportedly resigned as Nvidia CEO; CFO taking interim role.</em></p>
+<p>4. <strong>据报道：EU AI Act 关键条款 12 月 2 日起执行</strong>——全球首个强制规范生成式 AI 的法律框架。<em>EU AI Act key provisions reportedly taking effect December 2 — first mandatory generative AI regulation globally.</em></p>
+
+<p><strong>最重要的 takeaway / Most Important Insight：</strong> AI 正从&quot;回答问题&quot;向&quot;自主规划 + 工具使用 + 多步执行&quot;演进——Agentic 架构将成为后端工程师的核心技能。<em>The shift from &quot;answer questions&quot; to &quot;plan + use tools + execute autonomously&quot; = agentic architecture is becoming core backend engineering knowledge.</em></p>
+
+<hr/>
+
+<h2>⚠️ 需要复习的内容 / What to Review</h2>
+
+<p>1. <strong>2D DP 完整家族</strong>：Edit Distance、Interleaving String、Distinct Subsequences、Burst Balloons 四题的转移方程和各自的&quot;类型标志&quot;（min/OR/sum/区间分割）——能在面试开始时 30 秒内区分哪题用哪种。<em>Review the 4 2D DP problem types and their transition &quot;signatures&quot; — be able to identify in 30 seconds which variant applies.</em></p>
+<p>2. <strong>SAGA 补偿事务的幂等设计</strong>：补偿操作被重试时不能产生副作用——具体怎么实现？（幂等 key、版本号、状态机）。<em>SAGA compensation idempotency: how do you ensure compensating transactions are safe to retry?</em></p>
+<p>3. <strong>区间 DP 填表顺序</strong>：为什么必须从小区间到大区间？自己能不看代码写出 Burst Balloons 的嵌套循环结构吗？<em>Interval DP fill order: can you write the nested loop structure for Burst Balloons from memory?</em></p>
+
+<hr/>
+
+<h2>🏆 本周亮点 / Win of the Week</h2>
+
+<p><strong>Burst Balloons 深潜完成！</strong></p>
+
+<p>这是整个 NeetCode 150 中公认最难的 DP 题之一。通过深度精讲，彻底掌握了&quot;区间 DP 反向思维&quot;——这个思维模式不只是解一道题，而是打开了矩阵链乘法、SQL join 优化器、外部排序归并等一系列工程问题的通用钥匙。</p>
+
+<p><em>Burst Balloons deep dive complete! This is one of the hardest DP problems in NeetCode 150. The &quot;last balloon&quot; reversal insight isn&#x27;t just for this problem — it&#x27;s the master key for Matrix Chain Multiplication, SQL join ordering, and external sort merge optimization.</em></p>
+
+<hr/>
+
+<h2>🎯 下周预告 / Next Week Preview</h2>
+
+<p>基于当前进度指数，下周预计：</p>
+<p><em>Based on current indices, next week likely covers:</em></p>
+
+<p>- <strong>算法</strong>：2D DP 收尾 — Regular Expression Matching (#10)（最后一道 Hard 2D DP），随后进入贪心（Greedy）章节。<em>Algorithms: finish 2D DP with Regular Expression Matching (#10), then enter Greedy section.</em></p>
+<p>- <strong>系统设计</strong>：继续 Synthesis 模式——可能综合复习分布式系统中的可观测性主题（Tracing + Logging + Metrics 三位一体）。<em>System Design: Synthesis continues — likely observability trilogy (Tracing + Logging + Metrics).</em></p>
+<p>- <strong>前端</strong>：Frontend 指数 37/50，下周应推进新 Frontend 内容。<em>Frontend: index at 37/50, new content expected.</em></p>
+<p>- <strong>Python Craft</strong>：Synthesis 阶段，继续深度专题。<em>Python Craft: Synthesis phase continues.</em></p>
+<p>- <strong>AI</strong>：下周为 News or Synthesis 日，取决于周期轮换。<em>AI: News or Synthesis depending on rotation.</em></p>
+
+<p>加油！距离 NeetCode 150 完成还有 31 题。🚀</p>
+<p><em>Keep going! 31 problems left to complete NeetCode 150.</em> 🚀</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-21</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
