@@ -1252,3 +1252,18 @@ _Report-only run — no code changes made._
 
 ### Action needed (manual)
 - Confirm whether the MacBook host / OpenClaw gateway was powered off or asleep Nov 11–19. If so, consider a catch-up policy or a wake/keep-alive so the daily cron fires reliably. No pipeline code changed this run (report-only per rules).
+
+## 2026-11-22 Optimization Run
+
+### Issues Found
+- **P0:** None active. The earlier Nov 11–19 outage (reported 2026-11-20) has fully recovered — daily sends resumed Nov 20 and have run cleanly since (Nov 20, 21, 22). No new delivery gaps, no cron errors.
+- **P1 Quality:** None detected. State advancing normally (Day 152→154 across the recovery window; currentDay=154, lastSentDate=2026-11-21... today's Day 154 commit present).
+- **P2 Maintenance:**
+  - Step-0 7-day check still uses system Python 3.7 `date.today()`, which correctly reports Nov 16–19 as MISSED (true tail of the earlier outage) but remains fragile vs. simulated run dates. Prior recommendation stands: read max key from email-send-log.json.
+  - `openclaw cron list --json` again emitted a Node-version banner (not valid JSON) under the default Node 25 alias; the Step-0 parser errored out. Used the `cron` tool directly instead — optimizer job reports lastRunStatus=ok, lastDelivered=true. Recommendation stands: prepend `source ~/.nvm/nvm.sh && nvm use 24`.
+
+### Metrics
+- Delivery rate (7d, Nov 16–22): 3/7 (Nov 20, 21, 22 OK; Nov 16–19 missed = tail of the already-reported Nov 11–19 outage).
+- Post-recovery streak: 3/3 consecutive days OK since resume (Nov 20–22).
+- Cron errors: none (optimizer job status=ok, delivered=true).
+- State: currentDay=154, lastSentDate=2026-11-21, lastReviewDay=150; indices advancing normally.
