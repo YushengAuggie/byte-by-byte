@@ -5,8 +5,543 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 23 Nov 2026 16:07:09 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 24 Nov 2026 16:12:36 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-24</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-24</guid>
+      <pubDate>Tue, 24 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>🏗️ 系统设计 / System Design — Day 156 (Synthesis)</h2>
+<h2>一致性模型全景图 — 从 Eventual 到 Linearizable 的工程决策</h2>
+<h2>Consistency Model Panorama — Engineering Choices from Eventual to Linearizable</h2>
+
+<p>&gt; 综合回顾: Day 12 (CAP), Day 9 (Replication), Day 39 (Cache), Day 47 (Consensus), Day 54 (Multi-Region)</p>
+
+<hr/>
+
+<h3>🔍 为什么这很重要 / Why This Matters</h3>
+
+<p>过去60天，我们设计了YouTube、Google Maps、支付系统、分布式缓存……每次都会面临同一个问题：<strong>这个数据需要多强的一致性？</strong> 今天把这些散落的知识串成一张决策地图。</p>
+
+<p>Over 60 designs, one question kept recurring: <strong>how consistent does this data need to be?</strong> Today we unify the scattered lessons into a single decision framework.</p>
+
+<hr/>
+
+<h3>📊 一致性层级 / The Consistency Spectrum</h3>
+
+<pre><code>
+弱 Weak ◄─────────────────────────────────► 强 Strong
+
+Eventual       Read-your-writes    Monotonic Read    Sequential    Linearizable
+最终一致          读自己写              单调读              顺序一致性         线性一致性
+
+DNS, S3       User profile        Social feed       Kafka order    Redis INCR
+Shopping cart  Auth session       Notification      Zookeeper      Bank balance
+</code></pre>
+
+<hr/>
+
+<h3>🏗️ 过去设计的一致性选择 / Consistency Choices Across Our Designs</h3>
+
+<p>| 系统 System | 选择 Choice | 原因 Why |</p>
+<p>|---|---|---|</p>
+<p>| URL Shortener (Day 19) | Eventual | 重定向不需要强一致；CDN 缓存可以短暂脏读 |</p>
+<p>| 支付系统 Payment (Day 38) | Linearizable | 钱不能多扣；必须用分布式事务/2PC |</p>
+<p>| 聊天系统 Chat (Day 28) | Causal | 消息要有因果序，但不需要全局线性 |</p>
+<p>| 分布式缓存 Cache (Day 39) | Tunable | Redis 默认异步复制；关键场景用 WAIT 命令 |</p>
+<p>| 多地 Active-Active (Day 54) | Eventual + CRDT | 跨 region 延迟太高，用 conflict-free structures |</p>
+
+<hr/>
+
+<h3>⚡ 决策框架 / Decision Framework</h3>
+
+<pre><code>
+问题1: 写后必须立即读到自己写的数据？
+  YES → Read-your-writes (session affinity / read-after-write)
+  NO  → 继续
+
+问题2: 多用户并发写同一条记录？(如库存、余额)
+  YES → Linearizable (单 leader + MVCC / distributed lock)
+  NO  → 继续
+
+问题3: 数据有因果依赖？(评论早于回复)
+  YES → Causal consistency (vector clocks / Lamport timestamps)
+  NO  → Eventual consistency is fine
+</code></pre>
+
+<hr/>
+
+<h3>🔴 别踩这个坑 / Common Mistakes</h3>
+
+<p><strong>坑1: 把&quot;高可用&quot;和&quot;强一致&quot;当成对立面</strong></p>
+<p>&gt; 实际上只是 latency vs consistency 的权衡。Redis Cluster 可以用 <code>WAIT</code> 实现 read-after-write，代价是 p99 延迟上升。</p>
+
+<p><strong>坑2: 对所有数据用同一策略</strong></p>
+<p>&gt; 电商系统：商品价格用 Eventual（CDN 缓存），下单用 Linearizable（库存扣减），订单历史用 Read-your-writes（刚付完款要立刻看到）。</p>
+
+<p><strong>坑3: 忽略 clock skew</strong></p>
+<p>&gt; 多 region 写时绝对不能用本地时间戳排序。用 Hybrid Logical Clocks (HLC) 或 Google TrueTime。</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像餐厅记账：</p>
+<p>- <strong>Eventual</strong>：服务员先用便利贴记，晚点再录入电脑。可能短暂不同步，但最终一致。</p>
+<p>- <strong>Linearizable</strong>：收银机直接记，所有人看到的账都一样，但收银机坏了就完了。</p>
+<p>- <strong>Read-your-writes</strong>：你点的菜服务员一定记住了，哪怕其他人还不知道。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://jepsen.io/consistency — 最权威的一致性模型分类</p>
+<p>- https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html</p>
+<p>- https://aws.amazon.com/blogs/database/choosing-the-right-dynamodb-consistency-model/</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>💻 算法 / Algorithms — Day 156</h2>
+<h2>#312 Burst Balloons — Hard — 2-D Dynamic Programming (10/11)</h2>
+
+<p>🧩 <strong>二维DP模式 (10/11)</strong> — 在 Day 100 的模版基础上演进</p>
+
+<p>&gt; 本题是 2-D DP 系列最难也最经典的&quot;区间 DP&quot;变体。与前九题不同，它不是填充矩形网格，而是在<strong>区间</strong>上定义子问题。</p>
+
+<hr/>
+
+<h3>🔗 Links</h3>
+
+<p>- 🔗 LeetCode: https://leetcode.com/problems/burst-balloons/ 🔴 Hard</p>
+<p>- 📹 NeetCode: https://www.youtube.com/watch?v=VFskby7lUbw</p>
+
+<hr/>
+
+<h3>🌍 真实类比 / Real-World Analogy</h3>
+
+<p>想象你在拆除一排建筑物，每拆一栋获得奖励 = 左邻 × 自己 × 右邻的价值。<strong>关键决策</strong>：你选择<strong>最后</strong>拆哪一栋。</p>
+
+<p>This is like demolishing buildings where reward = left × current × right. The key insight: think about which building you demolish <strong>last</strong> in a range, not first.</p>
+
+<hr/>
+
+<h3>💡 为什么这题难 / Why This Is Hard</h3>
+
+<p><strong>直觉</strong>（错误）：每次戳价值最高的气球 → 贪心，WA。</p>
+
+<p><strong>正确思路</strong>：逆向思维。与其想&quot;先戳哪个&quot;，想&quot;<strong>这个区间最后戳哪个</strong>&quot;。</p>
+
+<p>当气球 <code>k</code> 是区间 <code>[i, j]</code> 中<strong>最后一个</strong>被戳的，它两侧的气球已经全消失了，所以收益是固定的：<code>nums[i-1] <em> nums[k] </em> nums[j+1]</code>。</p>
+
+<pre><code>
+区间 DP 状态定义：
+dp[i][j] = 戳爆区间 (i, j) 内所有气球的最大硬币数
+           注意：i 和 j 本身是边界，不会被戳
+
+转移方程：
+for k in range(i+1, j):        # k 是这个区间最后被戳的
+    coins = nums[i]*nums[k]*nums[j]  # k左右都已清空，邻居是i和j
+    dp[i][j] = max(dp[i][j], dp[i][k] + coins + dp[k][j])
+
+初始化：
+nums = [1] + nums + [1]        # 两端加哨兵
+dp = [[0]*(n+2) for _ in range(n+2)]
+</code></pre>
+
+<hr/>
+
+<h3>🐍 Python Solution with Trace</h3>
+
+<pre><code>
+def maxCoins(nums: list[int]) -&gt; int:
+    # Add sentinel balloons at both ends
+    nums = [1] + nums + [1]
+    n = len(nums)
+    dp = [[0] * n for _ in range(n)]
+
+    # Enumerate by interval length (bottom-up)
+    # l = length of open interval (i, j), so at least 2 apart
+    for length in range(2, n):        # interval gap
+        for left in range(0, n - length):
+            right = left + length
+            # Try each k as the LAST balloon popped in (left, right)
+            for k in range(left + 1, right):
+                coins = nums[left] * nums[k] * nums[right]
+                dp[left][right] = max(
+                    dp[left][right],
+                    dp[left][k] + coins + dp[k][right]
+                )
+
+    return dp[0][n - 1]  # full range with sentinels
+
+
+# Trace: nums = [3, 1, 5, 8]
+# After padding: [1, 3, 1, 5, 8, 1]
+# dp[0][5] = answer = 167
+</code></pre>
+
+<p><strong>复杂度 Complexity:</strong></p>
+<p>- Time: O(n³) — 三重循环</p>
+<p>- Space: O(n²) — DP 表</p>
+
+<hr/>
+
+<h3>🔁 与同系列对比 / Pattern Variations</h3>
+
+<p>| 题目 | 区别 Difference |</p>
+<p>|---|---|</p>
+<p>| Edit Distance (Day 151) | 标准二维网格 DP，转移来自上/左/斜 |</p>
+<p>| Distinct Subsequences (Day 153) | 单向网格，只往右下走 |</p>
+<p>| <strong>Burst Balloons (今天)</strong> | <strong>区间 DP！子问题是子区间，不是子矩阵</strong> |</p>
+<p>| Regular Expression Matching (Day 157) | 二维 + 通配符，转移更复杂 |</p>
+
+<p><strong>核心差异</strong>：Burst Balloons 用&quot;枚举最后一个元素&quot;代替&quot;枚举相邻子结构&quot;，是区间 DP 的精髓。</p>
+
+<hr/>
+
+<h3>📝 Quiz</h3>
+
+<pre><code>
+{&quot;question&quot;:&quot;Burst Balloons 中 dp[i][j] 的含义是？&quot;,&quot;options&quot;:[&quot;戳爆所有气球的最大收益&quot;,&quot;戳爆闭区间[i,j]内气球的最大收益&quot;,&quot;戳爆开区间(i,j)内气球的最大收益（i和j是哨兵/边界）&quot;,&quot;以i为第一个戳、j为最后一个戳的最大收益&quot;],&quot;correct_index&quot;:2}
+</code></pre>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>拆积木游戏：你有一排积木，每次拆一块得分 = 左邻 × 自己 × 右邻。</p>
+<p>技巧：不要想&quot;先拆哪块&quot;，要想&quot;<strong>这一段最后留哪块</strong>&quot;——因为只有最后那块的邻居是固定的！</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://leetcode.com/problems/burst-balloons/editorial/</p>
+<p>- https://cp-algorithms.com/dynamic_programming/divide-and-conquer-dp.html</p>
+<p>- https://www.youtube.com/watch?v=VFskby7lUbw</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>🗣️ 软技能 / Soft Skills — Day 156 (Synthesis)</h2>
+<h2>高级场景: 你被要求接手一个技术债务严重的核心系统</h2>
+<h2>Senior Scenario: Taking Ownership of a Critical System Drowning in Tech Debt</h2>
+
+<p>&gt; 综合主题: Day 16 (技术债务), Day 56 (快速上手陌生代码库), Day 51 (迁移/废弃), Day 32 (技术决策推动)</p>
+
+<hr/>
+
+<h3>🎯 场景 / The Scenario</h3>
+
+<p>你新加入一个团队，第一周就被告知：你需要负责公司最核心的订单处理服务。这个服务已经7年没有重大重构，测试覆盖率 12%，P0 故障平均每月一次。你的老板说：&quot;我知道这很难，但我们需要你让它稳下来，同时不能停止新功能交付。&quot;</p>
+
+<p>You join a team and within your first week, you&#x27;re handed ownership of the company&#x27;s most critical order processing service. 7 years of accumulated debt, 12% test coverage, one P0 per month. Your manager says: &quot;I know it&#x27;s messy, but we need stability without stopping feature delivery.&quot;</p>
+
+<hr/>
+
+<h3>🌟 STAR 拆解 / STAR Framework</h3>
+
+<p><strong>Situation:</strong></p>
+<p>接手时：5000行无文档 Python 代码，依赖注入靠全局变量，DB 查询散落在业务逻辑里，无任何 metrics。</p>
+
+<p><strong>Task:</strong></p>
+<p>目标：6个月内把 P0 频率降到每季度一次，同时不延误产品 roadmap。</p>
+
+<p><strong>Action (分阶段策略):</strong></p>
+
+<pre><code>
+第1-2周: 观察，不动 (Observe, Don&#x27;t Touch)
+├── 读代码，画出数据流图（不改代码）
+├── 在 staging 跑所有已有测试，记录 flaky 的
+└── 读最近3个月的 incident post-mortems
+
+第3-4周: 插装，不重构 (Instrument, Don&#x27;t Refactor)
+├── 加 structured logging（不改逻辑）
+├── 加 Datadog APM traces 到每个 DB 调用
+└── 建立基线：p99 latency、error rate、call graph
+
+第5-8周: 外科手术式修复 (Surgical Fixes)
+├── 找出导致50%故障的根因（通常只有2-3个）
+├── 只改高风险代码，每改一块先写测试
+└── Code freeze: 新功能走 feature flag，旧路径不动
+
+第9-24周: 渐进重构 (Strangler Fig Pattern)
+├── 新逻辑写在新模块，旧代码调用新模块
+├── 每个 sprint 至少一个&quot;测试覆盖率提升&quot;任务
+└── 每季度给上级一个覆盖率/稳定性报告
+</code></pre>
+
+<p><strong>Result:</strong></p>
+<p>4个月后，P0 降至每季度1次；测试覆盖率从12%→41%；没有延误任何 roadmap 里程碑。</p>
+
+<hr/>
+
+<h3>❌ vs ✅</h3>
+
+<p>| ❌ 新人常犯 / Junior Mistake | ✅ Senior 做法 |</p>
+<p>|---|---|</p>
+<p>| &quot;这代码太烂了，我要重写&quot; | 先理解，再重构；Big Bang 重写风险极高 |</p>
+<p>| 第一周就提大量 PR 改代码风格 | 先建立信任，再推变化 |</p>
+<p>| 把技术债务当纯技术问题 | 量化业务影响（每次 P0 损失多少 GMV）才能说服上级投资 |</p>
+<p>| 一次性重构所有问题 | Strangler Fig：新旧并行，渐进迁移 |</p>
+
+<hr/>
+
+<h3>💡 Senior/Staff 加分点</h3>
+
+<p>1. <strong>用业务语言谈技术债</strong>：&quot;每次 P0 我们损失约 $X 收入 + $Y 工程师时间&quot; &gt; &quot;代码质量很差&quot;</p>
+<p>2. <strong>主动建立 service reliability 目标</strong>，不等上级指派 SLO</p>
+<p>3. <strong>把改善过程做成可见的</strong>：weekly tech debt burn-down chart 发给 stakeholders</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>就像接手一套老房子：别第一天就砸墙。先住几周，找出哪里漏水、哪里电路有问题，然后先修最危险的，再慢慢翻新，整个过程不影响你住人。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://martinfowler.com/bliki/StranglerFigApplication.html</p>
+<p>- https://www.oreilly.com/library/view/the-pragmatic-programmer/9780135956977/ (Technical Debt chapter)</p>
+<p>- https://sre.google/sre-book/eliminating-toil/</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>🐍 Python Craft — Day 156 (Synthesis)</h2>
+<h2>深度综合: Python 内存模型全景 — 对象、引用、GC、__slots__ 的统一视角</h2>
+<h2>Deep Synthesis: Python Memory Model — Objects, References, GC, and __slots__ Unified</h2>
+
+<p>&gt; 综合回顾: GC (Day 73), Metaclasses (Day 69), dataclasses (Day 99), Descriptors (Day 68)</p>
+
+<hr/>
+
+<h3>🧠 Python 对象的内存代价 / Memory Cost of a Python Object</h3>
+
+<p>很多人不知道：<strong>Python 中每个对象都是一个 C 结构体，最小开销约 56 字节</strong>（64位系统）。</p>
+
+<pre><code>
+import sys
+
+x = 42          # int
+print(sys.getsizeof(x))   # 28 bytes
+
+y = &quot;hello&quot;
+print(sys.getsizeof(y))   # 54 bytes
+
+z = []
+print(sys.getsizeof(z))   # 56 bytes (empty list!)
+
+# A simple instance
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+p = Point(1, 2)
+print(sys.getsizeof(p))           # ~48 bytes (just the shell)
+print(sys.getsizeof(p.__dict__))  # ~232 bytes (the dict!)
+# Total: ~280 bytes for two integers!
+</code></pre>
+
+<p><strong>结论</strong>：普通类实例用 <code>__dict__</code> 存属性，字典开销巨大。</p>
+
+<hr/>
+
+<h3>⚡ __slots__ 的威力 / The Power of __slots__</h3>
+
+<pre><code>
+from dataclasses import dataclass
+
+# Regular class: uses __dict__
+class PointDict:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+# With __slots__: no __dict__, uses fixed offsets
+class PointSlots:
+    __slots__ = (&#x27;x&#x27;, &#x27;y&#x27;)
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+# dataclass with slots (Python 3.10+)
+@dataclass(slots=True)
+class PointDC:
+    x: float
+    y: float
+
+import tracemalloc
+tracemalloc.start()
+
+# Create 1 million points
+points_dict  = [PointDict(i, i)  for i in range(1_000_000)]
+points_slots = [PointSlots(i, i) for i in range(1_000_000)]
+
+# PointDict:  ~280 MB
+# PointSlots: ~56 MB  (5x smaller!)
+# Attribute access is also faster (no dict lookup)
+</code></pre>
+
+<hr/>
+
+<h3>🔄 引用计数 + 循环 GC / RefCount + Cyclic GC</h3>
+
+<pre><code>
+import gc
+import ctypes
+
+# Python uses reference counting as primary GC
+a = [1, 2, 3]
+# refcount = 1
+
+b = a
+# refcount = 2
+
+del a
+# refcount = 1 (b still holds reference)
+
+del b
+# refcount = 0 → immediately deallocated (no GC needed!)
+
+# Problem: circular references
+class Node:
+    def __init__(self):
+        self.ref = None
+
+x = Node()
+y = Node()
+x.ref = y   # x → y
+y.ref = x   # y → x  (cycle!)
+
+del x, y
+# refcount never hits 0!
+# Python&#x27;s cyclic GC (gc module) handles this in generation sweeps
+
+gc.collect()  # Force a cycle collection
+print(gc.get_count())  # (gen0, gen1, gen2) object counts
+</code></pre>
+
+<hr/>
+
+<h3>🎯 实战决策 / When to Use What</h3>
+
+<pre><code>
+大量小对象 (坐标、事件、消息)?
+  → __slots__ 或 dataclass(slots=True)
+  → 节省 60-80% 内存
+
+需要动态属性 (__dict__)?
+  → 普通类，接受内存开销
+
+不可变数据?
+  → NamedTuple (C struct 级别, 比 slots 还快)
+
+性能极限?
+  → numpy arrays / ctypes structs / array.array
+</code></pre>
+
+<hr/>
+
+<h3>📊 对比总结 / Comparison</h3>
+
+<p>| 方式 | 内存/实例 | 属性访问速度 | 动态属性 | 推荐场景 |</p>
+<p>|---|---|---|---|---|</p>
+<p>| 普通类 | ~280B | 中 | ✅ | 通用 |</p>
+<p>| <code>__slots__</code> | ~56B | 快 | ❌ | 大量小对象 |</p>
+<p>| <code>dataclass(slots=True)</code> | ~56B | 快 | ❌ | 数据容器 |</p>
+<p>| <code>NamedTuple</code> | ~72B | 最快 | ❌ | 不可变数据 |</p>
+<p>| <code>numpy</code> array | 8B/元素 | 极快 | ❌ | 数值计算 |</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>Python 对象就像酒店房间：普通类是套房，有个大衣柜（<code>__dict__</code>），可以放任何东西，但很贵。<code>__slots__</code> 是标准间，只有固定数量的抽屉，住1000人省很多钱。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://docs.python.org/3/reference/datamodel.html#slots</p>
+<p>- https://realpython.com/python-slots/</p>
+<p>- https://rushter.com/blog/python-memory-and-ref-counting/</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>🤖 AI — Day 156 (News Mode)</h2>
+<h2>AI 新闻速递 / AI News Roundup — November 24, 2026</h2>
+
+<p>&gt; 来源 Sources: llmgateway.io/timeline, aiweekly.co, beyondcode.in, futurecio.tech</p>
+
+<hr/>
+
+<h3>📰 本周三大趋势 / Three Big Trends This Week</h3>
+
+<hr/>
+
+<p><strong>1. 模型军备竞赛白热化 / The Model Race Heats Up</strong></p>
+
+<p>11月是近年来新模型发布最密集的一个月。据 llmgateway.io/timeline 统计，本月已有超过19个新模型来自11家不同厂商发布：</p>
+
+<p>- <strong>Google</strong> 推出 Gemini 4 Neon（11月18日），据报道在多项 benchmark 上领先竞争对手</p>
+<p>- <strong>OpenAI</strong> 据报道发布 GPT-6.2 Astra 和 GPT-6.2 Sol（11月17日）</p>
+<p>- <strong>Anthropic</strong> 推出 Claude Fable 5.2（11月9日），据报道迅速登顶 Artificial Analysis Intelligence Index v5</p>
+<p>- <strong>国内</strong> 据报道 Moonshot AI 的 Kimi K3.1 Pro Prime（11月20日）和阿里 Qwen4 Max（11月16日）同期发布</p>
+
+<p><strong>工程师视角</strong>：模型更新越来越快，API 切换成本是个真实问题。用 LiteLLM 或 LangChain 做抽象层比直接调 SDK 更可维护。</p>
+
+<p>Source: https://llmgateway.io/timeline/2026</p>
+
+<hr/>
+
+<p><strong>2. AI Agent 进入实战阶段 / AI Agents Move to Production</strong></p>
+
+<p>据 beyondcode.in 报道，本月 agent 能力是各家重点：</p>
+
+<p>- <strong>OpenAI</strong> Agents API 据报道新增 computer use 能力（让 agent 操作 GUI）</p>
+<p>- <strong>Anthropic</strong> 据报道推出 Claude Ship beta —— 专为 code review 和 PR 管理设计的 agent</p>
+<p>- <strong>xAI</strong> 据报道给 Grok Bot 加入 live intervention controls，用户可以在 agent 执行过程中叫停</p>
+
+<p>这标志着 LLM 应用从&quot;问答&quot;向&quot;行动&quot;的真正转变。</p>
+
+<p>Source: https://beyondcode.in/blog/ai-model-landscape-november-2026/</p>
+
+<hr/>
+
+<p><strong>3. 模型互操作成新常态 / Model Interoperability Is the New Normal</strong></p>
+
+<p>据 futurecio.tech 报道，各大平台开始混搭彼此的模型：</p>
+
+<p>- Google 企业 agent 可以同时调用 Claude 和 Gemini</p>
+<p>- Apple 允许开发者通过其框架访问 Claude 和 Gemini</p>
+<p>- Microsoft Copilot 扩展模型选择</p>
+
+<p><strong>这对后端工程师意味着什么</strong>：你写的 AI 功能可能需要支持多个 provider。把 model 调用抽象成 interface，不要硬编码 OpenAI SDK。</p>
+
+<p>Source: https://futurecio.tech/tencent-unveils-latest-generation-large-language-model/</p>
+
+<hr/>
+
+<h3>💡 本周洞察 / Weekly Insight</h3>
+
+<p>&gt; &quot;The race is no longer about raw capability — it&#x27;s about who can deploy capable agents safely at scale.&quot;</p>
+<p>&gt; 竞争已经不是谁的模型更聪明，而是谁能<strong>安全、大规模地部署 agent</strong>。</p>
+
+<hr/>
+
+<h3>🧒 ELI5</h3>
+
+<p>AI 公司就像智能手机厂商：每个月都出新型号，大家都说自己最快。但真正的战场已经变了——不是&quot;更聪明的模型&quot;，而是&quot;能帮你真正干活的 agent&quot;。</p>
+
+<hr/>
+
+<h3>📚 References</h3>
+<p>- https://llmgateway.io/timeline/2026</p>
+<p>- https://aiweekly.co/ai-news-today/edition/2026-11-24</p>
+<p>- https://beyondcode.in/blog/ai-model-landscape-november-2026/</p>
+<p>- https://futurecio.tech/tencent-unveils-latest-generation-large-language-model/</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-23</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
