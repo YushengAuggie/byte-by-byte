@@ -5,8 +5,895 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Tue, 24 Nov 2026 16:12:36 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 25 Nov 2026 16:24:32 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-25</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-25</guid>
+      <pubDate>Wed, 25 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>🏗️ System Design</h1>
+<h2>Day 157 — System Design Expert Synthesis</h2>
+<h2>高并发系统的五大核心设计张力</h2>
+<h3>Five Core Design Tensions in High-Scale Systems</h3>
+
+<hr/>
+
+<p>🏗️ <strong>系统设计专题综合 / System Design — Expert Synthesis</strong></p>
+
+<p><em>经过 60 个系统设计专题，今天综合回顾贯穿始终的 5 大核心权衡。</em></p>
+<p><em>After 60 system design topics, today we synthesize the 5 fundamental tensions that run through all of them.</em></p>
+
+<hr/>
+
+<h2>想象你在设计一个面试白板系统...</h2>
+
+<p>每次面试官说&quot;请设计 X&quot;，他真正在考察的不是你记住了多少组件——而是你如何<strong>在约束中做选择</strong>。这 5 大张力贯穿了所有你学过的话题。</p>
+
+<p><em>Every time an interviewer says &quot;design X,&quot; they&#x27;re really testing whether you can make reasoned choices under constraints. These 5 tensions run through every system we&#x27;ve studied.</em></p>
+
+<hr/>
+
+<h2>⚡ 张力 1：一致性 vs 可用性</h2>
+<p><strong>Consistency vs. Availability (CAP Theorem)</strong></p>
+
+<pre><code>
+强一致性 ←————————————→ 最终一致性
+  Zookeeper/etcd         DynamoDB/Cassandra
+  分布式锁               DNS缓存
+  金融账本               购物车
+</code></pre>
+
+<p><strong>覆盖话题链：</strong> CAP定理 → 数据库复制 → 一致性哈希 → 分布式锁 → Raft/Paxos</p>
+
+<p><strong>核心决策框架 / Decision framework:</strong></p>
+<p>- 钱/库存/权限 → CP（宁可不可用，不要数据错）</p>
+<p>- 社交点赞/浏览量/推荐 → AP（短暂不一致无所谓）</p>
+<p>- 用户 session/购物车 → 最终一致性 + 客户端合并</p>
+
+<p><strong>别踩这个坑：</strong> 在面试中不要说&quot;我用 Redis 保证一致性&quot;——Redis 默认是异步复制，主挂了会丢数据。用 Redis Sentinel/Cluster 时要明确说明你接受了什么一致性级别。</p>
+
+<hr/>
+
+<h2>⏱️ 张力 2：吞吐量 vs 延迟</h2>
+<p><strong>Throughput vs. Latency</strong></p>
+
+<pre><code>
+高吞吐量策略：批处理、异步队列、流式写入
+低延迟策略：同步调用、内存缓存、连接池
+
+              批处理/队列
+高吞吐 ───────────────────── 高延迟
+低吞吐 ─────────────────────  低延迟
+              同步直连
+</code></pre>
+
+<p><strong>覆盖话题链：</strong> 消息队列 → 限流 → 负载均衡 → 分布式任务队列 → 实时游戏后端</p>
+
+<p><strong>核心公式（Little&#x27;s Law）:</strong></p>
+<p>&gt; L = λ × W</p>
+<p>&gt; 系统中请求数 = 到达率 × 平均延迟</p>
+
+<p>提高吞吐量 → 要么减少 W（优化每个请求延迟），要么接受更多 L（扩容）</p>
+
+<p><strong>实战场景对比：</strong></p>
+<p>- Kafka consumer: 批量 commit offset → 高吞吐，但崩溃可能重复处理</p>
+<p>- 实时游戏帧同步: 20ms 内必须响应 → 牺牲吞吐，换取低延迟</p>
+
+<hr/>
+
+<h2>💾 张力 3：存储 vs 计算</h2>
+<p><strong>Storage vs. Computation (Precompute Trade-off)</strong></p>
+
+<pre><code>
+纯计算：每次请求实时算
+  ↓ 慢但省空间
+预计算：提前算好存起来
+  ↓ 快但占空间
+
+例：推荐系统
+  实时: 每次请求跑协同过滤 → 500ms
+  预计算: 离线跑推荐结果存 Redis → 5ms
+</code></pre>
+
+<p><strong>覆盖话题链：</strong> 缓存策略 → CDN → 推荐系统 → Autocomplete/Typeahead → 搜索引擎</p>
+
+<p><strong>决策矩阵：</strong></p>
+<p>| 场景 | 选择 |</p>
+<p>|------|------|</p>
+<p>| 结果变化频率低（&lt;1天） | 预计算 |</p>
+<p>| 结果高度个性化 | 混合（粗粒度预计算 + 细粒度实时） |</p>
+<p>| 数据量极大无法全存 | 分层缓存（热/温/冷） |</p>
+
+<hr/>
+
+<h2>🔄 张力 4：实时性 vs 成本</h2>
+<p><strong>Real-time vs. Cost</strong></p>
+
+<pre><code>
+Twitch直播: 必须实时 → WebRTC/WebSocket → 高成本
+YouTube点播: 允许延迟 → CDN分发 → 低成本
+
+实时 ←—[WebSocket]—[Long Poll]—[SSE]—[Polling]—→ 批处理
+      贵                                               便宜
+</code></pre>
+
+<p><strong>覆盖话题链：</strong> 聊天系统 → 直播系统 → 通知系统 → 协同编辑 → 股票交易所</p>
+
+<p><strong>关键决策：</strong> 用户能接受多少延迟？</p>
+<p>- 聊天消息：&lt;500ms 感知上是实时的</p>
+<p>- 股票价格：&lt;100ms，需要专用 TCP 连接</p>
+<p>- 邮件通知：几分钟可接受，用 Kafka + 批处理</p>
+
+<p><strong>成本优化实战：</strong></p>
+<p>1. 分层推送：活跃用户 WebSocket，不活跃用户轮询</p>
+<p>2. 消息聚合：1 秒内多条通知 → 合并为一条推送</p>
+<p>3. 降级策略：WebSocket 断开 → SSE → Long Poll → 短轮询</p>
+
+<hr/>
+
+<h2>🏗️ 张力 5：灵活性 vs 性能</h2>
+<p><strong>Flexibility vs. Performance (Architecture Trade-off)</strong></p>
+
+<pre><code>
+单体 Monolith        微服务 Microservices      平台工程
+  · 简单                · 独立部署                · Service Mesh
+  · 快速迭代             · 技术多样性               · API Gateway
+  · 难以扩展             · 网络开销+复杂度           · GitOps/IDP
+</code></pre>
+
+<p><strong>覆盖话题链：</strong> 微服务 vs 单体 → API 网关 → 服务网格 → 分布式追踪 → Feature Flag</p>
+
+<p><strong>2026 年最佳实践 — 模块化单体（Modular Monolith）：</strong></p>
+<p>&gt; 在单一进程中按领域边界严格分模块，需要时再拆服务。</p>
+<p>&gt; &quot;Start monolith, extract services when you feel pain.&quot;</p>
+
+<p><strong>什么时候才应该拆微服务？</strong></p>
+<p>- ✅ 不同组件有完全不同的扩展需求</p>
+<p>- ✅ 团队规模 &gt; 50 人，康威定律开始生效</p>
+<p>- ✅ 有成熟的 DevOps/CD pipeline</p>
+<p>- ❌ 团队 &lt; 10 人 → 单体先走</p>
+<p>- ❌ 还没清楚领域边界 → 拆了只会更乱</p>
+
+<hr/>
+
+<h2>📐 综合架构原则 / Master Principle</h2>
+
+<p>&gt; <strong>没有最好的架构，只有最合适当前约束的架构。</strong></p>
+<p>&gt; <em>There is no best architecture, only the most appropriate one given current constraints.</em></p>
+
+<p>在面试中，每次做决策都说出你在哪个张力上做了权衡：</p>
+<p>- &quot;这里我选择可用性 over 一致性，因为...&quot;</p>
+<p>- &quot;我们预计算这个结果，接受空间换时间，因为...&quot;</p>
+<p>- &quot;我用消息队列解耦，吞吐量提升，但增加了延迟...&quot;</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Designing Data-Intensive Applications — Martin Kleppmann](https://dataintensive.net/)</p>
+<p>- [The System Design Primer](https://github.com/donnemartin/system-design-primer)</p>
+<p>- [AWS Architecture Center — Tradeoffs](https://aws.amazon.com/architecture/)</p>
+<p>- [Google SRE Book — Chapter 3: Embracing Risk](https://sre.google/sre-book/embracing-risk/)</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象你在管一个超市：</p>
+<p>- 一致性 vs 可用性 = 货架缺货时，你是关门等补货（一致性）还是继续卖但数量可能不准（可用性）？</p>
+<p>- 吞吐量 vs 延迟 = 一次送一件 vs 等满一车再送？</p>
+<p>- 存储 vs 计算 = 每次问妈妈 2+2 等多少，还是背下来？</p>
+<p>- 实时性 vs 成本 = 专车接送 vs 公交？</p>
+<p>- 灵活 vs 性能 = 瑞士军刀 vs 专业厨刀？</p>
+
+<p>每个选择都有代价。好的系统设计师就是知道<strong>在哪里值得付这个代价</strong>。</p>
+
+<hr/>
+<h1>💻 Algorithms</h1>
+<h2>Day 157 — Algorithms: Regular Expression Matching</h2>
+<h2>LeetCode #10 · Hard · 2-D Dynamic Programming (11/11)</h2>
+
+<hr/>
+
+<p>💻 <strong>算法 / Algorithms</strong> — #10 Regular Expression Matching 🔴 Hard</p>
+
+<p>🧩 <strong>二维动态规划模式 (11/11)</strong> — 收官之作，本模式最难题</p>
+
+<p>[🔗 LeetCode #10](https://leetcode.com/problems/regular-expression-matching/) | [📹 NeetCode](https://neetcode.io/problems/regular-expression-matching)</p>
+
+<hr/>
+
+<h2>回顾本模式 / Pattern Recap (11 problems done!)</h2>
+
+<p>从 Day 1 的 Unique Paths 到今天的 Regex Matching，你已完成整个 2D DP 模式：</p>
+
+<pre><code>
+#62  Unique Paths         → 基础网格路径
+#1143 LCS               → 字符串对齐
+#309 Stock Cooldown      → 状态机DP
+#518 Coin Change II      → 背包DP
+#494 Target Sum         → 计数DP
+#97  Interleaving String → 三字符串对齐
+#72  Edit Distance       → 增删改操作
+#329 Longest Inc. Path   → 记忆化DFS（矩阵）
+#115 Distinct Subseq    → 子序列计数
+#312 Burst Balloons     → 区间DP反向思维
+#10  Regex Matching     → 状态机+通配符 ← 今天
+</code></pre>
+
+<hr/>
+
+<h2>真实世界类比 / Real-World Analogy</h2>
+
+<p>想象你在写一个<strong>简化版 grep</strong>：</p>
+<p>- <code>.</code> 匹配任意单个字符（像通配符&quot;？&quot;）</p>
+<p>- <code>*</code> 表示前面那个字符可以出现 0 次或多次</p>
+
+<p>问：<code>s = &quot;aab&quot;</code>, <code>p = &quot;c<em>a</em>b&quot;</code> 能匹配吗？</p>
+<p>答：能！<code>c<em></code> 匹配 0 个 c，<code>a</em></code> 匹配 2 个 a，<code>b</code> 匹配 b ✅</p>
+
+<hr/>
+
+<h2>映射到模板 / Mapping to Template</h2>
+
+<pre><code>
+# 通用模板
+dp = [[False] * (m+1) for _ in range(n+1)]
+# 今天变形：字符串 s(长度n) vs 模式 p(长度m)
+# dp[i][j] = s[:i] 能否被 p[:j] 匹配
+</code></pre>
+
+<p><strong>状态定义：</strong> <code>dp[i][j]</code> = <code>s[:i]</code> 是否匹配 <code>p[:j]</code></p>
+
+<p><strong>转移方程（三种情况）：</strong></p>
+<pre><code>
+Case 1: p[j-1] == s[i-1] 或 p[j-1] == &#x27;.&#x27;
+  → dp[i][j] = dp[i-1][j-1]  （两边都消耗一个字符）
+
+Case 2: p[j-1] == &#x27;*&#x27;
+  → 子情况 2a: 用 0 次前缀字符
+      dp[i][j] = dp[i][j-2]   （跳过 x* 这个pattern）
+  → 子情况 2b: 用 1+ 次（前缀字符能匹配s[i-1]）
+      dp[i][j] = dp[i-1][j]   （消耗一个s字符，pattern不动）
+      条件：p[j-2] == s[i-1] 或 p[j-2] == &#x27;.&#x27;
+
+Case 3: 其他
+  → dp[i][j] = False
+</code></pre>
+
+<hr/>
+
+<h2>完整解法 + 追踪 / Full Solution with Trace</h2>
+
+<pre><code>
+def isMatch(s: str, p: str) -&gt; bool:
+    n, m = len(s), len(p)
+    
+    # dp[i][j]: s[:i] matches p[:j]
+    dp = [[False] * (m + 1) for _ in range(n + 1)]
+    
+    # Base case: empty s matches empty p
+    dp[0][0] = True
+    
+    # Base case: empty s can match patterns like a*, a*b*, a*b*c*
+    # e.g., dp[0][2] = True if p[1] == &#x27;*&#x27; (zero occurrences of p[0])
+    for j in range(2, m + 1):
+        if p[j - 1] == &#x27;*&#x27;:
+            dp[0][j] = dp[0][j - 2]
+    
+    # Fill the table
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            if p[j - 1] == &#x27;*&#x27;:
+                # Zero occurrences of p[j-2]
+                dp[i][j] = dp[i][j - 2]
+                # One or more occurrences (if previous char matches)
+                if p[j - 2] == s[i - 1] or p[j - 2] == &#x27;.&#x27;:
+                    dp[i][j] = dp[i][j] or dp[i - 1][j]
+            elif p[j - 1] == &#x27;.&#x27; or p[j - 1] == s[i - 1]:
+                # Direct match or wildcard
+                dp[i][j] = dp[i - 1][j - 1]
+            # else: dp[i][j] remains False
+    
+    return dp[n][m]
+</code></pre>
+
+<p><strong>手动追踪 s=&quot;aab&quot;, p=&quot;c<em>a</em>b&quot;:</strong></p>
+<pre><code>
+    &quot;&quot;  c   *   a   *   b
+&quot;&quot;  T   F   T   F   T   F
+a   F   F   F   T   T   F
+a   F   F   F   F   T   F
+b   F   F   F   F   F   T  ← 答案！
+</code></pre>
+
+<p><strong>追踪关键步：</strong></p>
+<p>- <code>dp[0][2]</code>: p=&quot;c*&quot; → <code>dp[0][0]</code> = True ✅ (0个c)</p>
+<p>- <code>dp[0][4]</code>: p=&quot;c<em>a</em>&quot; → <code>dp[0][2]</code> = True ✅ (0个a)</p>
+<p>- <code>dp[1][4]</code>: s=&quot;a&quot;, p=&quot;c<em>a</em>&quot; → p[3]=&#x27;*&#x27;, p[2]=&#x27;a&#x27;==s[0]=&#x27;a&#x27; → <code>dp[0][4]</code> = True ✅</p>
+<p>- <code>dp[3][5]</code>: s=&quot;aab&quot;, p=&quot;c<em>a</em>b&quot; → p[4]=&#x27;b&#x27;==s[2]=&#x27;b&#x27; → <code>dp[2][4]</code> = True ✅</p>
+
+<hr/>
+
+<h2>复杂度 / Complexity</h2>
+<p>- <strong>时间</strong>: O(n × m) — 填 n×m 的表格</p>
+<p>- <strong>空间</strong>: O(n × m) — 可优化到 O(m)（只需保留上一行）</p>
+
+<hr/>
+
+<h2>举一反三 / Compare Within Pattern Block</h2>
+
+<p>这道题综合了本 block 中多道题的思路：</p>
+
+<p>| 技巧 | 来源题目 | 本题应用 |</p>
+<p>|------|----------|----------|</p>
+<p>| 空字符串 base case | #72 Edit Distance | dp[0][j] 初始化处理 <code>x*</code> |</p>
+<p>| 状态机转移 | #309 Cooldown | <code>*</code> 分两种子状态 |</p>
+<p>| 计数/布尔DP | #1143 LCS | 同样的 dp[i-1][j-1] 对角线转移 |</p>
+<p>| 跳过选项 | #518 Coin Change II | <code>dp[i][j-2]</code>（0次使用）|</p>
+
+<p><strong>🎯 2D DP 模式终极口诀：</strong></p>
+<p>&gt; &quot;画表格，定含义，看依赖，找转移，别忘边界&quot;</p>
+<p>&gt; Draw table → Define meaning → Check dependencies → Find transition → Don&#x27;t forget base cases</p>
+
+<hr/>
+
+<h2>📝 Quiz</h2>
+<pre><code>
+{&quot;question&quot;:&quot;s=&#x27;aa&#x27;, p=&#x27;a*&#x27;. What does dp[2][2] depend on?&quot;,&quot;options&quot;:[&quot;dp[1][2] only&quot;,&quot;dp[2][0] only&quot;,&quot;Both dp[2][0] and dp[1][2]&quot;,&quot;dp[1][1] only&quot;],&quot;correct_index&quot;:2}
+</code></pre>
+
+<p>答案解析：<code>p[1]=&#x27;*&#x27;</code>，所以 <code>dp[2][2] = dp[2][0]</code>（0次使用）OR（<code>p[0]=&#x27;a&#x27;==s[1]=&#x27;a&#x27;</code>）<code>dp[1][2]</code>（继续匹配）</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [LeetCode #10 Official Solution](https://leetcode.com/problems/regular-expression-matching/editorial/)</p>
+<p>- [NeetCode Video Explanation](https://www.youtube.com/watch?v=HAA8mgxlov8)</p>
+<p>- [Regex matching state machine — CS Theory](https://en.wikipedia.org/wiki/Regular_expression#Formal_language_theory)</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象你在玩一个&quot;猜猜我是谁&quot;的游戏。模式是你的线索卡，字符串是答案。<code>.</code> 是个魔法卡，可以匹配任何字母。<code>a*</code> 是个&quot;我可以带 0 到无数个 a 朋友&quot;的卡。DP 表格就像在纸上记录每一步&quot;这个线索和这个答案能配上吗&quot;，一格一格填出来，最终右下角告诉你答案。</p>
+
+<hr/>
+<h1>🗣️ Soft Skills</h1>
+<h2>Day 157 — Soft Skills Expert Synthesis</h2>
+<h2>高级别工程师的&quot;元技能&quot;综合</h2>
+<h3>Meta-Skills for Senior/Staff Engineers</h3>
+
+<hr/>
+
+<p>🗣️ <strong>软技能综合 / Soft Skills — Expert Synthesis</strong></p>
+
+<p><em>经过 60 道行为面试题，今天综合最难被量化但最能区分 Senior vs Staff 的能力。</em></p>
+<p><em>After 60 behavioral questions, today we synthesize the hardest-to-quantify skills that separate Senior from Staff.</em></p>
+
+<hr/>
+
+<h2>场景 / Scenario</h2>
+
+<p>你作为 Staff 工程师，被问到这个合成题：</p>
+
+<p>&gt; <strong>&quot;Tell me about how you&#x27;ve developed your engineering judgment over time — specifically, how do you decide WHEN to act vs. WHEN to wait?&quot;</strong></p>
+<p>&gt;</p>
+<p>&gt; <strong>&quot;谈谈你如何随着时间发展出工程判断力——具体来说，你如何决定什么时候行动、什么时候等待？&quot;</strong></p>
+
+<p>这道题考察的是<strong>元认知</strong>——思考你如何思考。Senior 以下的工程师几乎无法回答这道题。</p>
+
+<hr/>
+
+<h2>STAR 拆解 / STAR Framework</h2>
+
+<h3>❌ Junior/Mid 的回答（失分）</h3>
+<p>&gt; &quot;我一般会先和团队讨论，然后根据大家的意见做决定...&quot;</p>
+
+<p>问题：这是<strong>流程描述</strong>，不是<strong>判断力展示</strong>。没有展示你的思维模型。</p>
+
+<h3>✅ Senior/Staff 的回答（得分）</h3>
+
+<p><strong>Situation（背景）：</strong></p>
+<p>&gt; &quot;在我职业生涯的不同阶段，我见过两种失败：行动太快和等待太久。有一次我们在架构不稳定时就扩团队，导致 3 个月后要推倒重来；另一次我等了太久才叫停一个明显走偏的项目，损失了 2 个月人力。&quot;</p>
+
+<p><strong>Task（任务）：</strong></p>
+<p>&gt; &quot;我需要建立一个可重复的决策框架，区分&#x27;现在必须决定&#x27;和&#x27;信息不足等等更好&#x27;。&quot;</p>
+
+<p><strong>Action（行动）：</strong></p>
+<p>&gt; &quot;我用了&#x27;可逆性 × 时间成本&#x27;矩阵：</p>
+<p>&gt; - 高可逆 + 决策成本低 → 现在就做，错了再改</p>
+<p>&gt; - 低可逆 + 信息还在增加 → 等，设定明确的信息收集截止点</p>
+<p>&gt; - 低可逆 + 信息已充分 → 必须决定，不能拖</p>
+<p>&gt;</p>
+<p>&gt; 我还学会了区分&#x27;数据驱动决策&#x27;和&#x27;方向性赌注&#x27;——前者等数据，后者基于判断力押注。&quot;</p>
+
+<p><strong>Result（结果）：</strong></p>
+<p>&gt; &quot;这套框架帮助我的团队在过去 18 个月里减少了约 30% 的&#x27;决策反转&#x27;，同时也让我更清楚地向 PM 和 leadership 解释为什么我们在等，等什么。&quot;</p>
+
+<hr/>
+
+<h2>决策框架 / The Senior Engineer Decision Matrix</h2>
+
+<pre><code>
+                低可逆性
+                    │
+    等待获取信息 ←──┤──→ 必须快速决定（截止点明确）
+                    │
+高信息不确定性 ──────┼────── 低信息不确定性
+                    │
+    快速行动验证 ←──┤──→ 行动（有充分依据）
+                    │
+                高可逆性
+</code></pre>
+
+<p><strong>关键认知：</strong> 大多数工程决策在&quot;高可逆、低不确定性&quot;象限——你根本不需要想太多，直接做。真正需要判断力的是另外三个象限。</p>
+
+<hr/>
+
+<h2>Senior vs Staff 的核心差异 / Senior vs Staff Gap</h2>
+
+<p>| 维度 | Senior | Staff |</p>
+<p>|------|--------|-------|</p>
+<p>| 判断范围 | 自己的项目 | 跨团队影响 |</p>
+<p>| 等待 vs 行动 | 本能反应 | 有意识的元认知 |</p>
+<p>| 传授判断力 | 偶尔 | 系统性培养他人 |</p>
+<p>| 失败归因 | &quot;我做了 A，失败了&quot; | &quot;判断框架 X 在条件 Y 下失效&quot; |</p>
+<p>| 对模糊的反应 | 要求清晰度 | 在模糊中前进，同时降低风险 |</p>
+
+<hr/>
+
+<h2>关键要点 / Key Takeaways</h2>
+
+<p>1. <strong>判断力是可以讲清楚的</strong> — 如果你只能说&quot;我凭直觉知道&quot;，你还没到 Staff 水平</p>
+<p>2. <strong>行动偏见 ≠ 鲁莽</strong> — 知道何时&quot;宁可错也要动&quot;是技能</p>
+<p>3. <strong>等待也是决策</strong> — &quot;我们决定等 2 周再决定&quot;本身就是一个需要理由的决定</p>
+<p>4. <strong>给判断力建立口碑</strong> — 当你的判断被证明准确时，要明确总结原因，让团队看到你的思维过程</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [Staff Engineer — Will Larson](https://staffeng.com/book)</p>
+<p>- [The Art of Action — Stephen Bungay](https://www.amazon.com/Art-Action-Leaders-Between-Plans/dp/1857885597)</p>
+<p>- [Thinking in Bets — Annie Duke](https://www.annieduke.com/books/)</p>
+<p>- [Amazon Leadership Principles — Bias for Action](https://www.amazon.jobs/content/en/our-workplace/leadership-principles)</p>
+
+<h2>🧒 ELI5</h2>
+<p>工程判断力就像学开车：初学者看红绿灯（规则）；有经验的驾驶员会读路况、预判其他车、决定什么时候可以&quot;在规则边缘&quot;加速通过。最好的工程师不只是遵守规则，他们能解释为什么某个情况下打破&quot;最佳实践&quot;反而是对的——而且事后被证明确实是对的。</p>
+
+<hr/>
+<h1>🐍 Python Craft</h1>
+<h2>Day 157 — Python Craft Expert Synthesis</h2>
+<h2>Python 内存模型深挖：对象、引用与 CPython 内部</h2>
+<h3>Python Memory Model Deep Dive: Objects, References &amp; CPython Internals</h3>
+
+<hr/>
+
+<p>🐍 <strong>Python Craft 综合 / Python Craft — Expert Synthesis</strong></p>
+
+<p><em>50 个 Python 话题走完，今天穿透表面，直击 CPython 内存模型——理解这个，你才真正懂 Python 为什么这样工作。</em></p>
+
+<hr/>
+
+<h2>想象你在调试一个神秘的内存泄漏...</h2>
+
+<pre><code>
+import gc
+
+class Node:
+    def __init__(self, val):
+        self.val = val
+        self.next = None
+
+# 创建循环引用
+a = Node(1)
+b = Node(2)
+a.next = b
+b.next = a  # 循环！
+
+del a
+del b
+# 问题：内存释放了吗？
+print(gc.collect())  # 输出什么？为什么？
+</code></pre>
+
+<p>答案：<code>gc.collect()</code> 会返回 2（收集到了 2 个对象）——因为 CPython 的引用计数无法处理循环引用，需要靠<strong>循环垃圾收集器</strong>。</p>
+
+<hr/>
+
+<h2>核心概念 1：一切皆对象，引用计数是第一道防线</h2>
+
+<pre><code>
+import sys
+
+x = [1, 2, 3]
+print(sys.getrefcount(x))  # 2（x + getrefcount参数）
+
+y = x
+print(sys.getrefcount(x))  # 3
+
+del y
+print(sys.getrefcount(x))  # 2（回到2）
+</code></pre>
+
+<p><strong>CPython 对象头（C struct 视角）：</strong></p>
+<pre><code>
+typedef struct _object {
+    Py_ssize_t ob_refcnt;    // 引用计数
+    PyTypeObject *ob_type;   // 类型指针
+} PyObject;
+</code></pre>
+
+<p>每次赋值 <code>y = x</code> → <code>ob_refcnt++</code></p>
+<p>每次 <code>del y</code> 或超出作用域 → <code>ob_refcnt--</code></p>
+<p>当 <code>ob_refcnt == 0</code> → 立即释放内存</p>
+
+<hr/>
+
+<h2>核心概念 2：小整数缓存（让你的面试官眼前一亮）</h2>
+
+<pre><code>
+a = 256
+b = 256
+print(a is b)  # True — 同一对象！
+
+a = 257
+b = 257
+print(a is b)  # False — 不同对象！（通常情况下）
+
+# 为什么？CPython 预分配 -5 到 256 的整数对象
+# 节省频繁创建小整数的开销
+</code></pre>
+
+<p><strong>字符串驻留（String Interning）：</strong></p>
+<pre><code>
+s1 = &quot;hello&quot;
+s2 = &quot;hello&quot;
+print(s1 is s2)  # True — 驻留！
+
+s1 = &quot;hello world&quot;
+s2 = &quot;hello world&quot;  
+print(s1 is s2)  # 可能 False — 含空格的字符串不自动驻留
+
+# 显式驻留
+import sys
+s1 = sys.intern(&quot;hello world&quot;)
+s2 = sys.intern(&quot;hello world&quot;)
+print(s1 is s2)  # True
+</code></pre>
+
+<hr/>
+
+<h2>核心概念 3：分代垃圾收集器</h2>
+
+<pre><code>
+Generation 0（新生代） → Generation 1 → Generation 2（老生代）
+
+新创建对象进 Gen 0
+Gen 0 满了触发 GC → 存活者晋升到 Gen 1
+Gen 1 满了触发 GC → 存活者晋升到 Gen 2
+Gen 2 是完整 GC（最慢，最少触发）
+</code></pre>
+
+<pre><code>
+import gc
+
+# 查看各代阈值
+print(gc.get_threshold())   # (700, 10, 10) 默认值
+# Gen0: 700次分配触发；Gen1: Gen0收集10次触发；Gen2同理
+
+# 查看各代当前对象数
+print(gc.get_count())       # (当前gen0, gen1, gen2)
+
+# 手动触发（生产代码里几乎不需要）
+collected = gc.collect(0)   # 只收集gen0
+collected = gc.collect()    # 完整收集
+</code></pre>
+
+<p><strong>实战应用 — 处理大量临时对象时：</strong></p>
+<pre><code>
+import gc
+
+def process_large_dataset(items):
+    results = []
+    for i, item in enumerate(items):
+        result = expensive_transform(item)
+        results.append(result)
+        
+        # 每 10000 个触发一次 GC，防止内存峰值过高
+        if i % 10000 == 0:
+            gc.collect(0)  # 只收年轻代，开销小
+    
+    return results
+</code></pre>
+
+<hr/>
+
+<h2>核心概念 4：`__slots__` — 节省 40-50% 内存</h2>
+
+<pre><code>
+# 普通 class：每个实例有个 __dict__（哈希表）
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+# 百万个 Point 对象 → 大量 __dict__ 开销
+
+# __slots__：用固定内存布局替代 __dict__
+class PointSlotted:
+    __slots__ = (&#x27;x&#x27;, &#x27;y&#x27;)
+    
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+import sys
+p1 = Point(1, 2)
+p2 = PointSlotted(1, 2)
+print(sys.getsizeof(p1))  # ~56 bytes（不含 __dict__ 本身）
+print(sys.getsizeof(p2))  # ~48 bytes
+
+# __dict__ 额外占用约 232 bytes！
+print(sys.getsizeof(p1.__dict__))  # 232 bytes
+# p2 没有 __dict__
+</code></pre>
+
+<p><strong>什么时候用 <code>__slots__</code>：</strong></p>
+<p>- ✅ 创建大量（&gt;10万）的简单数据对象</p>
+<p>- ✅ 属性固定，不需要动态添加</p>
+<p>- ❌ 需要多重继承（会让 slots 变复杂）</p>
+<p>- ❌ 需要 <code>__dict__</code>（pickling、动态属性等）</p>
+
+<hr/>
+
+<h2>核心概念 5：弱引用 — 打破循环，不阻止 GC</h2>
+
+<pre><code>
+import weakref
+
+class Cache:
+    def __init__(self):
+        # 普通 dict：强引用，对象不会被 GC
+        # self._cache = {}
+        
+        # WeakValueDictionary：弱引用，对象没有其他引用时会被 GC
+        self._cache = weakref.WeakValueDictionary()
+    
+    def get(self, key, factory):
+        if key not in self._cache:
+            obj = factory()
+            self._cache[key] = obj
+        return self._cache[key]
+
+# 实践：监听器/回调注册，避免 observer 阻止 被观察对象 GC
+class EventEmitter:
+    def __init__(self):
+        self._listeners = weakref.WeakSet()
+    
+    def add_listener(self, listener):
+        self._listeners.add(listener)
+    
+    def emit(self, event):
+        # 已 GC 的 listener 自动从 WeakSet 消失
+        for listener in self._listeners:
+            listener.on_event(event)
+</code></pre>
+
+<hr/>
+
+<h2>🔧 实用诊断工具</h2>
+
+<pre><code>
+# 查找内存泄漏
+import tracemalloc
+
+tracemalloc.start()
+
+# ... 你的代码 ...
+
+snapshot = tracemalloc.take_snapshot()
+top_stats = snapshot.statistics(&#x27;lineno&#x27;)
+for stat in top_stats[:5]:
+    print(stat)
+# 输出：哪些行分配了最多内存
+
+# 查找循环引用
+import gc
+gc.set_debug(gc.DEBUG_LEAK)
+gc.collect()
+# 有循环引用会打印到 stderr
+</code></pre>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [CPython Source — Objects/object.c](https://github.com/python/cpython/blob/main/Objects/object.c)</p>
+<p>- [Python Memory Management — Real Python](https://realpython.com/python-memory-management/)</p>
+<p>- [Python <code>gc</code> module docs](https://docs.python.org/3/library/gc.html)</p>
+<p>- [Python <code>weakref</code> module docs](https://docs.python.org/3/library/weakref.html)</p>
+
+<h2>🧒 ELI5</h2>
+<p>Python 给每个对象贴一个小标签，记录有多少人&quot;指着&quot;它。没人指了就扔掉。但如果两个玩具互相拿着对方，计数永远不会到零——这时候 Python 会派一个&quot;特别清洁队&quot;（GC）去找这种互相拿着的东西，一起扔掉。<code>__slots__</code> 就像给每个玩具分配一个固定大小的抽屉，比每个玩具都有一个无限大的背包更省地方。</p>
+
+<hr/>
+<h1>🤖 AI</h1>
+<h2>Day 157 — AI: Concept Mode</h2>
+<h2>Test-Time Compute — 推理时算力的崛起</h2>
+<h3>Test-Time Compute: Why Thinking Longer Beats Training Longer</h3>
+
+<hr/>
+
+<p>🤖 <strong>AI — 测试时算力 / Test-Time Compute</strong></p>
+
+<p><em>注：今日网络搜索不可用，切换至 CONCEPT 模式。</em></p>
+<p><em>Note: Web search unavailable today; switching to CONCEPT mode.</em></p>
+
+<hr/>
+
+<h2>直觉解释 / Intuitive Explanation</h2>
+
+<p>过去 5 年，AI 进步的主要来源是：<strong>训练更久，用更多数据</strong>（Scaling Law）。</p>
+
+<p>但 2024-2025 年涌现出一个新范式：<strong>让模型在推理时&quot;想更长时间&quot;</strong>，而不是只依赖训练时学到的知识。</p>
+
+<p>&gt; 类比：给一个学生更多的考试时间，让他能检查答案、反复思考——而不只是增加他的备考时间。</p>
+
+<p>这就是 <strong>Test-Time Compute（TTC）</strong>，也叫推理时扩展（Inference-Time Scaling）。</p>
+
+<hr/>
+
+<h2>它是如何工作的？ / How It Works</h2>
+
+<h3>方法 1：Chain-of-Thought（思维链）</h3>
+<pre><code>
+普通推理：
+  问题 → 答案
+
+CoT 推理：
+  问题 → 步骤1 → 步骤2 → 步骤3 → ... → 答案
+
+模型&quot;思考&quot;的 token 越多，对复杂问题的准确率越高
+</code></pre>
+
+<h3>方法 2：Self-Consistency（自一致性）</h3>
+<pre><code>
+# 伪代码：采样多个推理路径，投票选最优答案
+answers = []
+for _ in range(N):  # 生成 N 个独立答案
+    answer = model.generate(problem, temperature=0.7)
+    answers.append(answer)
+
+final = majority_vote(answers)  # 多数投票
+</code></pre>
+
+<h3>方法 3：MCTS + LLM（蒙特卡洛树搜索）</h3>
+<pre><code>
+                   问题
+                  /    \
+           路径A        路径B
+          /    \       /    \
+        A1      A2   B1      B2
+        ✗       ✓    ✗       ✗
+
+模型探索多条推理路径，用奖励模型评估中间步骤
+最著名实现：OpenAI o1/o3, DeepSeek-R1
+</code></pre>
+
+<hr/>
+
+<h2>为什么这很重要 / Why This Matters</h2>
+
+<p><strong>训练时扩展的局限：</strong></p>
+<p>- 更多数据/参数 → 效果提升越来越难（收益递减）</p>
+<p>- 成本指数增长</p>
+<p>- 训练一次，能力固定</p>
+
+<p><strong>测试时扩展的优势：</strong></p>
+<p>- 对简单问题：少想（省算力）</p>
+<p>- 对复杂问题：多想（准确率高）</p>
+<p>- <strong>动态分配算力</strong>，而非固定</p>
+
+<pre><code>
+传统模型：
+  简单问题: ████ 相同计算
+  困难问题: ████ 相同计算
+
+TTC 模型：
+  简单问题: ██ 快速回答
+  困难问题: ████████████ 深度推理
+</code></pre>
+
+<hr/>
+
+<h2>实际效果对比 / Real-World Impact</h2>
+
+<p><strong>数学推理（竞赛级别）：</strong></p>
+<p>- GPT-4（标准）: AIME 数学竞赛约 ~10% 准确率</p>
+<p>- o1（大量思考 token）: 显著提升至竞赛水平</p>
+
+<p><strong>代码生成：</strong></p>
+<p>- 标准 LLM：直接输出代码</p>
+<p>- TTC 模型：生成 → 自我检查 → 发现 bug → 修复 → 输出</p>
+
+<hr/>
+
+<h2>可运行代码 / Runnable Example</h2>
+
+<pre><code>
+# pip install openai
+
+import openai
+
+client = openai.OpenAI()
+
+# 标准推理（快但不深）
+def standard_answer(question):
+    response = client.chat.completions.create(
+        model=&quot;gpt-4o-mini&quot;,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: question}],
+        max_tokens=200
+    )
+    return response.choices[0].message.content
+
+# 模拟 CoT — 增加推理步骤
+def cot_answer(question):
+    prompt = f&quot;{question}\n\nLet&#x27;s think step by step:&quot;
+    response = client.chat.completions.create(
+        model=&quot;gpt-4o&quot;,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}],
+        max_tokens=1000  # 允许更长的&quot;思考&quot;
+    )
+    return response.choices[0].message.content
+
+# 自一致性投票
+def self_consistent_answer(question, n=5):
+    from collections import Counter
+    
+    answers = []
+    for _ in range(n):
+        response = client.chat.completions.create(
+            model=&quot;gpt-4o-mini&quot;,
+            messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: question}],
+            temperature=0.7,  # 增加多样性
+            max_tokens=300
+        )
+        answers.append(response.choices[0].message.content)
+    
+    # 对于数学题，提取最终数字答案投票
+    # 这里简化为返回所有答案供人工对比
+    return answers
+
+if __name__ == &quot;__main__&quot;:
+    q = &quot;If a train travels 120 km in 1.5 hours, what is its average speed?&quot;
+    
+    print(&quot;Standard:&quot;, standard_answer(q))
+    print(&quot;\nCoT:&quot;, cot_answer(q))
+    print(&quot;\nSelf-consistent (5 samples):&quot;, self_consistent_answer(q, n=3))
+</code></pre>
+
+<hr/>
+
+<h2>局限性与权衡 / Limitations &amp; Trade-offs</h2>
+
+<p>| 优势 | 局限 |</p>
+<p>|------|------|</p>
+<p>| 复杂推理准确率高 | 延迟高（o1 类模型秒级 → 分钟级） |</p>
+<p>| 动态算力分配 | API 成本随&quot;思考 token&quot;线性增加 |</p>
+<p>| 无需重新训练 | 需要奖励模型引导（RLHF/RLAIF） |</p>
+<p>| 对数学/代码效果显著 | 对事实性问题提升有限 |</p>
+
+<p><strong>工程实践建议：</strong></p>
+<p>- 用户查询简单 → 标准模型（省成本）</p>
+<p>- 代码生成/调试 → TTC 模型（准确率优先）</p>
+<p>- 实时系统 → TTC 不合适（延迟太高）</p>
+
+<hr/>
+
+<h2>📚 References</h2>
+<p>- [OpenAI o1 Technical Report](https://openai.com/index/learning-to-reason-with-llms/)</p>
+<p>- [DeepSeek-R1 Paper](https://arxiv.org/abs/2501.12948)</p>
+<p>- [Scaling LLM Test-Time Compute — Google DeepMind](https://arxiv.org/abs/2408.03314)</p>
+<p>- [Self-Consistency Improves CoT — Wei et al.](https://arxiv.org/abs/2203.11171)</p>
+
+<h2>🧒 ELI5</h2>
+<p>想象你在做数学题。有些小朋友看到题马上就写答案（快但可能错）。有些小朋友会先打草稿、检查、算几遍再写（慢但对）。AI 以前都是&quot;马上写答案&quot;的那种。测试时算力就是让 AI 学会&quot;先打草稿&quot;——给它更多时间思考，答案就更准。就这么简单！</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-24</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
