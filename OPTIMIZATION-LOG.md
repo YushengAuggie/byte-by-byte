@@ -1267,3 +1267,18 @@ _Report-only run — no code changes made._
 - Post-recovery streak: 3/3 consecutive days OK since resume (Nov 20–22).
 - Cron errors: none (optimizer job status=ok, delivered=true).
 - State: currentDay=154, lastSentDate=2026-11-21, lastReviewDay=150; indices advancing normally.
+
+## 2026-11-25 Optimization Run
+
+### Issues Found
+- **P0:** None. Delivery fully healthy — 6-day clean streak (Nov 20–25). Optimizer cron job reports lastRunStatus=ok, lastDelivered=true. Only Nov 19 shows MISSED, which is the tail of the previously-reported Nov 11–19 outage, now fully recovered.
+- **P1 Quality:** None detected. State advancing normally (currentDay=157, lastSentDate=2026-11-25). Indices incrementing cleanly; review cadence on track (lastReviewDay=155, every-5-day reviews present through 155).
+- **P2 Maintenance:**
+  - `openclaw cron list --json` again failed in Step 0: the default Node alias is now v25.6.1, which is outside OpenClaw's supported ranges (>=25.9.0), so the CLI printed a version banner instead of JSON and the parser errored. Node env drift. Recommendation stands: prepend `source ~/.nvm/nvm.sh && nvm use 24` (or install 25.9.0) in Step 0; used the `cron` tool directly as fallback.
+  - Step-0 7-day check still keys off system Python 3.7 `date.today()` — works here but remains fragile vs. simulated dates. Prior recommendation stands: read max key from email-send-log.json.
+
+### Metrics
+- Delivery rate (7d, Nov 19–25): 6/7 (Nov 20–25 OK; Nov 19 missed = tail of prior outage).
+- Post-recovery streak: 6/6 consecutive days OK (Nov 20–25).
+- Cron errors: none (optimizer job status=ok, delivered=true).
+- State: currentDay=157, lastSentDate=2026-11-25, lastReviewDay=155; indices advancing normally.
