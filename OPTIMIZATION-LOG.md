@@ -1282,3 +1282,15 @@ _Report-only run — no code changes made._
 - Post-recovery streak: 6/6 consecutive days OK (Nov 20–25).
 - Cron errors: none (optimizer job status=ok, delivered=true).
 - State: currentDay=157, lastSentDate=2026-11-25, lastReviewDay=155; indices advancing normally.
+
+## 2026-11-28 Optimization Run
+
+### Issues Found
+- P0: None. Delivery healthy (7/7 last 7 days).
+- P1: None observed. State counters advancing normally (Day 160, review day 160 completed).
+- P2: `openclaw cron list --json` output no longer parses as JSON from the Step 0 script (JSONDecodeError on empty/non-JSON stdout). The cron tool API confirms the optimizer job status=ok, so this is a cosmetic harness issue, not a delivery problem. Consider updating the data-gather snippet to tolerate non-JSON CLI output.
+
+### Metrics
+- Delivery rate (7d): 7/7
+- Cron errors: none (optimizer lastRunStatus=ok, lastRunError=null)
+- Current day: 160, lastSentDate: 2026-11-28
