@@ -5,8 +5,351 @@
     <link>https://github.com/YushengAuggie/byte-by-byte</link>
     <description>Daily bilingual (Chinese/English) tech learning: system design, algorithms, soft skills, Python craft, and AI.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 27 Nov 2026 16:12:28 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 28 Nov 2026 16:30:49 +0000</lastBuildDate>
     <atom:link href="https://github.com/YushengAuggie/byte-by-byte/raw/main/docs/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>byte-by-byte — 2026-11-28</title>
+      <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
+      <guid isPermaLink="false">https://github.com/YushengAuggie/byte-by-byte/archive/2026-11-28</guid>
+      <pubDate>Sat, 28 Nov 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<h1>Deepdive</h1>
+<p>🔬 <strong>Saturday Deep Dive: Regular Expression Matching — LeetCode #10 (15 min read)</strong></p>
+<p>📊 NeetCode: 123/150 · SysDesign: 60/40 · Behavioral: 60/40 · Frontend: 37/50 · AI: 30/30</p>
+<p>🔥 5-day streak!</p>
+
+<hr/>
+
+<h2>Overview / 概述</h2>
+
+<p><strong>中文：</strong></p>
+<p>正则表达式匹配是一道经典的 Hard 级动态规划题，考频极高（Google、Meta、Amazon 都出过）。给定字符串 <code>s</code> 和模式 <code>p</code>，其中 <code>.</code> 匹配任意单字符，<code>*</code> 匹配前驱字符的零次或多次出现，判断 <code>p</code> 是否能完整匹配 <code>s</code>。</p>
+
+<p>难点在于 <code>*</code> 的&quot;零次&quot;语义——它可以让前驱字符彻底消失，导致状态空间爆炸。暴力递归会超时，必须用记忆化或 DP 才能在 O(m·n) 时间内解决。</p>
+
+<p><strong>English:</strong></p>
+<p>Regular Expression Matching is a canonical Hard DP problem. Given string <code>s</code> and pattern <code>p</code> where <code>.</code> matches any single character and <code><em></code> matches zero or more of the preceding element, determine if <code>p</code> matches <code>s</code> </em>entirely*.</p>
+
+<p>The tricky part is <code>*</code>&#x27;s &quot;zero occurrences&quot; case — the preceding character can vanish, creating branching state explosions in naive recursion. We need DP to reach O(m·n) time.</p>
+
+<p>🔗 LeetCode: https://leetcode.com/problems/regular-expression-matching/</p>
+<p>📹 NeetCode: https://www.youtube.com/watch?v=HAA8mgxlov8</p>
+
+<hr/>
+
+<h2>Part 1: Theory / 理论基础 (5 min)</h2>
+
+<p><strong>中文：核心思路</strong></p>
+
+<p>设 <code>dp[i][j]</code> 表示 <code>s[0..i-1]</code> 能否被 <code>p[0..j-1]</code> 匹配。</p>
+
+<p>三种情况递推：</p>
+
+<p><strong>情况 1：普通字符匹配</strong> (<code>p[j-1]</code> 是字母或 <code>.</code>)</p>
+<p>- <code>dp[i][j] = dp[i-1][j-1]</code> 当 <code>s[i-1] == p[j-1]</code> 或 <code>p[j-1] == &#x27;.&#x27;</code></p>
+
+<p><strong>情况 2：<code><em></code> 号</strong> (<code>p[j-1] == &#x27;</em>&#x27;</code>)</p>
+<p>- <code>*</code> 代表前驱字符 <code>p[j-2]</code> 匹配零次或多次</p>
+<p>- 零次：<code>dp[i][j] = dp[i][j-2]</code>（跳过 <code>p[j-2]*</code> 整个模式）</p>
+<p>- 一次及以上：<code>dp[i][j] = dp[i-1][j]</code> 当 <code>s[i-1] == p[j-2]</code> 或 <code>p[j-2] == &#x27;.&#x27;</code></p>
+<p>— 即「用 <code>p[j-2]*</code> 匹配 <code>s[i-1]</code>，然后 <code>s[0..i-2]</code> 还需被 <code>p[0..j-1]</code> 匹配」</p>
+
+<p><strong>情况 3：边界</strong></p>
+<p>- <code>dp[0][0] = True</code>（空字符串匹配空模式）</p>
+<p>- <code>dp[0][j]</code>：只有 <code>p[0..j-1]</code> 是 <code>a<em>b</em>c*...</code> 形式才为 True</p>
+
+<p><strong>English: Mental Model</strong></p>
+
+<p>Think of <code>dp[i][j]</code> as: <em>&quot;Can pattern p&#x27;s first j characters match string s&#x27;s first i characters?&quot;</em></p>
+
+<p>The key insight: <code>x<em></code> is a single </em>unit<em> in the pattern. When you encounter <code></em></code> at position j, you must look at the character TWO positions back (<code>p[j-2]</code>) — it&#x27;s the character that <code>*</code> quantifies.</p>
+
+<pre><code>
+State transition diagram:
+
+              p[j-1] is regular char/dot          p[j-1] is &#x27;*&#x27;
+              ┌─────────────────────────┐    ┌────────────────────────────┐
+              │  match? use dp[i-1][j-1]│    │ ZERO use:  dp[i][j-2]      │
+dp[i][j] ──► │  no match? dp[i][j]=F   │    │ ONE+: if s[i-1] ~ p[j-2]   │
+              └─────────────────────────┘    │   use: dp[i-1][j]          │
+                                             └────────────────────────────┘
+</code></pre>
+
+<hr/>
+
+<h2>Part 2: Step-by-Step Implementation / 一步一步实现 (8 min)</h2>
+
+<h3>Approach 1: Naive Recursion (会超时 — TLE)</h3>
+
+<p><strong>中文：</strong> 直觉解法，但对 <code>*</code> 做了指数级分叉，时间复杂度 O(2^(m+n))。</p>
+
+<pre><code>
+def isMatch_naive(s: str, p: str) -&gt; bool:
+    # Base case: empty pattern
+    if not p:
+        return not s
+    
+    # Does the first character match?
+    first_match = bool(s) and p[0] in {s[0], &#x27;.&#x27;}
+    
+    # Is the SECOND character a &#x27;*&#x27;?
+    if len(p) &gt;= 2 and p[1] == &#x27;*&#x27;:
+        # Option A: use &#x27;*&#x27; zero times (skip the &quot;x*&quot; unit entirely)
+        # Option B: use it once (consume s[0] and keep the same pattern)
+        return (isMatch_naive(s, p[2:]) or          # zero times
+                (first_match and isMatch_naive(s[1:], p)))  # one or more
+    else:
+        # No &#x27;*&#x27;: must match first char and recurse on rest
+        return first_match and isMatch_naive(s[1:], p[1:])
+</code></pre>
+
+<hr/>
+
+<h3>Approach 2: Memoization (Top-Down DP)</h3>
+
+<p><strong>中文：</strong> 用 <code>@cache</code> 消除重复子问题，时间 O(m·n)，空间 O(m·n)。</p>
+
+<pre><code>
+from functools import cache
+
+def isMatch_memo(s: str, p: str) -&gt; bool:
+    @cache
+    def dp(i: int, j: int) -&gt; bool:
+        &quot;&quot;&quot;
+        Returns True if s[i:] is fully matched by p[j:].
+        i: current index in s (0..len(s))
+        j: current index in p (0..len(p))
+        &quot;&quot;&quot;
+        # Base case: exhausted the pattern
+        if j == len(p):
+            return i == len(s)  # True only if s is also exhausted
+        
+        # Does s[i] match p[j]?
+        first_match = i &lt; len(s) and p[j] in {s[i], &#x27;.&#x27;}
+        
+        # Lookahead: is the NEXT pattern char a &#x27;*&#x27;?
+        if j + 1 &lt; len(p) and p[j + 1] == &#x27;*&#x27;:
+            # Zero occurrences: skip &quot;p[j]*&quot; unit entirely (move j by 2)
+            # One or more: consume s[i] only if first_match (keep j, move i)
+            return dp(i, j + 2) or (first_match and dp(i + 1, j))
+        else:
+            # No &#x27;*&#x27; following: must match current chars and advance both
+            return first_match and dp(i + 1, j + 1)
+    
+    return dp(0, 0)
+</code></pre>
+
+<p><strong>关键提示 / Key tip:</strong> We recurse on <em>indices</em> (not substrings) so Python&#x27;s <code>@cache</code> can deduplicate efficiently.</p>
+
+<hr/>
+
+<h3>Approach 3: Bottom-Up DP (最优解 / Optimal)</h3>
+
+<p><strong>中文：</strong> 迭代版 DP，逻辑与记忆化完全对应，但无递归开销。</p>
+
+<pre><code>
+def isMatch(s: str, p: str) -&gt; bool:
+    m, n = len(s), len(p)
+    
+    # dp[i][j] = can p[0..j-1] match s[0..i-1] ?
+    # Using (m+1) x (n+1) table; row 0 = empty s, col 0 = empty p
+    dp = [[False] * (n + 1) for _ in range(m + 1)]
+    
+    # --- Base case initialization ---
+    dp[0][0] = True  # empty string matches empty pattern
+    
+    # Empty string can match patterns like a*, a*b*, a*b*c* ...
+    # If p[j-1] == &#x27;*&#x27;, it can annihilate p[j-2], inheriting dp[0][j-2]
+    for j in range(2, n + 1):
+        if p[j - 1] == &#x27;*&#x27;:
+            dp[0][j] = dp[0][j - 2]  # zero occurrences of p[j-2]
+    
+    # --- Fill the table row by row ---
+    for i in range(1, m + 1):       # i iterates over s characters
+        for j in range(1, n + 1):   # j iterates over p characters
+            
+            if p[j - 1] == &#x27;*&#x27;:
+                # &#x27;*&#x27; acts on the character BEFORE it: p[j-2]
+                # Case A: use &#x27;*&#x27; ZERO times → skip &quot;p[j-2]*&quot; entirely
+                zero_times = dp[i][j - 2]
+                
+                # Case B: use &#x27;*&#x27; ONE or MORE times
+                # s[i-1] must match p[j-2] (the char that &#x27;*&#x27; quantifies)
+                # Then we &quot;consume&quot; s[i-1] and keep the same pattern position j
+                prev_char_matches = (p[j - 2] == s[i - 1] or p[j - 2] == &#x27;.&#x27;)
+                one_or_more = dp[i - 1][j] if prev_char_matches else False
+                
+                dp[i][j] = zero_times or one_or_more
+            
+            elif p[j - 1] == &#x27;.&#x27; or p[j - 1] == s[i - 1]:
+                # Direct match: both chars align → inherit diagonal
+                dp[i][j] = dp[i - 1][j - 1]
+            
+            # else: mismatch, dp[i][j] stays False
+    
+    return dp[m][n]
+</code></pre>
+
+<p><strong>DP Table Walkthrough (s=&quot;aab&quot;, p=&quot;c<em>a</em>b&quot;):</strong></p>
+
+<pre><code>
+    &quot;&quot;  c   *   a   *   b
+&quot;&quot;  T   F   T   F   T   F
+a   F   F   F   T   T   F
+a   F   F   F   F   T   F
+b   F   F   F   F   F   T  ← answer!
+</code></pre>
+
+<p>每个 <code>*</code> 格子看的是两格前（零次）和左上（一次）。</p>
+<p>Each <code>*</code> cell looks two columns left (zero) and one row up (one-or-more).</p>
+
+<p><strong>复杂度 / Complexity:</strong></p>
+<p>- Time: O(m · n)</p>
+<p>- Space: O(m · n), optimizable to O(n) with rolling array</p>
+
+<hr/>
+
+<h3>Space-Optimized Version (Bonus)</h3>
+
+<pre><code>
+def isMatch_1d(s: str, p: str) -&gt; bool:
+    m, n = len(s), len(p)
+    # Only keep current and previous row
+    prev = [False] * (n + 1)
+    prev[0] = True
+    for j in range(2, n + 1):
+        if p[j - 1] == &#x27;*&#x27;:
+            prev[j] = prev[j - 2]
+    
+    for i in range(1, m + 1):
+        curr = [False] * (n + 1)
+        for j in range(1, n + 1):
+            if p[j - 1] == &#x27;*&#x27;:
+                prev_char_matches = p[j - 2] in {s[i - 1], &#x27;.&#x27;}
+                curr[j] = curr[j - 2] or (prev_char_matches and prev[j])
+            elif p[j - 1] in {s[i - 1], &#x27;.&#x27;}:
+                curr[j] = prev[j - 1]
+        prev = curr
+    
+    return prev[n]
+</code></pre>
+
+<hr/>
+
+<h2>Part 3: Edge Cases &amp; Gotchas / 边界情况 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>| 场景 | 输入 | 期望 | 陷阱 |</p>
+<p>|------|------|------|------|</p>
+<p>| <code><em></code> 消零 | s=&quot;b&quot;, p=&quot;a</em>b&quot; | True | <code>a*</code> 匹配空 |</p>
+<p>| 连续 <code>.<em></code> | s=&quot;aaa&quot;, p=&quot;.</em>&quot; | True | <code>.*</code> 吞掉一切 |</p>
+<p>| 模式比字符串长 | s=&quot;a&quot;, p=&quot;a<em>a</em>a*&quot; | True | 全部零次后仍为空 |</p>
+<p>| <code><em></code> 出现在位置 1 | s=&quot;&quot;, p=&quot;a</em>&quot; | True | 初始化行必须处理 |</p>
+<p>| <code><em></code> 只匹配一次 | s=&quot;a&quot;, p=&quot;a</em>&quot; | True | 不要忘记&quot;一次及以上&quot; |</p>
+<p>| 无 <code>*</code> 长度不等 | s=&quot;ab&quot;, p=&quot;a&quot; | False | 长度不能弥补 |</p>
+
+<p><strong>English:</strong></p>
+
+<p><strong>Critical gotcha:</strong> <code><em></code> ALWAYS has a preceding character in valid input (per LeetCode constraints), so <code>p[j-2]</code> access when <code>p[j-1] == &#x27;</em>&#x27;</code> is safe — but only when <code>j &gt;= 2</code>. Always initialize from <code>j=2</code> in the first row.</p>
+
+<p><strong>Another trap:</strong> When <code>p[j-1] == &#x27;<em>&#x27;</code>, do NOT look at <code>dp[i-1][j-1]</code> (diagonal). The <code></em></code> applies to <code>p[j-2]</code>, not <code>p[j-1]</code>.</p>
+
+<p><strong>Dot trap:</strong> <code>&#x27;.&#x27;</code> matches <em>exactly one</em> character — it cannot match zero. Only <code>&#x27;.*&#x27;</code> can match zero.</p>
+
+<hr/>
+
+<h2>Part 4: Real-World Application / 实际应用 (2 min)</h2>
+
+<p><strong>中文：</strong></p>
+
+<p>这道题的 DP 思想直接应用于：</p>
+<p>1. <strong>SQL <code>LIKE</code> 操作符</strong>：<code>%</code> 和 <code>_</code> 通配符的匹配逻辑与本题高度相似</p>
+<p>2. <strong>路由匹配</strong>：Express.js / FastAPI 的路径通配（<code>/api/*</code>）</p>
+<p>3. <strong>grep/awk 引擎</strong>：GNU grep 的 NFA → DFA 转换正是 DP 核心思想</p>
+<p>4. <strong>编译原理</strong>：词法分析器（lexer）中的正则表达式转 NFA 再转 DFA</p>
+
+<p><strong>English:</strong></p>
+
+<p>This exact DP structure powers real regex engines:</p>
+
+<pre><code>
+# SQL LIKE equivalent (simplified)
+def sql_like(s: str, pattern: str) -&gt; bool:
+    # &#x27;%&#x27; = &#x27;.*&#x27; in regex, &#x27;_&#x27; = &#x27;.&#x27; in regex
+    p = pattern.replace(&#x27;%&#x27;, &#x27;.*&#x27;).replace(&#x27;_&#x27;, &#x27;.&#x27;)
+    return isMatch(s, &#x27;^&#x27; + p + &#x27;$&#x27;)  # conceptually
+</code></pre>
+
+<p><strong>Production reality:</strong> Real regex engines like RE2 (used by Google, Go, Python&#x27;s <code>re2</code> module) convert the regex to an NFA, then simulate it — essentially the same DP state transitions but streaming over input. The DP approach here is a direct table-based NFA simulation.</p>
+
+<p><strong>Interview context:</strong> Interviewers sometimes follow up: <em>&quot;How would you extend this to support <code>+</code> and <code>?</code>?&quot;</em></p>
+<p>- <code>x+</code> = <code>xx*</code> (one or more)</p>
+<p>- <code>x?</code> = <code>(x|ε)</code> — add a case: if <code>p[j-1] == &#x27;?&#x27;</code>, either skip it (<code>dp[i][j-2]</code>) or consume one char</p>
+
+<hr/>
+
+<h2>Part 5: Interview Simulation / 面试模拟 (3 min)</h2>
+
+<p><strong>中文：</strong> 面试官最爱追问的 5 个问题：</p>
+
+<p><strong>Q1: 为什么不能用 <code>s.find()</code> 或 Python 的 <code>re</code> 模块？</strong></p>
+<p>A1: 面试考的是你能否手写 DP 推导出状态转移，调库没有考查价值。面试时要先说：&quot;现实中当然用 <code>re.fullmatch(p, s)</code>，但我来展示 DP 解法。&quot;</p>
+
+<p><strong>Q2: 时间复杂度是多少？能优化吗？</strong></p>
+<p>A2: O(m·n) 时间，O(m·n) 空间。空间可用滚动数组优化到 O(n)，时间无法进一步优化（需要遍历所有状态）。</p>
+
+<p><strong>Q3: 如果模式中有 <code>+</code>（一次及以上）和 <code>?</code>（零次或一次），怎么改？</strong></p>
+<p>A3: 在 DP 中加两个分支：<code>?</code> → <code>dp[i][j] = dp[i][j-2] or (first_match and dp[i-1][j-1])</code>；<code>+</code> 类似于 <code>*</code> 但去掉零次分支。</p>
+
+<p><strong>Q4: 递归版和迭代版哪个更好？</strong></p>
+<p>A4: 迭代版更稳定（无调用栈溢出风险），空间优化更自然；递归版思路更直观。面试中先讲递归思路，再写迭代版代码。</p>
+
+<p><strong>Q5: 能不能用 BFS/DFS 做？</strong></p>
+<p>A5: 可以——把 <code>(i, j)</code> 当节点做 BFS。这正是 NFA 仿真的本质。但 DP 表法更直接，状态管理更清晰。</p>
+
+<hr/>
+
+<p><strong>English Q&amp;A:</strong></p>
+
+<p><strong>Q1: Where does <code>*</code> complexity come from?</strong></p>
+<p>A: Without memoization, <code>*</code> creates two branches at each step (zero/one-more), leading to O(2^(m+n)) in the worst case. With DP, each <code>(i,j)</code> state is computed once → O(m·n).</p>
+
+<p><strong>Q2: What&#x27;s the invariant of <code>dp[0][j]</code>?</strong></p>
+<p>A: <code>dp[0][j]</code> = &quot;can pattern p[0..j-1] match the empty string?&quot; — only true for patterns like <code>a<em></code>, <code>a</em>b<em></code>, <code>.</em></code>, etc. This row drives correct initialization.</p>
+
+<p><strong>Q3: Why do we check <code>dp[i-1][j]</code> (not <code>dp[i-1][j-1]</code>) for the one-or-more case?</strong></p>
+<p>A: Because <code><em></code> can match multiple chars. After consuming <code>s[i-1]</code>, the SAME <code>p[j-1]</code> (<code></em></code>) is still in play to potentially match <code>s[i-2]</code>. We keep <code>j</code> fixed and move <code>i</code>.</p>
+
+<p><strong>Q4: What if the pattern starts with <code>*</code>?</strong></p>
+<p>A: Per LeetCode constraints, <code>*</code> never appears as the first character — it always has a preceding character. No need to guard for this.</p>
+
+<p><strong>Q5: Can this be extended to full POSIX regex?</strong></p>
+<p>A: This covers the core: <code>.</code> and <code>*</code>. Full POSIX adds <code>+</code>, <code>?</code>, <code>[]</code>, <code>^</code>, <code>$</code>, <code>{n,m}</code>, alternation <code>|</code>, and groups <code>()</code>. Each extension adds state transitions but the DP framework remains.</p>
+
+<hr/>
+
+<p><em>🔬 Deep Dive by byte-by-byte · Day 160 · Saturday, November 28, 2026</em></p>
+
+<hr/>
+<h1>Review</h1>
+<h2>Review Day 160 — Saturday Deep Dive Edition</h2>
+
+<p>&gt; This review day falls on a Saturday. The main content for today is the Saturday Deep Dive:</p>
+<p>&gt; <strong>Regular Expression Matching — LeetCode #10</strong></p>
+<p>&gt; See: <code>2026-11-28-deepdive.md</code></p>
+
+<h2>Quick Review Quiz (Days 156–159)</h2>
+
+<p><strong>Q1: [Algorithms] Burst Balloons uses interval DP. What&#x27;s the key reversal trick?</strong></p>
+<p>A1: Instead of thinking &quot;which balloon to pop first,&quot; think &quot;which balloon is popped LAST in interval [i,j].&quot; This avoids the problem of broken adjacency after popping. <code>dp[i][j] = max(dp[i][k] + nums[i]<em>nums[k]</em>nums[j] + dp[k][j])</code> for k in (i,j).</p>
+
+<p><strong>Q2: [Algorithms] Regular Expression Matching — when <code>p[j-1] == &#x27;*&#x27;</code>, what two states do you check?</strong></p>
+<p>A2: (1) <strong>Zero occurrences</strong>: <code>dp[i][j-2]</code> — skip the <code>x<em></code> unit entirely. (2) <strong>One or more</strong>: <code>dp[i-1][j]</code> if <code>s[i-1]</code> matches <code>p[j-2]</code> — consume one char, keep the same <code></em></code> pattern active.</p>
+
+<p><strong>Q3: [Algorithms] Maximum Subarray (Kadane&#x27;s) — what&#x27;s the invariant at each step?</strong></p>
+<p>A3: <code>curr = max(nums[i], curr + nums[i])</code> — either extend the current subarray or start fresh at <code>nums[i]</code>. Global max tracks the best seen. O(n) time, O(1) space.</p>
+]]></description>
+    </item>
     <item>
       <title>byte-by-byte — 2026-11-27</title>
       <link>https://github.com/YushengAuggie/byte-by-byte/tree/main/archive</link>
